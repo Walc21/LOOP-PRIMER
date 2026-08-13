@@ -49,6 +49,10 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   repetição de `RUN`.
 - Dependências futuras só podem ser locais, declaradas pelo projeto, necessárias
   ao marco corrente e registradas neste plano. Instalações globais são proibidas.
+- O bootstrap de ambiente para a ingestão M3 cobre somente Debian/Ubuntu:
+  instala ferramentas locais de sistema quando ausentes e cria `.venv` no
+  repositório. O Prime Agent permanece uma dependência opcional externa e não
+  é instalado por esse mecanismo.
 
 ## Marcos canônicos
 
@@ -206,3 +210,8 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   preserva SHA-256 e tamanho do `source.zip` recebido, sem publicar
   `latex-source`. A suíte completa manteve 98 testes aprovados; M4 não foi
   iniciado.
+- 2026-08-13 — Portabilidade M3: será incluído um bootstrap explícito para
+  Debian/Ubuntu que verifica Python 3.11+, Poppler e LaTeX, instala somente os
+  pacotes de sistema ausentes mediante `sudo`, e cria o ambiente virtual local
+  com as versões de `requirements-dev.txt`. Prime Agent continua fora do
+  escopo, por ser opcional e uma instalação global.

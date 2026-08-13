@@ -22,7 +22,19 @@ modelo, rede ou API paga.
 
 ## Validação local
 
-Crie um ambiente virtual local e instale somente as dependências declaradas:
+Em Debian ou Ubuntu, prepare uma cópia recém-transferida com:
+
+```bash
+sh bin/bootstrap-deps.sh
+```
+
+O bootstrap instala, quando faltarem, Python/`venv`, Poppler e LaTeX; cria
+`.venv` no projeto; e instala somente as versões fixadas em
+`requirements-dev.txt`. Ele pode pedir `sudo` e acesso à rede para os pacotes
+locais e o índice Python. Não instala o Prime Agent, que é opcional e externo.
+
+Alternativamente, crie o ambiente virtual manualmente e instale somente as
+dependências declaradas:
 
 ```bash
 python3 -m venv .venv

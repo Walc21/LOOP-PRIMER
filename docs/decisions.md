@@ -306,3 +306,23 @@ todo o ZIP é tratado como não confirmado e a ingestão usa
 
 **Motivo:** impedir que artefatos e eventos de uma entrada sejam combinados com
 um ZIP posterior e evitar que um projeto parcialmente truncado seja aceito.
+
+## ADR-019 — Bootstrap portátil limitado ao ambiente local de ingestão
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** `bin/bootstrap-deps.sh` suporta Debian e Ubuntu. Ele detecta os
+requisitos da ingestão M3 — Python 3.11+, módulo `venv`, Poppler
+(`pdfinfo`, `pdftotext`, `pdftoppm`, `pdfimages`) e `pdflatex` — e solicita
+`sudo` apenas se algum pacote de sistema estiver ausente. Em seguida, cria ou
+reutiliza `.venv` no próprio repositório e instala as versões fixadas de
+`requirements-dev.txt`.
+
+O script não instala nem configura o Prime Agent: ele é opcional nesta etapa,
+é global ao dispositivo e exige autorização própria. Sistemas que não sejam
+Debian/Ubuntu falham com instruções claras, sem tentar inferir um gerenciador
+de pacotes.
+
+**Motivo:** o repositório deve poder ser copiado sem carregar ambientes locais,
+mas a automação não pode ocultar instalações globais, variar silenciosamente
+por distribuição ou ampliar o escopo da integração Prime Agent.
