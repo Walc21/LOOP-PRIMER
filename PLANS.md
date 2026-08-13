@@ -1,0 +1,111 @@
+# ExecPlan vivo — article-loop
+
+## Objetivo
+
+Construir uma integração verificável para revisão iterativa de artigo matemático
+sem alterar o núcleo do Prime Agent. A arquitetura canônica possui 21 papéis,
+execução esparsa, estado durável próprio, júri cego, gates determinísticos,
+champion, challengers e arquivo Pareto.
+
+A fonte normativa de arquitetura é `docs/architecture.md`; a autoridade da
+integração Prime Agent continua sendo `docs/compatibility.md`.
+
+## Estado atual
+
+- Atualizado em 2026-08-12.
+- M0 — compatibilidade, segurança e documentação-base: concluído.
+- M0.5 — alinhamento da arquitetura canônica: concluído nesta etapa.
+- Nenhum diretório de runtime, código, schema, prompt executável ou skill foi
+  materializado no Marco 0.5.
+- Não houve instalação de dependências, início do Prime Agent, subagente,
+  `/autonomous`, `/refine` ou chamada de modelo.
+- Versão instalada auditada: `prime-agent 0.7.1`.
+
+## Contratos já decididos
+
+- O catálogo de 21 papéis, os caminhos canônicos, os estados, as ações e as
+  dimensões de avaliação já são definidos em `docs/architecture.md`; M1 não
+  inventará nem renomeará esses contratos.
+- A hierarquia RLM autorizada no futuro é profundidade 2: M00 na profundidade
+  0, S10–S50 na 1 e W11–W53 na 2. A sessão raiz deverá usar
+  `/rlm-max-depth 2`, sem `--global`, somente após autorização específica.
+- `rlm(...)` devolve apenas handle de admissão. Propostas detalhadas chegam por
+  arquivo canônico e resumo/referência por `agent_message` compatível.
+- Agentes propõem; somente o merge escreve no challenger; nenhum agente escreve
+  diretamente no champion.
+- Dependências futuras só podem ser locais, declaradas pelo projeto, necessárias
+  ao marco corrente e registradas neste plano. Instalações globais são proibidas.
+
+## Marcos canônicos
+
+| Marco | Entrega | Estado | Critério de aceitação |
+|---|---|---|---|
+| M0 | compatibilidade, segurança e documentação-base | concluído | versão, superfícies e incompatibilidades registradas sem runtime |
+| M0.5 | alinhamento da arquitetura | concluído | catálogo, estados, ações, dimensões, scripts e árvore canônica verificados |
+| M1 | scaffold e contratos canônicos | pendente | implementa os contratos já definidos, sem renomear IDs, estados ou paths |
+| M2 | máquina de estados, event log e recuperação | pendente | os 16 estados e suas transições são testáveis e auditáveis |
+| M3 | ingestão PDF e baseline editável | pendente | `input/inbox/artigo.pdf` tem SHA-256 preservado e alcança `SOURCE_READY` |
+| M4 | papéis, prompts imutáveis e compilador | pendente | os 21 papéis canônicos usam os contratos imutáveis aprovados |
+| M5 | blackboard, grafo de claims e ativação esparsa | pendente | RUN/CHECK/SHIFT/FREEZE seguem o grafo de impacto |
+| M6 | integração RLM hierárquica | pendente | profundidade 2, handles, mensagens e arquivos passam teste controlado |
+| M7 | síntese, merge, gates e arquivos de versões | pendente | somente merge escreve challenger; champion e Pareto preservam histórico |
+| M8 | avaliador externo cego em júri | pendente | rubrica cega não expõe autoria, ordem ou status de champion |
+| M9 | detecção de progresso e refoco | pendente | estagnação e refoco são produzidos pelos scripts canônicos |
+| M10 | política de compensação e finalizador | pendente | decisão e finalização transacional respeitam gates duros |
+| M11 | comandos e configuração do Prime Agent | pendente | recursos `.prime/agent/` seguem a compatibilidade instalada |
+| M12 | orçamento, observabilidade e execução prolongada | pendente | limites, custos e recuperação são observáveis sem alterar globais |
+| M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
+
+## Sequência canônica dos Prompts 01–13
+
+1. M1 materializa o scaffold e os contratos canônicos já documentados.
+2. M2 implementa a máquina de estados, o event log e a recuperação.
+3. M3 processa a entrada canônica e produz baseline editável com preservação do
+   PDF original.
+4. M4 introduz papéis, prompts imutáveis e compilador, sem mudar seu catálogo.
+5. M5 implementa blackboard, grafo de claims e ativação esparsa.
+6. M6 integra a hierarquia RLM somente em execução autorizada.
+7. M7 constrói síntese, merge, gates e arquivos de versões.
+8. M8 integra o avaliador externo cego como júri.
+9. M9 integra detecção de progresso e refoco.
+10. M10 integra compensação e finalização transacional.
+11. M11 configura comandos e recursos locais do Prime Agent.
+12. M12 acrescenta orçamento, observabilidade e execução prolongada autorizada.
+13. M13 executa testes sistêmicos e prepara a entrega.
+
+## Critérios de aceitação do produto
+
+- Há exatamente 21 papéis lógicos com os IDs canônicos e a execução nunca
+  ultrapassa profundidade RLM 2.
+- O gerente geral executa sempre; o primeiro ciclo auditável envolve os cinco
+  departamentos; ciclos posteriores obedecem ao grafo de impacto.
+- Os 16 estados e as 9 ações canônicas são persistidos e as transições são
+  recuperáveis por event log.
+- `correctness_math` é gate duro e não pode ser compensado por clareza, estilo
+  ou outra dimensão.
+- O PDF em `input/inbox/artigo.pdf` é preservado por SHA-256; `source.zip`, se
+  existente e aprovado em inspeção segura, é a fonte preferencial.
+- Apenas merge escreve challenger e nenhuma rotina de agente escreve champion.
+- Gates, julgamento cego, decisão e finalização deixam evidência suficiente
+  para reconstituir champion, challengers, rejeitados e fronteira Pareto.
+- O projeto não altera instalação/configuração global do Prime Agent e não faz
+  chamadas pagas sem autorização específica.
+
+## Riscos e bloqueadores
+
+| Risco ou bloqueador | Mitigação/decisão |
+|---|---|
+| versão instalada `0.7.1` diverge de exemplos em `main` | adaptador usa somente contratos registrados em `docs/compatibility.md` |
+| contrato de `agent_message.mode` é conflitante | não usar `mode`; persistir resultado canônico em arquivo |
+| PDF e `source.zip` não foram fornecidos | M3 permanece pendente; não inventar fonte nem baseline |
+| runtime Prime Agent pode gerar custo | M6 e M11 requerem autorização específica de provedor e orçamento |
+| ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
+
+## Registro de progresso
+
+- 2026-08-12 — M0: diretório validado, Git inicializado, versão e superfícies
+  públicas do Prime Agent auditadas sem credenciais ou runtime.
+- 2026-08-12 — M0.5 iniciado: documentação integralmente relida e comparada à
+  sequência canônica dos Prompts 01–13.
+- 2026-08-12 — M0.5 concluído: arquitetura, marcos, decisões e política de
+  dependências alinhados; verificações textuais de cardinalidade registradas.
