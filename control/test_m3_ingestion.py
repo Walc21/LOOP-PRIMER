@@ -269,7 +269,8 @@ class IngestionTests(unittest.TestCase):
 
     def test_structurally_invalid_latex_falls_back_with_explicit_issue(self):
         self.fixture()
-        with zipfile.ZipFile(self.root / "input/inbox/source.zip", "w") as archive:
+        source = self.root / "input/inbox/source.zip"
+        with zipfile.ZipFile(source, "w") as archive:
             archive.writestr("paper.tex", "\\documentclass{article}\n\\begin{document}\n\\def\\broken{\n\\end{document}\n")
         ingest(self.root)
         champion = self.root / "versions/champion/v0000"
@@ -277,11 +278,13 @@ class IngestionTests(unittest.TestCase):
         normalized = json.loads((champion / "source/normalized.json").read_text())
         self.assertEqual("PDF_ONLY_RECONSTRUCTION", provenance["source_mode"])
         self.assertFalse((champion / "latex-source").exists())
+        self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), provenance["source_zip"]["sha256"])
+        self.assertEqual(source.stat().st_size, provenance["source_zip"]["size_bytes"])
         self.assertIn("SOURCE_ZIP_STRUCTURALLY_INVALID", [issue["code"] for issue in normalized["issues"]])
 
     def test_valid_main_with_truncated_tex_member_falls_back_to_pdf_only(self):
         self.fixture()
-        self.source_zip(
+        source = self.source_zip(
             ("main.tex", self.valid_tex()),
             ("appendix.tex", "\\documentclass{article}\n\\begin{document}\n\\def\\broken{\n\\end{document}\n"),
         )
@@ -291,6 +294,8 @@ class IngestionTests(unittest.TestCase):
         normalized = json.loads((champion / "source/normalized.json").read_text())
         self.assertEqual("PDF_ONLY_RECONSTRUCTION", provenance["source_mode"])
         self.assertFalse((champion / "latex-source").exists())
+        self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), provenance["source_zip"]["sha256"])
+        self.assertEqual(source.stat().st_size, provenance["source_zip"]["size_bytes"])
         self.assertIn("SOURCE_ZIP_STRUCTURALLY_INVALID", [issue["code"] for issue in normalized["issues"]])
 
     def test_managed_parent_symlinks_are_rejected_without_external_writes(self):

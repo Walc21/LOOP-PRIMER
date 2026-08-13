@@ -201,3 +201,8 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   champion a confere. Inclusão, remoção ou troca de `source.zip` falha fechada,
   e qualquer membro `.tex` inválido impede `SOURCE_ZIP`. Passaram 46 testes de
   contratos, 30 de M2 e 22 de M3: 98 na suíte completa; M4 não foi iniciado.
+- 2026-08-13 — M3 correção de proveniência de fallback concluída: quando LaTeX
+  inválido força `PDF_ONLY_RECONSTRUCTION`, o `ingestion-manifest.json` ainda
+  preserva SHA-256 e tamanho do `source.zip` recebido, sem publicar
+  `latex-source`. A suíte completa manteve 98 testes aprovados; M4 não foi
+  iniciado.
