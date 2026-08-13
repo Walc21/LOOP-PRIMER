@@ -9,9 +9,12 @@ O Marco 3 acrescenta ingestão local e offline: coloque exatamente um PDF
 regular em `input/inbox/artigo.pdf` e execute `bin/preflight.sh`. O comando
 preserva o original em `artifacts/original/<sha256>/`, extrai derivados locais
 e publica `versions/champion/v0000` somente depois do gate `SOURCE_READY`.
-Reexecutar o mesmo PDF é idempotente; qualquer arquivo ambíguo ou existente
-divergente falha sem sobrescrever evidência. `source.zip` é aceito apenas após
-inspeção contra traversal/symlinks e com uma fonte LaTeX válida.
+Reexecutar o mesmo PDF é idempotente somente depois de revalidar hashes,
+manifests e árvores sem symlink; qualquer arquivo ambíguo ou existente
+divergente falha sem sobrescrever evidência. PDF e `source.zip` são congelados
+em staging antes da inspeção. `source.zip` é aceito apenas após inspeção UTF-8,
+anti-traversal, anti-duplicidade/criptografia/symlink e com estrutura LaTeX
+confirmada. O log durável registra `NEW → INGESTED → SOURCE_READY`.
 
 PDF escaneado sem OCR não recebe texto inventado: o manifest contém issues e o
 gate falha por falta de cobertura textual. Nenhum comando inicia o Prime Agent,

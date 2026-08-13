@@ -35,13 +35,17 @@ do SHA-256 hexadecimal minúsculo. Durante o replay, o mesmo contrato fechado
 de `event.schema.json` é aplicado integralmente, incluindo versão `1.1.0`,
 inteiros não booleanos, data ISO 8601 com fuso e hashes por posição no log.
 
-`ingest(root, *, fault=None)` é o preflight M3. Ele requer exatamente o PDF
-regular `input/inbox/artigo.pdf`, preserva-o por SHA-256 em
+`ingest(root, *, fault=None)` é o preflight M3. Ele congela exatamente o PDF
+regular `input/inbox/artigo.pdf` (e o ZIP opcional) antes de qualquer leitura,
+preserva os bytes congelados por SHA-256 em
 `artifacts/original/<sha256>/document.pdf`, usa apenas Poppler local para
 extração/renderização e publica `versions/champion/v0000` somente após o gate
-local `SOURCE_READY`. O retorno informa `created` ou `idempotent`. PDFs sem
+local `SOURCE_READY`, e grava NEW → INGESTED → SOURCE_READY com IDs
+determinísticos. O retorno informa `created` ou `idempotent` somente após
+revalidar artefatos, manifests, hashes e árvores sem symlink. PDFs sem
 texto recebem classificação escaneada e issue de OCR desligado; nenhuma fórmula
-ou símbolo é inferido. `IngestionError` e `SourceReadyError` explicam entradas
+ou símbolo é inferido. A reconstrução LaTeX escapa toda extração não confiável
+e é compilada em diretório isolado com `-no-shell-escape`. `IngestionError` e `SourceReadyError` explicam entradas
 inseguras ou baseline insuficiente.
 
 A função assíncrona `run(*args, **kwargs)` permanece deliberadamente

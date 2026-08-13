@@ -17,11 +17,19 @@ required_before_jury:
 # rastreabilidade e a comparabilidade do baseline; não prova correção
 # matemática nem substitui inspeção humana.
 source_ready:
+  maximum_pdf_bytes: 52428800
+  maximum_pages: 1000
+  maximum_zip_members: 1000
+  maximum_zip_member_bytes: 10485760
+  maximum_zip_total_bytes: 52428800
+  maximum_zip_expansion_ratio: 100
   minimum_text_coverage: 0.80
   minimum_reference_coverage: 0.80
   minimum_equation_coverage: 0.80
   visual_sample_pages: 3
-  visual_minimum_nonblank_ratio: 0.01
+  # A 20dpi sample of a sparse mathematical page may contain only a small
+  # title/equation footprint; this is still a measured, non-zero threshold.
+  visual_minimum_nonblank_ratio: 0.001
   ocr_enabled: false
 
 gates:

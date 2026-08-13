@@ -237,3 +237,29 @@ e qualquer divergência de artefato já publicado falha fechada.
 **Motivo:** a fonte PDF é evidência imutável, enquanto uma reconstrução é
 necessariamente incompleta. Separar as duas e registrar lacunas torna a etapa
 reproduzível sem fingir que extração/OCR prova equivalência matemática.
+
+## ADR-016 — Correção final de integridade e recuperação da ingestão M3
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** a ingestão congela PDF e `source.zip` em staging antes
+de qualquer inspeção ou transformação; SHA-256 e tamanho serão calculados nos
+bytes congelados e novamente verificados. Artefatos e champion serão preparados
+em staging, publicados por rename com sincronização e verificados depois da
+publicação. A retomada só aceitará conjuntos completos, sem symlinks e com
+manifests/hashes mutuamente consistentes; qualquer divergência falhará fechada.
+
+O `run_id` é derivado do SHA-256 integral, e o DurableStore registra
+idempotentemente NEW → INGESTED → SOURCE_READY. SOURCE_READY só será emitido
+após gate calculado por métricas reais e documentadas; LaTeX e ZIP serão
+tratados como dados não confiáveis.
+
+O gate mede texto por página, candidatos versus inventários de equações e
+referências e uma amostra visual determinística; limites de PDF/ZIP também
+são declarados em `gates.yaml`. A reconstrução trata cada linha como texto não
+confiável, escapa caracteres LaTeX e compila com `-no-shell-escape` em diretório
+isolado.
+
+**Motivo:** impedir que um byte diferente do validado seja publicado, que uma
+queda transforme publicação parcial em sucesso implícito, ou que um manifest
+autodeclarado substitua evidência verificável.

@@ -170,3 +170,16 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   só após `SOURCE_READY`. Cinco testes M3 usam fixture local e a suíte completa
   passou com 81 testes; sem rede, modelo, OCR automático, dependência nova ou
   Prime Agent.
+- 2026-08-13 — M3 correção final iniciada: auditoria independente demonstrou
+  TOCTOU de PDF/ZIP, publicação parcialmente irrecuperável, idempotência sem
+  verificação de integridade, ausência de transições M2 e métricas SOURCE_READY
+  tautológicas. A correção fica estritamente no M3, com staging congelado,
+  recuperação conservadora, event log canônico e testes adversariais locais;
+  M4 continua bloqueado.
+- 2026-08-13 — M3 correção final concluída: PDF e ZIP são congelados e
+  revalidados antes de qualquer ferramenta; publicação por estágio/rename é
+  recuperável e o log registra NEW → INGESTED → SOURCE_READY com chaves
+  determinísticas. Idempotência agora revalida árvores, manifests, hashes e
+  ausência de symlinks. SOURCE_READY mede cobertura, inventários e amostra
+  visual; LaTeX reconstruído é escapado e compilado isoladamente. M4 não foi
+  iniciado.

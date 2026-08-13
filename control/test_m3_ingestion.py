@@ -16,6 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / ".prime/agent/skills/article-loop/src"))
 from article_loop import IngestionError, SourceReadyError, ingest
+from article_loop.store import DurableStore
+from article_loop.state_machine import State
 
 
 class IngestionTests(unittest.TestCase):
@@ -94,3 +96,87 @@ class IngestionTests(unittest.TestCase):
         provenance = json.loads((self.root / "versions/champion/v0000/ingestion-manifest.json").read_text())
         self.assertEqual("SOURCE_ZIP", provenance["source_mode"])
         self.assertTrue((self.root / "versions/champion/v0000/latex-source/paper.tex").is_file())
+
+    def test_frozen_pdf_survives_inbox_swap_and_event_log_is_canonical(self):
+        pdf = self.fixture(); original = pdf.read_bytes()
+        def swap(stage):
+            if stage == "after_input_freeze":
+                pdf.write_bytes(b"changed after freeze")
+        result = ingest(self.root, fault=swap)
+        digest = result["sha256"]
+        self.assertEqual(hashlib.sha256(original).hexdigest(), digest)
+        self.assertEqual(original, (self.root / "artifacts/original" / digest / "document.pdf").read_bytes())
+        store = DurableStore(self.root)
+        self.assertEqual(["NEW", "INGESTED", "SOURCE_READY"], [event["state_to"] for event in store.read_events(result["run_id"])])
+        self.assertEqual("SOURCE_READY", store.rebuild_snapshot(result["run_id"])["state"])
+
+    def test_tampering_never_returns_idempotent(self):
+        result = ingest(self.root) if self.fixture() else None
+        champion = self.root / "versions/champion/v0000"
+        (champion / "baseline.pdf").write_bytes(b"tampered")
+        with self.assertRaisesRegex(IngestionError, "baseline hash"):
+            ingest(self.root)
+        # Restore via a fresh fixture/project, then exercise derived and source files.
+        self.temporary.cleanup(); self.setUp(); self.fixture(); result = ingest(self.root)
+        digest = result["sha256"]
+        (self.root / "artifacts/extracted" / digest / "text.txt").write_text("tampered", encoding="utf-8")
+        with self.assertRaisesRegex(IngestionError, "manifest hash"):
+            ingest(self.root)
+
+    def test_rendered_and_symlink_tampering_are_rejected(self):
+        self.fixture(); result = ingest(self.root); digest = result["sha256"]
+        (self.root / "artifacts/rendered" / digest / "pages/page-1.png").write_bytes(b"tampered")
+        with self.assertRaisesRegex(IngestionError, "manifest hash"):
+            ingest(self.root)
+        self.temporary.cleanup(); self.setUp(); self.fixture(); ingest(self.root)
+        champion = self.root / "versions/champion/v0000"
+        (champion / "source/text.txt").unlink()
+        (champion / "source/text.txt").symlink_to("/etc/passwd")
+        with self.assertRaisesRegex(IngestionError, "symlink"):
+            ingest(self.root)
+
+    def test_publication_faults_recover_without_duplicate_events(self):
+        self.fixture()
+        for boundary in ("before_original_publish", "after_original_publish", "before_extracted_publish", "after_extracted_publish", "before_rendered_publish", "after_rendered_publish", "before_champion_publish", "after_champion_publish", "before_ingested_record", "after_ingested_record", "before_source_ready_record", "after_source_ready_record"):
+            with self.subTest(boundary=boundary):
+                with self.assertRaisesRegex(RuntimeError, boundary):
+                    ingest(self.root, fault=lambda stage, wanted=boundary: (_ for _ in ()).throw(RuntimeError(stage)) if stage == wanted else None)
+                result = ingest(self.root)
+                events = DurableStore(self.root).read_events(result["run_id"])
+                self.assertEqual(3, len(events))
+                self.assertEqual(State.SOURCE_READY.value, events[-1]["state_to"])
+                shutil.rmtree(self.root / "versions/champion/v0000")
+                for path in (self.root / "artifacts/original", self.root / "artifacts/extracted", self.root / "artifacts/rendered"):
+                    shutil.rmtree(path)
+                    path.mkdir()
+                for path in (self.root / "state/events", self.root / "state/snapshots"):
+                    shutil.rmtree(path); path.mkdir()
+
+    def test_gate_failure_has_no_source_ready_and_zip_cases_are_rejected(self):
+        self.fixture()
+        gates = self.root / "config/gates.yaml"
+        gates.write_text(gates.read_text().replace("visual_minimum_nonblank_ratio: 0.001", "visual_minimum_nonblank_ratio: 1.0"))
+        with self.assertRaises(SourceReadyError): ingest(self.root)
+        digest = hashlib.sha256((self.root / "input/inbox/artigo.pdf").read_bytes()).hexdigest()
+        self.assertEqual(["NEW"], [event["state_to"] for event in DurableStore(self.root).read_events(f"ingest-{digest}")])
+        gates.write_text((ROOT / "config/gates.yaml").read_text())
+        with zipfile.ZipFile(self.root / "input/inbox/source.zip", "w") as archive:
+            archive.writestr("a.tex", "x"); archive.writestr("a.tex", "x")
+        with self.assertRaisesRegex(IngestionError, "duplicate"): ingest(self.root)
+
+    def test_latex_escaping_and_page_mapping(self):
+        from article_loop.ingestion import _latex_escape, _lines
+        self.assertEqual(r"\textbackslash{}\{\}\$\&\#\textasciicircum{}\_\%\textasciitilde{}", _latex_escape("\\{}$&#^_%~"))
+        lines, *_ = _lines(["first", "second"])
+        self.assertEqual([1, 2], [line["page"] for line in lines])
+
+    def test_source_zip_is_frozen_before_later_inbox_change(self):
+        self.fixture()
+        source = self.root / "input/inbox/source.zip"
+        with zipfile.ZipFile(source, "w") as archive:
+            archive.writestr("paper.tex", "\\documentclass{article}\n\\begin{document}A\\end{document}\n")
+        def mutate(stage):
+            if stage == "after_source_zip_freeze":
+                source.write_bytes(b"different archive")
+        ingest(self.root, fault=mutate)
+        self.assertTrue((self.root / "versions/champion/v0000/latex-source/paper.tex").exists())
