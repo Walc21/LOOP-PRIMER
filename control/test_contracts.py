@@ -225,10 +225,12 @@ class ScaffoldTests(unittest.TestCase):
             {path.name for path in (ROOT / "scripts").glob("[0-9][0-9]_*.py")},
             scripts,
         )
-        for name in ("start-prime.sh", "preflight.sh", "check.sh"):
+        for name in ("start-prime.sh", "check.sh"):
             path = ROOT / "bin" / name
             self.assertTrue(path.is_file())
             self.assertEqual(path.stat().st_mode & 0o111, 0)
+        self.assertTrue((ROOT / "bin/preflight.sh").is_file())
+        self.assertNotEqual((ROOT / "bin/preflight.sh").stat().st_mode & 0o111, 0)
 
 
 class ConditionalContractTests(unittest.TestCase):

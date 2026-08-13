@@ -214,3 +214,26 @@ validação estrutural além da cadeia criptográfica e da semântica de estados
 **Motivo:** uma cadeia de hashes recalculada só comprova consistência dos bytes;
 não torna um evento fora do contrato canônico confiável. Aplicar o schema nos
 dois limites impede tanto commits locais inválidos quanto logs forjados.
+
+## ADR-015 — Ingestão M3 conservadora, offline e versionada
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** a ingestão aceita exatamente `input/inbox/artigo.pdf`, sem
+symlinks que escapem da raiz, calcula seu SHA-256 e somente produz derivados
+em diretórios identificados por esse hash. Poppler fornece metadados, texto,
+páginas renderizadas e imagens; a classificação digital/híbrido/escaneado é
+heurística documentada no manifest. OCR permanece opcional e explicitamente
+desligado por padrão: ausência de texto em PDF escaneado gera issues em vez de
+símbolos inferidos. `source.zip` é inspecionado sem extração insegura e só é
+preferido se contiver fontes LaTeX regulares válidas.
+
+O gate `SOURCE_READY` compara páginas, cobertura textual, inventários de
+equações e referências e uma amostra visual local segundo limites declarados
+em `config/gates.yaml`. A promoção para `versions/champion/v0000` ocorre por
+publicação atômica somente após o gate; reingestão do mesmo hash é idempotente
+e qualquer divergência de artefato já publicado falha fechada.
+
+**Motivo:** a fonte PDF é evidência imutável, enquanto uma reconstrução é
+necessariamente incompleta. Separar as duas e registrar lacunas torna a etapa
+reproduzível sem fingir que extração/OCR prova equivalência matemática.

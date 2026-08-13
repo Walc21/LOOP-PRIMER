@@ -5,7 +5,7 @@ description: Núcleo local de estado durável do article-loop, sem runtime Prime
 
 # article-loop
 
-No Marco 2, esta skill fornece somente persistência local, offline e
+No Marco 3, esta skill fornece persistência e ingestão local, offline e
 determinística. Não inicia agentes, modelos, rede ou operações de runtime.
 
 ## API pública
@@ -34,6 +34,15 @@ IDs e tipo de evento vazios, chave de idempotência vazia ou maior que 256,
 do SHA-256 hexadecimal minúsculo. Durante o replay, o mesmo contrato fechado
 de `event.schema.json` é aplicado integralmente, incluindo versão `1.1.0`,
 inteiros não booleanos, data ISO 8601 com fuso e hashes por posição no log.
+
+`ingest(root, *, fault=None)` é o preflight M3. Ele requer exatamente o PDF
+regular `input/inbox/artigo.pdf`, preserva-o por SHA-256 em
+`artifacts/original/<sha256>/document.pdf`, usa apenas Poppler local para
+extração/renderização e publica `versions/champion/v0000` somente após o gate
+local `SOURCE_READY`. O retorno informa `created` ou `idempotent`. PDFs sem
+texto recebem classificação escaneada e issue de OCR desligado; nenhuma fórmula
+ou símbolo é inferido. `IngestionError` e `SourceReadyError` explicam entradas
+inseguras ou baseline insuficiente.
 
 A função assíncrona `run(*args, **kwargs)` permanece deliberadamente
 indisponível e levanta `RuntimeError` até a integração autorizada do Marco 6.

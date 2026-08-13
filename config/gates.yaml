@@ -13,7 +13,22 @@ required_before_jury:
   - role_topology
   - schema_meta_validation
 
+# M3: SOURCE_READY é local e deliberadamente conservador.  Ele valida a
+# rastreabilidade e a comparabilidade do baseline; não prova correção
+# matemática nem substitui inspeção humana.
+source_ready:
+  minimum_text_coverage: 0.80
+  minimum_reference_coverage: 0.80
+  minimum_equation_coverage: 0.80
+  visual_sample_pages: 3
+  visual_minimum_nonblank_ratio: 0.01
+  ocr_enabled: false
+
 gates:
+  - id: SOURCE_READY
+    command: bin/preflight.sh
+    timeout_seconds: 300
+    deterministic: true
   - id: config_contracts
     command: .venv/bin/python -m unittest -v control.test_contracts
     timeout_seconds: 300

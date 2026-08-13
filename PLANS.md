@@ -23,6 +23,8 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - Não houve instalação de dependências, início do Prime Agent, subagente,
   `/autonomous`, `/refine` ou chamada de modelo.
 - Versão instalada auditada: `prime-agent 0.7.1`.
+- M3 concluído: ingestão offline usa apenas Poppler já presente; OCR é
+  adaptador opcional, desligado por padrão, sem dependência nova.
 
 ## Contratos já decididos
 
@@ -57,7 +59,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M0.6 | completude de paths e ordem transacional | concluído | caminhos adicionais, ordem merge → gates → júri → decisão → finalizador e SHIFT verificados |
 | M1 | scaffold e contratos canônicos | concluído | árvore materializada, 21 papéis, 8 dimensões e 12 schemas validados localmente |
 | M2 | máquina de estados, event log e recuperação | concluído após correção contratual final | API e replay aplicam integralmente `event.schema.json`; 30 testes M2 e 76 testes locais aprovados |
-| M3 | ingestão PDF e baseline editável | pendente | `input/inbox/artigo.pdf` tem SHA-256 preservado e alcança `SOURCE_READY` |
+| M3 | ingestão PDF e baseline editável | concluído | `bin/preflight.sh` preserva SHA-256, publica `v0000` após `SOURCE_READY` e falha fechada em entradas inseguras |
 | M4 | papéis, prompts imutáveis e compilador | pendente | os 21 papéis canônicos usam os contratos imutáveis aprovados |
 | M5 | blackboard, grafo de claims e ativação esparsa | pendente | RUN/CHECK/SHIFT/FREEZE seguem o grafo de impacto |
 | M6 | integração RLM hierárquica | pendente | profundidade 2, handles, mensagens e arquivos passam teste controlado |
@@ -111,7 +113,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 |---|---|
 | versão instalada `0.7.1` diverge de exemplos em `main` | adaptador usa somente contratos registrados em `docs/compatibility.md` |
 | contrato de `agent_message.mode` é conflitante | não usar `mode`; persistir resultado canônico em arquivo |
-| PDF e `source.zip` não foram fornecidos | M3 permanece pendente; não inventar fonte nem baseline |
+| PDF e `source.zip` reais não foram fornecidos | M3 usa fixture local nos testes; uma execução real exige entrada do usuário |
 | runtime Prime Agent pode gerar custo | M6 e M11 requerem autorização específica de provedor e orçamento |
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
@@ -163,3 +165,8 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   fechados e limites de `event.schema.json` mesmo para cadeias recalculadas.
   Os 46 testes contratuais, 30 testes M2 e 76 testes locais passaram; M3 não
   foi iniciado.
+- 2026-08-13 — M3 concluído: preflight offline valida entrada e ZIP seguro,
+  preserva o original por SHA-256, extrai baseline rastreável e publica v0000
+  só após `SOURCE_READY`. Cinco testes M3 usam fixture local e a suíte completa
+  passou com 81 testes; sem rede, modelo, OCR automático, dependência nova ou
+  Prime Agent.
