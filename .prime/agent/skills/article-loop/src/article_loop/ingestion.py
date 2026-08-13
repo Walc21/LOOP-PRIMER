@@ -282,12 +282,47 @@ def _zip_info(path: Path, limits: dict[str, Any]) -> dict[str, Any]:
             if pure.suffix.lower() == ".tex" and not member.is_dir(): tex.append(normalized)
         if files & directories or any("/".join(name.split("/")[:i]) in files for name in names for i in range(1, len(name.split("/")))):
             raise IngestionError("source.zip has file-directory collision")
-        valid = []
+        invalid: list[str] = []
         for name in tex:
             text = archive.read(name).decode("utf-8")
-            if _latex_structurally_valid(text):
-                valid.append(name)
-    return {"sha256": _sha256(path), "size_bytes": path.stat().st_size, "tex_members": valid, "safe_inspection_passed": True}
+            if not _latex_structurally_valid(text):
+                invalid.append(name)
+    return {"sha256": _sha256(path), "size_bytes": path.stat().st_size,
+            "tex_members": tex, "invalid_tex_members": invalid,
+            "safe_inspection_passed": True}
+
+
+def _source_identity(input_sha256: str, zip_info: dict[str, Any] | None,
+                     source_mode: str) -> dict[str, Any]:
+    """The immutable bytes and source classification belonging to one run."""
+    return {
+        "input_sha256": input_sha256,
+        "source_zip_present": zip_info is not None,
+        "source_zip_sha256": zip_info["sha256"] if zip_info else None,
+        "source_zip_size_bytes": zip_info["size_bytes"] if zip_info else None,
+        "source_mode": source_mode,
+    }
+
+
+def _persisted_source_identity(store: DurableStore, run_id: str) -> dict[str, Any] | None:
+    """Return the one identity committed by M3 events, failing closed on gaps."""
+    identities: list[dict[str, Any]] = []
+    for event in store.read_events(run_id):
+        if event["state_to"] in {State.INGESTED.value, State.SOURCE_READY.value}:
+            identity = event["payload"].get("source_identity")
+            if not isinstance(identity, dict):
+                raise IngestionError("persisted M3 source identity is missing")
+            identities.append(identity)
+    if not identities:
+        return None
+    if any(identity != identities[0] for identity in identities[1:]):
+        raise IngestionError("persisted M3 source identities diverge")
+    return identities[0]
+
+
+def _require_source_identity(actual: dict[str, Any], persisted: dict[str, Any] | None) -> None:
+    if persisted is not None and persisted != actual:
+        raise IngestionError("source.zip identity differs from the persisted execution")
 
 
 def _copy_zip(zip_path: Path, destination: Path) -> None:
@@ -401,9 +436,20 @@ def _verify_artifacts(original: Path, extracted: Path, rendered: Path, digest: s
     return hashes
 
 
-def _verify_champion(champion: Path, digest: str, hashes: dict[str,str]) -> None:
+def _verify_champion(champion: Path, digest: str, hashes: dict[str,str],
+                     source_identity: dict[str, Any]) -> None:
     _assert_tree(champion); provenance=_read_json(champion/"ingestion-manifest.json"); manifest=_read_json(champion/"manifest.json")
     if provenance.get("input_sha256") != digest or _sha256(champion/"baseline.pdf") != digest: raise IngestionError("champion baseline hash diverges")
+    if provenance.get("source_identity") != source_identity:
+        raise IngestionError("champion source identity diverges")
+    if provenance.get("source_mode") != source_identity["source_mode"]:
+        raise IngestionError("champion source mode diverges")
+    source_zip = provenance.get("source_zip")
+    if source_identity["source_zip_present"]:
+        if not isinstance(source_zip, dict) or source_zip.get("sha256") != source_identity["source_zip_sha256"] or source_zip.get("size_bytes") != source_identity["source_zip_size_bytes"]:
+            raise IngestionError("champion source.zip hash diverges")
+    elif source_zip is not None:
+        raise IngestionError("champion unexpectedly records source.zip")
     if provenance.get("artifact_hashes") != hashes or _directory_hash(champion, exclude={"manifest.json"}) != manifest.get("content_hash") or manifest.get("workspace_hash") != manifest.get("content_hash"):
         raise IngestionError("champion manifest or workspace hash diverges")
     if _directory_hash(champion/"source", exclude={"manifest.json"}) != hashes["extracted"]: raise IngestionError("champion source diverges from extracted artifact")
@@ -427,19 +473,22 @@ def ingest(root: str | Path, *, fault: Callable[[str], None] | None = None) -> d
         info=_pdf_info(frozen_pdf); pages=int(info["Pages"])
         if pages > int(limits["maximum_pages"]): raise IngestionError("PDF exceeds configured page limit")
         zip_info=_zip_info(frozen_zip, limits) if frozen_zip else None
-        source_zip=zip_info if zip_info and zip_info["tex_members"] else None
+        source_zip=zip_info if zip_info and zip_info["tex_members"] and not zip_info["invalid_tex_members"] else None
         source_mode="SOURCE_ZIP" if source_zip else "PDF_ONLY_RECONSTRUCTION"
         run_id=f"ingest-{digest}"; store=DurableStore(project); store.create_run(run_id, actor_id="m3", event_id=f"{run_id}:new")
+        source_identity = _source_identity(digest, zip_info, source_mode)
+        persisted_identity = _persisted_source_identity(store, run_id)
+        _require_source_identity(source_identity, persisted_identity)
         original=_managed_child(project, f"artifacts/original/{digest}"); extracted_artifact=_managed_child(project, f"artifacts/extracted/{digest}"); rendered_artifact=_managed_child(project, f"artifacts/rendered/{digest}"); champion=_managed_child(project, "versions/champion/v0000")
         if champion.exists():
-            hashes=_verify_artifacts(original,extracted_artifact,rendered_artifact,digest); _verify_champion(champion,digest,hashes)
+            hashes=_verify_artifacts(original,extracted_artifact,rendered_artifact,digest); _verify_champion(champion,digest,hashes,source_identity)
             if store.snapshot(run_id)["state"] != State.SOURCE_READY: raise IngestionError("champion exists without SOURCE_READY event")
             return {"status":"idempotent","champion":"versions/champion/v0000","sha256":digest,"run_id":run_id}
         original_stage=stage/"original"; original_stage.mkdir(); shutil.copy2(frozen_pdf,original_stage/"document.pdf")
         _write_json(original_stage/"manifest.json",{"directory_hash":_directory_hash(original_stage),"input_sha256":digest,"size_bytes":size})
         _publish(original_stage,original,verify=lambda p: _assert_tree(p) if _sha256(p/"document.pdf")==digest else (_ for _ in ()).throw(IngestionError("original artifact hash diverges")),fault=fault,label="original")
         _fault(fault,"before_ingested_record")
-        store.record(run_id,State.INGESTED,event_id=f"{run_id}:ingested",idempotency_key=f"{run_id}:ingested",actor_id="m3",event_type="M3_INGESTED",payload={"input_sha256":digest,"input_size_bytes":size,"original_locator":f"artifacts/original/{digest}/document.pdf","source_mode":source_mode},artifact_hashes=[_directory_hash(original, exclude={"manifest.json"})])
+        store.record(run_id,State.INGESTED,event_id=f"{run_id}:ingested",idempotency_key=f"{run_id}:ingested",actor_id="m3",event_type="M3_INGESTED",payload={**source_identity,"source_identity":source_identity,"input_size_bytes":size,"original_locator":f"artifacts/original/{digest}/document.pdf"},artifact_hashes=[_directory_hash(original, exclude={"manifest.json"})])
         _fault(fault,"after_ingested_record")
         extracted=stage/"extracted"; extracted.mkdir(); text_pages=[]
         for page in range(1,pages+1):
@@ -449,7 +498,7 @@ def ingest(root: str | Path, *, fault: Callable[[str], None] | None = None) -> d
         pages_dir=extracted/"pages"; pages_dir.mkdir(); _tool(["pdftoppm","-png","-r","100",str(frozen_pdf),str(pages_dir/"page")],error="PDF rendering failed")
         images=extracted/"images"; images.mkdir(); _tool(["pdfimages","-png",str(frozen_pdf),str(images/"image")],error="PDF image extraction failed")
         lines,equations,references,equation_candidates,reference_candidates=_lines(text_pages); issues=[]
-        if zip_info and not source_zip: issues.append({"code":"SOURCE_ZIP_STRUCTURALLY_INVALID","message":"source.zip LaTeX could not be structurally confirmed; PDF-only reconstruction used"})
+        if zip_info and not source_zip: issues.append({"code":"SOURCE_ZIP_STRUCTURALLY_INVALID","message":"source.zip has no complete LaTeX document or contains a structurally invalid .tex member; PDF-only reconstruction used"})
         if not any(page.strip() for page in text_pages): issues.append({"code":"OCR_NOT_RUN","message":"scanned PDF detected; OCR adapter is disabled"})
         normalized={"schema_version":"1.1.0","source_mode":source_mode,"pages":pages,"blocks":[{"page":page,"line_start":min([x["line"] for x in lines if x["page"]==page],default=0),"line_end":max([x["line"] for x in lines if x["page"]==page],default=0)} for page in range(1,pages+1)],"lines":lines,"equations":equations,"equation_candidates":equation_candidates,"references":references,"reference_candidates":reference_candidates,"issues":issues}
         _write_json(extracted/"normalized.json",normalized); reconstructed=extracted/"reconstructed.tex"; reconstructed.write_text(_normalized_latex(lines,issues),encoding="utf-8"); _compile_latex(reconstructed, stage)
@@ -459,10 +508,10 @@ def ingest(root: str | Path, *, fault: Callable[[str], None] | None = None) -> d
         _publish(extracted,extracted_artifact,verify=lambda p: _assert_tree(p),fault=fault,label="extracted")
         _publish(rendered,rendered_artifact,verify=lambda p: _assert_tree(p),fault=fault,label="rendered")
         hashes=_verify_artifacts(original,extracted_artifact,rendered_artifact,digest)
-        _fault(fault,"before_source_ready_record"); store.record(run_id,State.SOURCE_READY,event_id=f"{run_id}:source-ready",idempotency_key=f"{run_id}:source-ready",actor_id="m3",event_type="M3_SOURCE_READY",payload={"input_sha256":digest,"gate":gate,"artifacts":hashes},artifact_hashes=sorted(hashes.values())); _fault(fault,"after_source_ready_record")
+        _fault(fault,"before_source_ready_record"); store.record(run_id,State.SOURCE_READY,event_id=f"{run_id}:source-ready",idempotency_key=f"{run_id}:source-ready",actor_id="m3",event_type="M3_SOURCE_READY",payload={**source_identity,"source_identity":source_identity,"gate":gate,"artifacts":hashes},artifact_hashes=sorted(hashes.values())); _fault(fault,"after_source_ready_record")
         candidate=stage/"candidate"; candidate.mkdir(); shutil.copytree(extracted_artifact,candidate/"source"); shutil.copy2(original/"document.pdf",candidate/"baseline.pdf")
         if source_zip: _copy_zip(frozen_zip,candidate/"latex-source")
-        _write_json(candidate/"ingestion-manifest.json",{"schema_version":"1.1.0","input_sha256":digest,"input_size_bytes":size,"original_locator":f"artifacts/original/{digest}/document.pdf","source_mode":normalized["source_mode"],"source_zip":source_zip,"source_ready_gate":gate,"artifact_hashes":hashes})
+        _write_json(candidate/"ingestion-manifest.json",{"schema_version":"1.1.0","input_sha256":digest,"input_size_bytes":size,"original_locator":f"artifacts/original/{digest}/document.pdf","source_mode":normalized["source_mode"],"source_identity":source_identity,"source_zip":source_zip,"source_ready_gate":gate,"artifact_hashes":hashes})
         content_hash=_directory_hash(candidate); _write_json(candidate/"manifest.json",{"schema_version":"1.1.0","candidate_id":"v0000","candidate_kind":"baseline","run_id":run_id,"cycle_id":0,"base_candidate_id":None,"built_at":_utcnow(),"content_hash":content_hash,"workspace_hash":content_hash,"source_proposal_ids":[],"merge_receipt_locator":None,"immutable":True})
-        _publish(candidate,champion,verify=lambda p: _verify_champion(p,digest,hashes),fault=fault,label="champion")
+        _publish(candidate,champion,verify=lambda p: _verify_champion(p,digest,hashes,source_identity),fault=fault,label="champion")
     return {"status":"created","champion":"versions/champion/v0000","sha256":digest,"run_id":run_id}

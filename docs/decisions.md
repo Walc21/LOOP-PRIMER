@@ -286,3 +286,23 @@ todos os arquivos regulares e o diretório são sincronizados.
 **Motivo:** registrar a evidência imutável antes de qualquer transformação,
 impedir escrita por links de diretório, não aceitar TeX estruturalmente
 truncado e reduzir a janela de perda após publicação atômica.
+
+## ADR-018 — Identidade completa de `source.zip` na execução M3
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** a identidade imutável de uma ingestão contém SHA-256 do PDF,
+presença de `source.zip`, e, quando presente, SHA-256 e tamanho do ZIP, além de
+`source_mode`. Embora o `run_id` continue derivado do PDF, os eventos
+`INGESTED` e `SOURCE_READY` carregam a identidade completa. Toda retomada e
+todo retorno idempotente comparam a entrada atual, os eventos persistidos e o
+`ingestion-manifest` do champion; adição, remoção ou alteração do ZIP causa
+falha fechada.
+
+Um projeto `SOURCE_ZIP` só pode copiar o ZIP inteiro quando todos os seus
+membros `.tex` são UTF-8 e estruturalmente válidos. Se qualquer um não for,
+todo o ZIP é tratado como não confirmado e a ingestão usa
+`PDF_ONLY_RECONSTRUCTION` com issue explícita.
+
+**Motivo:** impedir que artefatos e eventos de uma entrada sejam combinados com
+um ZIP posterior e evitar que um projeto parcialmente truncado seja aceito.

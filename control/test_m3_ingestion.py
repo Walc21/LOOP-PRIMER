@@ -40,6 +40,17 @@ class IngestionTests(unittest.TestCase):
         subprocess.run(["gs", "-q", "-dBATCH", "-dNOPAUSE", "-sDEVICE=pdfwrite", f"-sOutputFile={self.root / 'input/inbox' / name}", str(postscript)], check=True)
         return self.root / "input/inbox" / name
 
+    def source_zip(self, *members):
+        path = self.root / "input/inbox/source.zip"
+        with zipfile.ZipFile(path, "w") as archive:
+            for name, contents in members:
+                archive.writestr(name, contents)
+        return path
+
+    @staticmethod
+    def valid_tex(body="Fixture"):
+        return f"\\documentclass{{article}}\n\\begin{{document}}{body}\\end{{document}}\n"
+
     def test_digital_pdf_creates_traceable_champion_and_is_idempotent(self):
         pdf = self.fixture()
         result = ingest(self.root)
@@ -96,12 +107,75 @@ class IngestionTests(unittest.TestCase):
 
     def test_valid_source_zip_is_preferred(self):
         self.fixture()
-        with zipfile.ZipFile(self.root / "input/inbox/source.zip", "w") as archive:
-            archive.writestr("paper.tex", "\\documentclass{article}\n\\begin{document}Fixture\\end{document}\n")
-        ingest(self.root)
+        self.source_zip(("paper.tex", self.valid_tex()))
+        result = ingest(self.root)
         provenance = json.loads((self.root / "versions/champion/v0000/ingestion-manifest.json").read_text())
         self.assertEqual("SOURCE_ZIP", provenance["source_mode"])
         self.assertTrue((self.root / "versions/champion/v0000/latex-source/paper.tex").is_file())
+        self.assertEqual("idempotent", ingest(self.root)["status"])
+        self.assertEqual(3, len(DurableStore(self.root).read_events(result["run_id"])))
+
+    def test_altered_source_zip_after_success_is_rejected(self):
+        self.fixture(); self.source_zip(("paper.tex", self.valid_tex("first"))); ingest(self.root)
+        self.source_zip(("paper.tex", self.valid_tex("second")))
+        with self.assertRaisesRegex(IngestionError, "source.zip identity"):
+            ingest(self.root)
+
+    def test_removed_source_zip_after_success_is_rejected(self):
+        self.fixture(); source = self.source_zip(("paper.tex", self.valid_tex())); ingest(self.root)
+        source.unlink()
+        with self.assertRaisesRegex(IngestionError, "source.zip identity"):
+            ingest(self.root)
+
+    def test_added_source_zip_after_pdf_only_success_is_rejected(self):
+        self.fixture(); ingest(self.root)
+        self.source_zip(("paper.tex", self.valid_tex()))
+        with self.assertRaisesRegex(IngestionError, "source.zip identity"):
+            ingest(self.root)
+
+    def test_altered_source_zip_after_source_ready_crash_is_rejected(self):
+        self.fixture(); self.source_zip(("paper.tex", self.valid_tex("first")))
+        with self.assertRaisesRegex(RuntimeError, "before_champion_publish"):
+            ingest(self.root, fault=lambda stage: (_ for _ in ()).throw(RuntimeError(stage)) if stage == "before_champion_publish" else None)
+        self.source_zip(("paper.tex", self.valid_tex("second")))
+        with self.assertRaisesRegex(IngestionError, "source.zip identity"):
+            ingest(self.root)
+        self.assertFalse((self.root / "versions/champion/v0000").exists())
+
+    def test_removed_source_zip_after_source_ready_crash_is_rejected(self):
+        self.fixture(); source = self.source_zip(("paper.tex", self.valid_tex()))
+        with self.assertRaisesRegex(RuntimeError, "before_champion_publish"):
+            ingest(self.root, fault=lambda stage: (_ for _ in ()).throw(RuntimeError(stage)) if stage == "before_champion_publish" else None)
+        source.unlink()
+        with self.assertRaisesRegex(IngestionError, "source.zip identity"):
+            ingest(self.root)
+        self.assertFalse((self.root / "versions/champion/v0000").exists())
+
+    def test_added_source_zip_during_source_ready_recovery_is_rejected(self):
+        self.fixture()
+        with self.assertRaisesRegex(RuntimeError, "before_champion_publish"):
+            ingest(self.root, fault=lambda stage: (_ for _ in ()).throw(RuntimeError(stage)) if stage == "before_champion_publish" else None)
+        self.source_zip(("paper.tex", self.valid_tex()))
+        with self.assertRaisesRegex(IngestionError, "source.zip identity"):
+            ingest(self.root)
+        self.assertFalse((self.root / "versions/champion/v0000").exists())
+
+    def test_source_zip_hashes_in_events_and_champion_coincide(self):
+        self.fixture(); source = self.source_zip(("paper.tex", self.valid_tex()))
+        result = ingest(self.root)
+        expected = {
+            "input_sha256": result["sha256"], "source_zip_present": True,
+            "source_zip_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+            "source_zip_size_bytes": source.stat().st_size, "source_mode": "SOURCE_ZIP",
+        }
+        events = DurableStore(self.root).read_events(result["run_id"])
+        for event in events[1:]:
+            self.assertEqual(expected, event["payload"]["source_identity"])
+            self.assertEqual(expected["source_zip_sha256"], event["payload"]["source_zip_sha256"])
+        provenance = json.loads((self.root / "versions/champion/v0000/ingestion-manifest.json").read_text())
+        self.assertEqual(expected, provenance["source_identity"])
+        self.assertEqual(expected["source_zip_sha256"], provenance["source_zip"]["sha256"])
+        self.assertEqual(expected["source_zip_size_bytes"], provenance["source_zip"]["size_bytes"])
 
     def test_frozen_pdf_survives_inbox_swap_and_event_log_is_canonical(self):
         pdf = self.fixture(); original = pdf.read_bytes()
@@ -197,6 +271,20 @@ class IngestionTests(unittest.TestCase):
         self.fixture()
         with zipfile.ZipFile(self.root / "input/inbox/source.zip", "w") as archive:
             archive.writestr("paper.tex", "\\documentclass{article}\n\\begin{document}\n\\def\\broken{\n\\end{document}\n")
+        ingest(self.root)
+        champion = self.root / "versions/champion/v0000"
+        provenance = json.loads((champion / "ingestion-manifest.json").read_text())
+        normalized = json.loads((champion / "source/normalized.json").read_text())
+        self.assertEqual("PDF_ONLY_RECONSTRUCTION", provenance["source_mode"])
+        self.assertFalse((champion / "latex-source").exists())
+        self.assertIn("SOURCE_ZIP_STRUCTURALLY_INVALID", [issue["code"] for issue in normalized["issues"]])
+
+    def test_valid_main_with_truncated_tex_member_falls_back_to_pdf_only(self):
+        self.fixture()
+        self.source_zip(
+            ("main.tex", self.valid_tex()),
+            ("appendix.tex", "\\documentclass{article}\n\\begin{document}\n\\def\\broken{\n\\end{document}\n"),
+        )
         ingest(self.root)
         champion = self.root / "versions/champion/v0000"
         provenance = json.loads((champion / "ingestion-manifest.json").read_text())

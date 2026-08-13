@@ -42,11 +42,15 @@ preserva os bytes congelados por SHA-256 em
 tamanho, hash e modo de fonte antes de extração, renderização ou gate. Só então
 usa Poppler local e, após o gate local `SOURCE_READY`, publica
 `versions/champion/v0000`; os IDs NEW → INGESTED → SOURCE_READY são
-determinísticos. Antes de qualquer escrita, os oito diretórios gerenciados são
+determinísticos. A identidade imutável registrada nos dois eventos e no
+`ingestion-manifest` inclui SHA-256 do PDF, presença de `source.zip`, seu
+SHA-256/tamanho quando presente e o `source_mode`; retomada e idempotência
+rejeitam ZIP adicionado, removido ou alterado. Antes de qualquer escrita, os oito diretórios gerenciados são
 validados sem symlinks e dentro da raiz; cada árvore em staging sincroniza
 todos os arquivos e diretórios antes do rename. Um `source.zip` só é usado se
-seu LaTeX UTF-8 tiver chaves, ambientes e um único `document` estruturalmente
-válidos; em dúvida, a execução usa `PDF_ONLY_RECONSTRUCTION` e registra issue.
+todos os membros `.tex` que seriam copiados tiverem LaTeX UTF-8 com chaves,
+ambientes e um único `document` estruturalmente válidos; em dúvida, a execução
+usa `PDF_ONLY_RECONSTRUCTION` e registra issue.
 O retorno informa `created` ou `idempotent` somente após revalidar artefatos,
 manifests, hashes e árvores sem symlink. PDFs sem texto recebem classificação
 escaneada e issue de OCR desligado; nenhuma fórmula ou símbolo é inferido. A
