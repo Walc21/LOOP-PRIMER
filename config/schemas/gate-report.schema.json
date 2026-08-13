@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gate-report.schema.json",
+  "title": "GateReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "report_id", "candidate_id", "candidate_content_hash", "generated_at", "overall_pass", "correctness_math_pass", "gates"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "report_id": {"type": "string", "minLength": 1},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "overall_pass": {"type": "boolean"},
+    "correctness_math_pass": {"type": "boolean"},
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["gate_id", "command", "verifier_version", "input_hash", "exit_code", "passed", "evidence_locators"],
+        "properties": {
+          "gate_id": {"type": "string", "minLength": 1},
+          "command": {"type": "string", "minLength": 1},
+          "verifier_version": {"type": "string", "minLength": 1},
+          "input_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "exit_code": {"type": "integer"},
+          "passed": {"type": "boolean"},
+          "evidence_locators": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"overall_pass": {"const": true}}, "required": ["overall_pass"]},
+      "then": {"properties": {"correctness_math_pass": {"const": true}}}
+    }
+  ]
+}

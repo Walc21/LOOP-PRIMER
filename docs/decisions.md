@@ -108,3 +108,40 @@ avaliação.
 **Motivo:** separar construção, avaliação e commit impede promover bytes ou
 conteúdo diferentes dos avaliados, preservando rastreabilidade e recuperação
 atômica do ciclo.
+
+## ADR-009 — Contratos declarativos e validação local do Marco 1
+
+**Estado:** aceito em 2026-08-12.
+
+**Decisão:** configurações e papéis são YAML; envelopes persistidos usam JSON
+validado por JSON Schema Draft 2020-12. Cada schema é fechado a propriedades
+desconhecidas, identifica sua versão e referencia contratos compartilhados
+somente por caminhos relativos versionados. Os testes do scaffold usam apenas
+validadores locais já disponíveis e não importam nem iniciam o Prime Agent.
+
+AgentProposal registra evidências, operações, dependências, riscos e versão do
+prompt, mas proíbe campos destinados a cadeia de raciocínio privada. A trilha
+auditável guarda resultados e justificativas verificáveis, não deliberação
+interna de modelos.
+
+**Motivo:** contratos fechados detectam deriva cedo, referências relativas
+mantêm o repositório reproduzível e a separação entre evidência e raciocínio
+privado reduz risco de retenção indevida sem prejudicar auditoria.
+
+## ADR-010 — Contratos condicionais antes do estado durável
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** tarefas distinguem subgerentes de especialistas; manifests de
+baseline e challenger têm invariantes diferentes; vereditos representam uma
+única apresentação cega entre exatamente dois candidatos; e cada ação de
+decisão exige sua evidência própria. RunManifest, Event e Snapshot expressam
+somente invariantes estruturais necessárias ao Prompt 02, sem antecipar regras
+de transição.
+
+M00 permanece sempre em `RUN` e não é destinatário de AgentTask. Contratos
+fechados rejeitam campos que revelem champion, autoria ou equipe no júri.
+
+**Motivo:** impedir estados impossíveis e combinações ambíguas antes que sejam
+persistidos, mantendo a implementação futura de transições separada dos
+formatos canônicos.

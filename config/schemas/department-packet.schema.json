@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "department-packet.schema.json",
+  "title": "DepartmentPacket",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "packet_id", "run_id", "cycle_id", "department_id", "base_hash", "proposal_ids", "specialist_task_ids", "dependency_reviews", "status", "no_change_justification", "evidence_locators", "created_at"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "packet_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0},
+    "department_id": {"enum": ["S10", "S20", "S30", "S40", "S50"]},
+    "base_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "proposal_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "specialist_task_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "dependency_reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["proposal_id", "reviewer_role_id", "status", "evidence_locators"],
+        "properties": {
+          "proposal_id": {"type": "string", "minLength": 1},
+          "reviewer_role_id": {"const": "S20"},
+          "status": {"enum": ["approved", "changes_requested", "not_applicable"]},
+          "evidence_locators": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "status": {"enum": ["complete", "blocked", "no_change"]},
+    "no_change_justification": {"type": ["string", "null"]},
+    "evidence_locators": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "created_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "no_change"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "proposal_ids": {"maxItems": 0},
+          "specialist_task_ids": {"maxItems": 0},
+          "dependency_reviews": {"maxItems": 0},
+          "no_change_justification": {"type": "string", "minLength": 10, "maxLength": 500},
+          "evidence_locators": {"minItems": 1}
+        }
+      },
+      "else": {"properties": {"no_change_justification": {"const": null}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "complete"}}, "required": ["status"]},
+      "then": {"properties": {"proposal_ids": {"minItems": 1}}}
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event.schema.json",
+  "title": "Event",
+  "description": "Invariantes estruturais; regras de transição pertencem ao M2.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "event_id", "idempotency_key", "run_id", "cycle_id", "sequence", "occurred_at", "event_type", "state_from", "state_to", "actor_id", "payload", "artifact_hashes", "previous_event_hash", "event_hash"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "event_id": {"type": "string", "minLength": 1},
+    "idempotency_key": {"type": "string", "minLength": 1, "maxLength": 256},
+    "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0},
+    "sequence": {"type": "integer", "minimum": 0},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "event_type": {"type": "string", "minLength": 1},
+    "state_from": {"type": ["string", "null"], "enum": [null, "NEW", "INGESTED", "SOURCE_READY", "CYCLE_PLANNED", "DEPARTMENTS_RUNNING", "SYNTHESIS_READY", "CANDIDATE_BUILT", "GATES_PASSED", "EVALUATED", "DIAGNOSED", "DECIDED", "COMMITTING", "CYCLE_COMPLETE", "PAUSED", "FINALIZED", "TECHNICAL_FAILURE"]},
+    "state_to": {"enum": ["NEW", "INGESTED", "SOURCE_READY", "CYCLE_PLANNED", "DEPARTMENTS_RUNNING", "SYNTHESIS_READY", "CANDIDATE_BUILT", "GATES_PASSED", "EVALUATED", "DIAGNOSED", "DECIDED", "COMMITTING", "CYCLE_COMPLETE", "PAUSED", "FINALIZED", "TECHNICAL_FAILURE"]},
+    "actor_id": {"type": "string", "minLength": 1},
+    "payload": {"type": "object"},
+    "artifact_hashes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "previous_event_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "event_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"sequence": {"const": 0}}, "required": ["sequence"]},
+      "then": {"properties": {"previous_event_hash": {"const": null}, "state_from": {"const": null}}},
+      "else": {"properties": {"previous_event_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "state_from": {"type": "string"}}}
+    }
+  ]
+}

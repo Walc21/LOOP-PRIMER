@@ -1,0 +1,19 @@
+schema_version: "1.0.0"
+id: S20
+name: subgerente de verificação matemática
+kind: submanager
+department: verificação matemática
+rlm_depth: 1
+parent_id: M00
+children_ids:
+  - W21
+  - W22
+  - W23
+responsibility: Consolidar validação técnica e matemática.
+allowed_activation_modes:
+  - RUN
+  - CHECK
+  - SHIFT
+  - FREEZE
+produces_proposals_only: true
+writes_champion: false

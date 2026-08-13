@@ -6,11 +6,12 @@ O article-loop revisará iterativamente um artigo matemático com evidência
 reproduzível, preservando o PDF original e mantendo histórico de decisões,
 candidatos e avaliação cega. Este documento fixa para os Prompts 01–13 o
 catálogo de papéis, caminhos, estados, ações, dimensões de avaliação e scripts
-externos. M1 definirá implementação e schemas dentro desses contratos; não
-inventará ou renomeará papéis, estados, ações ou paths.
+externos. M1 materializou configuração e schemas dentro desses contratos sem
+inventar ou renomear papéis, estados, ações ou paths.
 
-Os caminhos abaixo são especificação documental nos Marcos 0.5 e 0.6. Nenhum
-diretório é criado agora.
+Os caminhos canônicos foram fixados nos Marcos 0.5 e 0.6 e o scaffold foi
+materializado no Marco 1. Diretórios de runtime contêm somente sentinelas
+`.gitkeep`; nenhum estado de execução, PDF, segredo ou resultado foi criado.
 
 ## Entrada, fontes e preservação
 
@@ -69,7 +70,8 @@ específica para executar o Prime Agent.
 
 ## Ativação esparsa
 
-M00 está sempre em `RUN`. No primeiro ciclo auditável, os cinco departamentos
+M00 está sempre em `RUN` e não pode receber `CHECK`, `SHIFT` ou `FREEZE`. No
+primeiro ciclo auditável, os cinco departamentos
 participam: S10, S20, S30, S40 e S50 recebem trabalho. Seus trabalhadores são
 ativados somente conforme a cobertura focal necessária. Nos ciclos seguintes,
 o grafo de impacto determina quais departamentos e trabalhadores participam.
@@ -135,14 +137,14 @@ article-loop/
 └── docs/
 ```
 
-A árvore não foi materializada. Os caminhos canônicos não podem ser inventados
-silenciosamente; cada marco pode criar arquivos dentro dos diretórios canônicos
-somente quando for o responsável por eles. M1 poderá materializar somente
-caminhos já definidos acima e os contratos que os preenchem; não poderá mover
-entrada, estado, versões ou prompts para paths novos.
+A árvore foi materializada no Marco 1. Os caminhos canônicos não podem ser
+inventados silenciosamente; cada marco pode criar arquivos dentro dos
+diretórios canônicos somente quando for o responsável por eles. M1 criou
+configurações, schemas e stubs inertes; não moveu entrada, estado, versões ou
+prompts para paths novos.
 
-- `.prime/agent/prompts/` contém os templates Markdown de comandos.
-- `.prime/agent/skills/article-loop/` conterá a skill Python do projeto.
+- `.prime/agent/prompts/` está reservado aos templates Markdown do M4.
+- `.prime/agent/skills/article-loop/` contém o scaffold inerte da skill Python.
 - `artifacts/rendered/` contém PDFs e páginas renderizadas derivadas.
 - `prompts/registry.json` registra hashes e versões dos prompts.
 - `state/locks/` contém locks por `run_id`.
@@ -160,8 +162,8 @@ entrada, estado, versões ou prompts para paths novos.
 `versions/challengers/`, `versions/pareto/`, `versions/rejected/`,
 `workspaces/`, `reports/`, `logs/`, `control/`, `scripts/`, `bin/`,
 `bin/start-prime.sh`, `bin/preflight.sh`, `bin/check.sh` e `docs/`
-são paths canônicos; continuam somente especificados até o marco que os
-materializar de forma autorizada.
+são paths canônicos materializados no M1; somente seu conteúdo operacional
+permanece reservado aos marcos responsáveis.
 
 ## Máquina de estados canônica
 
@@ -215,7 +217,10 @@ alegar conclusão.
 
 ## Avaliação cega e gates duros
 
-O júri recebe identificadores neutros de candidato, sem autoria, ordem de
+Cada `JuryVerdict` compara exatamente dois identificadores neutros em uma única
+apresentação A/B ou B/A, sem autoria, ordem de criação ou condição de champion.
+A consistência entre apresentações será calculada depois por `comparison_id` e
+`juror_id`. As dimensões são exatamente:
 criação ou condição de champion. As dimensões são exatamente:
 
 ```text
@@ -255,11 +260,11 @@ scripts/04_compensation_policy.py
 scripts/05_transactional_finalizer.py
 ```
 
-Eles não existem nem são executados nos Marcos 0.5 e 0.6. M8–M10 definirão sua
-implementação nesses paths, sem trocar nomes nem criar scripts concorrentes com
-a mesma autoridade de decisão. Em especial,
-`scripts/05_transactional_finalizer.py` não reconstrói nem modifica o
-challenger: apenas revalida hashes e aplica atomicamente `PROMOTE`,
+Os cinco paths existem desde M1 como módulos inertes, sem lógica operacional.
+M8–M10 definirão sua implementação sem trocar nomes nem criar scripts
+concorrentes com a mesma autoridade de decisão. Em especial,
+`scripts/05_transactional_finalizer.py` não poderá reconstruir nem modificar o
+challenger: apenas revalidará hashes e aplicará atomicamente `PROMOTE`,
 `ARCHIVE_PARETO`, `REJECT`, `FINALIZE` ou outra ação autorizada.
 
 ## Fluxo de dados e resultados de agentes
@@ -304,9 +309,13 @@ nova avaliação.
 - A retomada futura reidrata do estado do projeto; não presume que sessão ou
   filho inativo tenha concluído trabalho.
 
-## Itens de implementação para M1
+## Contratos materializados no M1 e corrigidos no M1.1
 
-M1 poderá definir schemas de campos, serialização, validação e convenções de
-arquivo dentro da árvore canônica. Permanecem abertos apenas detalhes de
-implementação: licença e retenção do PDF, estrutura de envelope, rubrica
-numérica, métricas de dominância e orçamento/provedor de ensaio autorizado.
+M1 materializou configuração YAML, o catálogo dos 21 papéis, a rubrica com oito
+dimensões, os 12 JSON Schemas canônicos, sentinelas da árvore e stubs inertes
+para integrações futuras. M1.1 fechou invariantes condicionais de tarefas,
+baseline/challenger, pacotes sem impacto, diagnóstico, comparação cega,
+decisões, manifesto de run, eventos e snapshots, sem implementar persistência
+ou regras de transição. Permanecem abertos para seus marcos: licença e retenção
+do PDF, implementação do event log, métricas de dominância, orçamento ou
+provedor explicitamente autorizado e toda orquestração Prime Agent.

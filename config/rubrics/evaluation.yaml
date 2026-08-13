@@ -1,0 +1,46 @@
+# O júri pontua somente evidência observável; nunca solicita cadeia de raciocínio.
+schema_version: "1.0.0"
+scale:
+  minimum: 0
+  maximum: 5
+dimensions:
+  - id: correctness_math
+    description: Correção de definições, resultados, cálculos e provas.
+    hard_gate: true
+    compensable: false
+    pass_threshold: 5
+  - id: proof_completeness
+    description: Cobertura explícita das etapas necessárias das provas.
+    hard_gate: false
+    compensable: true
+    pass_threshold: 3
+  - id: logical_coherence
+    description: Consistência da arquitetura lógica e das dependências.
+    hard_gate: false
+    compensable: true
+    pass_threshold: 3
+  - id: scientific_contribution
+    description: Clareza, relevância e sustentação das contribuições.
+    hard_gate: false
+    compensable: true
+    pass_threshold: 3
+  - id: semantic_precision
+    description: Precisão técnica de termos, escopo e afirmações.
+    hard_gate: false
+    compensable: true
+    pass_threshold: 3
+  - id: clarity
+    description: Legibilidade e exposição acadêmica.
+    hard_gate: false
+    compensable: true
+    pass_threshold: 3
+  - id: format_integrity
+    description: Integridade de LaTeX, referências, figuras, tabelas e PDF.
+    hard_gate: false
+    compensable: true
+    pass_threshold: 3
+  - id: reproducibility
+    description: Possibilidade de repetir cálculos, build e verificações.
+    hard_gate: false
+    compensable: true
+    pass_threshold: 3

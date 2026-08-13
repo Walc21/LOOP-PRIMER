@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "candidate-manifest.schema.json",
+  "title": "CandidateManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "candidate_id", "candidate_kind", "run_id", "cycle_id", "base_candidate_id", "built_at", "workspace_hash", "content_hash", "source_proposal_ids", "merge_receipt_locator", "immutable"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "candidate_kind": {"enum": ["baseline", "challenger"]},
+    "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0},
+    "base_candidate_id": {"type": ["string", "null"], "minLength": 1},
+    "built_at": {"type": "string", "format": "date-time"},
+    "workspace_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source_proposal_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "merge_receipt_locator": {"type": ["string", "null"], "minLength": 1},
+    "immutable": {"const": true}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"candidate_kind": {"const": "baseline"}}, "required": ["candidate_kind"]},
+      "then": {
+        "properties": {
+          "base_candidate_id": {"const": null},
+          "source_proposal_ids": {"maxItems": 0},
+          "merge_receipt_locator": {"const": null}
+        }
+      },
+      "else": {
+        "properties": {
+          "base_candidate_id": {"type": "string", "minLength": 1},
+          "source_proposal_ids": {"minItems": 1},
+          "merge_receipt_locator": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  ]
+}

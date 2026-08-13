@@ -1,0 +1,28 @@
+# Gates locais e determinísticos. Nenhum gate chama modelos ou rede.
+schema_version: "1.0.0"
+policy:
+  fail_closed: true
+  allow_unconfigured_gate: false
+  model_calls_allowed: false
+  network_allowed: false
+  correctness_math_is_hard_gate: true
+  style_can_compensate_correctness_math: false
+
+required_before_jury:
+  - config_contracts
+  - role_topology
+  - schema_meta_validation
+
+gates:
+  - id: config_contracts
+    command: .venv/bin/python -m unittest -v control.test_contracts
+    timeout_seconds: 300
+    deterministic: true
+  - id: role_topology
+    command: .venv/bin/python -m unittest -v control.test_contracts.RoleCatalogTests
+    timeout_seconds: 300
+    deterministic: true
+  - id: schema_meta_validation
+    command: .venv/bin/python -m unittest -v control.test_contracts.SchemaContractTests
+    timeout_seconds: 300
+    deterministic: true

@@ -1,0 +1,19 @@
+schema_version: "1.0.0"
+id: S40
+name: subgerente textual/semântico
+kind: submanager
+department: textual/semântico
+rlm_depth: 1
+parent_id: M00
+children_ids:
+  - W41
+  - W42
+  - W43
+responsibility: Consolidar propostas textuais e semânticas.
+allowed_activation_modes:
+  - RUN
+  - CHECK
+  - SHIFT
+  - FREEZE
+produces_proposals_only: true
+writes_champion: false

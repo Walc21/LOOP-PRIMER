@@ -1,0 +1,19 @@
+schema_version: "1.0.0"
+id: S30
+name: subgerente de fortalecimento matemático
+kind: submanager
+department: fortalecimento matemático
+rlm_depth: 1
+parent_id: M00
+children_ids:
+  - W31
+  - W32
+  - W33
+responsibility: Consolidar propostas de fortalecimento matemático.
+allowed_activation_modes:
+  - RUN
+  - CHECK
+  - SHIFT
+  - FREEZE
+produces_proposals_only: true
+writes_champion: false

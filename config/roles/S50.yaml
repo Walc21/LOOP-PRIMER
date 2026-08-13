@@ -1,0 +1,19 @@
+schema_version: "1.0.0"
+id: S50
+name: subgerente de formatação/PDF
+kind: submanager
+department: formatação/PDF
+rlm_depth: 1
+parent_id: M00
+children_ids:
+  - W51
+  - W52
+  - W53
+responsibility: Consolidar conformidade de apresentação sem alterar semântica.
+allowed_activation_modes:
+  - RUN
+  - CHECK
+  - SHIFT
+  - FREEZE
+produces_proposals_only: true
+writes_champion: false

@@ -12,11 +12,14 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
-- Atualizado em 2026-08-12.
+- Atualizado em 2026-08-13.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
 - M0.6 — completude de caminhos e ordem transacional: concluído nesta etapa.
-- Nenhum diretório de runtime, código, schema, prompt executável ou skill foi
+- M1 — scaffold e contratos canônicos: concluído.
+- M1.1 — correção dos contratos condicionais: concluído.
+| M1.1 | correção dos contratos condicionais | concluído | 46 testes cobrem exemplos positivos e negativos dos 12 schemas e invariantes de M00 |
+| M1.1 | correção dos contratos condicionais | em execução | invariantes de tarefas, candidatos, júri, decisões, ingestão e estado validados |
   materializado nos Marcos 0.5 e 0.6.
 - Não houve instalação de dependências, início do Prime Agent, subagente,
   `/autonomous`, `/refine` ou chamada de modelo.
@@ -53,7 +56,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M0 | compatibilidade, segurança e documentação-base | concluído | versão, superfícies e incompatibilidades registradas sem runtime |
 | M0.5 | alinhamento da arquitetura | concluído | catálogo, estados, ações, dimensões, scripts e árvore canônica verificados |
 | M0.6 | completude de paths e ordem transacional | concluído | caminhos adicionais, ordem merge → gates → júri → decisão → finalizador e SHIFT verificados |
-| M1 | scaffold e contratos canônicos | pendente | implementa os contratos já definidos, sem renomear IDs, estados ou paths |
+| M1 | scaffold e contratos canônicos | concluído | árvore materializada, 21 papéis, 8 dimensões e 12 schemas validados localmente |
 | M2 | máquina de estados, event log e recuperação | pendente | os 16 estados e suas transições são testáveis e auditáveis |
 | M3 | ingestão PDF e baseline editável | pendente | `input/inbox/artigo.pdf` tem SHA-256 preservado e alcança `SOURCE_READY` |
 | M4 | papéis, prompts imutáveis e compilador | pendente | os 21 papéis canônicos usam os contratos imutáveis aprovados |
@@ -124,3 +127,14 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - 2026-08-12 — M0.6 concluído: paths canônicos completados, ordem merge → gates
   → júri → decisão → finalizador fixada e `SHIFT` diferenciado de `RUN`; nenhum
   artefato de implementação foi criado.
+- 2026-08-12 — M1 iniciado: adotados YAML declarativo para configuração, JSON
+  Schema Draft 2020-12 para contratos de dados e testes locais sem rede ou
+  chamadas de modelo.
+- 2026-08-12 — M1 concluído: scaffold canônico materializado; configurações,
+  papéis, rubrica e schemas validados; 12 testes locais passaram sem rede,
+  instalação, Prime Agent ou chamadas de modelo.
+- 2026-08-13 — M1.1 iniciado: revisão contratual anterior ao estado durável,
+  sem implementar transições, ingestão, orquestração, merge ou júri.
+- 2026-08-13 — M1.1 concluído: M00 fixado em `RUN`; contratos condicionais de
+  tarefas, candidatos, departamentos, diagnóstico, júri, decisão, run, evento e
+  snapshot validados com 46 testes no `.venv/bin/python`.

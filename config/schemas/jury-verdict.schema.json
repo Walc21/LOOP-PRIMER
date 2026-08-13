@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jury-verdict.schema.json",
+  "title": "JuryVerdict",
+  "description": "Uma apresentação cega de exatamente dois candidatos, sem autoria, equipe ou status de versão.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "verdict_id", "comparison_id", "juror_id", "candidate_neutral_ids", "content_hashes", "presentation_order", "order_seed", "rubric_version", "dimension_scores", "outcome", "winner_neutral_id", "correctness_math_pass", "evidence_locators", "submitted_at"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "verdict_id": {"type": "string", "minLength": 1},
+    "comparison_id": {"type": "string", "minLength": 1},
+    "juror_id": {"type": "string", "minLength": 1},
+    "candidate_neutral_ids": {"const": ["A", "B"]},
+    "content_hashes": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "presentation_order": {
+      "oneOf": [
+        {"type": "array", "prefixItems": [{"const": "A"}, {"const": "B"}], "items": false},
+        {"type": "array", "prefixItems": [{"const": "B"}, {"const": "A"}], "items": false}
+      ]
+    },
+    "order_seed": {"type": "integer", "minimum": 0},
+    "rubric_version": {"type": "string", "minLength": 1},
+    "dimension_scores": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {"$ref": "#/$defs/dimension_scores"}
+    },
+    "outcome": {"enum": ["winner", "tie", "inconclusive"]},
+    "winner_neutral_id": {"type": ["string", "null"], "enum": ["A", "B", null]},
+    "correctness_math_pass": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "boolean"}},
+    "evidence_locators": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "submitted_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"outcome": {"const": "winner"}}, "required": ["outcome"]},
+      "then": {"properties": {"winner_neutral_id": {"enum": ["A", "B"]}}},
+      "else": {"properties": {"winner_neutral_id": {"const": null}}}
+    }
+  ],
+  "$defs": {
+    "dimension_scores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["correctness_math", "proof_completeness", "logical_coherence", "scientific_contribution", "semantic_precision", "clarity", "format_integrity", "reproducibility"],
+      "properties": {
+        "correctness_math": {"type": "number", "minimum": 0, "maximum": 5},
+        "proof_completeness": {"type": "number", "minimum": 0, "maximum": 5},
+        "logical_coherence": {"type": "number", "minimum": 0, "maximum": 5},
+        "scientific_contribution": {"type": "number", "minimum": 0, "maximum": 5},
+        "semantic_precision": {"type": "number", "minimum": 0, "maximum": 5},
+        "clarity": {"type": "number", "minimum": 0, "maximum": 5},
+        "format_integrity": {"type": "number", "minimum": 0, "maximum": 5},
+        "reproducibility": {"type": "number", "minimum": 0, "maximum": 5}
+      }
+    }
+  }
+}
