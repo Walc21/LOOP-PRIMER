@@ -14,9 +14,10 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 - Atualizado em 2026-08-12.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
-- M0.5 — alinhamento da arquitetura canônica: concluído nesta etapa.
+- M0.5 — alinhamento da arquitetura canônica: concluído.
+- M0.6 — completude de caminhos e ordem transacional: concluído nesta etapa.
 - Nenhum diretório de runtime, código, schema, prompt executável ou skill foi
-  materializado no Marco 0.5.
+  materializado nos Marcos 0.5 e 0.6.
 - Não houve instalação de dependências, início do Prime Agent, subagente,
   `/autonomous`, `/refine` ou chamada de modelo.
 - Versão instalada auditada: `prime-agent 0.7.1`.
@@ -30,9 +31,18 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   0, S10–S50 na 1 e W11–W53 na 2. A sessão raiz deverá usar
   `/rlm-max-depth 2`, sem `--global`, somente após autorização específica.
 - `rlm(...)` devolve apenas handle de admissão. Propostas detalhadas chegam por
-  arquivo canônico e resumo/referência por `agent_message` compatível.
+  arquivo canônico e resumo ou referência por `agent_message` compatível.
 - Agentes propõem; somente o merge escreve no challenger; nenhum agente escreve
   diretamente no champion.
+- O pipeline canônico é: propostas estruturadas → consolidação departamental →
+  síntese do gerente → merge em workspace isolado → challenger imutável → gates
+  determinísticos → júri cego → diagnóstico → decisão canônica → finalizador
+  transacional → promoção, arquivo Pareto ou rejeição. A decisão só opera sobre
+  candidato construído e avaliado.
+- O finalizador apenas revalida hashes e aplica atomicamente ação autorizada;
+  não reconstrói nem modifica o conteúdo avaliado. `SHIFT` explora uma
+  alternativa motivada por plateau, oscilação ou diagnóstico e não é mera
+  repetição de `RUN`.
 - Dependências futuras só podem ser locais, declaradas pelo projeto, necessárias
   ao marco corrente e registradas neste plano. Instalações globais são proibidas.
 
@@ -42,16 +52,17 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 |---|---|---|---|
 | M0 | compatibilidade, segurança e documentação-base | concluído | versão, superfícies e incompatibilidades registradas sem runtime |
 | M0.5 | alinhamento da arquitetura | concluído | catálogo, estados, ações, dimensões, scripts e árvore canônica verificados |
+| M0.6 | completude de paths e ordem transacional | concluído | caminhos adicionais, ordem merge → gates → júri → decisão → finalizador e SHIFT verificados |
 | M1 | scaffold e contratos canônicos | pendente | implementa os contratos já definidos, sem renomear IDs, estados ou paths |
 | M2 | máquina de estados, event log e recuperação | pendente | os 16 estados e suas transições são testáveis e auditáveis |
 | M3 | ingestão PDF e baseline editável | pendente | `input/inbox/artigo.pdf` tem SHA-256 preservado e alcança `SOURCE_READY` |
 | M4 | papéis, prompts imutáveis e compilador | pendente | os 21 papéis canônicos usam os contratos imutáveis aprovados |
 | M5 | blackboard, grafo de claims e ativação esparsa | pendente | RUN/CHECK/SHIFT/FREEZE seguem o grafo de impacto |
 | M6 | integração RLM hierárquica | pendente | profundidade 2, handles, mensagens e arquivos passam teste controlado |
-| M7 | síntese, merge, gates e arquivos de versões | pendente | somente merge escreve challenger; champion e Pareto preservam histórico |
+| M7 | síntese, merge, gates e arquivos de versões | pendente | somente merge constrói challenger antes de gates e júri; champion e Pareto preservam histórico |
 | M8 | avaliador externo cego em júri | pendente | rubrica cega não expõe autoria, ordem ou status de champion |
 | M9 | detecção de progresso e refoco | pendente | estagnação e refoco são produzidos pelos scripts canônicos |
-| M10 | política de compensação e finalizador | pendente | decisão e finalização transacional respeitam gates duros |
+| M10 | política de compensação e finalizador | pendente | finalizador revalida hashes e aplica ações atômicas sem modificar o challenger avaliado |
 | M11 | comandos e configuração do Prime Agent | pendente | recursos `.prime/agent/` seguem a compatibilidade instalada |
 | M12 | orçamento, observabilidade e execução prolongada | pendente | limites, custos e recuperação são observáveis sem alterar globais |
 | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
@@ -86,8 +97,9 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - O PDF em `input/inbox/artigo.pdf` é preservado por SHA-256; `source.zip`, se
   existente e aprovado em inspeção segura, é a fonte preferencial.
 - Apenas merge escreve challenger e nenhuma rotina de agente escreve champion.
-- Gates, julgamento cego, decisão e finalização deixam evidência suficiente
-  para reconstituir champion, challengers, rejeitados e fronteira Pareto.
+- Merge constrói challenger imutável antes de gates e julgamento cego; decisão e
+  finalização só ocorrem após essa avaliação e deixam evidência suficiente para
+  reconstituir champion, challengers, rejeitados e fronteira Pareto.
 - O projeto não altera instalação/configuração global do Prime Agent e não faz
   chamadas pagas sem autorização específica.
 
@@ -109,3 +121,6 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   sequência canônica dos Prompts 01–13.
 - 2026-08-12 — M0.5 concluído: arquitetura, marcos, decisões e política de
   dependências alinhados; verificações textuais de cardinalidade registradas.
+- 2026-08-12 — M0.6 concluído: paths canônicos completados, ordem merge → gates
+  → júri → decisão → finalizador fixada e `SHIFT` diferenciado de `RUN`; nenhum
+  artefato de implementação foi criado.

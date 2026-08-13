@@ -89,3 +89,22 @@ escreve diretamente no champion.
 recuperação, avaliação e finalização seja conhecida antes de existir código. A
 decisão reduz ambiguidade entre departamentos, impede deriva de paths e mantém
 as garantias de auditoria e custo da arquitetura esparsa.
+
+## ADR-008 — Ordem transacional do pipeline
+
+**Estado:** aceito em 2026-08-12.
+
+**Decisão:** o pipeline segue obrigatoriamente propostas estruturadas,
+consolidação departamental, síntese do gerente, merge em workspace isolado,
+challenger imutável, gates determinísticos, júri cego, diagnóstico, decisão
+canônica, finalizador transacional e destino de promoção, arquivo Pareto ou
+rejeição. Merge é o único escritor do challenger e ocorre antes de gates e
+júri. A decisão opera apenas sobre um challenger construído e avaliado.
+`scripts/05_transactional_finalizer.py` não reconstrói nem modifica conteúdo:
+revalida hashes e aplica atomicamente `PROMOTE`, `ARCHIVE_PARETO`, `REJECT`,
+`FINALIZE` ou outra ação autorizada. Alterar conteúdo depois do júri exige nova
+avaliação.
+
+**Motivo:** separar construção, avaliação e commit impede promover bytes ou
+conteúdo diferentes dos avaliados, preservando rastreabilidade e recuperação
+atômica do ciclo.

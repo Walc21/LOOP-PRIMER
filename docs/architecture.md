@@ -9,7 +9,7 @@ catálogo de papéis, caminhos, estados, ações, dimensões de avaliação e sc
 externos. M1 definirá implementação e schemas dentro desses contratos; não
 inventará ou renomeará papéis, estados, ações ou paths.
 
-Os caminhos abaixo são apenas especificação documental no Marco 0.5. Nenhum
+Os caminhos abaixo são especificação documental nos Marcos 0.5 e 0.6. Nenhum
 diretório é criado agora.
 
 ## Entrada, fontes e preservação
@@ -78,12 +78,14 @@ o grafo de impacto determina quais departamentos e trabalhadores participam.
 |---|---|
 | RUN | papel ativo que recebe tarefa focal e, em execução autorizada, pode gerar proposta ou evidência |
 | CHECK | revisa proposta, dependência ou gate existente sem assumir promoção |
-| SHIFT | é replanejado por impacto, diagnóstico, dependência obrigatória ou refoco |
+| SHIFT | exploração limitada de estratégia alternativa, generalização ou reformulação motivada por plateau, oscilação ou diagnóstico; não é apenas reexecutar RUN |
 | FREEZE | fica inativo no ciclo e não gera chamadas de modelo, subagentes ou trabalho especulativo |
 
 `FREEZE` é o mecanismo primário de economia: sem impacto não há chamada de
 modelo. `CHECK` não autoriza alteração no challenger; produz apenas evidência
-para merge ou nova ativação.
+para merge ou nova ativação. `SHIFT` é diferente de `RUN`: ele explora de forma
+limitada uma alternativa motivada por plateau, oscilação ou diagnóstico, em vez
+de repetir a tarefa ativa.
 
 ## Árvore canônica do projeto
 
@@ -91,6 +93,9 @@ para merge ou nova ativação.
 article-loop/
 ├── .prime/
 │   └── agent/
+│       ├── prompts/
+│       └── skills/
+│           └── article-loop/
 ├── config/
 │   ├── roles/
 │   ├── rubrics/
@@ -99,17 +104,20 @@ article-loop/
 │   └── inbox/
 ├── artifacts/
 │   ├── original/
-│   └── extracted/
+│   ├── extracted/
+│   └── rendered/
 ├── prompts/
 │   ├── immutable/
-│   └── overlays/
+│   ├── overlays/
+│   └── registry.json
 ├── state/
 │   ├── events/
 │   ├── snapshots/
 │   ├── checkpoints/
 │   ├── claims/
 │   ├── issues/
-│   └── decisions/
+│   ├── decisions/
+│   └── locks/
 ├── versions/
 │   ├── champion/
 │   ├── challengers/
@@ -120,23 +128,40 @@ article-loop/
 ├── logs/
 ├── control/
 ├── scripts/
+├── bin/
+│   ├── start-prime.sh
+│   ├── preflight.sh
+│   └── check.sh
 └── docs/
 ```
 
-A árvore não foi materializada. M1 poderá criar somente caminhos já definidos
-acima e os contratos que os preenchem; não poderá mover entrada, estado,
-versões ou prompts para paths novos.
+A árvore não foi materializada. Os caminhos canônicos não podem ser inventados
+silenciosamente; cada marco pode criar arquivos dentro dos diretórios canônicos
+somente quando for o responsável por eles. M1 poderá materializar somente
+caminhos já definidos acima e os contratos que os preenchem; não poderá mover
+entrada, estado, versões ou prompts para paths novos.
+
+- `.prime/agent/prompts/` contém os templates Markdown de comandos.
+- `.prime/agent/skills/article-loop/` conterá a skill Python do projeto.
+- `artifacts/rendered/` contém PDFs e páginas renderizadas derivadas.
+- `prompts/registry.json` registra hashes e versões dos prompts.
+- `state/locks/` contém locks por `run_id`.
+- `bin/` contém `bin/start-prime.sh`, `bin/preflight.sh` e `bin/check.sh`.
 
 ### Paths explícitos da árvore
 
-`.prime/agent/`, `config/roles/`, `config/rubrics/`, `config/schemas/`,
-`input/inbox/`, `artifacts/original/`, `artifacts/extracted/`,
-`prompts/immutable/`, `prompts/overlays/`, `state/events/`,
+`.prime/agent/`, `.prime/agent/prompts/`, `.prime/agent/skills/`,
+`.prime/agent/skills/article-loop/`, `config/roles/`, `config/rubrics/`,
+`config/schemas/`, `input/inbox/`, `artifacts/original/`,
+`artifacts/extracted/`, `artifacts/rendered/`, `prompts/immutable/`,
+`prompts/overlays/`, `prompts/registry.json`, `state/events/`,
 `state/snapshots/`, `state/checkpoints/`, `state/claims/`, `state/issues/`,
-`state/decisions/`, `versions/champion/`, `versions/challengers/`,
-`versions/pareto/`, `versions/rejected/`, `workspaces/`, `reports/`, `logs/`,
-`control/`, `scripts/` e `docs/` são paths canônicos; continuam somente
-especificados até o marco que os materializar de forma autorizada.
+`state/decisions/`, `state/locks/`, `versions/champion/`,
+`versions/challengers/`, `versions/pareto/`, `versions/rejected/`,
+`workspaces/`, `reports/`, `logs/`, `control/`, `scripts/`, `bin/`,
+`bin/start-prime.sh`, `bin/preflight.sh`, `bin/check.sh` e `docs/`
+são paths canônicos; continuam somente especificados até o marco que os
+materializar de forma autorizada.
 
 ## Máquina de estados canônica
 
@@ -182,10 +207,11 @@ FINALIZE
 ABORT_TECHNICAL
 ```
 
-Ação e merge são separados: a ação escolhe o destino do ciclo e somente merge
-materializa proposta aprovada no challenger. `PROMOTE` exige gates e avaliação
-registrados; `ARCHIVE_PARETO` preserva candidato não dominado; `ABORT_TECHNICAL`
-registra falha técnica sem alegar conclusão.
+Ação e merge são separados: o merge constrói o challenger antes de gates e do
+júri; a ação escolhe o destino somente após o challenger estar construído e
+avaliado. `PROMOTE` exige gates e avaliação registrados; `ARCHIVE_PARETO`
+preserva candidato não dominado; `ABORT_TECHNICAL` registra falha técnica sem
+alegar conclusão.
 
 ## Avaliação cega e gates duros
 
@@ -210,11 +236,12 @@ não prova propriedade que não verifica.
 
 ## Versões, merge e Pareto
 
-O champion é o candidato aprovado vigente; challengers são candidatos formados
-por merge; rejeitados e não dominados continuam rastreáveis. Antes de promoção,
-merge registra proposta, evidência, candidato de origem, gates e decisão. O
-arquivo Pareto conserva alternativas não dominadas; remoção exige relação de
-dominância explícita.
+O champion é o candidato aprovado vigente; challengers são candidatos imutáveis
+construídos pelo merge em workspace isolado; rejeitados e não dominados continuam
+rastreáveis. Merge é o único escritor do challenger e ocorre antes de gates e
+do júri. A decisão opera exclusivamente sobre um challenger já construído e
+avaliado. O arquivo Pareto conserva alternativas não dominadas; remoção exige
+relação de dominância explícita.
 
 ## Scripts externos canônicos
 
@@ -228,21 +255,43 @@ scripts/04_compensation_policy.py
 scripts/05_transactional_finalizer.py
 ```
 
-Eles não existem nem são executados no Marco 0.5. M8–M10 definirão sua
+Eles não existem nem são executados nos Marcos 0.5 e 0.6. M8–M10 definirão sua
 implementação nesses paths, sem trocar nomes nem criar scripts concorrentes com
-a mesma autoridade de decisão.
+a mesma autoridade de decisão. Em especial,
+`scripts/05_transactional_finalizer.py` não reconstrói nem modifica o
+challenger: apenas revalida hashes e aplica atomicamente `PROMOTE`,
+`ARCHIVE_PARETO`, `REJECT`, `FINALIZE` ou outra ação autorizada.
 
 ## Fluxo de dados e resultados de agentes
 
-1. A ingestão registra PDF e seleciona fonte editável ou reconstrução.
-2. M00 planeja ciclo e ativa papéis por RUN, CHECK, SHIFT ou FREEZE.
-3. Subgerentes consolidam propostas e aplicam as dependências obrigatórias com
-   S20.
-4. Filhos RLM futuros retornam resumo/referência por `agent_message` compatível
-   e artefato detalhado em arquivo canônico; `rlm(...)` nunca devolve resposta.
-5. Síntese prepara candidato neutro para júri e gates produzem evidência.
-6. Decisão escolhe ação canônica; merge, Pareto e finalização aplicam somente
-   transições autorizadas.
+A ordem canônica do pipeline é imutável:
+
+```text
+propostas estruturadas
+-> consolidação departamental
+-> síntese do gerente
+-> merge em workspace isolado
+-> challenger imutável
+-> gates determinísticos
+-> júri cego
+-> diagnóstico
+-> decisão canônica
+-> finalizador transacional
+-> promoção, arquivo Pareto ou rejeição
+```
+
+A ingestão registra o PDF e seleciona fonte editável ou reconstrução; M00 planeja
+o ciclo e ativa papéis por `RUN`, `CHECK`, `SHIFT` ou `FREEZE`. Subgerentes
+consolidam propostas e aplicam as dependências obrigatórias com S20. Filhos RLM
+futuros retornam resumo ou referência por `agent_message` compatível e artefato
+detalhado em arquivo canônico; `rlm(...)` nunca devolve resposta.
+
+O merge é o único escritor que constrói o challenger em workspace isolado. Ele
+ocorre antes dos gates determinísticos e do júri cego. A decisão canônica só
+opera sobre um challenger já construído e avaliado. O finalizador transacional
+não reconstrói o challenger: revalida seus hashes e aplica atomicamente a ação
+autorizada. Nenhum conteúdo pode ser modificado entre júri e finalização sem
+nova avaliação.
 
 ## Segurança e limites desta etapa
 
