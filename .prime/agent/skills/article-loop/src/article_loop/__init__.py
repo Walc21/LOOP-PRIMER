@@ -1,12 +1,7 @@
-"""Project-local Prime Agent skill scaffold.
-
-The orchestration contract is intentionally deferred to M6. This module never
-starts agents or models in M1.
-"""
-
-__version__ = "0.1.0"
-
-
-async def run() -> None:
-    """Refuse execution until the orchestration milestone is implemented."""
+"""Public API."""
+from .state_machine import State, TransitionError
+from .store import DurableStore, IntegrityError, StopRequested, StoreError
+__version__ = "0.2.0"
+async def run(*args, **kwargs):
     raise RuntimeError("article-loop orchestration is not implemented before M6")
+__all__ = ["DurableStore", "IntegrityError", "State", "StopRequested", "StoreError", "TransitionError", "run"]

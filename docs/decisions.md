@@ -145,3 +145,21 @@ fechados rejeitam campos que revelem champion, autoria ou equipe no júri.
 **Motivo:** impedir estados impossíveis e combinações ambíguas antes que sejam
 persistidos, mantendo a implementação futura de transições separada dos
 formatos canônicos.
+
+## ADR-011 — Log encadeado e snapshot derivado para o estado durável
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** M2 usa um JSONL append-only por `run_id`, com sequência, hash do
+evento anterior e hash canônico do próprio evento. O snapshot é derivado do
+log, nunca a fonte de verdade, e é reconstituível após interrupção. A escrita
+de snapshot/checkpoint usa arquivo temporário no mesmo filesystem, `flush`,
+`fsync`, `rename` e nova verificação de hash; o log é protegido por lock
+exclusivo por execução. A chave idempotente é única por log e uma repetição com
+o mesmo conteúdo devolve o evento existente.
+
+`PAUSED` guarda o estado de retomada e retorna somente a ele; `FINALIZED` e
+`TECHNICAL_FAILURE` são terminais. O arquivo `control/STOP` bloqueia o começo
+de novas operações, mas não interrompe uma operação que já adquiriu o lock,
+preservando sua atomicidade.
+

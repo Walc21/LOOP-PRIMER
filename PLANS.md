@@ -15,6 +15,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - Atualizado em 2026-08-13.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
+ - M2 — máquina de estados, event log e recuperação: em execução.
 - M0.6 — completude de caminhos e ordem transacional: concluído nesta etapa.
 - M1 — scaffold e contratos canônicos: concluído.
 - M1.1 — correção dos contratos condicionais: concluído.
@@ -57,7 +58,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M0.5 | alinhamento da arquitetura | concluído | catálogo, estados, ações, dimensões, scripts e árvore canônica verificados |
 | M0.6 | completude de paths e ordem transacional | concluído | caminhos adicionais, ordem merge → gates → júri → decisão → finalizador e SHIFT verificados |
 | M1 | scaffold e contratos canônicos | concluído | árvore materializada, 21 papéis, 8 dimensões e 12 schemas validados localmente |
-| M2 | máquina de estados, event log e recuperação | pendente | os 16 estados e suas transições são testáveis e auditáveis |
+| M2 | máquina de estados, event log e recuperação | em execução | núcleo local com JSONL, replay, locking, hashes e recuperação testados sem runtime Prime Agent |
 | M3 | ingestão PDF e baseline editável | pendente | `input/inbox/artigo.pdf` tem SHA-256 preservado e alcança `SOURCE_READY` |
 | M4 | papéis, prompts imutáveis e compilador | pendente | os 21 papéis canônicos usam os contratos imutáveis aprovados |
 | M5 | blackboard, grafo de claims e ativação esparsa | pendente | RUN/CHECK/SHIFT/FREEZE seguem o grafo de impacto |
@@ -138,3 +139,5 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - 2026-08-13 — M1.1 concluído: M00 fixado em `RUN`; contratos condicionais de
   tarefas, candidatos, departamentos, diagnóstico, júri, decisão, run, evento e
   snapshot validados com 46 testes no `.venv/bin/python`.
+- 2026-08-13 — M2 iniciado: será implementado exclusivamente o núcleo local de
+  estado durável, sem chamadas de modelo, agentes, rede ou dependências novas.
