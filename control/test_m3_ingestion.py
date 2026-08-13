@@ -12,6 +12,8 @@ import unittest
 import zipfile
 from pathlib import Path
 
+import jsonschema
+
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / ".prime/agent/skills/article-loop/src"))
@@ -50,6 +52,10 @@ class IngestionTests(unittest.TestCase):
         self.assertTrue((self.root / "artifacts/extracted" / digest / "coordinates.html").is_file())
         self.assertTrue((self.root / "artifacts/rendered" / digest / "pages/page-1.png").is_file())
         self.assertTrue((champion / "source/coordinates.html").is_file())
+        schema = json.loads((ROOT / "config/schemas/candidate-manifest.schema.json").read_text())
+        jsonschema.Draft202012Validator(
+            schema, format_checker=jsonschema.Draft202012Validator.FORMAT_CHECKER
+        ).validate(json.loads((champion / "manifest.json").read_text()))
         self.assertEqual("idempotent", ingest(self.root)["status"])
 
     def test_corrupted_multiple_and_ambiguous_pdf_are_rejected(self):
@@ -158,8 +164,14 @@ class IngestionTests(unittest.TestCase):
         gates.write_text(gates.read_text().replace("visual_minimum_nonblank_ratio: 0.001", "visual_minimum_nonblank_ratio: 1.0"))
         with self.assertRaises(SourceReadyError): ingest(self.root)
         digest = hashlib.sha256((self.root / "input/inbox/artigo.pdf").read_bytes()).hexdigest()
-        self.assertEqual(["NEW"], [event["state_to"] for event in DurableStore(self.root).read_events(f"ingest-{digest}")])
+        self.assertEqual(["NEW", "INGESTED"], [event["state_to"] for event in DurableStore(self.root).read_events(f"ingest-{digest}")])
+        self.assertTrue((self.root / "artifacts/original" / digest / "document.pdf").is_file())
         gates.write_text((ROOT / "config/gates.yaml").read_text())
+        ingest(self.root)
+        self.assertEqual(
+            ["NEW", "INGESTED", "SOURCE_READY"],
+            [event["state_to"] for event in DurableStore(self.root).read_events(f"ingest-{digest}")],
+        )
         with zipfile.ZipFile(self.root / "input/inbox/source.zip", "w") as archive:
             archive.writestr("a.tex", "x"); archive.writestr("a.tex", "x")
         with self.assertRaisesRegex(IngestionError, "duplicate"): ingest(self.root)
@@ -180,3 +192,34 @@ class IngestionTests(unittest.TestCase):
                 source.write_bytes(b"different archive")
         ingest(self.root, fault=mutate)
         self.assertTrue((self.root / "versions/champion/v0000/latex-source/paper.tex").exists())
+
+    def test_structurally_invalid_latex_falls_back_with_explicit_issue(self):
+        self.fixture()
+        with zipfile.ZipFile(self.root / "input/inbox/source.zip", "w") as archive:
+            archive.writestr("paper.tex", "\\documentclass{article}\n\\begin{document}\n\\def\\broken{\n\\end{document}\n")
+        ingest(self.root)
+        champion = self.root / "versions/champion/v0000"
+        provenance = json.loads((champion / "ingestion-manifest.json").read_text())
+        normalized = json.loads((champion / "source/normalized.json").read_text())
+        self.assertEqual("PDF_ONLY_RECONSTRUCTION", provenance["source_mode"])
+        self.assertFalse((champion / "latex-source").exists())
+        self.assertIn("SOURCE_ZIP_STRUCTURALLY_INVALID", [issue["code"] for issue in normalized["issues"]])
+
+    def test_managed_parent_symlinks_are_rejected_without_external_writes(self):
+        for relative in ("input/inbox", "workspaces", "artifacts/original", "artifacts/extracted", "artifacts/rendered", "versions/champion", "config", "state"):
+            with self.subTest(relative=relative):
+                self.fixture()
+                outside = self.root / "outside"
+                outside.mkdir(exist_ok=True)
+                managed = self.root / relative
+                managed.mkdir(parents=True, exist_ok=True)
+                if relative == "input/inbox":
+                    shutil.copy2(managed / "artigo.pdf", outside / "artigo.pdf")
+                shutil.rmtree(managed)
+                managed.symlink_to(outside, target_is_directory=True)
+                before = sorted(item.relative_to(outside).as_posix() for item in outside.rglob("*"))
+                with self.assertRaisesRegex(IngestionError, "symlink"):
+                    ingest(self.root)
+                self.assertEqual(before, sorted(item.relative_to(outside).as_posix() for item in outside.rglob("*")))
+                managed.unlink()
+                managed.mkdir(parents=True)

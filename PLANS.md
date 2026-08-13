@@ -23,8 +23,9 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - Não houve instalação de dependências, início do Prime Agent, subagente,
   `/autonomous`, `/refine` ou chamada de modelo.
 - Versão instalada auditada: `prime-agent 0.7.1`.
-- M3 concluído: ingestão offline usa apenas Poppler já presente; OCR é
-  adaptador opcional, desligado por padrão, sem dependência nova.
+- M3 corretivo cirúrgico final concluído: a ingestão publica e registra o
+  original antes das derivações, contém todos os diretórios gerenciados e
+  valida estruturalmente LaTeX sem compilá-lo; M4 permanece pendente.
 
 ## Contratos já decididos
 
@@ -59,7 +60,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M0.6 | completude de paths e ordem transacional | concluído | caminhos adicionais, ordem merge → gates → júri → decisão → finalizador e SHIFT verificados |
 | M1 | scaffold e contratos canônicos | concluído | árvore materializada, 21 papéis, 8 dimensões e 12 schemas validados localmente |
 | M2 | máquina de estados, event log e recuperação | concluído após correção contratual final | API e replay aplicam integralmente `event.schema.json`; 30 testes M2 e 76 testes locais aprovados |
-| M3 | ingestão PDF e baseline editável | concluído | `bin/preflight.sh` preserva SHA-256, publica `v0000` após `SOURCE_READY` e falha fechada em entradas inseguras |
+| M3 | ingestão PDF e baseline editável | concluído | original publicado e registrado em `INGESTED` antes das derivações; `v0000` só após `SOURCE_READY`, com contenção de caminhos e falha fechada |
 | M4 | papéis, prompts imutáveis e compilador | pendente | os 21 papéis canônicos usam os contratos imutáveis aprovados |
 | M5 | blackboard, grafo de claims e ativação esparsa | pendente | RUN/CHECK/SHIFT/FREEZE seguem o grafo de impacto |
 | M6 | integração RLM hierárquica | pendente | profundidade 2, handles, mensagens e arquivos passam teste controlado |
@@ -183,3 +184,10 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   ausência de symlinks. SOURCE_READY mede cobertura, inventários e amostra
   visual; LaTeX reconstruído é escapado e compilado isoladamente. M4 não foi
   iniciado.
+- 2026-08-13 — M3 correção cirúrgica final concluída: o manifesto de `v0000`
+  satisfaz o schema de candidato; o original é publicado e o evento `INGESTED`
+  é persistido antes de extração, renderização e gate. Todos os oito diretórios
+  gerenciados rejeitam symlinks, LaTeX só é aceito após inspeção estática
+  conservadora, e cada árvore de staging sofre `fsync` integral antes do
+  rename. Passaram 46 testes contratuais, 30 testes M2, 14 testes M3 e 90 na
+  suíte completa; M4 não foi iniciado.

@@ -263,3 +263,26 @@ isolado.
 **Motivo:** impedir que um byte diferente do validado seja publicado, que uma
 queda transforme publicação parcial em sucesso implícito, ou que um manifest
 autodeclarado substitua evidência verificável.
+
+## ADR-017 — Limites de escrita e ordem de evidência da ingestão M3
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** antes de qualquer escrita, a ingestão valida a raiz e cada
+diretório gerenciado, recusando qualquer componente symlink e qualquer destino
+resolvido fora da raiz. O original congelado é publicado e sua evidência
+(caminho, tamanho, SHA-256 e modo de fonte) é registrada em `INGESTED` antes de
+extração, renderização ou gate; uma falha de `SOURCE_READY` portanto preserva
+o estado `INGESTED` e o original íntegro. A retomada usa as chaves idempotentes
+existentes, sem repetir eventos.
+
+`source.zip` só é preferido quando a fonte LaTeX UTF-8 passa inspeção estática
+conservadora: comentários e escapes são respeitados, chaves são balanceadas,
+há exatamente um ambiente `document` e a pilha de ambientes fecha sem
+truncamento. Se essa confirmação falhar, o ZIP não é fonte e a ingestão usa
+`PDF_ONLY_RECONSTRUCTION` com issue explícita. Antes de cada rename de staging,
+todos os arquivos regulares e o diretório são sincronizados.
+
+**Motivo:** registrar a evidência imutável antes de qualquer transformação,
+impedir escrita por links de diretório, não aceitar TeX estruturalmente
+truncado e reduzir a janela de perda após publicação atômica.

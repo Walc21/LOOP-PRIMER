@@ -38,15 +38,21 @@ inteiros não booleanos, data ISO 8601 com fuso e hashes por posição no log.
 `ingest(root, *, fault=None)` é o preflight M3. Ele congela exatamente o PDF
 regular `input/inbox/artigo.pdf` (e o ZIP opcional) antes de qualquer leitura,
 preserva os bytes congelados por SHA-256 em
-`artifacts/original/<sha256>/document.pdf`, usa apenas Poppler local para
-extração/renderização e publica `versions/champion/v0000` somente após o gate
-local `SOURCE_READY`, e grava NEW → INGESTED → SOURCE_READY com IDs
-determinísticos. O retorno informa `created` ou `idempotent` somente após
-revalidar artefatos, manifests, hashes e árvores sem symlink. PDFs sem
-texto recebem classificação escaneada e issue de OCR desligado; nenhuma fórmula
-ou símbolo é inferido. A reconstrução LaTeX escapa toda extração não confiável
-e é compilada em diretório isolado com `-no-shell-escape`. `IngestionError` e `SourceReadyError` explicam entradas
-inseguras ou baseline insuficiente.
+`artifacts/original/<sha256>/document.pdf` e registra `INGESTED` com caminho,
+tamanho, hash e modo de fonte antes de extração, renderização ou gate. Só então
+usa Poppler local e, após o gate local `SOURCE_READY`, publica
+`versions/champion/v0000`; os IDs NEW → INGESTED → SOURCE_READY são
+determinísticos. Antes de qualquer escrita, os oito diretórios gerenciados são
+validados sem symlinks e dentro da raiz; cada árvore em staging sincroniza
+todos os arquivos e diretórios antes do rename. Um `source.zip` só é usado se
+seu LaTeX UTF-8 tiver chaves, ambientes e um único `document` estruturalmente
+válidos; em dúvida, a execução usa `PDF_ONLY_RECONSTRUCTION` e registra issue.
+O retorno informa `created` ou `idempotent` somente após revalidar artefatos,
+manifests, hashes e árvores sem symlink. PDFs sem texto recebem classificação
+escaneada e issue de OCR desligado; nenhuma fórmula ou símbolo é inferido. A
+reconstrução LaTeX escapa toda extração não confiável e é compilada em diretório
+isolado com `-no-shell-escape`. `IngestionError` e `SourceReadyError` explicam
+entradas inseguras ou baseline insuficiente.
 
 A função assíncrona `run(*args, **kwargs)` permanece deliberadamente
 indisponível e levanta `RuntimeError` até a integração autorizada do Marco 6.
