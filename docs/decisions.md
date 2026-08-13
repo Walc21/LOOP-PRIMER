@@ -163,3 +163,19 @@ o mesmo conteúdo devolve o evento existente.
 de novas operações, mas não interrompe uma operação que já adquiriu o lock,
 preservando sua atomicidade.
 
+## ADR-012 — Recuperação conservadora e identificadores de execução seguros
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** o `run_id` é um identificador simples, não um caminho: aceita
+somente letras ASCII, algarismos, ponto, hífen e sublinhado, sem `.` ou `..`.
+O store verifica o sinal `control/STOP` depois de adquirir o lock. Linhas JSONL
+sem terminador, JSON inválido, eventos incompletos e hashes ou encadeamentos
+incompatíveis são corrupção e impedem replay ou nova escrita; não há reparo
+silencioso do log. Um snapshot parcial nunca é fonte de verdade: um arquivo
+temporário abandonado antes do rename é descartável e, após rename, o snapshot
+é sempre revalidado e pode ser reconstruído integralmente do JSONL.
+
+**Motivo:** impedir que uma entrada de caminho escape do repositório, que um
+STOP concorra com o início de uma operação ou que uma recuperação transforme
+perda/corrupção de evidência em histórico aparentemente válido.

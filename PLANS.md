@@ -15,13 +15,11 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - Atualizado em 2026-08-13.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
- - M2 — máquina de estados, event log e recuperação: em execução.
+- M2 — máquina de estados, event log e recuperação: concluído.
 - M0.6 — completude de caminhos e ordem transacional: concluído nesta etapa.
 - M1 — scaffold e contratos canônicos: concluído.
-- M1.1 — correção dos contratos condicionais: concluído.
-| M1.1 | correção dos contratos condicionais | concluído | 46 testes cobrem exemplos positivos e negativos dos 12 schemas e invariantes de M00 |
-| M1.1 | correção dos contratos condicionais | em execução | invariantes de tarefas, candidatos, júri, decisões, ingestão e estado validados |
-  materializado nos Marcos 0.5 e 0.6.
+- M1.1 — correção dos contratos condicionais: concluído; 46 testes cobrem
+  exemplos positivos e negativos dos 12 schemas e invariantes de M00.
 - Não houve instalação de dependências, início do Prime Agent, subagente,
   `/autonomous`, `/refine` ou chamada de modelo.
 - Versão instalada auditada: `prime-agent 0.7.1`.
@@ -58,7 +56,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M0.5 | alinhamento da arquitetura | concluído | catálogo, estados, ações, dimensões, scripts e árvore canônica verificados |
 | M0.6 | completude de paths e ordem transacional | concluído | caminhos adicionais, ordem merge → gates → júri → decisão → finalizador e SHIFT verificados |
 | M1 | scaffold e contratos canônicos | concluído | árvore materializada, 21 papéis, 8 dimensões e 12 schemas validados localmente |
-| M2 | máquina de estados, event log e recuperação | em execução | núcleo local com JSONL, replay, locking, hashes e recuperação testados sem runtime Prime Agent |
+| M2 | máquina de estados, event log e recuperação | concluído | núcleo local com JSONL, replay, locking, hashes, STOP e recuperação aprovado por 59 testes locais |
 | M3 | ingestão PDF e baseline editável | pendente | `input/inbox/artigo.pdf` tem SHA-256 preservado e alcança `SOURCE_READY` |
 | M4 | papéis, prompts imutáveis e compilador | pendente | os 21 papéis canônicos usam os contratos imutáveis aprovados |
 | M5 | blackboard, grafo de claims e ativação esparsa | pendente | RUN/CHECK/SHIFT/FREEZE seguem o grafo de impacto |
@@ -134,6 +132,9 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - 2026-08-12 — M1 concluído: scaffold canônico materializado; configurações,
   papéis, rubrica e schemas validados; 12 testes locais passaram sem rede,
   instalação, Prime Agent ou chamadas de modelo.
+- 2026-08-13 — M2 corretivo iniciado: a implementação parcial será auditada
+  contra recuperação, atomicidade, locks, integridade e contenção; nenhum
+  marco posterior será iniciado.
 - 2026-08-13 — M1.1 iniciado: revisão contratual anterior ao estado durável,
   sem implementar transições, ingestão, orquestração, merge ou júri.
 - 2026-08-13 — M1.1 concluído: M00 fixado em `RUN`; contratos condicionais de
@@ -141,3 +142,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   snapshot validados com 46 testes no `.venv/bin/python`.
 - 2026-08-13 — M2 iniciado: será implementado exclusivamente o núcleo local de
   estado durável, sem chamadas de modelo, agentes, rede ou dependências novas.
+- 2026-08-13 — M2 concluído: log JSONL append-only encadeado, snapshots
+  derivados, checkpoint, lock por execução, STOP, recuperação conservadora e
+  idempotência foram validados por 13 testes dedicados e 59 testes locais no
+  total; M3 não foi iniciado.
