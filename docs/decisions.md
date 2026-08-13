@@ -179,3 +179,20 @@ temporário abandonado antes do rename é descartável e, após rename, o snapsh
 **Motivo:** impedir que uma entrada de caminho escape do repositório, que um
 STOP concorra com o início de uma operação ou que uma recuperação transforme
 perda/corrupção de evidência em histórico aparentemente válido.
+
+## ADR-013 — Replay semântico e commit transacional do event log
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** o replay valida também a máquina de estados: o evento inicial é
+exatamente `NEW`, transições posteriores preservam origem, ciclo e regras de
+pausa/retomada, e estados terminais não admitem sucessores. Cada append lógico
+é preparado como a versão integral do JSONL em arquivo temporário no mesmo
+filesystem, com flush e `fsync`, seguido de `os.replace`, `fsync` do diretório
+quando disponível e verificação do arquivo final. Temporários órfãos não são
+fonte de estado; corrupção do log canônico nunca é reparada silenciosamente.
+
+**Motivo:** hashes válidos provam integridade criptográfica, mas não que a
+história representa uma execução autorizada. A substituição atômica evita que
+uma queda exponha uma linha parcial como evento commitado e mantém a repetição
+idempotente recuperável após falhas antes ou depois do rename.

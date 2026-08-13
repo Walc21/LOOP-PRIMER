@@ -61,6 +61,19 @@ class DurableStateTests(unittest.TestCase):
             current = FORWARD[current]
             self.event(current, run_id)
 
+    def forged_events(self, mutate):
+        """Apply a semantic mutation while retaining a valid hash chain."""
+        log = self.root / "state/events/run-1.jsonl"
+        events = [json.loads(line) for line in log.read_text().splitlines()]
+        mutate(events)
+        previous = None
+        for sequence, event in enumerate(events):
+            event["sequence"] = sequence
+            event["previous_event_hash"] = previous
+            event["event_hash"] = self.store._ehash(event)
+            previous = event["event_hash"]
+        log.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events))
+
     def test_all_valid_transitions(self):
         for current, target in FORWARD.items():
             with self.subTest(current=current, target=target):
@@ -128,17 +141,17 @@ class DurableStateTests(unittest.TestCase):
         with self.assertRaisesRegex(IntegrityError, "invalid event JSON"):
             self.store.read_events("run-1")
 
-    def test_crash_before_rename_leaves_replayable_log(self):
+    def test_crash_before_rename_leaves_prior_log_valid(self):
         def fault(stage):
-            if stage == "before_rename":
+            if stage == "after_fsync_before_rename":
                 raise RuntimeError("simulated crash")
 
         crashing = DurableStore(self.root, fault=fault)
         with self.assertRaisesRegex(RuntimeError, "simulated crash"):
             crashing.create_run("run-1")
         recovered = DurableStore(self.root)
-        self.assertEqual(recovered.read_events("run-1")[0]["state_to"], State.NEW)
-        self.assertEqual(recovered.rebuild_snapshot("run-1")["event_sequence"], 0)
+        self.assertEqual(recovered.read_events("run-1"), [])
+        self.assertEqual(recovered.create_run("run-1")["sequence"], 0)
 
     def test_crash_after_rename_is_idempotently_recoverable(self):
         def fault(stage):
@@ -206,6 +219,90 @@ class DurableStateTests(unittest.TestCase):
         restarted = DurableStore(self.root).create_run("run-1")
         self.assertEqual(restarted, initial)
         self.assertEqual(len(DurableStore(self.root).read_events("run-1")), 1)
+
+    def test_semantic_replay_rejects_forged_hash_valid_logs(self):
+        cases = {
+            "new_to_finalized": lambda events: events[1].update(state_to=State.FINALIZED.value),
+            "divergent_state_from": lambda events: events[1].update(state_from=State.SOURCE_READY.value),
+            "changed_cycle": lambda events: events[1].update(cycle_id=1),
+        }
+        for name, mutate in cases.items():
+            with self.subTest(name=name):
+                self.created()
+                self.event(State.INGESTED)
+                self.forged_events(mutate)
+                with self.assertRaises(IntegrityError):
+                    self.store.read_events("run-1")
+                self.temporary.cleanup()
+                self.setUp()
+
+    def test_semantic_replay_rejects_invalid_initial_event(self):
+        self.created()
+        self.forged_events(lambda events: events[0].update(state_to=State.INGESTED.value))
+        with self.assertRaises(IntegrityError):
+            self.store.read_events("run-1")
+
+    def test_semantic_replay_rejects_forged_pause_and_resume(self):
+        self.created()
+        self.event(State.INGESTED)
+        self.store.pause("run-1", event_id="pause", idempotency_key="pause", actor_id="test")
+        self.forged_events(lambda events: events[2]["payload"].update(resume_state=State.NEW.value))
+        with self.assertRaises(IntegrityError):
+            self.store.read_events("run-1")
+
+        self.temporary.cleanup()
+        self.setUp()
+        self.created()
+        self.event(State.INGESTED)
+        self.store.pause("run-1", event_id="pause", idempotency_key="pause", actor_id="test")
+        self.store.resume("run-1", event_id="resume", idempotency_key="resume", actor_id="test")
+        self.forged_events(lambda events: events[3].update(state_to=State.SOURCE_READY.value))
+        with self.assertRaises(IntegrityError):
+            self.store.read_events("run-1")
+
+    def test_semantic_replay_rejects_event_after_terminal_state(self):
+        self.advance_to(State.CYCLE_COMPLETE)
+        self.event(State.FINALIZED)
+        log = self.root / "state/events/run-1.jsonl"
+        events = [json.loads(line) for line in log.read_text().splitlines()]
+        terminal = dict(events[-1])
+        terminal.update(
+            event_id="after-terminal", idempotency_key="after-terminal",
+            state_from=State.FINALIZED.value, state_to=State.TECHNICAL_FAILURE.value,
+            sequence=len(events), previous_event_hash=events[-1]["event_hash"],
+        )
+        terminal["event_hash"] = self.store._ehash(terminal)
+        log.write_text(log.read_text() + json.dumps(terminal, sort_keys=True) + "\n")
+        with self.assertRaises(IntegrityError):
+            self.store.read_events("run-1")
+
+    def test_event_commit_faults_are_recoverable_and_idempotent(self):
+        stages = {
+            "before_temp_write": False,
+            "during_preparation": False,
+            "after_fsync_before_rename": False,
+            "after_rename": True,
+            "before_final_verification": True,
+        }
+        for stage, committed in stages.items():
+            with self.subTest(stage=stage):
+                def fault(current_stage, expected=stage):
+                    if current_stage == expected:
+                        raise RuntimeError(expected)
+
+                crashing = DurableStore(self.root, fault=fault)
+                with self.assertRaisesRegex(RuntimeError, stage):
+                    crashing.create_run("run-1")
+                log = self.root / "state/events/run-1.jsonl"
+                if log.exists():
+                    self.assertTrue(log.read_bytes().endswith(b"\n"))
+                events = DurableStore(self.root).read_events("run-1")
+                self.assertEqual(len(events), int(committed))
+                event = DurableStore(self.root).create_run("run-1")
+                self.assertEqual(event["sequence"], 0)
+                self.assertEqual(len(DurableStore(self.root).read_events("run-1")), 1)
+                self.temporary.cleanup()
+                self.setUp()
 
 
 if __name__ == "__main__":

@@ -90,29 +90,53 @@ class DurableStore:
         value.pop("event_hash", None)
         return _hash(_bytes(value))
 
-    def _atomic(self, path: Path, value: Mapping[str, Any]) -> None:
-        data = _bytes(value)
+    def _fault(self, stage: str) -> None:
+        if self.fault:
+            self.fault(stage)
+
+    def _fsync_directory(self, directory: Path) -> None:
+        try:
+            descriptor = os.open(directory, os.O_RDONLY)
+        except OSError:
+            return
+        try:
+            os.fsync(descriptor)
+        except OSError:
+            pass
+        finally:
+            os.close(descriptor)
+
+    def _atomic_bytes(self, path: Path, data: bytes) -> None:
+        self._fault("before_temp_write")
         descriptor, temporary_name = tempfile.mkstemp(prefix=".tmp-", dir=path.parent)
         temporary = Path(temporary_name)
         try:
             with os.fdopen(descriptor, "wb") as stream:
                 stream.write(data)
+                self._fault("during_preparation")
                 stream.flush()
                 os.fsync(stream.fileno())
-            if self.fault:
-                self.fault("before_rename")
+            self._fault("after_fsync_before_rename")
+            self._fault("before_rename")
             os.replace(temporary, path)
-            if self.fault:
-                self.fault("after_rename")
+            self._fsync_directory(path.parent)
+            self._fault("after_rename")
+            self._fault("before_final_verification")
             if _hash(path.read_bytes()) != _hash(data):
                 raise IntegrityError("atomic hash verification failed")
         finally:
             if temporary.exists():
                 temporary.unlink()
 
+    def _atomic(self, path: Path, value: Mapping[str, Any]) -> None:
+        self._atomic_bytes(path, _bytes(value))
+
     def _validate_event(self, event: Any, run_id: str, sequence: int, previous_hash: str | None) -> None:
         if not isinstance(event, dict) or set(event) != _EVENT_FIELDS:
             raise IntegrityError("event fields are invalid")
+        if (type(event["sequence"]) is not int or type(event["cycle_id"]) is not int
+                or event["cycle_id"] < 0):
+            raise IntegrityError("event sequence or cycle_id is invalid")
         if event["run_id"] != run_id or event["sequence"] != sequence:
             raise IntegrityError("event run_id or sequence mismatch")
         if event["previous_event_hash"] != previous_hash:
@@ -151,12 +175,56 @@ class DurableStore:
                 raise IntegrityError("invalid event JSON") from error
             previous_hash = events[-1]["event_hash"] if events else None
             self._validate_event(event, run_id, len(events), previous_hash)
+            self._validate_replay_transition(event, events)
             if any(previous["event_id"] == event["event_id"] for previous in events):
                 raise IntegrityError("duplicate event_id in log")
             if any(previous["idempotency_key"] == event["idempotency_key"] for previous in events):
                 raise IntegrityError("duplicate idempotency_key in log")
             events.append(event)
         return events
+
+    def _validate_replay_transition(
+        self, event: Mapping[str, Any], events: list[dict[str, Any]]
+    ) -> None:
+        """Validate state-machine semantics in addition to event integrity."""
+        target = State(event["state_to"])
+        if not events:
+            if (event["sequence"] != 0 or event["state_from"] is not None
+                    or target is not State.NEW or event["previous_event_hash"] is not None
+                    or event["cycle_id"] != 0):
+                raise IntegrityError("initial event semantics are invalid")
+            return
+
+        previous = events[-1]
+        current = State(previous["state_to"])
+        if event["state_from"] != current.value:
+            raise IntegrityError("event state_from does not match prior state")
+        expected_cycle = previous["cycle_id"] + int(
+            current is State.CYCLE_COMPLETE and target is State.CYCLE_PLANNED
+        )
+        if event["cycle_id"] != expected_cycle:
+            raise IntegrityError("event cycle_id transition is invalid")
+        resume_to = None
+        if current is State.PAUSED:
+            resume_value = previous["payload"].get("resume_state")
+            try:
+                resume_to = State(resume_value)
+            except (TypeError, ValueError) as error:
+                raise IntegrityError("paused event has invalid resume_state") from error
+            if resume_to in {State.PAUSED, State.FINALIZED, State.TECHNICAL_FAILURE}:
+                raise IntegrityError("paused event has invalid resume_state")
+        if target is State.PAUSED:
+            resume_value = event["payload"].get("resume_state")
+            try:
+                resume_state = State(resume_value)
+            except (TypeError, ValueError) as error:
+                raise IntegrityError("pause event has invalid resume_state") from error
+            if resume_state is not current:
+                raise IntegrityError("pause event resume_state does not match prior state")
+        try:
+            require_transition(current, target, resume_to=resume_to)
+        except TransitionError as error:
+            raise IntegrityError("event state transition is invalid") from error
 
     def _snapshot(self, run_id: str, events: list[dict[str, Any]]) -> dict[str, Any]:
         if events:
@@ -243,10 +311,10 @@ class DurableStore:
                 "previous_event_hash": events[-1]["event_hash"] if events else None,
             }
             event["event_hash"] = self._ehash(event)
-            with self._log(run_id).open("ab") as stream:
-                stream.write(_bytes(event) + b"\n")
-                stream.flush()
-                os.fsync(stream.fileno())
+            log = self._log(run_id)
+            prior = log.read_bytes() if log.exists() else b""
+            self._atomic_bytes(log, prior + _bytes(event) + b"\n")
+            self.read_events(run_id)
             self.rebuild_snapshot(run_id, persist=True)
             return event
 

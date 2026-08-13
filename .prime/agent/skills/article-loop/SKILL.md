@@ -21,9 +21,12 @@ seguro e snapshots derivados. Seus métodos públicos são:
 
 `State`, `TransitionError`, `StoreError`, `IntegrityError` e `StopRequested`
 também são exportados. O log é a fonte de verdade: linhas parciais, JSON
-inválido, IDs repetidos e hash/encadeamento divergentes levantam
-`IntegrityError`; o store não os repara silenciosamente. `control/STOP`
-bloqueia operações novas depois da aquisição do lock.
+inválido, IDs repetidos, hash/encadeamento divergentes e replay que viole a
+máquina de estados levantam `IntegrityError`; o store não os repara
+silenciosamente. Um append prepara a versão integral do JSONL em temporário no
+mesmo filesystem, aplica `fsync` e `os.replace`, sincroniza o diretório quando
+suportado e verifica o resultado. Temporários órfãos não alteram o replay.
+`control/STOP` bloqueia operações novas depois da aquisição do lock.
 
 A função assíncrona `run(*args, **kwargs)` permanece deliberadamente
 indisponível e levanta `RuntimeError` até a integração autorizada do Marco 6.
