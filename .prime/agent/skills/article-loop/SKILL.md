@@ -28,6 +28,13 @@ mesmo filesystem, aplica `fsync` e `os.replace`, sincroniza o diretório quando
 suportado e verifica o resultado. Temporários órfãos não alteram o replay.
 `control/STOP` bloqueia operações novas depois da aquisição do lock.
 
+Antes do lock/commit, `record()` rejeita os parâmetros estruturais inválidos:
+IDs e tipo de evento vazios, chave de idempotência vazia ou maior que 256,
+`run_id` inseguro, payload não objeto e hashes de artefato não únicos ou fora
+do SHA-256 hexadecimal minúsculo. Durante o replay, o mesmo contrato fechado
+de `event.schema.json` é aplicado integralmente, incluindo versão `1.1.0`,
+inteiros não booleanos, data ISO 8601 com fuso e hashes por posição no log.
+
 A função assíncrona `run(*args, **kwargs)` permanece deliberadamente
 indisponível e levanta `RuntimeError` até a integração autorizada do Marco 6.
 

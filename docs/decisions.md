@@ -196,3 +196,21 @@ fonte de estado; corrupção do log canônico nunca é reparada silenciosamente.
 história representa uma execução autorizada. A substituição atômica evita que
 uma queda exponha uma linha parcial como evento commitado e mantém a repetição
 idempotente recuperável após falhas antes ou depois do rename.
+
+## ADR-014 — Validação estrutural integral do evento antes de commit e no replay
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** o store implementa localmente, sem dependência de runtime, todos
+os invariantes de `config/schemas/event.schema.json` que se aplicam ao evento:
+versão `1.1.0`, campos fechados, identificadores não vazios, chave de
+idempotência de até 256 caracteres, `run_id` seguro, inteiros não negativos
+sem aceitar booleanos, data ISO 8601 com fuso, payload objeto, hashes de
+artefatos únicos e SHA-256 hexadecimal minúsculo, e hashes anterior/próprio
+conformes à posição no log. A API `record()` valida os parâmetros expostos
+antes de adquirir o lock ou alterar o JSONL; o replay reaplica a mesma
+validação estrutural além da cadeia criptográfica e da semântica de estados.
+
+**Motivo:** uma cadeia de hashes recalculada só comprova consistência dos bytes;
+não torna um evento fora do contrato canônico confiável. Aplicar o schema nos
+dois limites impede tanto commits locais inválidos quanto logs forjados.

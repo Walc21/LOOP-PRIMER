@@ -15,7 +15,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - Atualizado em 2026-08-13.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
-- M2 — máquina de estados, event log e recuperação: concluído após correção final.
+- M2 — máquina de estados, event log e recuperação: concluído após correção contratual final.
 - M0.6 — completude de caminhos e ordem transacional: concluído nesta etapa.
 - M1 — scaffold e contratos canônicos: concluído.
 - M1.1 — correção dos contratos condicionais: concluído; 46 testes cobrem
@@ -56,7 +56,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M0.5 | alinhamento da arquitetura | concluído | catálogo, estados, ações, dimensões, scripts e árvore canônica verificados |
 | M0.6 | completude de paths e ordem transacional | concluído | caminhos adicionais, ordem merge → gates → júri → decisão → finalizador e SHIFT verificados |
 | M1 | scaffold e contratos canônicos | concluído | árvore materializada, 21 papéis, 8 dimensões e 12 schemas validados localmente |
-| M2 | máquina de estados, event log e recuperação | concluído após correção final | replay semântico e commit recuperável do JSONL aprovados por 18 testes M2 e 64 testes locais |
+| M2 | máquina de estados, event log e recuperação | concluído após correção contratual final | API e replay aplicam integralmente `event.schema.json`; 30 testes M2 e 76 testes locais aprovados |
 | M3 | ingestão PDF e baseline editável | pendente | `input/inbox/artigo.pdf` tem SHA-256 preservado e alcança `SOURCE_READY` |
 | M4 | papéis, prompts imutáveis e compilador | pendente | os 21 papéis canônicos usam os contratos imutáveis aprovados |
 | M5 | blackboard, grafo de claims e ativação esparsa | pendente | RUN/CHECK/SHIFT/FREEZE seguem o grafo de impacto |
@@ -153,4 +153,13 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   transição, ciclo, pausa e terminalidade; o JSONL usa commit por temporário,
   `fsync`, rename, sincronização de diretório quando suportada e verificação.
   Os 46 testes contratuais, 18 testes M2 e 64 testes locais passaram; M3 não
+  foi iniciado.
+- 2026-08-13 — M2 correção contratual final iniciada: a auditoria demonstrou
+  que a API aceitava campos estruturais inválidos e que replay aceitava versão
+  de schema forjada. A correção validará integralmente o evento antes do
+  commit e durante replay, sem dependência nova e sem iniciar M3.
+- 2026-08-13 — M2 correção contratual final concluída: `record()` rejeita
+  parâmetros inválidos antes do lock/commit, e replay aplica todos os campos
+  fechados e limites de `event.schema.json` mesmo para cadeias recalculadas.
+  Os 46 testes contratuais, 30 testes M2 e 76 testes locais passaram; M3 não
   foi iniciado.

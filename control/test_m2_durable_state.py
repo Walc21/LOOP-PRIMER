@@ -62,17 +62,26 @@ class DurableStateTests(unittest.TestCase):
             self.event(current, run_id)
 
     def forged_events(self, mutate):
-        """Apply a semantic mutation while retaining a valid hash chain."""
+        """Apply a mutation while retaining a valid hash chain."""
         log = self.root / "state/events/run-1.jsonl"
         events = [json.loads(line) for line in log.read_text().splitlines()]
         mutate(events)
         previous = None
-        for sequence, event in enumerate(events):
-            event["sequence"] = sequence
+        for event in events:
             event["previous_event_hash"] = previous
             event["event_hash"] = self.store._ehash(event)
             previous = event["event_hash"]
         log.write_text("".join(json.dumps(event, sort_keys=True) + "\n" for event in events))
+
+    def assert_record_rejected_without_log(self, **overrides):
+        values = {
+            "event_id": "event-1", "idempotency_key": "key-1", "actor_id": "test",
+            "event_type": "STATE_RECORDED", "artifact_hashes": [], "initial": True,
+        }
+        values.update(overrides)
+        with self.assertRaises(StoreError):
+            self.store.record("run-1", State.NEW, **values)
+        self.assertFalse((self.root / "state/events/run-1.jsonl").exists())
 
     def test_all_valid_transitions(self):
         for current, target in FORWARD.items():
@@ -303,6 +312,63 @@ class DurableStateTests(unittest.TestCase):
                 self.assertEqual(len(DurableStore(self.root).read_events("run-1")), 1)
                 self.temporary.cleanup()
                 self.setUp()
+
+    def test_record_rejects_empty_event_id_without_log_change(self):
+        self.assert_record_rejected_without_log(event_id="")
+
+    def test_record_rejects_empty_idempotency_key_without_log_change(self):
+        self.assert_record_rejected_without_log(idempotency_key="")
+
+    def test_record_rejects_oversized_idempotency_key_without_log_change(self):
+        self.assert_record_rejected_without_log(idempotency_key="x" * 257)
+
+    def test_record_rejects_empty_actor_id_without_log_change(self):
+        self.assert_record_rejected_without_log(actor_id="")
+
+    def test_record_rejects_empty_event_type_without_log_change(self):
+        self.assert_record_rejected_without_log(event_type="")
+
+    def test_record_rejects_invalid_artifact_hash_without_log_change(self):
+        self.assert_record_rejected_without_log(artifact_hashes=["not-a-hash"])
+
+    def test_record_rejects_duplicate_artifact_hash_without_log_change(self):
+        digest = "a" * 64
+        self.assert_record_rejected_without_log(artifact_hashes=[digest, digest])
+
+    def test_replay_rejects_unknown_schema_version_with_valid_hash_chain(self):
+        self.created()
+        self.forged_events(lambda events: events[0].update(schema_version="9.9.9"))
+        with self.assertRaises(IntegrityError):
+            self.store.read_events("run-1")
+
+    def test_replay_rejects_invalid_occurred_at_with_valid_hash_chain(self):
+        self.created()
+        self.forged_events(lambda events: events[0].update(occurred_at="not-a-timestamp"))
+        with self.assertRaises(IntegrityError):
+            self.store.read_events("run-1")
+
+    def test_replay_rejects_duplicate_artifact_hash_with_valid_hash_chain(self):
+        self.created()
+        digest = "a" * 64
+        self.forged_events(lambda events: events[0].update(artifact_hashes=[digest, digest]))
+        with self.assertRaises(IntegrityError):
+            self.store.read_events("run-1")
+
+    def test_replay_rejects_boolean_sequence_or_cycle_id_with_valid_hash_chain(self):
+        for field in ("sequence", "cycle_id"):
+            with self.subTest(field=field):
+                self.created()
+                self.forged_events(lambda events, field=field: events[0].update({field: True}))
+                with self.assertRaises(IntegrityError):
+                    self.store.read_events("run-1")
+                self.temporary.cleanup()
+                self.setUp()
+
+    def test_replay_rejects_additional_property_with_valid_hash_chain(self):
+        self.created()
+        self.forged_events(lambda events: events[0].update(unexpected="forged"))
+        with self.assertRaises(IntegrityError):
+            self.store.read_events("run-1")
 
 
 if __name__ == "__main__":
