@@ -5,8 +5,8 @@ description: Núcleo local de estado durável do article-loop, sem runtime Prime
 
 # article-loop
 
-Até o Marco 5, esta skill fornece persistência, ingestão e planejamento local, offline e
-determinística. Não inicia agentes, modelos, rede ou operações de runtime.
+No Marco 6, a skill acrescenta uma orquestração por receipts. A prova local usa
+`FakeRLMAdapter`; importar a skill não inicia Prime Agent, agentes, modelos ou rede.
 
 ## API pública
 
@@ -58,8 +58,28 @@ reconstrução LaTeX escapa toda extração não confiável e é compilada em di
 isolado com `-no-shell-escape`. `IngestionError` e `SourceReadyError` explicam
 entradas inseguras ou baseline insuficiente.
 
-A função assíncrona `run(*args, **kwargs)` permanece deliberadamente
-indisponível e levanta `RuntimeError` até a integração autorizada do Marco 6.
+## API pública M6
+
+Todas as funções abaixo são assíncronas: `await bootstrap(pdf_path, root=".")`,
+`await preflight(root=".")`, `await run_cycle(root=".", cycle_id=None,
+dry_run=False)`, `await status(root=".")`, `await checkpoint(root=".")`,
+`await pause(root=".")`, `await resume(root=".")`, `await stop(root=".")` e
+`await finalize(root=".")`. `run()` permanece um alias de `run_cycle()`.
+
+`PrimeRLMAdapter` encapsula somente a API instalada: admissão por
+`await rlm(prompt, name=...)`, mensagens sem `mode` e remoção pelo pai. Antes
+de uma execução autorizada, a sessão raiz deve consultar e executar
+`/rlm-max-depth 2` (sem `--global`). `FakeRLMAdapter` permite validar a árvore,
+duplicatas, recibos e retomada sem runtime real.
+
+`Orchestrator` nunca faz fan-in por `gather()`: a admissão retorna somente o
+handle, e cada conclusão é uma nova passagem curta que lê o snapshot. Os
+especialistas escrevem em `workspaces/<run>/ciclo/<papel>/`; o receipt contém
+somente caminho, SHA-256 e versão. O pai valida hash, schema e identidade antes
+de consumir. Só `DepartmentPacket` validado sobe de `Sxx` para `M00`; em S30 e
+S40, propostas com efeito técnico ficam bloqueadas sem revisão aprovada de
+S20. A ativação vem exclusivamente do plano M5: o gerente admite só S ativos
+e cada S admite apenas seus W RUN/CHECK/SHIFT.
 
 ## Memória e ativação M5
 
@@ -80,5 +100,5 @@ departamentais. A integração M6 deverá respeitar `paused` e nunca criar taref
 ou chamada para entradas FREEZE.
 
 Os marcos futuros devem preservar os contratos em `config/schemas/` e só podem
-ativar integração Prime Agent após o preflight previsto em
+executar integração Prime Agent após o preflight previsto em
 `docs/compatibility.md`.

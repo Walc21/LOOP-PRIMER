@@ -72,7 +72,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M3 | ingestão PDF e baseline editável | concluído | original publicado e registrado em `INGESTED` antes das derivações; PDF, presença/hash/tamanho de ZIP e modo de fonte são imutáveis até `v0000`, com contenção de caminhos e falha fechada |
 | M4 | papéis, prompts imutáveis e compilador | concluído | os 21 papéis canônicos compilam deterministicamente a partir de núcleos verificados, contexto fechado, overlay registrado e schema de saída |
 | M5 | blackboard, grafo de claims e ativação esparsa | concluído (corrigido) | localizadores estruturados, lock, limites e regras de ativação corrigidos; M6 permanece não iniciado |
-| M6 | integração RLM hierárquica | pendente | profundidade 2, handles, mensagens e arquivos passam teste controlado |
+| M6 | integração RLM hierárquica | concluído | adapters Prime/Fake, receipts validados, árvore esparsa e retomada local aprovados sem modelo |
 | M7 | síntese, merge, gates e arquivos de versões | pendente | somente merge constrói challenger antes de gates e júri; champion e Pareto preservam histórico |
 | M8 | avaliador externo cego em júri | pendente | rubrica cega não expõe autoria, ordem ou status de champion |
 | M9 | detecção de progresso e refoco | pendente | estagnação e refoco são produzidos pelos scripts canônicos |
@@ -257,3 +257,11 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   incompatíveis. Os 17 testes M5 e os 128 testes da suíte completa passaram
   localmente, sem dependências novas, chamadas a modelos, Prime Agent, rede ou
   início de M6.
+- 2026-08-14 — M6 iniciado: a integração será limitada a adaptadores locais e
+  simulação determinística. O adaptador real somente encapsula as superfícies
+  documentadas (`rlm`, `agent_message` e profundidade por sessão); nenhum
+  runtime, modelo ou agente real será iniciado nesta etapa.
+- 2026-08-14 — M6 concluído: a prova offline cobriu admissão idempotente,
+  receipts fora de ordem/duplicados, falha, silêncio, cancelamento, isolamento
+  raiz/neto e consolidação de `DepartmentPacket`; a suíte completa aprovou 136
+  testes.

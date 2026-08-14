@@ -450,3 +450,22 @@ para a integração futura.
 **Motivo:** separar memória auditável, decisão de ativação e execução futura
 permite testar economia, cobertura e orçamento sem custo de modelo nem estado
 implícito de sessão.
+
+## ADR-022 — Orquestração RLM por receipts duráveis no M6
+
+**Estado:** aceito em 2026-08-14.
+
+**Decisão:** M6 introduz `PrimeRLMAdapter` e `FakeRLMAdapter` e uma
+orquestração reentrante. `rlm()` é tratado exclusivamente como admissão: o
+handle é persistido antes de qualquer avanço e não existe fan-in por
+`gather`. Cada filho escreve em workspace isolado; sua única mensagem ao pai é
+um receipt com caminho contido, SHA-256 e versão do schema. O pai valida o
+receipt e o arquivo antes de consolidar. Somente o subgerente recebe receipts
+dos três especialistas e somente ele envia um `DepartmentPacket` à raiz.
+
+Nomes são determinísticos por execução, ciclo, departamento e papel. A
+retomada lê o journal próprio, reaproveita admissões persistidas e cria apenas
+filhos ainda ausentes. A profundidade 2 é uma pré-condição do adaptador real:
+ela deve ser consultada e configurada pela sessão raiz com
+`/rlm-max-depth 2`, sem `--global`, somente em execução autorizada. A prova
+M6 usa exclusivamente o fake e importação local da skill.
