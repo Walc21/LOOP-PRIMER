@@ -1,11 +1,12 @@
 import asyncio, hashlib, json, shutil, subprocess, sys, tempfile, unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
 sys.path.insert(0, str(ROOT / ".prime/agent/skills/article-loop/src"))
 from article_loop import ChildHandle, FakeRLMAdapter, Orchestrator, OrchestrationError, PrimeRLMAdapter, ingest, run_cycle
-from article_loop.store import DurableStore
-from article_loop.activation import ActivationPlanner
+from article_loop.store import DurableStore, StoreError
+from article_loop.activation import ActivationPlanner, PlanningLimits
 from article_loop.blackboard import Impact
 
 
@@ -188,10 +189,10 @@ class M6OrchestrationTests(unittest.TestCase):
         self.cycle(); self.admit_workers("S10")
         for role in ("W11","W12","W13"):
             path,digest=self.write_proposal(role); asyncio.run(self.o.receipt(self.run,sender_role=role,parent_role="S10",path=path,sha256=digest))
-        path=self.root / "workspaces" / self.run / "cycle-0000" / "W11" / "receipt.json"; original=path.read_bytes(); path.write_text("{}")
-        with self.assertRaises(OrchestrationError): asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=self.manager("S10")))
-        # A separately valid department can publish once; retries preserve bytes.
-        path.write_bytes(original)
+        path=self.root / "workspaces" / self.run / "cycle-0000" / "W11" / "receipt.json"; path.unlink()
+        (self.root / "workspaces" / self.run / "cycle-0000" / "W12" / "receipt.json").write_text("{}")
+        # Accepted receipts are now exclusively represented by their frozen
+        # content-addressed bytes, so mutable workspaces may disappear.
         state=asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=self.manager("S10")))
         packet=Path(state["receipts"]["S10"]["path"]); before=packet.read_bytes()
         asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=self.manager("S10"))); self.assertEqual(before,packet.read_bytes())
@@ -220,3 +221,87 @@ class M6OrchestrationTests(unittest.TestCase):
         self.assertEqual(len([x for x in self.fake.calls if x["name"].endswith("-w11")]),1)
         with self.assertRaises(OrchestrationError): self.o._append(self.run,"UNKNOWN","unknown",{})
         with self.assertRaises(OrchestrationError): self.o._append(self.run,"HANDLE","bad",{"role_id":"W12"})
+
+    def test_real_paused_m5_checkpoint_is_accepted_without_spawn(self):
+        impact=Impact((),(),(),(),("W11",),1)
+        paused=ActivationPlanner(limits=PlanningLimits(max_estimated_tokens=1)).plan(cycle_id=0,impact=impact).activation_map()
+        self.assertTrue(paused["paused"]); self.assertIsInstance(paused["checkpoint"],dict)
+        self.persist_plan(paused)
+        state=asyncio.run(self.o.run_cycle(run_id=self.run,plan=paused))
+        self.assertTrue(state["paused"]); self.assertEqual(state["children"],{}); self.assertEqual(self.fake.calls,[])
+
+    def test_paused_checkpoint_is_closed_against_forgery(self):
+        paused=ActivationPlanner(limits=PlanningLimits(max_estimated_tokens=1)).plan(cycle_id=0,impact=Impact((),(),(),(),("W11",),1)).activation_map()
+        variants=[]
+        missing=json.loads(json.dumps(paused)); del missing["checkpoint"]["reason"]; variants.append(missing)
+        extra=json.loads(json.dumps(paused)); extra["checkpoint"]["extra"]=True; variants.append(extra)
+        wrong=json.loads(json.dumps(paused)); wrong["checkpoint"]["estimated_tokens"]="1"; variants.append(wrong)
+        mismatch=json.loads(json.dumps(paused)); mismatch["checkpoint"]["reason"]="department_limit_exhausted"; variants.append(mismatch)
+        for forged in variants:
+            with self.subTest(forged=forged["checkpoint"]):
+                with self.assertRaises(OrchestrationError): self.o._plan(forged)
+
+    def test_receipt_is_read_once_and_frozen_copy_corruption_fails_closed(self):
+        self.cycle(); self.admit_workers("S10"); path,digest=self.write_proposal("W11")
+        original=Path.read_bytes; reads=[]
+        def counted(item, *args, **kwargs):
+            if item == path: reads.append(item)
+            return original(item,*args,**kwargs)
+        with mock.patch.object(Path,"read_bytes",counted):
+            asyncio.run(self.o.receipt(self.run,sender_role="W11",parent_role="S10",path=path,sha256=digest))
+        self.assertEqual(reads,[path])
+        for role in ("W12","W13"):
+            proposal,proposal_hash=self.write_proposal(role)
+            asyncio.run(self.o.receipt(self.run,sender_role=role,parent_role="S10",path=proposal,sha256=proposal_hash))
+        frozen=Path(asyncio.run(self.o.status(self.run))["receipts"]["W11"]["immutable_path"]); frozen.write_bytes(b"{}")
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.consolidate_department(self.run,"S10"))
+
+    def test_pause_failure_does_not_publish_local_pause_and_retry_is_idempotent(self):
+        self.cycle()
+        def failed_store(_root): return DurableStore(_root,fault=lambda _stage: (_ for _ in ()).throw(StoreError("injected")))
+        with mock.patch("article_loop.orchestrator.DurableStore",side_effect=failed_store):
+            with self.assertRaises(OrchestrationError): asyncio.run(self.o.pause(self.run))
+        self.assertFalse(asyncio.run(self.o.status(self.run))["paused"]); self.assertEqual(DurableStore(self.root).snapshot(self.run)["state"],"DEPARTMENTS_RUNNING")
+        asyncio.run(self.o.pause(self.run)); asyncio.run(self.o.pause(self.run))
+        self.assertEqual(len([e for e in self.o._events(self.run) if e["event_type"]=="PAUSED"]),1)
+
+    def test_resume_and_stop_failures_do_not_publish_local_terminal_events(self):
+        self.cycle(); asyncio.run(self.o.pause(self.run))
+        def failed_store(_root): return DurableStore(_root,fault=lambda _stage: (_ for _ in ()).throw(StoreError("injected")))
+        with mock.patch("article_loop.orchestrator.DurableStore",side_effect=failed_store):
+            with self.assertRaises(OrchestrationError): asyncio.run(self.o.resume(self.run))
+        self.assertTrue(asyncio.run(self.o.status(self.run))["paused"]); self.assertEqual(DurableStore(self.root).snapshot(self.run)["state"],"PAUSED")
+        asyncio.run(self.o.resume(self.run))
+        with mock.patch("article_loop.orchestrator.DurableStore",side_effect=failed_store):
+            with self.assertRaises(OrchestrationError): asyncio.run(self.o.stop(self.run))
+        self.assertFalse(asyncio.run(self.o.status(self.run))["stopped"]); self.assertEqual(DurableStore(self.root).snapshot(self.run)["state"],"DEPARTMENTS_RUNNING")
+        asyncio.run(self.o.stop(self.run)); asyncio.run(self.o.stop(self.run))
+        events=self.o._events(self.run)
+        self.assertEqual(len([e for e in events if e["event_type"]=="RESUMED"]),1)
+        self.assertEqual(len([e for e in events if e["event_type"]=="STOPPED"]),1)
+
+    def test_retry_after_canonical_commit_before_journal_reconciles_once(self):
+        self.cycle(); original=self.o._append; raised=False
+        def interrupted(run,event,key,payload):
+            nonlocal raised
+            if event == "PAUSED" and not raised:
+                raised=True; raise RuntimeError("interrupted after canonical commit")
+            return original(run,event,key,payload)
+        with mock.patch.object(self.o,"_append",side_effect=interrupted):
+            with self.assertRaises(RuntimeError): asyncio.run(self.o.pause(self.run))
+        self.assertFalse(asyncio.run(self.o.status(self.run))["paused"]); self.assertEqual(DurableStore(self.root).snapshot(self.run)["state"],"PAUSED")
+        asyncio.run(self.o.pause(self.run))
+        self.assertEqual(len([e for e in self.o._events(self.run) if e["event_type"]=="PAUSED"]),1)
+
+    def test_cycle_mirror_retry_after_canonical_commit_reconciles_once(self):
+        original=self.o._append; raised=False
+        def interrupted(run,event,key,payload):
+            nonlocal raised
+            if event == "PLAN" and not raised:
+                raised=True; raise RuntimeError("interrupted after canonical cycle commit")
+            return original(run,event,key,payload)
+        with mock.patch.object(self.o,"_append",side_effect=interrupted):
+            with self.assertRaises(RuntimeError): self.cycle()
+        self.assertEqual(DurableStore(self.root).snapshot(self.run)["state"],"CYCLE_PLANNED")
+        self.cycle()
+        self.assertEqual(len([e for e in self.o._events(self.run) if e["event_type"]=="PLAN"]),1)

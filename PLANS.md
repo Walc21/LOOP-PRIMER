@@ -287,3 +287,12 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   passagem, stop cancela antes de remover, e S30/S40 técnicos ficam bloqueados
   sem revisão S20 válida. Passaram 24 testes M6 locais e 152 testes na suíte
   completa; M7 não foi iniciado.
+- 2026-08-14 — Terceira correção cirúrgica de M6 concluída: o checkpoint
+  pausado do M5 é aceito somente no formato fechado realmente emitido pelo
+  planejador, sem admissão de filhos; `receipt()` faz uma única leitura dos
+  bytes, valida e congela exatamente essa leitura antes de journalizar, e toda
+  consolidação usa exclusivamente a cópia imutável verificada. Transições de
+  pausa, retomada, parada e ciclo confirmam primeiro o DurableStore canônico e
+  reconciliam retries sem eventos duplicados. Passaram 31 testes M6 e 159 na
+  suíte completa com `jsonschema` real, além de `py_compile`; M7 não foi
+  iniciado.

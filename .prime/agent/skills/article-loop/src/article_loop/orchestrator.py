@@ -274,7 +274,8 @@ class Orchestrator:
         if set(raw) != expected or type(raw.get("cycle_id")) is not int or type(raw.get("paused")) is not bool or not isinstance(roles, list) or not isinstance(raw.get("budget"), Mapping): raise OrchestrationError("invalid ActivationPlan activation_map")
         budget=raw["budget"]; limits=budget.get("limits")
         if set(budget) != {"limits","estimated_tokens","wall_time_seconds"} or not isinstance(limits, Mapping) or set(limits) != set(PlanningLimits.__dataclass_fields__) or any(type(v) is not int for v in limits.values()): raise OrchestrationError("invalid ActivationPlan budget")
-        if raw["paused"] != (raw["checkpoint"] is not None) or (raw["checkpoint"] is not None and not isinstance(raw["checkpoint"], str)):
+        checkpoint = raw["checkpoint"]
+        if raw["paused"] != (checkpoint is not None):
             raise OrchestrationError("paused plan requires exactly one checkpoint")
         required={"role_id","mode","justification","estimated_tokens","wall_time_seconds","inputs","expected_outputs"}
         if any(not isinstance(x, Mapping) or set(x)!=required for x in roles): raise OrchestrationError("invalid ActivationPlan role entry")
@@ -295,16 +296,76 @@ class Orchestrator:
                 if entry["estimated_tokens"] <= 0 or entry["wall_time_seconds"] <= 0: raise OrchestrationError("active activation entry invalid")
                 active.append(entry)
         if budget["estimated_tokens"] != sum(x["estimated_tokens"] for x in active) or budget["wall_time_seconds"] != sum(x["wall_time_seconds"] for x in active): raise OrchestrationError("activation budget is forged")
-        if len(active)>limits["max_active_per_cycle"] or budget["estimated_tokens"]>limits["max_estimated_tokens"] or budget["wall_time_seconds"]>limits["max_wall_time_seconds"]:
-            raise OrchestrationError("activation limits incoherent")
-        for department in DEPARTMENTS:
-            department_active = [entry for entry in active if entry["role_id"] == department or entry["role_id"] in CHILDREN[department]]
-            child_active = [entry for entry in active if entry["role_id"] in CHILDREN[department]]
-            if len(department_active) > limits["max_active_per_department"] or len(child_active) > limits["max_children_per_manager"]:
-                raise OrchestrationError("activation department limits incoherent")
-        if any(sum(entry["role_id"] == role for entry in active) > limits["max_active_per_role"] for role in mapping):
-            raise OrchestrationError("activation role limit incoherent")
+        # A paused M5 checkpoint intentionally captures an over-limit
+        # candidate for audit and later resumption.  Only runnable plans must
+        # be inside every limit; paused plans are checked against their closed
+        # checkpoint below.
+        if not paused:
+            if len(active)>limits["max_active_per_cycle"] or budget["estimated_tokens"]>limits["max_estimated_tokens"] or budget["wall_time_seconds"]>limits["max_wall_time_seconds"]:
+                raise OrchestrationError("activation limits incoherent")
+            for department in DEPARTMENTS:
+                department_active = [entry for entry in active if entry["role_id"] == department or entry["role_id"] in CHILDREN[department]]
+                child_active = [entry for entry in active if entry["role_id"] in CHILDREN[department]]
+                if len(department_active) > limits["max_active_per_department"] or len(child_active) > limits["max_children_per_manager"]:
+                    raise OrchestrationError("activation department limits incoherent")
+            if any(sum(entry["role_id"] == role for entry in active) > limits["max_active_per_role"] for role in mapping):
+                raise OrchestrationError("activation role limit incoherent")
+        if paused:
+            checkpoint_fields = {"reason", "constraints", "mandatory_roles", "missing_mandatory", "active_roles", "estimated_tokens", "wall_time_seconds", "limits"}
+            allowed_reasons = {"mandatory_coverage_missing", "mandatory_coverage_exceeds_limits", "department_limit_exhausted", "budget_exhausted"}
+            allowed_constraints = {"missing_mandatory", "cycle_limit", "token_limit", "wall_time_limit", "department_limit", "children_limit", "role_limit"}
+            if (not isinstance(checkpoint, Mapping) or set(checkpoint) != checkpoint_fields
+                    or checkpoint.get("reason") not in allowed_reasons
+                    or not isinstance(checkpoint.get("constraints"), list)
+                    or not checkpoint["constraints"] or len(checkpoint["constraints"]) != len(set(checkpoint["constraints"]))
+                    or any(item not in allowed_constraints for item in checkpoint["constraints"])
+                    or any(not isinstance(checkpoint.get(name), list) for name in ("mandatory_roles", "missing_mandatory"))
+                    or any(type(checkpoint.get(name)) is not int for name in ("active_roles", "estimated_tokens", "wall_time_seconds"))
+                    or not isinstance(checkpoint.get("limits"), Mapping)
+                    or set(checkpoint["limits"]) != set(PlanningLimits.__dataclass_fields__)):
+                raise OrchestrationError("invalid paused ActivationPlan checkpoint")
+            mandatory = checkpoint["mandatory_roles"]; missing = checkpoint["missing_mandatory"]
+            if (mandatory != sorted(set(mandatory)) or missing != sorted(set(missing))
+                    or any(role not in all_roles for role in mandatory + missing)
+                    or any(type(value) is not int for value in checkpoint["limits"].values())
+                    or checkpoint["active_roles"] != len(active)
+                    or checkpoint["estimated_tokens"] != budget["estimated_tokens"]
+                    or checkpoint["wall_time_seconds"] != budget["wall_time_seconds"]
+                    or dict(checkpoint["limits"]) != dict(limits)
+                    or missing != sorted(set(mandatory) - {entry["role_id"] for entry in active})):
+                raise OrchestrationError("paused ActivationPlan checkpoint diverges from plan")
+            constraints = checkpoint["constraints"]
+            expected_reason = (
+                "mandatory_coverage_missing" if missing else
+                "mandatory_coverage_exceeds_limits" if mandatory else
+                "department_limit_exhausted" if constraints == ["department_limit"] else
+                "budget_exhausted"
+            )
+            if checkpoint["reason"] != expected_reason:
+                raise OrchestrationError("paused ActivationPlan checkpoint reason diverges from constraints")
         return mapping, raw, paused
+
+    def _canonical(self, run: str, target: State, *, event_id: str, event_type: str, payload: Mapping[str, Any]) -> None:
+        """Commit canonical state first; DurableStore idempotency closes retry gaps."""
+        store = DurableStore(self.root)
+        try:
+            store.record(run, target, event_id=event_id, idempotency_key=event_id,
+                         actor_id="m6", event_type=event_type, payload=payload)
+        except (StoreError, TransitionError) as error:
+            raise OrchestrationError("canonical M3/M6 transition rejected") from error
+
+    def _frozen_receipt(self, run: str, receipt: Mapping[str, Any]) -> bytes:
+        sha256 = receipt.get("sha256")
+        if not isinstance(sha256, str) or not _SHA.fullmatch(sha256):
+            raise OrchestrationError("immutable receipt hash is invalid")
+        expected = self._managed("state", "orchestration", run, "receipts", sha256, create=False) / "artifact.json"
+        frozen = Path(receipt.get("immutable_path", ""))
+        if frozen != expected or frozen.is_symlink() or not frozen.is_file():
+            raise OrchestrationError("immutable receipt is unsafe")
+        data = frozen.read_bytes()
+        if _hash(data) != sha256:
+            raise OrchestrationError("immutable receipt hash differs")
+        return data
 
     def _load_plan(self, run: str, cycle_id: int | None) -> Mapping[str, Any]:
         """Read the immutable M5 map; public calls never invent a plan."""
@@ -342,15 +403,13 @@ class Orchestrator:
             if not old_hash:
                 if cycle != state["cycle_id"] and DurableStore(self.root).snapshot(run)["state"] != State.CYCLE_COMPLETE.value: raise OrchestrationError("prior cycle is not complete")
                 plan_file=self._file(run, f"activation-c{cycle:04d}.json")
-                if plan_file.exists(): raise OrchestrationError("immutable PLAN artifact already exists without journal entry")
-                self._atomic(plan_file, raw)
-                self._append(run,"PLAN",f"{run}:c{cycle}:plan",{"cycle_id":cycle,"activation":mapping,"activation_hash":digest,"raw":raw})
-        store = DurableStore(self.root)
-        try:
-            if store.snapshot(run)["state"] in {State.SOURCE_READY.value, State.CYCLE_COMPLETE.value}:
-                store.record(run, State.CYCLE_PLANNED, event_id=f"{run}:m6:c{cycle}:planned", idempotency_key=f"{run}:m6:c{cycle}:planned", actor_id="m6", event_type="M6_CYCLE_PLANNED", payload={"activation_hash":digest})
-        except (StoreError, TransitionError) as error:
-            raise OrchestrationError("canonical M3/M6 transition rejected") from error
+                if plan_file.exists() and plan_file.read_bytes() != _bytes(raw) + b"\n": raise OrchestrationError("immutable PLAN artifact conflicts")
+                if not plan_file.exists(): self._atomic(plan_file, raw)
+            # Reconcile either side of an interrupted mirror before treating
+            # the cycle as ready.  The DurableStore idempotency key makes this
+            # safe for normal reentry and for a crash after its commit.
+            self._canonical(run, State.CYCLE_PLANNED, event_id=f"{run}:m6:c{cycle}:planned", event_type="M6_CYCLE_PLANNED", payload={"activation_hash":digest})
+            self._append(run,"PLAN",f"{run}:c{cycle}:plan",{"cycle_id":cycle,"activation":mapping,"activation_hash":digest,"raw":raw})
         if paused:
             # A paused M5 plan is recorded as CYCLE_PLANNED, then paused with
             # the same concrete transition rules as an operator request.
@@ -359,13 +418,9 @@ class Orchestrator:
         for role in DEPARTMENTS:
             if mapping[role] != "FREEZE": await self._admit(run, cycle, role, self.adapter)
         with self._lock(run):
+            self._canonical(run, State.DEPARTMENTS_RUNNING, event_id=f"{run}:m6:c{cycle}:departments", event_type="M6_DEPARTMENTS_RUNNING", payload={"activation_hash":digest})
             self._append(run,"DEPARTMENTS_RUNNING",f"{run}:c{cycle}:departments",{})
             result = self._save_snapshot(run)
-        try:
-            if store.snapshot(run)["state"] == State.CYCLE_PLANNED.value:
-                store.record(run, State.DEPARTMENTS_RUNNING, event_id=f"{run}:m6:c{cycle}:departments", idempotency_key=f"{run}:m6:c{cycle}:departments", actor_id="m6", event_type="M6_DEPARTMENTS_RUNNING", payload={"activation_hash":digest})
-        except (StoreError, TransitionError) as error:
-            raise OrchestrationError("canonical department transition rejected") from error
         return result
 
     async def _admit(self, run: str, cycle: int, role: str, adapter: Any) -> dict[str, Any]:
@@ -480,9 +535,13 @@ class Orchestrator:
             if not child or child["cycle_id"] != state["cycle_id"] or child["status"] in {"FAILED","CANCELLED"}: raise OrchestrationError("sender is not receipt-compatible")
             workspace=self._workspace(run,state["cycle_id"],sender_role); target=Path(path)
             self._regular(target,workspace)
-            if target.parent != workspace or _hash(target.read_bytes()) != sha256: raise OrchestrationError("receipt location or hash differs")
+            # The untrusted workspace file is consumed exactly once.  Hashing,
+            # parsing, validation and freezing must all describe this single
+            # byte sequence; rereading it would admit a TOCTOU substitution.
+            data=target.read_bytes()
+            if target.parent != workspace or _hash(data) != sha256: raise OrchestrationError("receipt location or hash differs")
             schema="department-packet.schema.json" if sender_role.startswith("S") else "agent-proposal.schema.json"
-            try: document=json.loads(target.read_text()); validate_output(self.root,schema,document)
+            try: document=json.loads(data); validate_output(self.root,schema,document)
             except (json.JSONDecodeError,PromptContractError) as error: raise OrchestrationError("receipt schema invalid") from error
             if sender_role.startswith("W"):
                 good=document.get("role_id")==sender_role and document.get("cycle_id")==state["cycle_id"] and document.get("base_hash")==state["base_hash"]
@@ -493,9 +552,12 @@ class Orchestrator:
                 if old["sha256"] == sha256 and old["path"] == str(target): return state
                 raise OrchestrationError("conflicting second receipt")
             immutable=self._managed("state","orchestration",run,"receipts",sha256,create=True)/"artifact.json"
-            data=target.read_bytes()
             if immutable.exists() and immutable.read_bytes()!=data: raise OrchestrationError("content-addressed receipt conflict")
             if not immutable.exists(): self._atomic_bytes(immutable,data)
+            # Confirm the bytes we have frozen before making the RECEIPT
+            # durable.  All later consumers use immutable_path exclusively.
+            if _hash(self._frozen_receipt(run,{"immutable_path":str(immutable),"sha256":sha256})) != sha256:
+                raise OrchestrationError("immutable receipt hash differs")
             payload={"sender_role":sender_role,"parent_role":parent_role,"path":str(target),"immutable_path":str(immutable),"sha256":sha256,"schema_version":schema_version,"cycle_id":state["cycle_id"]}
             self._append(run,"RECEIPT",f"{run}:c{state['cycle_id']}:{sender_role}:receipt",payload); return self._save_snapshot(run)
 
@@ -523,12 +585,8 @@ class Orchestrator:
         if any(r not in state["receipts"] for r in workers): raise OrchestrationError("department has pending receipts")
         proposals=[]
         for r in workers:
-            receipt=state["receipts"][r]; mutable=Path(receipt["path"]); workspace=self._workspace(run,state["cycle_id"],r)
-            self._regular(mutable, workspace)
-            if _hash(mutable.read_bytes()) != receipt["sha256"]: raise OrchestrationError("receipt bytes changed after acceptance")
-            frozen=Path(receipt["immutable_path"])
-            if frozen.is_symlink() or not frozen.is_file() or _hash(frozen.read_bytes()) != receipt["sha256"]: raise OrchestrationError("immutable receipt is unsafe")
-            try: proposal=json.loads(frozen.read_text()); validate_output(self.root,"agent-proposal.schema.json",proposal)
+            receipt=state["receipts"][r]
+            try: proposal=json.loads(self._frozen_receipt(run,receipt)); validate_output(self.root,"agent-proposal.schema.json",proposal)
             except (json.JSONDecodeError, PromptContractError) as error: raise OrchestrationError("immutable receipt schema invalid") from error
             if proposal.get("role_id")!=r or proposal.get("cycle_id")!=state["cycle_id"] or proposal.get("base_hash")!=state["base_hash"]: raise OrchestrationError("immutable receipt identity differs")
             proposals.append(proposal)
@@ -549,9 +607,7 @@ class Orchestrator:
             review_index: dict[str, dict[str, Any]]={}
             s20=state["receipts"].get("S20")
             if s20:
-                frozen=Path(s20["immutable_path"])
-                if frozen.is_symlink() or not frozen.is_file() or _hash(frozen.read_bytes()) != s20["sha256"]: raise OrchestrationError("S20 dependency packet is unsafe")
-                try: source_packet=json.loads(frozen.read_text()); validate_output(self.root,"department-packet.schema.json",source_packet)
+                try: source_packet=json.loads(self._frozen_receipt(run,s20)); validate_output(self.root,"department-packet.schema.json",source_packet)
                 except (json.JSONDecodeError, PromptContractError) as error: raise OrchestrationError("S20 dependency packet is invalid") from error
                 if source_packet.get("department_id") != "S20" or source_packet.get("run_id") != run or source_packet.get("cycle_id") != state["cycle_id"] or source_packet.get("base_hash") != state["base_hash"]: raise OrchestrationError("S20 dependency packet identity differs")
                 review_index={x["proposal_id"]:x for x in source_packet["dependency_reviews"]}
@@ -590,35 +646,43 @@ class Orchestrator:
         run=self._run(run_id)
         with self._lock(run):
             state=self._state(run)
-            if state["paused"]: return state
+            if state["paused"]:
+                pause_id=state.get("pause_id")
+                if not isinstance(pause_id,str): raise OrchestrationError("paused journal lacks pause id")
+                self._canonical(run,State.PAUSED,event_id=pause_id,event_type="M6_PAUSED",payload={"resume_state":state.get("resume_state")})
+                return state
             if state["stopped"] or state["finalized"]: raise OrchestrationError("execution is terminal")
             pause_id=f"{run}:pause:{len(self._events(run))}"
-            self._append(run,"PAUSED",pause_id,{"pause_id":pause_id,"resume_state":state["state"]})
-            try: DurableStore(self.root).pause(run,event_id=pause_id,idempotency_key=pause_id,actor_id="m6")
-            except (StoreError, TransitionError) as error: raise OrchestrationError("canonical pause rejected") from error
+            payload={"pause_id":pause_id,"resume_state":state["state"]}
+            self._canonical(run,State.PAUSED,event_id=pause_id,event_type="M6_PAUSED",payload=payload)
+            self._append(run,"PAUSED",pause_id,payload)
             return self._save_snapshot(run)
     async def resume(self, run_id: str) -> dict[str, Any]:
         run=self._run(run_id)
         with self._lock(run):
             state=self._state(run)
             if state["stopped"] or state["finalized"] or not state["paused"]: raise OrchestrationError("execution cannot resume")
-            key=f"{run}:resume:{state.get('pause_id')}"; self._append(run,"RESUMED",key,{"pause_id":state.get("pause_id")})
-            try: DurableStore(self.root).resume(run,event_id=key,idempotency_key=key,actor_id="m6")
-            except (StoreError, TransitionError) as error: raise OrchestrationError("canonical resume rejected") from error
+            pause_id=state.get("pause_id"); resume_state=state.get("resume_state")
+            if not isinstance(pause_id,str) or resume_state not in {item.value for item in State}: raise OrchestrationError("paused journal is malformed")
+            key=f"{run}:resume:{pause_id}"; payload={"pause_id":pause_id}
+            # Do not use DurableStore.resume(): after a crash between its
+            # commit and RESUMED, record() recognizes this idempotency key.
+            self._canonical(run,State(resume_state),event_id=key,event_type="M6_RESUMED",payload=payload)
+            self._append(run,"RESUMED",key,payload)
             return self._save_snapshot(run)
     async def stop(self, run_id: str) -> dict[str, Any]:
         run=self._run(run_id)
         with self._lock(run):
             state=self._state(run)
-            if state["stopped"]: return state
+            stop_id=f"{run}:m6:stopped"
+            if state["stopped"]:
+                self._canonical(run,State.TECHNICAL_FAILURE,event_id=stop_id,event_type="M6_STOPPED",payload={"reason":"operator_stop"})
+                return state
+            if state["finalized"]: raise OrchestrationError("execution is terminal")
             for role, child in state["children"].items():
                 if child["status"] == "ADMITTED": self._append(run,"CANCELLED",f"{run}:c{state['cycle_id']}:{role}:cancelled",{"role_id":role,"pending_owner":child["parent_id"] != getattr(self.adapter,"actor_id",None)})
-            self._append(run,"STOPPED",f"{run}:stopped:{len(self._events(run))}",{})
-            try:
-                store=DurableStore(self.root)
-                if store.snapshot(run)["state"] not in {State.TECHNICAL_FAILURE.value, State.FINALIZED.value}:
-                    store.record(run,State.TECHNICAL_FAILURE,event_id=f"{run}:m6:stopped",idempotency_key=f"{run}:m6:stopped",actor_id="m6",event_type="M6_STOPPED",payload={"reason":"operator_stop"})
-            except (StoreError, TransitionError) as error: raise OrchestrationError("canonical stop rejected") from error
+            self._canonical(run,State.TECHNICAL_FAILURE,event_id=stop_id,event_type="M6_STOPPED",payload={"reason":"operator_stop"})
+            self._append(run,"STOPPED",stop_id,{})
             result=self._save_snapshot(run)
         # Only the owning actor may remove direct children; unresolved owners
         # remain journaled as pending cancellation, never false success.
