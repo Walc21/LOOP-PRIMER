@@ -315,6 +315,101 @@ class M6OrchestrationTests(unittest.TestCase):
             with self.subTest(plan=plan.checkpoint):
                 self.o._plan(plan.activation_map())
 
+    def test_w53_impact_without_finalization_token_checkpoint_is_accepted(self):
+        plan = ActivationPlanner(PlanningLimits(max_estimated_tokens=1)).plan(
+            cycle_id=2,
+            impact=Impact((), (), (), (), ("W53",), 1),
+            finalization_requested=False,
+        )
+        self.assertTrue(plan.paused)
+        self.assertEqual(
+            {entry.role_id for entry in plan.entries if entry.mode != "FREEZE"},
+            {"M00", "S50", "W53"},
+        )
+        self.assertEqual(plan.checkpoint["mandatory_roles"], [])
+        self.assertEqual(plan.checkpoint["missing_mandatory"], [])
+        self.assertEqual(plan.checkpoint["constraints"], ["token_limit"])
+        self.o._plan(plan.activation_map())
+
+    def test_w53_impact_without_finalization_accepts_each_limit_checkpoint(self):
+        limits = {
+            "max_estimated_tokens": (PlanningLimits(max_estimated_tokens=1), "token_limit"),
+            "max_wall_time_seconds": (PlanningLimits(max_wall_time_seconds=1), "wall_time_limit"),
+            "max_active_per_cycle": (PlanningLimits(max_active_per_cycle=1), "cycle_limit"),
+            "max_active_per_department": (PlanningLimits(max_active_per_department=1), "department_limit"),
+            "max_children_per_manager": (PlanningLimits(max_children_per_manager=0), "children_limit"),
+            "max_active_per_role": (PlanningLimits(max_active_per_role=0), "role_limit"),
+        }
+        impact = Impact((), (), (), (), ("W53",), 1)
+        for name, (limit, constraint) in limits.items():
+            with self.subTest(limit=name):
+                plan = ActivationPlanner(limit).plan(cycle_id=2, impact=impact)
+                self.assertTrue(plan.paused)
+                self.assertEqual(plan.checkpoint["mandatory_roles"], [])
+                self.assertEqual(plan.checkpoint["missing_mandatory"], [])
+                self.assertIn(constraint, plan.checkpoint["constraints"])
+                self.o._plan(plan.activation_map())
+
+    def test_w51_and_w53_impact_without_finalization_is_accepted(self):
+        plan = ActivationPlanner(PlanningLimits(max_estimated_tokens=1)).plan(
+            cycle_id=2, impact=Impact((), (), (), (), ("W51", "W53"), 1)
+        )
+        self.assertEqual(plan.checkpoint["mandatory_roles"], [])
+        self.assertEqual(plan.checkpoint["missing_mandatory"], [])
+        self.o._plan(plan.activation_map())
+
+    def test_finalization_w53_requires_and_accepts_complete_group(self):
+        plan = ActivationPlanner(PlanningLimits(max_estimated_tokens=1)).plan(
+            cycle_id=2, impact=Impact((), (), (), (), ("W53",), 1), finalization_requested=True
+        )
+        self.assertEqual(plan.checkpoint["mandatory_roles"], ["S50", "W51", "W53"])
+        self.assertEqual(plan.checkpoint["missing_mandatory"], [])
+        self.assertTrue(all(entry.mode != "FREEZE" for entry in plan.entries if entry.role_id in plan.checkpoint["mandatory_roles"]))
+        self.o._plan(plan.activation_map())
+
+    def test_w22_and_w53_impact_without_finalization_requires_only_proof_group(self):
+        plan = ActivationPlanner(PlanningLimits(max_estimated_tokens=1)).plan(
+            cycle_id=2, impact=Impact((), (), (), (), ("W22", "W53"), 1)
+        )
+        self.assertEqual(plan.checkpoint["mandatory_roles"], ["S20", "W22"])
+        self.assertEqual(plan.checkpoint["missing_mandatory"], [])
+        self.o._plan(plan.activation_map())
+
+    def test_w22_with_finalization_requires_and_accepts_both_groups(self):
+        plan = ActivationPlanner(PlanningLimits(max_estimated_tokens=1)).plan(
+            cycle_id=2, impact=Impact((), (), (), (), ("W22",), 1), finalization_requested=True
+        )
+        self.assertEqual(plan.checkpoint["mandatory_roles"], ["S20", "S50", "W22", "W51", "W53"])
+        self.assertEqual(plan.checkpoint["missing_mandatory"], [])
+        self.o._plan(plan.activation_map())
+
+    def test_public_m5_activation_map_compatibility_matrix(self):
+        role_ids = tuple(entry["role_id"] for entry in self.plan["roles"])
+        role_sets = tuple((role_id,) for role_id in role_ids) + (("W22", "W53"), ("W51", "W53"))
+        limits = (
+            PlanningLimits(),
+            PlanningLimits(max_estimated_tokens=1),
+            PlanningLimits(max_wall_time_seconds=1),
+            PlanningLimits(max_active_per_cycle=1),
+            PlanningLimits(max_active_per_department=1),
+            PlanningLimits(max_children_per_manager=0),
+            PlanningLimits(max_active_per_role=0),
+        )
+        cases = 0
+        for cycle_id in (0, 1, 3):
+            for roles in role_sets:
+                for finalization_requested in (False, True):
+                    for limit in limits:
+                        with self.subTest(cycle_id=cycle_id, roles=roles, finalization_requested=finalization_requested, limit=limit):
+                            plan = ActivationPlanner(limit).plan(
+                                cycle_id=cycle_id,
+                                impact=Impact((), (), (), (), roles, 1),
+                                finalization_requested=finalization_requested,
+                            )
+                            self.o._plan(plan.activation_map())
+                            cases += 1
+        self.assertEqual(cases, 966)
+
     def test_receipt_retry_uses_frozen_copy_before_workspace(self):
         self.cycle(); self.admit_workers("S10"); path,digest=self.write_proposal("W11")
         asyncio.run(self.o.receipt(self.run,sender_role="W11",parent_role="S10",path=path,sha256=digest))

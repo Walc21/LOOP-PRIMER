@@ -320,3 +320,11 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   grupos obrigatórios válidos. Planos pausados são recalculados sem permitir
   ausência obrigatória inventada. Passaram 36 testes M6 e 164 na suíte
   completa com `jsonschema` real, além de `py_compile`; M7 não foi iniciado.
+- 2026-08-14 — Sexta correção cirúrgica de M6 concluída: a validação do
+  checkpoint pausado não infere finalização apenas porque W53 está ativo; o
+  artefato M5 permanece o vínculo de proveniência. W22 continua exigindo o
+  grupo de prova, e os únicos grupos declarados continuam vazio, prova,
+  finalização ou união. A matriz pública M5 aprovou 966 planos (ciclos 0/1/3,
+  todos os papéis, combinações críticas, ambos estados de finalização e todos
+  os limites restritivos). Passaram 43 testes M6 e 171 na suíte completa com
+  `jsonschema` real, além de `py_compile`; M7 não foi iniciado.

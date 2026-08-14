@@ -526,3 +526,12 @@ prova, finalização ou sua união; cada obrigatório deve estar ativo, e o
 checkpoint pausado só pode declarar a saída efetivamente produzível pelo
 planejador, impedindo que uma ausência inventada converta plano normal em
 pausa.
+
+**Quinto complemento corretivo (2026-08-14):** `activation_map()` não expõe
+`finalization_requested`; portanto M6 não o infere de W53 ativo. No checkpoint
+pausado, a presença de W53 por `Impact.roles` é compatível com
+`mandatory_roles=[]`, enquanto um grupo de finalização declarado continua
+exigindo S50, W51 e W53 ativos. A regra independente de W22 permanece: W22
+ativo exige o grupo S20/W22. A proveniência permanece vinculada ao hash do
+artefato M5 persistido, e os únicos grupos declarados aceitos são vazio,
+prova, finalização e sua união.

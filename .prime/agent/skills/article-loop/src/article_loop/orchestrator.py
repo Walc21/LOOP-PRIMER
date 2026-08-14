@@ -377,7 +377,6 @@ class Orchestrator:
                     or missing != []
                     or any(mapping[role] == "FREEZE" for role in mandatory)
                     or (mapping["W22"] != "FREEZE" and proof_mandatory != mandatory and sorted(proof_mandatory + finalization_mandatory) != mandatory)
-                    or (mapping["W53"] != "FREEZE" and finalization_mandatory != mandatory and sorted(proof_mandatory + finalization_mandatory) != mandatory)
                     or any(type(value) is not int for value in checkpoint["limits"].values())
                     or checkpoint["active_roles"] != len(active)
                     or checkpoint["estimated_tokens"] != budget["estimated_tokens"]
