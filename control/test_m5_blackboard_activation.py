@@ -20,6 +20,21 @@ from article_loop import (ActivationMode, ActivationPlanner, Blackboard,
 
 
 SOURCE = "a" * 64
+DEPARTMENTS = ("S10", "S20", "S30", "S40", "S50")
+
+
+def department_packet(department, status="complete"):
+    no_change = status == "no_change"
+    return {
+        "schema_version": "1.1.0", "packet_id": f"packet-{department}", "run_id": "run-1",
+        "cycle_id": 0, "department_id": department, "base_hash": SOURCE,
+        "proposal_ids": [] if no_change else [f"proposal-{department}"],
+        "specialist_task_ids": [] if no_change else [f"task-{department}"],
+        "dependency_reviews": [], "status": status,
+        "no_change_justification": "No material change was proposed." if no_change else None,
+        "evidence_locators": [f"evidence-{department}.json#record"],
+        "created_at": "2026-08-13T12:00:00Z",
+    }
 
 
 def claim(text="A theorem", kind="theorem", location=None, dependencies=None, severity=70):
@@ -125,7 +140,12 @@ class ActivationTests(unittest.TestCase):
         first = self.planner.plan(cycle_id=0, impact=impact)
         second = self.planner.plan(cycle_id=0, impact=impact)
         self.assertEqual(first.activation_map(), second.activation_map())
-        self.assertEqual({entry.role_id for entry in first.entries if entry.role_id.startswith("S") and entry.mode != ActivationMode.FREEZE}, {"S10", "S20", "S30", "S40", "S50"})
+        modes = {entry.role_id: entry.mode for entry in first.entries}
+        self.assertEqual(modes["M00"], ActivationMode.RUN)
+        self.assertEqual({role for role in DEPARTMENTS if modes[role] is ActivationMode.RUN}, set(DEPARTMENTS))
+        focal = {"W11", "W21", "W31", "W41", "W51"}
+        self.assertEqual({role for role, mode in modes.items() if role.startswith("W") and mode is ActivationMode.RUN}, focal)
+        self.assertTrue(all(modes[role] is ActivationMode.FREEZE for role in modes if role.startswith("W") and role not in focal))
 
     def test_new_proof_requires_w22_and_style_stays_sparse(self):
         proof_plan = self.planner.plan(cycle_id=2, impact=self.board.impact("run-1", ["theorem"]))
@@ -136,6 +156,22 @@ class ActivationTests(unittest.TestCase):
         self.assertEqual(style_modes["W22"], ActivationMode.FREEZE)
         self.assertEqual(style_modes["W51"], ActivationMode.FREEZE)
 
+    def test_isolated_notation_and_equation_do_not_require_w22(self):
+        for change in ("notation", "equation"):
+            with self.subTest(change=change):
+                plan = self.planner.plan(cycle_id=2, impact=self.board.impact("run-1", [change]))
+                self.assertEqual({entry.role_id: entry.mode for entry in plan.entries}["W22"], ActivationMode.FREEZE)
+
+    def test_proof_and_indirect_theorem_dependency_require_w22_check(self):
+        for change in ("theorem", "proof"):
+            with self.subTest(change=change):
+                plan = self.planner.plan(cycle_id=2, impact=self.board.impact("run-1", [change]))
+                self.assertEqual({entry.role_id: entry.mode for entry in plan.entries}["W22"], ActivationMode.CHECK)
+        definition = self.board.append("run-1", "claims", claim("Definition", "definition", {"section": "1"}))
+        self.board.append("run-1", "claims", claim("Dependent theorem", "theorem", {"section": "2"}, [definition["claim_id"]]))
+        plan = self.planner.plan(cycle_id=2, impact=self.board.impact("run-1", [definition["claim_id"]]))
+        self.assertEqual({entry.role_id: entry.mode for entry in plan.entries}["W22"], ActivationMode.CHECK)
+
     def test_freeze_coverage_and_finalization_requirements(self):
         plan = self.planner.plan(cycle_id=5, impact=self.board.impact("run-1", []), history={"S20": {"dependencies_changed": True, "last_checked_cycle": 1}})
         modes = {entry.role_id: entry.mode for entry in plan.entries}
@@ -145,6 +181,8 @@ class ActivationTests(unittest.TestCase):
         finish_modes = {entry.role_id: entry.mode for entry in finish.entries}
         self.assertNotEqual(finish_modes["W51"], ActivationMode.FREEZE)
         self.assertNotEqual(finish_modes["W53"], ActivationMode.FREEZE)
+        plateau_finish = self.planner.plan(cycle_id=5, impact=self.board.impact("run-1", []), finalization_requested=True, plateau=True)
+        self.assertEqual({entry.role_id: entry.mode for entry in plateau_finish.entries}["W53"], ActivationMode.CHECK)
 
     def test_modes_use_severity_failures_and_shift_signals(self):
         low = self.planner.plan(cycle_id=2, impact=self.board.impact("run-1", ["style"]))
@@ -154,6 +192,8 @@ class ActivationTests(unittest.TestCase):
         self.assertEqual({entry.role_id: entry.mode for entry in high.entries}["W41"], ActivationMode.RUN)
         proof = self.planner.plan(cycle_id=2, impact=self.board.impact("run-1", ["theorem"]))
         self.assertEqual({entry.role_id: entry.mode for entry in proof.entries}["W22"], ActivationMode.CHECK)
+        theorem_plateau = self.planner.plan(cycle_id=2, impact=self.board.impact("run-1", ["theorem"]), plateau=True)
+        self.assertEqual({entry.role_id: entry.mode for entry in theorem_plateau.entries}["W22"], ActivationMode.CHECK)
         for key, kwargs in (("plateau", {"plateau": True}), ("oscillation", {"oscillation": True}), ("diagnosis", {"diagnostic": True})):
             plan = self.planner.plan(cycle_id=2, impact=high_impact, **kwargs)
             self.assertEqual({entry.role_id: entry.mode for entry in plan.entries}["W41"], ActivationMode.SHIFT, key)
@@ -188,10 +228,30 @@ class ActivationTests(unittest.TestCase):
         specialist = specialist_view({"task_id": "t"}, excerpts=["x"], dependent_claims=[{"claim_id": "c"}], rubric={"r": 1}, local_history=[{"cycle": 1}])
         self.assertEqual(set(specialist), {"task", "excerpts", "dependent_claims", "rubric", "local_history"})
         self.assertEqual(set(submanager_view({"task_id": "s"}, [{"proposal_id": "p"}])), {"task", "child_proposals"})
-        packets = [{"department_id": department, "status": "NO_CHANGE"} for department in ("S10", "S20", "S30", "S40", "S50")]
-        self.assertEqual(len(manager_view(packets)["department_packets"]), 5)
-        for bad in ([], packets[:-1], packets[:1] * 5, packets[1:] + packets[:1], [{"department_id": "S60", "status": "NO_CHANGE"}] * 5, [{"department_id": "S10", "status": "NO_CHANGE", "extra": True}] + packets[1:]):
-            with self.assertRaises(ValueError): manager_view(bad)
+        complete = [department_packet(department) for department in DEPARTMENTS]
+        no_change = [department_packet(department, "no_change") for department in DEPARTMENTS]
+        self.assertEqual(manager_view(ROOT, complete)["department_packets"], complete)
+        self.assertEqual(manager_view(ROOT, no_change)["department_packets"], no_change)
+        blocked = [dict(packet) for packet in complete]; blocked[0] = department_packet("S10", "blocked")
+        self.assertEqual(manager_view(ROOT, blocked)["department_packets"], blocked)
+        fixture = json.loads((ROOT / "control/fixtures/m4/department_packet.json").read_text())
+        fixture_packets = [department_packet(department) for department in DEPARTMENTS]
+        fixture_packets[2] = fixture
+        self.assertEqual(manager_view(ROOT, fixture_packets)["department_packets"], fixture_packets)
+        for status in (None, "COMPLETE", "NO_CHANGE", "invalid"):
+            bad = [dict(packet) for packet in complete]
+            if status is None:
+                del bad[0]["status"]
+            else:
+                bad[0]["status"] = status
+            with self.subTest(status=status):
+                with self.assertRaises(ValueError): manager_view(ROOT, bad)
+        extra = [dict(packet) for packet in complete]; extra[0]["extra"] = True
+        partial = [dict(packet) for packet in complete]; del partial[0]["created_at"]
+        bad_datetime = [dict(packet) for packet in complete]; bad_datetime[0]["created_at"] = "not-a-date-time"
+        wrong_department = [dict(packet) for packet in complete]; wrong_department[0]["department_id"] = "S60"
+        for bad in ([], complete[:-1], complete[:1] * 5, complete[1:] + complete[:1], wrong_department, extra, partial, bad_datetime):
+            with self.assertRaises(ValueError): manager_view(ROOT, bad)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .blackboard import Impact
+from .prompts import PromptContractError, validate_output
 
 
 DEPARTMENTS = ("S10", "S20", "S30", "S40", "S50")
@@ -79,10 +80,16 @@ class ActivationPlanner:
         mandatory: set[str] = set()
         if finalization_requested:
             mandatory.update(("S50", "W51", "W53")); targets.update(mandatory)
-        if {"S20", "W22"} & targets:
+        # S20 also owns notation and equations.  Only an impact that already
+        # reaches the proof verifier is evidence that a theorem/proof check is
+        # required; do not infer it merely from S20 being active.
+        if "W22" in targets:
             mandatory.update(("S20", "W22")); targets.update(mandatory)
         if cycle_id == 0:
-            targets.update(DEPARTMENTS)
+            # There is no prior artifact in the first audit cycle to CHECK.
+            # Select one focal worker per department, and leave every other
+            # worker frozen even if a zero-severity empty impact was supplied.
+            targets = set(DEPARTMENTS)
             targets.update(children[0] for children in CHILDREN.values())
         for department in DEPARTMENTS:
             item = history.get(department, {})
@@ -93,7 +100,7 @@ class ActivationPlanner:
             if targets.intersection(children): targets.add(department)
         entries = [self._entry("M00", ActivationMode.RUN, "gerente geral obrigatório", impact)]
         for department in DEPARTMENTS:
-            entries.extend(self._department_entries(department, targets, impact, history, plateau, oscillation, diagnostic))
+            entries.extend(self._department_entries(department, targets, impact, history, plateau, oscillation, diagnostic, first_cycle=cycle_id == 0))
         return self._within_limits(cycle_id, entries, mandatory)
 
     def _within_limits(self, cycle_id: int, entries: list[ActivationEntry], mandatory: set[str]) -> ActivationPlan:
@@ -116,19 +123,23 @@ class ActivationPlanner:
             return ActivationPlan(cycle_id, tuple(entries), True, checkpoint, self.limits)
         return ActivationPlan(cycle_id, tuple(entries), False, None, self.limits)
 
-    def _department_entries(self, department: str, targets: set[str], impact: Impact, history: Mapping[str, Mapping[str, Any]], plateau: bool, oscillation: bool, diagnostic: bool) -> list[ActivationEntry]:
+    def _department_entries(self, department: str, targets: set[str], impact: Impact, history: Mapping[str, Mapping[str, Any]], plateau: bool, oscillation: bool, diagnostic: bool, *, first_cycle: bool) -> list[ActivationEntry]:
         children = CHILDREN[department]
         department_active = department in targets or bool(targets.intersection(children))
-        result = [self._entry(department, self._mode(department, department_active, impact, history, plateau, oscillation, diagnostic), "impacto, cobertura ou finalização" if department_active else "sem impacto no ciclo", impact)]
+        result = [self._entry(department, self._mode(department, department_active, impact, history, plateau, oscillation, diagnostic, first_cycle=first_cycle), "impacto, cobertura ou finalização" if department_active else "sem impacto no ciclo", impact)]
         for role in children:
             active = role in targets
-            result.append(self._entry(role, self._mode(role, active, impact, history, plateau, oscillation, diagnostic), "dependência crítica" if role in {"W22", "W51", "W53"} else "impacto focal", impact))
+            result.append(self._entry(role, self._mode(role, active, impact, history, plateau, oscillation, diagnostic, first_cycle=first_cycle), "dependência crítica" if role in {"W22", "W51", "W53"} else "impacto focal", impact))
         return result
 
     @staticmethod
-    def _mode(role: str, active: bool, impact: Impact, history: Mapping[str, Mapping[str, Any]], plateau: bool, oscillation: bool, diagnostic: bool) -> ActivationMode:
+    def _mode(role: str, active: bool, impact: Impact, history: Mapping[str, Mapping[str, Any]], plateau: bool, oscillation: bool, diagnostic: bool, *, first_cycle: bool) -> ActivationMode:
         if not active: return ActivationMode.FREEZE
+        if first_cycle: return ActivationMode.RUN
         item = history.get(role, {})
+        # These roles verify an already-defined mathematical or finalization
+        # obligation.  A global exploration signal cannot replace that check.
+        if role in {"W22", "W53"}: return ActivationMode.CHECK
         shift = plateau or oscillation or diagnostic or bool(item.get("plateau")) or bool(item.get("oscillation")) or bool(item.get("diagnosis_required")) or int(item.get("failure_count", 0)) >= 2
         if shift: return ActivationMode.SHIFT
         if role == "W22" or impact.severity < 50 or int(item.get("failure_count", 0)) == 1: return ActivationMode.CHECK
@@ -152,15 +163,13 @@ def submanager_view(task: Mapping[str, Any], child_proposals: Sequence[Mapping[s
     return {"task": dict(task), "child_proposals": [dict(proposal) for proposal in child_proposals]}
 
 
-def manager_view(packets: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def manager_view(project_root: str | Path, packets: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Expose only the five schema-valid canonical DepartmentPackets to M00."""
     if len(packets) != len(DEPARTMENTS): raise ValueError("M00 must receive exactly five packets")
-    normalized = []
     for expected, packet in zip(DEPARTMENTS, packets):
         if not isinstance(packet, Mapping) or packet.get("department_id") != expected: raise ValueError("packets must be canonical, unique, and ordered")
-        value = dict(packet)
-        if value.get("status") == "NO_CHANGE":
-            if set(value) != {"department_id", "status"}: raise ValueError("NO_CHANGE packet must use the closed format")
-        elif value.get("status") not in {None, "COMPLETE"} or not isinstance(value.get("proposal"), Mapping):
-            raise ValueError("DepartmentPacket must be COMPLETE with an object proposal")
-        normalized.append(value)
-    return {"department_packets": normalized}
+        try:
+            validate_output(project_root, "department-packet.schema.json", packet)
+        except PromptContractError as error:
+            raise ValueError("DepartmentPacket must satisfy its canonical schema") from error
+    return {"department_packets": list(packets)}

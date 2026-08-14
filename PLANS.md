@@ -242,8 +242,10 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   finalização (W51/W53), dependências envelhecidas e checkpoint de orçamento
   são locais e determinísticos. Oito testes M5 e 119 testes na suíte completa
   passaram, sem rede, modelos, Prime Agent ou dependências novas.
-- 2026-08-13 — Correção cirúrgica de M5: normalização de alterações estruturadas,
-  lock/`fsync` e confinamento contra symlinks no blackboard; modos e limites
-  determinísticos com cobertura crítica explícita; `manager_view` canônica.
-  Treze testes M5 e 124 testes na suíte completa passaram localmente. M6 não foi
-  iniciado.
+- 2026-08-14 — Segunda correção cirúrgica de M5 concluída: `manager_view`
+  aceita exclusivamente os cinco `DepartmentPacket` canônicos, em ordem,
+  validados integralmente pelo schema com `FormatChecker`; W22 só é coberto
+  quando o impacto matemático o exigir; e o ciclo 0 mantém gerentes e focais
+  em `RUN`, preservando verificadores críticos em `CHECK`. Os 15 testes M5 e
+  os 126 testes da suíte completa passaram localmente, sem dependências novas,
+  chamadas a modelos, Prime Agent, rede ou início de M6.

@@ -158,8 +158,9 @@ tokens ou tempo impedir cobertura obrigatória, o plano é `paused` com
 checkpoint explícito. A seleção e a serialização do mapa são canônicas.
 
 `manager_view` aceita exatamente os cinco pacotes, na ordem `S10`, `S20`,
-`S30`, `S40`, `S50`, uma vez cada. Cada item é um `DepartmentPacket` válido ou
-um `NO_CHANGE` fechado com apenas `department_id` e `status: "NO_CHANGE"`.
+`S30`, `S40`, `S50`, uma vez cada. Cada item é integralmente um
+`DepartmentPacket` válido; `no_change` é seu status canônico, nunca um envelope
+alternativo.
 
 **Decisão:** tarefas distinguem subgerentes de especialistas; manifests de
 baseline e challenger têm invariantes diferentes; vereditos representam uma
@@ -422,13 +423,19 @@ ambos os sentidos e traduz tipos/localizadores em seções, equações,
 referências e papéis canônicos.
 
 O planejador é uma função pura do snapshot, histórico e limites declarados.
-Ele sempre inclui M00, emite exatamente cinco pacotes departamentais (ativos ou
-`NO_CHANGE`), nunca cria tarefa para `FREEZE`, impõe cobertura por idade quando
-dependências mudaram e reserva W22 para teoremas/provas e W51+W53 para
-finalização. Orçamentos excedidos retornam um checkpoint de pausa explícito;
+Ele sempre inclui M00, emite exatamente cinco pacotes departamentais canônicos,
+nunca cria tarefa para `FREEZE`, impõe cobertura por idade quando dependências
+mudaram e reserva W22 somente para impacto que já o alcance (teorema, prova,
+lema ou dependência matemática fechada) e W51+W53 para finalização. No ciclo
+0, M00, os cinco subgerentes e um focal por departamento estão em `RUN`; os
+outros especialistas estão em `FREEZE`. `CHECK` é revisão de artefato ou
+dependência existente: W22 ativado e W53 na finalização não passam a `SHIFT`
+por sinal global. `SHIFT` exige exploração ou reformulação explicitamente
+justificada. Orçamentos excedidos retornam um checkpoint de pausa explícito;
 não há expansão silenciosa. As views removem contexto não necessário: um
 especialista vê sua tarefa e evidência local; um subgerente vê propostas dos
-filhos; M00 vê somente cinco DepartmentPackets/NO_CHANGE.
+filhos; M00 vê somente cinco DepartmentPackets canônicos, validados contra o
+schema com `FormatChecker`.
 
 **Hipótese/limite:** o mapeamento semântico de alterações é deliberadamente
 conservador por palavras-chave e tipos de localização até que M6 forneça
