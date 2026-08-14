@@ -24,7 +24,8 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   `/autonomous`, `/refine` ou chamada de modelo.
 - Versão instalada auditada: `prime-agent 0.7.1`.
 - M3 correção final de identidade concluída: vincula `source.zip` aos eventos,
-  à recuperação e ao champion; M4 permanece pendente.
+  à recuperação e ao champion; M4 concluído, sujeito a endurecimento
+  contratual pontual.
 - M4 concluído: contratos de prompt content-addressed, overlays versionados e
   compilação local cobrem os 21 papéis sem iniciar agentes nem alterar o catálogo.
 
@@ -223,3 +224,8 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   `DepartmentPacket` são validados pelos schemas existentes. Seis testes M4 e
   a suíte completa de 104 testes passaram localmente, sem modelos, Prime
   Agent, rede ou dependências novas.
+- 2026-08-13 — Correção contratual M4 concluída: catálogo, caminho e papel
+  são vinculados rigidamente; overlays têm escopo contido, grafo acíclico e
+  listas válidas; `prompt_version` identifica o conteúdo composto; e schemas
+  validam formatos. Onze testes M4 e a suíte completa de 109 testes passaram,
+  sem modelos, Prime Agent, rede ou dependências novas.

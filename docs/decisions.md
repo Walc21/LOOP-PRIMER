@@ -350,6 +350,24 @@ autoelogio, texto meta, alegações sem localizador e escrita direta no champion
 S30 e S40 exigem revisão de S20 para os efeitos definidos na arquitetura; S50
 não recebe autoridade semântica.
 
+**Complemento corretivo:** o registro é um catálogo fechado: `immutable` deve
+conter exatamente `global` e os 21 IDs canônicos, com `global` apenas em
+`immutable/global.md` e cada papel apenas em `immutable/<ROLE_ID>.md`.
+Caminhos são arquivos regulares dentro da raiz esperada; redirecionar um papel
+para o núcleo de outro falha. Overlays só podem existir para IDs canônicos não
+gerenciais no caminho `overlays/<ROLE_ID>/<versão>.yaml`.
+
+Antes da composição, `scope` do overlay precisa estar contido no da
+`AgentTask`; `scope` e `evidence` são listas não vazias, sem strings vazias ou
+duplicadas. M00 não aceita overlay enquanto não houver contrato explícito de
+escopo autorizado. As ligações `parent_version` e `rollback` formam grafo
+acíclico e falham fechadas.
+
+`prompt_version` é uma identidade `sha256:<hex>` calculada por função pura
+com hashes global e do papel, versão e hash do overlay (ou ausência explícita)
+e nome e hash do schema de saída. A compilação exige coincidência exata. Toda
+validação JSON Schema usa `FormatChecker`, inclusive timestamps.
+
 **Motivo:** separar núcleo auditável, ajuste contextual e envelope de saída
 impede deriva silenciosa de instruções, vazamento de contexto ou que uma
 proposta seja confundida com alteração de candidato/champion.
