@@ -552,3 +552,19 @@ inventário, manifest e publicação são verificados write-once. Gates locais
 configurados são fail-closed, registram entrada/saída limitada e não aceitam
 booleano para `correctness_math`. A única ponte de estado M7 é
 `DEPARTMENTS_RUNNING → SYNTHESIS_READY → CANDIDATE_BUILT → GATES_PASSED`.
+
+**Segundo complemento corretivo (2026-08-14):** `synthesize()` recebe os
+bytes canônicos das propostas aceitas e falha se o conjunto não for exatamente
+o declarado pelos cinco pacotes. O recibo congelado passa a comprometer os
+hashes integrais, dependências, validações, reviews S20 aplicáveis e ordem de
+aplicação. A árvore usa `lstat` sem seguir links, inclui diretórios no hash e
+inventário determinísticos e normaliza nomes para detectar colisões; gates não
+truncam uma saída excessiva para aprová-la e aceitam localizadores somente para
+arquivos regulares contidos no candidato. Esses controles continuam locais e
+não adicionam avaliação, júri, promoção ou qualquer estado M8.
+
+**Verificação da correção:** dependências declaradas precisam pertencer ao
+conjunto aceito; o retry relê o recibo congelado por contenção; e falhas
+injetadas antes/depois do `rename` recuperam de forma idempotente. A suíte
+local M0–M7 foi executada em módulos por limite de tempo do ambiente (183
+testes, sem skips novos); M8 não foi iniciado.

@@ -3,11 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any, Mapping
-from .synthesis import IntegrityError, _atomic, _json, _sha, _inventory, tree_hash
+from .synthesis import IntegrityError, SynthesisError, _atomic, _contained, _json, _regular, _sha, _inventory, tree_hash
 REQUIRED_GATES=("contracts_state","source_provenance","latex_compile_safe","render","pdf_valid","references_labels","asset_inventory","claim_dependencies","math_critical_issues","forbidden_metatext","local_budget","manifest_integrity","correctness_math")
-def _result(gate, before, passed=False, classification="inconclusive", output="evidence absent", code=1, evidence=()):
-    return {"gate_id":gate,"command":"local-fixture-adapter","verifier_version":"m7.2","timeout_seconds":1,"input_hash":before,"exit_code":code,"duration_ms":0,"output":output[:4096],"passed":bool(passed),"classification":classification,"evidence_locators":list(evidence)}
+LOCAL_VERIFIERS={gate:(f"article-loop-local-{gate}","m7.2") for gate in REQUIRED_GATES}
+def _result(gate, before, passed=False, classification="inconclusive", output="evidence absent", code=1, evidence=(), *, command=None, verifier_version=None, duration_ms=0):
+    command,verifier_version=LOCAL_VERIFIERS[gate] if command is None else (command,verifier_version)
+    return {"gate_id":gate,"command":command,"verifier_version":verifier_version,"timeout_seconds":1,"input_hash":before,"exit_code":code,"duration_ms":duration_ms,"output":output[:4096],"passed":bool(passed),"classification":classification,"evidence_locators":list(evidence)}
 def _manifest(candidate):
+    _regular(candidate / "manifest.json")
     path=candidate/"manifest.json"
     try: m=json.loads(path.read_text())
     except Exception as e: raise IntegrityError("invalid manifest") from e
@@ -15,11 +18,18 @@ def _manifest(candidate):
     return m
 def run_gates(candidate: str|Path, *, adapter: Any|None=None, required=REQUIRED_GATES) -> dict[str,Any]:
     """Run only named local adapters. Missing adapters never pass a gate."""
-    candidate=Path(candidate).resolve(); manifest=_manifest(candidate)
+    candidate=Path(candidate)
+    # This lstat-backed walk also rejects a symlinked candidate root before the
+    # manifest lookup can traverse it.
+    tree_hash(candidate)
+    if candidate.parent.name != "challengers" or candidate.parent.parent.name != "versions":
+        raise IntegrityError("candidate is outside the challenger publication tree")
+    manifest=_manifest(candidate)
     if tuple(required)!=REQUIRED_GATES or len(set(required))!=len(required): raise IntegrityError("unknown or missing required gate")
     report=[]; frozen=tree_hash(candidate)
     for gate in REQUIRED_GATES:
         before=tree_hash(candidate)
+        duration=0
         if before!=frozen: raise IntegrityError("candidate mutated before gate")
         if gate=="manifest_integrity":
             passed=True; classification="technical"; output="manifest/inventory verified"; code=0; evidence=["manifest.json"]
@@ -28,15 +38,28 @@ def run_gates(candidate: str|Path, *, adapter: Any|None=None, required=REQUIRED_
         else:
             value=adapter.verify(gate,candidate,manifest) if hasattr(adapter,"verify") else None
             if not isinstance(value,Mapping): value={}
-            passed=value.get("passed") is True
             classification=value.get("classification","inconclusive")
+            command,version=LOCAL_VERIFIERS[gate]
+            output=str(value.get("output","adapter evidence absent")); evidence=value.get("evidence_locators",[])
+            raw_code=value.get("exit_code")
+            code=raw_code if isinstance(raw_code,int) and not isinstance(raw_code,bool) else 1
+            passed=code==0
+            if value.get("command")!=command or value.get("verifier_version")!=version or value.get("input_hash")!=before:
+                passed=False; output="unallowlisted or stale verifier result"; code=1
             if classification not in {"scientific","technical","inconclusive"}: passed=False; classification="inconclusive"
-            output=str(value.get("output","adapter evidence absent")); code=int(value.get("exit_code",0 if passed else 1)); evidence=value.get("evidence_locators",[])
-            if not isinstance(evidence,list) or any(not isinstance(x,str) or not (candidate/x).is_file() for x in evidence): passed=False; evidence=[]; output="invalid evidence locator"; code=1
+            duration=value.get("duration_ms",0)
+            if not isinstance(duration,int) or isinstance(duration,bool) or duration < 0 or duration > 1000 or value.get("timed_out") is True:
+                passed=False; output="gate timeout or invalid duration"; code=1; duration=0
+            if len(output.encode()) > 4096:
+                passed=False; output="gate output exceeded limit"; code=1
+            try:
+                valid_evidence=isinstance(evidence,list) and all(isinstance(x,str) and _regular(_contained(candidate,x,True)) for x in evidence)
+            except (SynthesisError, OSError): valid_evidence=False
+            if not valid_evidence: passed=False; evidence=[]; output="invalid evidence locator"; code=1
             if gate=="correctness_math" and not (passed and classification=="scientific" and any("S20" in x or "W22" in x for x in evidence)):
                 passed=False; classification="inconclusive"; output="canonical S20/W22 mathematical evidence absent"; code=1
         after=tree_hash(candidate)
-        item=_result(gate,before,passed,classification,output,code,evidence); item["input_hash_after"]=after
+        item=_result(gate,before,passed,classification,output,code,evidence, duration_ms=duration); item["input_hash_after"]=after
         if after!=before: item.update(passed=False,classification="technical",exit_code=1,output="candidate mutated during gate")
         report.append(item)
     body={"schema_version":"1.1.0","candidate_id":manifest["candidate_id"],"candidate_content_hash":manifest["content_hash"],"candidate_hash":frozen,"generated_at":"1970-01-01T00:00:00Z","gates":report}

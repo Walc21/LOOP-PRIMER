@@ -133,12 +133,18 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   precheck limpo, leitura dos handoffs M6/M7 e suíte local. O escopo corrige
   somente integridade da árvore, receipts/síntese, publicação write-once,
   gates locais e a ponte mínima de estado; nenhum trabalho de M8 é autorizado.
-- 2026-08-14 — Correção cirúrgica de M7 concluída: receipts e síntese são
-  content-addressed, staging exclui o manifest do baseline e o challenger
-  preenche o contrato canônico write-once. Os 13 gates locais são fail-closed
-  e seus relatórios são imutáveis; a única ponte de estado aceita somente os
-  três estados M7. Passaram 6 testes M7 e 177 na suíte completa, sem modelos,
-  Prime, rede ou início de M8.
+- 2026-08-14 — Complemento corretivo de M7: a síntese agora exige os bytes
+  canônicos das propostas aceitas e os compromete (hash, dependências,
+  validações e ordem) no recibo congelado. A inspeção/cópia de árvore aceita
+  diretórios reais e alvos aninhados, mas recusa raiz ou componente symlink,
+  hardlink, FIFO, tipos especiais e colisões normalizadas. Gates recusam
+  evidência por link, timeout/duração inválida e saída excessiva. Foram
+  adicionadas regressões locais para essas fronteiras; M8 não foi iniciado.
+- 2026-08-14 — Fechamento da correção M7: dependências precisam pertencer ao
+  conjunto aceito, o recibo de síntese é relido por contenção antes de um retry
+  e fault injection cobre as fronteiras antes/depois do rename. A verificação
+  local segmentada executou 183 testes M0–M7 sem skips novos; M8 permanece
+  fora de escopo.
 
 - 2026-08-14 — M7 iniciado após precheck limpo do checkpoint M6 `f5ec8ae`,
   seu ancestralidade em `HEAD` e suíte local aprovada. O escopo é estritamente
