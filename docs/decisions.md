@@ -469,3 +469,18 @@ filhos ainda ausentes. A profundidade 2 é uma pré-condição do adaptador real
 ela deve ser consultada e configurada pela sessão raiz com
 `/rlm-max-depth 2`, sem `--global`, somente em execução autorizada. A prova
 M6 usa exclusivamente o fake e importação local da skill.
+
+**Complemento corretivo (2026-08-14):** M6 não cria uma execução paralela:
+usa o `ingest-<sha256>` de M3 somente depois de revalidar PDF, manifesto de
+ingestão, champion `v0000` e `SOURCE_READY`; `base_hash` é o `content_hash` do
+manifest do champion. A projeção M6 vem de journal JSONL encadeado,
+append-only, bloqueado por execução, sincronizado e validado; snapshots são
+atômicos e derivados. O activation map M5 é copiado com hash antes da primeira
+admissão e nunca é recalculado em retomada. M00 admite apenas Sxx, e cada Sxx
+em sua própria sessão admite apenas seus Wxx. Handles, tarefa, view e prompt
+content-addressed são journalizados antes do spawn seguinte. Receipts são
+aceitos uma vez, sob lock, somente da matriz W→S/S→M, no workspace canônico e
+com hash, schema, ciclo e base conferidos. A API pública não escolhe o fake:
+live sem `PrimeRLMAdapter` explícito falha fechada; dry-run grava só preview.
+Pausa, parada e finalização impedem mutações e o cancelamento é persistido
+antes da remoção.

@@ -265,3 +265,13 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   receipts fora de ordem/duplicados, falha, silêncio, cancelamento, isolamento
   raiz/neto e consolidação de `DepartmentPacket`; a suíte completa aprovou 136
   testes.
+- 2026-08-14 — Correção cirúrgica de M6 iniciada: a integração será vinculada
+  exclusivamente ao `ingest-<sha256>` canônico em `SOURCE_READY`. O plano M5
+  content-addressed, journal append-only por execução, workspaces sem symlink,
+  contexto RLM por ator e receipts com matriz de parentesco serão a única fonte
+  de continuidade. Não haverá chamadas ao Prime Agent, modelos ou M7.
+- 2026-08-14 — Correção cirúrgica de M6 concluída localmente: bootstrap
+  revalida o baseline M3 e usa o hash do champion; o journal M6 encadeado
+  projeta snapshots por ciclo; a árvore M00→Sxx→Wxx é contextual e reentrante;
+  planos, tarefas, views, prompts e receipts são validados e duráveis. A
+  cobertura adversarial permanece offline; M7 não foi iniciado.

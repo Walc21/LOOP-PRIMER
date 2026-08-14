@@ -73,13 +73,30 @@ de uma execução autorizada, a sessão raiz deve consultar e executar
 duplicatas, recibos e retomada sem runtime real.
 
 `Orchestrator` nunca faz fan-in por `gather()`: a admissão retorna somente o
-handle, e cada conclusão é uma nova passagem curta que lê o snapshot. Os
-especialistas escrevem em `workspaces/<run>/ciclo/<papel>/`; o receipt contém
-somente caminho, SHA-256 e versão. O pai valida hash, schema e identidade antes
-de consumir. Só `DepartmentPacket` validado sobe de `Sxx` para `M00`; em S30 e
-S40, propostas com efeito técnico ficam bloqueadas sem revisão aprovada de
-S20. A ativação vem exclusivamente do plano M5: o gerente admite só S ativos
-e cada S admite apenas seus W RUN/CHECK/SHIFT.
+handle, e cada conclusão é uma nova passagem curta que relê o journal. M6 usa
+exclusivamente o `ingest-<sha256>` de M3, já em `SOURCE_READY`, depois de
+revalidar PDF congelado, manifesto de ingestão e champion `v0000`; o
+`base_hash` é o `content_hash` daquele champion. O plano M5 validado e
+content-addressed é persistido antes da primeira admissão; plano pausado e
+entradas `FREEZE` não criam filhos.
+
+O journal complementar em `state/orchestration/<run>/journal.jsonl` é
+append-only, encadeado por hash, bloqueado por execução e sincronizado; o
+snapshot é apenas projeção atômica. Tarefa, view e prompt compilado são
+content-addressed no workspace isolado antes do spawn. Em queda entre spawn e
+persistência, a retomada reconcilia `list_subagents()` pelo nome determinístico.
+M00 admite somente S10--S50, e cada Sxx, em seu próprio contexto de sessão,
+admite apenas Wxx--Wxx+2; folhas não admitem filhos.
+
+Os especialistas escrevem em `workspaces/<run>/cycle-<n>/<papel>/`; o receipt
+contém somente caminho, SHA-256 e versão. Sob o mesmo lock, o pai verifica
+matriz W→S/S→M, identidade, ciclo, base, schema, hash e workspace sem symlink.
+Uma repetição byte-idêntica é idempotente; conteúdo diverso para o mesmo
+emissor/ciclo é conflito. Só `DepartmentPacket` validado sobe de `Sxx` para
+`M00`; a raiz não fala com netos. Pausa, parada e finalização bloqueiam
+mutações; cancelamento é journalizado antes da remoção. A API pública live não
+seleciona o fake: sem `PrimeRLMAdapter` explicitamente injetado ela falha
+fechada, e `dry_run` grava somente preview separado.
 
 ## Memória e ativação M5
 
