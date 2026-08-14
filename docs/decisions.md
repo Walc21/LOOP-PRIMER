@@ -427,15 +427,19 @@ Ele sempre inclui M00, emite exatamente cinco pacotes departamentais canônicos,
 nunca cria tarefa para `FREEZE`, impõe cobertura por idade quando dependências
 mudaram e reserva W22 somente para impacto que já o alcance (teorema, prova,
 lema ou dependência matemática fechada) e W51+W53 para finalização. No ciclo
-0, M00, os cinco subgerentes e um focal por departamento estão em `RUN`; os
-outros especialistas estão em `FREEZE`. `CHECK` é revisão de artefato ou
-dependência existente: W22 ativado e W53 na finalização não passam a `SHIFT`
-por sinal global. `SHIFT` exige exploração ou reformulação explicitamente
-justificada. Orçamentos excedidos retornam um checkpoint de pausa explícito;
-não há expansão silenciosa. As views removem contexto não necessário: um
+0, os targets de impacto e cobertura obrigatória são preservados por união;
+M00 e os cinco subgerentes estão em `RUN`, e cada departamento sem trabalhador
+alcançado recebe somente um focal padrão em `RUN`. Os outros especialistas
+permanecem em `FREEZE`. `CHECK` de W22 ativado e W53 na finalização precede o
+fallback do primeiro ciclo e não passa a `SHIFT` por sinal global. `SHIFT`
+exige exploração ou reformulação explicitamente justificada. Orçamentos
+excedidos, ou qualquer papel obrigatório ausente dos ativos, retornam um
+checkpoint de pausa explícito com `missing_mandatory`; não há expansão ou
+congelamento silencioso. As views removem contexto não necessário: um
 especialista vê sua tarefa e evidência local; um subgerente vê propostas dos
 filhos; M00 vê somente cinco DepartmentPackets canônicos, validados contra o
-schema com `FormatChecker`.
+schema com `FormatChecker` e coerentes em `run_id`, `cycle_id`, `base_hash` e
+`packet_id` único.
 
 **Hipótese/limite:** o mapeamento semântico de alterações é deliberadamente
 conservador por palavras-chave e tipos de localização até que M6 forneça

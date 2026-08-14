@@ -86,11 +86,12 @@ class ActivationPlanner:
         if "W22" in targets:
             mandatory.update(("S20", "W22")); targets.update(mandatory)
         if cycle_id == 0:
-            # There is no prior artifact in the first audit cycle to CHECK.
-            # Select one focal worker per department, and leave every other
-            # worker frozen even if a zero-severity empty impact was supplied.
-            targets = set(DEPARTMENTS)
-            targets.update(children[0] for children in CHILDREN.values())
+            # Preserve impact and mandatory coverage.  Add a single default
+            # focal only where the department has no worker already targeted.
+            targets.update(DEPARTMENTS)
+            for department, children in CHILDREN.items():
+                if not targets.intersection(children):
+                    targets.add(children[0])
         for department in DEPARTMENTS:
             item = history.get(department, {})
             age = cycle_id - int(item.get("last_checked_cycle", cycle_id))
@@ -108,7 +109,10 @@ class ActivationPlanner:
         counts = {department: sum(entry.mode is not ActivationMode.FREEZE for entry in entries if entry.role_id == department or entry.role_id in CHILDREN[department]) for department in DEPARTMENTS}
         children = {department: sum(entry.mode is not ActivationMode.FREEZE for entry in entries if entry.role_id in CHILDREN[department]) for department in DEPARTMENTS}
         tokens = sum(entry.estimated_tokens for entry in active); wall = sum(entry.wall_time_seconds for entry in active)
+        active_roles = {entry.role_id for entry in active}
+        missing_mandatory = sorted(mandatory - active_roles)
         reasons = []
+        if missing_mandatory: reasons.append("missing_mandatory")
         if len(active) > self.limits.max_active_per_cycle: reasons.append("cycle_limit")
         if tokens > self.limits.max_estimated_tokens: reasons.append("token_limit")
         if wall > self.limits.max_wall_time_seconds: reasons.append("wall_time_limit")
@@ -116,10 +120,8 @@ class ActivationPlanner:
         if any(value > self.limits.max_children_per_manager for value in children.values()): reasons.append("children_limit")
         if self.limits.max_active_per_role < 1 and active: reasons.append("role_limit")
         if reasons:
-            active_roles = {entry.role_id for entry in active}
-            blocked = sorted(mandatory & active_roles) if mandatory else []
-            reason = "mandatory_coverage_exceeds_limits" if blocked else ("department_limit_exhausted" if reasons == ["department_limit"] else "budget_exhausted")
-            checkpoint = {"reason": reason, "constraints": reasons, "mandatory_roles": blocked, "active_roles": len(active), "estimated_tokens": tokens, "wall_time_seconds": wall, "limits": asdict(self.limits)}
+            reason = "mandatory_coverage_missing" if missing_mandatory else ("mandatory_coverage_exceeds_limits" if mandatory else ("department_limit_exhausted" if reasons == ["department_limit"] else "budget_exhausted"))
+            checkpoint = {"reason": reason, "constraints": reasons, "mandatory_roles": sorted(mandatory), "missing_mandatory": missing_mandatory, "active_roles": len(active), "estimated_tokens": tokens, "wall_time_seconds": wall, "limits": asdict(self.limits)}
             return ActivationPlan(cycle_id, tuple(entries), True, checkpoint, self.limits)
         return ActivationPlan(cycle_id, tuple(entries), False, None, self.limits)
 
@@ -135,11 +137,12 @@ class ActivationPlanner:
     @staticmethod
     def _mode(role: str, active: bool, impact: Impact, history: Mapping[str, Mapping[str, Any]], plateau: bool, oscillation: bool, diagnostic: bool, *, first_cycle: bool) -> ActivationMode:
         if not active: return ActivationMode.FREEZE
+        # These roles verify an already-defined mathematical or finalization
+        # obligation, including in the first cycle.  A global exploration
+        # signal cannot replace that check.
+        if role in {"W22", "W53"}: return ActivationMode.CHECK
         if first_cycle: return ActivationMode.RUN
         item = history.get(role, {})
-        # These roles verify an already-defined mathematical or finalization
-        # obligation.  A global exploration signal cannot replace that check.
-        if role in {"W22", "W53"}: return ActivationMode.CHECK
         shift = plateau or oscillation or diagnostic or bool(item.get("plateau")) or bool(item.get("oscillation")) or bool(item.get("diagnosis_required")) or int(item.get("failure_count", 0)) >= 2
         if shift: return ActivationMode.SHIFT
         if role == "W22" or impact.severity < 50 or int(item.get("failure_count", 0)) == 1: return ActivationMode.CHECK
@@ -172,4 +175,12 @@ def manager_view(project_root: str | Path, packets: Sequence[Mapping[str, Any]])
             validate_output(project_root, "department-packet.schema.json", packet)
         except PromptContractError as error:
             raise ValueError("DepartmentPacket must satisfy its canonical schema") from error
+    run_ids = {packet["run_id"] for packet in packets}
+    cycle_ids = {packet["cycle_id"] for packet in packets}
+    base_hashes = {packet["base_hash"] for packet in packets}
+    packet_ids = [packet["packet_id"] for packet in packets]
+    if len(run_ids) != 1 or len(cycle_ids) != 1 or len(base_hashes) != 1:
+        raise ValueError("DepartmentPackets must share run_id, cycle_id, and base_hash")
+    if any(not packet_id.strip() for packet_id in packet_ids) or len(set(packet_ids)) != len(packet_ids):
+        raise ValueError("DepartmentPacket packet_id values must be non-empty and unique")
     return {"department_packets": list(packets)}

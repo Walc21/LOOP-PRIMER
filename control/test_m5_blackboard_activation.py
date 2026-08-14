@@ -147,6 +147,25 @@ class ActivationTests(unittest.TestCase):
         self.assertEqual({role for role, mode in modes.items() if role.startswith("W") and mode is ActivationMode.RUN}, focal)
         self.assertTrue(all(modes[role] is ActivationMode.FREEZE for role in modes if role.startswith("W") and role not in focal))
 
+    def test_first_cycle_preserves_critical_and_impacted_workers(self):
+        for change in ("theorem", "proof"):
+            with self.subTest(change=change):
+                plan = self.planner.plan(cycle_id=0, impact=self.board.impact("run-1", [change]))
+                self.assertEqual({entry.role_id: entry.mode for entry in plan.entries}["W22"], ActivationMode.CHECK)
+        finalization = self.planner.plan(cycle_id=0, impact=self.board.impact("run-1", []), finalization_requested=True)
+        finalization_modes = {entry.role_id: entry.mode for entry in finalization.entries}
+        self.assertEqual(finalization_modes["W51"], ActivationMode.RUN)
+        self.assertEqual(finalization_modes["W53"], ActivationMode.CHECK)
+        style = self.planner.plan(cycle_id=0, impact=self.board.impact("run-1", ["style"]))
+        style_modes = {entry.role_id: entry.mode for entry in style.entries}
+        self.assertEqual(style_modes["W41"], ActivationMode.RUN)
+        self.assertEqual(style_modes["W43"], ActivationMode.RUN)
+        notation = self.planner.plan(cycle_id=0, impact=self.board.impact("run-1", ["notation"]))
+        notation_modes = {entry.role_id: entry.mode for entry in notation.entries}
+        self.assertEqual(notation_modes["W21"], ActivationMode.RUN)
+        self.assertEqual(notation_modes["W42"], ActivationMode.RUN)
+        self.assertEqual(notation_modes["W22"], ActivationMode.FREEZE)
+
     def test_new_proof_requires_w22_and_style_stays_sparse(self):
         proof_plan = self.planner.plan(cycle_id=2, impact=self.board.impact("run-1", ["theorem"]))
         modes = {entry.role_id: entry.mode for entry in proof_plan.entries}
@@ -208,6 +227,21 @@ class ActivationTests(unittest.TestCase):
         frozen = next(entry for entry in finish.entries if entry.role_id == "W22")
         self.assertEqual((frozen.estimated_tokens, frozen.wall_time_seconds, frozen.expected_outputs), (0, 0, ()))
 
+    def test_first_cycle_critical_limits_and_missing_mandatory_pause(self):
+        theorem = ActivationPlanner(PlanningLimits(max_children_per_manager=0)).plan(cycle_id=0, impact=self.board.impact("run-1", ["theorem"]))
+        self.assertTrue(theorem.paused)
+        self.assertIn("W22", theorem.checkpoint["mandatory_roles"])
+        self.assertEqual(theorem.checkpoint["missing_mandatory"], [])
+        finalization = ActivationPlanner(PlanningLimits(max_children_per_manager=1)).plan(cycle_id=0, impact=self.board.impact("run-1", []), finalization_requested=True)
+        self.assertTrue(finalization.paused)
+        self.assertIn("W53", finalization.checkpoint["mandatory_roles"])
+        self.assertEqual(finalization.checkpoint["missing_mandatory"], [])
+        entries = [entry for entry in theorem.entries if entry.role_id != "W22"]
+        missing = self.planner._within_limits(0, entries, {"W22"})
+        self.assertTrue(missing.paused)
+        self.assertEqual(missing.checkpoint["reason"], "mandatory_coverage_missing")
+        self.assertEqual(missing.checkpoint["missing_mandatory"], ["W22"])
+
     def test_budget_exhaustion_returns_checkpoint_without_expansion(self):
         tight = ActivationPlanner(PlanningLimits(max_estimated_tokens=1))
         plan = tight.plan(cycle_id=0, impact=self.board.impact("run-1", []))
@@ -236,6 +270,8 @@ class ActivationTests(unittest.TestCase):
         self.assertEqual(manager_view(ROOT, blocked)["department_packets"], blocked)
         fixture = json.loads((ROOT / "control/fixtures/m4/department_packet.json").read_text())
         fixture_packets = [department_packet(department) for department in DEPARTMENTS]
+        for packet in fixture_packets:
+            packet.update({key: fixture[key] for key in ("run_id", "cycle_id", "base_hash")})
         fixture_packets[2] = fixture
         self.assertEqual(manager_view(ROOT, fixture_packets)["department_packets"], fixture_packets)
         for status in (None, "COMPLETE", "NO_CHANGE", "invalid"):
@@ -250,7 +286,11 @@ class ActivationTests(unittest.TestCase):
         partial = [dict(packet) for packet in complete]; del partial[0]["created_at"]
         bad_datetime = [dict(packet) for packet in complete]; bad_datetime[0]["created_at"] = "not-a-date-time"
         wrong_department = [dict(packet) for packet in complete]; wrong_department[0]["department_id"] = "S60"
-        for bad in ([], complete[:-1], complete[:1] * 5, complete[1:] + complete[:1], wrong_department, extra, partial, bad_datetime):
+        mismatched_run = [dict(packet) for packet in complete]; mismatched_run[1]["run_id"] = "run-2"
+        mismatched_cycle = [dict(packet) for packet in complete]; mismatched_cycle[1]["cycle_id"] = 1
+        mismatched_base = [dict(packet) for packet in complete]; mismatched_base[1]["base_hash"] = "b" * 64
+        duplicate_packet_id = [dict(packet) for packet in complete]; duplicate_packet_id[1]["packet_id"] = duplicate_packet_id[0]["packet_id"]
+        for bad in ([], complete[:-1], complete[:1] * 5, complete[1:] + complete[:1], wrong_department, extra, partial, bad_datetime, mismatched_run, mismatched_cycle, mismatched_base, duplicate_packet_id):
             with self.assertRaises(ValueError): manager_view(ROOT, bad)
 
 

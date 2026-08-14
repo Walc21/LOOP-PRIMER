@@ -249,3 +249,11 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   em `RUN`, preservando verificadores críticos em `CHECK`. Os 15 testes M5 e
   os 126 testes da suíte completa passaram localmente, sem dependências novas,
   chamadas a modelos, Prime Agent, rede ou início de M6.
+- 2026-08-14 — Terceira correção cirúrgica de M5 concluída: o ciclo 0 une
+  impactos e cobertura obrigatória aos focais mínimos, preservando W22/W51/W53
+  e demais trabalhadores atingidos; verificadores críticos têm precedência
+  sobre o fallback `RUN`; checkpoints declaram obrigatórios ausentes; e M00
+  recusa DepartmentPackets de execução, ciclo, base ou `packet_id`
+  incompatíveis. Os 17 testes M5 e os 128 testes da suíte completa passaram
+  localmente, sem dependências novas, chamadas a modelos, Prime Agent, rede ou
+  início de M6.
