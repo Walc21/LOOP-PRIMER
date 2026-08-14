@@ -28,7 +28,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   contratual pontual.
 - M4 concluído: contratos de prompt content-addressed, overlays versionados e
   compilação local cobrem os 21 papéis sem iniciar agentes nem alterar o catálogo.
-- M5 concluído: memória operacional append-only, grafo de impacto, views
+- M5 corrigido cirurgicamente: memória operacional append-only, grafo de impacto, views
   fechadas e planejador determinístico foram validados sem chamada a agentes ou
   modelos.
 
@@ -71,7 +71,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M2 | máquina de estados, event log e recuperação | concluído após correção contratual final | API e replay aplicam integralmente `event.schema.json`; 30 testes M2 e 76 testes locais aprovados |
 | M3 | ingestão PDF e baseline editável | concluído | original publicado e registrado em `INGESTED` antes das derivações; PDF, presença/hash/tamanho de ZIP e modo de fonte são imutáveis até `v0000`, com contenção de caminhos e falha fechada |
 | M4 | papéis, prompts imutáveis e compilador | concluído | os 21 papéis canônicos compilam deterministicamente a partir de núcleos verificados, contexto fechado, overlay registrado e schema de saída |
-| M5 | blackboard, grafo de claims e ativação esparsa | concluído | RUN/CHECK/SHIFT/FREEZE seguem o grafo de impacto |
+| M5 | blackboard, grafo de claims e ativação esparsa | concluído (corrigido) | localizadores estruturados, lock, limites e regras de ativação corrigidos; M6 permanece não iniciado |
 | M6 | integração RLM hierárquica | pendente | profundidade 2, handles, mensagens e arquivos passam teste controlado |
 | M7 | síntese, merge, gates e arquivos de versões | pendente | somente merge constrói challenger antes de gates e júri; champion e Pareto preservam histórico |
 | M8 | avaliador externo cego em júri | pendente | rubrica cega não expõe autoria, ordem ou status de champion |
@@ -242,3 +242,8 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   finalização (W51/W53), dependências envelhecidas e checkpoint de orçamento
   são locais e determinísticos. Oito testes M5 e 119 testes na suíte completa
   passaram, sem rede, modelos, Prime Agent ou dependências novas.
+- 2026-08-13 — Correção cirúrgica de M5: normalização de alterações estruturadas,
+  lock/`fsync` e confinamento contra symlinks no blackboard; modos e limites
+  determinísticos com cobertura crítica explícita; `manager_view` canônica.
+  Treze testes M5 e 124 testes na suíte completa passaram localmente. M6 não foi
+  iniciado.

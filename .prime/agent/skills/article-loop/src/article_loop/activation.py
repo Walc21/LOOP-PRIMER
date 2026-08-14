@@ -27,6 +27,7 @@ class PlanningLimits:
     max_active_per_cycle: int = 21
     max_active_per_department: int = 4
     max_children_per_manager: int = 3
+    max_active_per_role: int = 1
     max_wall_time_seconds: int = 3600
     max_estimated_tokens: int = 20000
     freeze_dependency_cycles: int = 2
@@ -65,65 +66,78 @@ class ActivationPlan:
 
 
 class ActivationPlanner:
-    """Plans all roles deterministically from public operational data."""
+    """Plans all roles deterministically from impact, history, and hard limits."""
 
     def __init__(self, limits: PlanningLimits = PlanningLimits()):
         self.limits = limits
 
-    def plan(self, *, cycle_id: int, impact: Impact, history: Mapping[str, Mapping[str, Any]] | None = None, finalization_requested: bool = False, plateau: bool = False) -> ActivationPlan:
+    def plan(self, *, cycle_id: int, impact: Impact, history: Mapping[str, Mapping[str, Any]] | None = None, finalization_requested: bool = False, plateau: bool = False, oscillation: bool = False, diagnostic: bool = False) -> ActivationPlan:
         if cycle_id < 0:
             raise ValueError("cycle_id must be non-negative")
         history = history or {}
         targets = set(impact.roles)
+        mandatory: set[str] = set()
         if finalization_requested:
-            targets.update(("S50", "W51", "W53"))
-        # First auditable cycle covers every department; one focal worker makes each packet actionable.
+            mandatory.update(("S50", "W51", "W53")); targets.update(mandatory)
+        if {"S20", "W22"} & targets:
+            mandatory.update(("S20", "W22")); targets.update(mandatory)
         if cycle_id == 0:
             targets.update(DEPARTMENTS)
             targets.update(children[0] for children in CHILDREN.values())
         for department in DEPARTMENTS:
             item = history.get(department, {})
-            if item.get("dependencies_changed") and cycle_id - int(item.get("last_checked_cycle", cycle_id)) >= self.limits.freeze_dependency_cycles:
-                targets.add(department)
-                targets.update(CHILDREN[department][:1])
-        # Child involvement implies departmental consolidation.
+            age = cycle_id - int(item.get("last_checked_cycle", cycle_id))
+            if item.get("dependencies_changed") and age >= self.limits.freeze_dependency_cycles:
+                targets.add(department); targets.add(CHILDREN[department][0])
         for department, children in CHILDREN.items():
-            if targets.intersection(children):
-                targets.add(department)
+            if targets.intersection(children): targets.add(department)
         entries = [self._entry("M00", ActivationMode.RUN, "gerente geral obrigatório", impact)]
         for department in DEPARTMENTS:
-            entries.extend(self._department_entries(department, targets, impact, history, plateau))
+            entries.extend(self._department_entries(department, targets, impact, history, plateau, oscillation, diagnostic))
+        return self._within_limits(cycle_id, entries, mandatory)
+
+    def _within_limits(self, cycle_id: int, entries: list[ActivationEntry], mandatory: set[str]) -> ActivationPlan:
         active = [entry for entry in entries if entry.mode is not ActivationMode.FREEZE]
-        tokens = sum(entry.estimated_tokens for entry in active)
-        wall = sum(entry.wall_time_seconds for entry in active)
-        per_department_excess = any(sum(entry.mode is not ActivationMode.FREEZE for entry in entries if entry.role_id == department or entry.role_id in CHILDREN[department]) > self.limits.max_active_per_department for department in DEPARTMENTS)
-        if len(active) > self.limits.max_active_per_cycle or tokens > self.limits.max_estimated_tokens or wall > self.limits.max_wall_time_seconds or per_department_excess:
-            checkpoint = {"reason": "budget_exhausted", "active_roles": len(active), "estimated_tokens": tokens, "wall_time_seconds": wall, "limits": asdict(self.limits)}
-            if per_department_excess:
-                checkpoint = dict(checkpoint, reason="department_limit_exhausted")
+        counts = {department: sum(entry.mode is not ActivationMode.FREEZE for entry in entries if entry.role_id == department or entry.role_id in CHILDREN[department]) for department in DEPARTMENTS}
+        children = {department: sum(entry.mode is not ActivationMode.FREEZE for entry in entries if entry.role_id in CHILDREN[department]) for department in DEPARTMENTS}
+        tokens = sum(entry.estimated_tokens for entry in active); wall = sum(entry.wall_time_seconds for entry in active)
+        reasons = []
+        if len(active) > self.limits.max_active_per_cycle: reasons.append("cycle_limit")
+        if tokens > self.limits.max_estimated_tokens: reasons.append("token_limit")
+        if wall > self.limits.max_wall_time_seconds: reasons.append("wall_time_limit")
+        if any(value > self.limits.max_active_per_department for value in counts.values()): reasons.append("department_limit")
+        if any(value > self.limits.max_children_per_manager for value in children.values()): reasons.append("children_limit")
+        if self.limits.max_active_per_role < 1 and active: reasons.append("role_limit")
+        if reasons:
+            active_roles = {entry.role_id for entry in active}
+            blocked = sorted(mandatory & active_roles) if mandatory else []
+            reason = "mandatory_coverage_exceeds_limits" if blocked else ("department_limit_exhausted" if reasons == ["department_limit"] else "budget_exhausted")
+            checkpoint = {"reason": reason, "constraints": reasons, "mandatory_roles": blocked, "active_roles": len(active), "estimated_tokens": tokens, "wall_time_seconds": wall, "limits": asdict(self.limits)}
             return ActivationPlan(cycle_id, tuple(entries), True, checkpoint, self.limits)
         return ActivationPlan(cycle_id, tuple(entries), False, None, self.limits)
 
-    def _department_entries(self, department: str, targets: set[str], impact: Impact, history: Mapping[str, Mapping[str, Any]], plateau: bool) -> list[ActivationEntry]:
+    def _department_entries(self, department: str, targets: set[str], impact: Impact, history: Mapping[str, Mapping[str, Any]], plateau: bool, oscillation: bool, diagnostic: bool) -> list[ActivationEntry]:
         children = CHILDREN[department]
-        active_children = [role for role in children if role in targets]
-        if len(active_children) > self.limits.max_children_per_manager:
-            active_children = active_children[:self.limits.max_children_per_manager]
-        department_active = department in targets or bool(active_children)
-        mode = ActivationMode.RUN if department_active else ActivationMode.FREEZE
-        if department_active and plateau and department == "S30":
-            mode = ActivationMode.SHIFT
-        result = [self._entry(department, mode, "impacto, cobertura ou finalização" if department_active else "sem impacto no ciclo", impact)]
+        department_active = department in targets or bool(targets.intersection(children))
+        result = [self._entry(department, self._mode(department, department_active, impact, history, plateau, oscillation, diagnostic), "impacto, cobertura ou finalização" if department_active else "sem impacto no ciclo", impact)]
         for role in children:
-            if role in active_children:
-                child_mode = ActivationMode.CHECK if role == "W22" and department != "S20" else ActivationMode.RUN
-                result.append(self._entry(role, child_mode, "dependência crítica" if role in {"W22", "W51", "W53"} else "impacto focal", impact))
-            else:
-                result.append(self._entry(role, ActivationMode.FREEZE, "sem impacto no ciclo", impact))
+            active = role in targets
+            result.append(self._entry(role, self._mode(role, active, impact, history, plateau, oscillation, diagnostic), "dependência crítica" if role in {"W22", "W51", "W53"} else "impacto focal", impact))
         return result
 
     @staticmethod
+    def _mode(role: str, active: bool, impact: Impact, history: Mapping[str, Mapping[str, Any]], plateau: bool, oscillation: bool, diagnostic: bool) -> ActivationMode:
+        if not active: return ActivationMode.FREEZE
+        item = history.get(role, {})
+        shift = plateau or oscillation or diagnostic or bool(item.get("plateau")) or bool(item.get("oscillation")) or bool(item.get("diagnosis_required")) or int(item.get("failure_count", 0)) >= 2
+        if shift: return ActivationMode.SHIFT
+        if role == "W22" or impact.severity < 50 or int(item.get("failure_count", 0)) == 1: return ActivationMode.CHECK
+        return ActivationMode.RUN
+
+    @staticmethod
     def _entry(role: str, mode: ActivationMode, justification: str, impact: Impact) -> ActivationEntry:
+        if mode is ActivationMode.FREEZE:
+            return ActivationEntry(role, mode, justification, 0, 0, (), ())
         manager = role.startswith("S") or role == "M00"
         expected = ("department-packet.schema.json",) if role.startswith("S") else (("activation_map.json",) if role == "M00" else ("agent-proposal.schema.json",))
         inputs = tuple(sorted(set(impact.claims + impact.sections + impact.equations + impact.references))) or ("snapshot",)
@@ -131,7 +145,6 @@ class ActivationPlanner:
 
 
 def specialist_view(task: Mapping[str, Any], *, excerpts: Sequence[str], dependent_claims: Sequence[Mapping[str, Any]], rubric: Mapping[str, Any], local_history: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    """Closed specialist context: only task-local operational inputs are exposed."""
     return {"task": dict(task), "excerpts": list(excerpts), "dependent_claims": [dict(claim) for claim in dependent_claims], "rubric": dict(rubric), "local_history": [dict(item) for item in local_history]}
 
 
@@ -140,6 +153,14 @@ def submanager_view(task: Mapping[str, Any], child_proposals: Sequence[Mapping[s
 
 
 def manager_view(packets: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
-    if len(packets) != 5:
-        raise ValueError("M00 must receive exactly five DepartmentPackets or NO_CHANGE packets")
-    return {"department_packets": [dict(packet) for packet in packets]}
+    if len(packets) != len(DEPARTMENTS): raise ValueError("M00 must receive exactly five packets")
+    normalized = []
+    for expected, packet in zip(DEPARTMENTS, packets):
+        if not isinstance(packet, Mapping) or packet.get("department_id") != expected: raise ValueError("packets must be canonical, unique, and ordered")
+        value = dict(packet)
+        if value.get("status") == "NO_CHANGE":
+            if set(value) != {"department_id", "status"}: raise ValueError("NO_CHANGE packet must use the closed format")
+        elif value.get("status") not in {None, "COMPLETE"} or not isinstance(value.get("proposal"), Mapping):
+            raise ValueError("DepartmentPacket must be COMPLETE with an object proposal")
+        normalized.append(value)
+    return {"department_packets": normalized}

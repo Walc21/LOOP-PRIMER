@@ -132,6 +132,35 @@ privado reduz risco de retenção indevida sem prejudicar auditoria.
 
 **Estado:** aceito em 2026-08-13.
 
+**Correção cirúrgica (2026-08-13):** alterações estruturadas são normalizadas
+sem escolher entre `id`, `kind` e `location`: todos os valores escalares de
+cada campo participam da correspondência. Assim, seção, equação e referência
+são preservadas inclusive quando `kind` e `location` coexistem. O fecho de
+dependências continua bidirecional e transitivo.
+
+O blackboard aceita somente `run_id` simples (`[A-Za-z0-9][A-Za-z0-9_.-]*`),
+confina cada componente de `state/blackboard/<run_id>` à raiz resolvida e
+rejeita qualquer symlink nesses caminhos gerenciados. A leitura rejeita linha
+sem newline ou JSON inválido. Por execução, um lock exclusivo envolve a leitura
+de idempotência/conflito e o append; a linha é escrita completa, recebe
+`flush`/`fsync` e o diretório é sincronizado. Linhas anteriores jamais são
+reescritas.
+
+O planejador usa severidade máxima do impacto, idade, alterações de
+dependência, falhas e sinais de plateau/oscilação/diagnóstico como entradas
+determinísticas. `RUN` é trabalho novo ou severidade alta; `CHECK` é validação
+de prova/teorema, severidade baixa ou primeira falha; `SHIFT` tem precedência
+para plateau, oscilação, diagnóstico solicitado ou falhas repetidas; `FREEZE`
+significa ausência de chamada e tem tokens, tempo e saídas esperadas vazios.
+W22 é obrigatório para teorema/prova e W51+W53 para finalização. Não há
+truncamento: se qualquer limite por ciclo, departamento, gerente, papel,
+tokens ou tempo impedir cobertura obrigatória, o plano é `paused` com
+checkpoint explícito. A seleção e a serialização do mapa são canônicas.
+
+`manager_view` aceita exatamente os cinco pacotes, na ordem `S10`, `S20`,
+`S30`, `S40`, `S50`, uma vez cada. Cada item é um `DepartmentPacket` válido ou
+um `NO_CHANGE` fechado com apenas `department_id` e `status: "NO_CHANGE"`.
+
 **Decisão:** tarefas distinguem subgerentes de especialistas; manifests de
 baseline e challenger têm invariantes diferentes; vereditos representam uma
 única apresentação cega entre exatamente dois candidatos; e cada ação de
