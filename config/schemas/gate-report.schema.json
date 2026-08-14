@@ -3,7 +3,7 @@
   "$id": "gate-report.schema.json",
   "title": "GateReport",
   "type": "object",
-  "additionalProperties": false,
+          "additionalProperties": false,
   "required": ["schema_version", "report_id", "candidate_id", "candidate_content_hash", "generated_at", "overall_pass", "correctness_math_pass", "gates"],
   "properties": {
     "schema_version": {"const": "1.1.0"},
@@ -27,7 +27,11 @@
           "input_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
           "exit_code": {"type": "integer"},
           "passed": {"type": "boolean"},
-          "evidence_locators": {"type": "array", "items": {"type": "string", "minLength": 1}}
+          "evidence_locators": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "classification": {"enum": ["scientific", "technical", "inconclusive"]},
+          "timeout_seconds": {"type": "integer", "minimum": 0},
+          "duration_ms": {"type": "integer", "minimum": 0},
+          "output": {"type": "string"}
         }
       }
     }

@@ -535,3 +535,11 @@ exigindo S50, W51 e W53 ativos. A regra independente de W22 permanece: W22
 ativo exige o grupo S20/W22. A proveniência permanece vinculada ao hash do
 artefato M5 persistido, e os únicos grupos declarados aceitos são vazio,
 prova, finalização e sua união.
+
+## ADR-023 — M7: síntese congelada e challenger write-once
+
+**Decisão:** M7 aceita exatamente cinco `DepartmentPacket` canônicos com
+identidade comum, congela seus bytes e opera sobre cópia regular do champion.
+Operações estruturadas usam paths contidos; links e arquivos especiais falham
+fechados. Gates conferem a árvore antes/depois; `correctness_math` fica
+inconclusivo sem evidência canônica. M7 não muda champion nem aplica decisão.
