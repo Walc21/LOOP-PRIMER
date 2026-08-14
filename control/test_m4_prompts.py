@@ -244,6 +244,37 @@ class PromptContractsTests(unittest.TestCase):
         with self.assertRaisesRegex(PromptContractError, "authorized scope"):
             compile_manager_prompt(ROOT, {"run_id": "run-fixture", "cycle_id": 0, "base_hash": BASE_HASH}, overlay_version="v1")
 
+    def test_output_schema_allowlist_rejects_escapes_and_aliases(self) -> None:
+        for schema_name in ("../../prompts/registry.json", "/tmp/schema.json", "candidate-manifest.schema.json"):
+            with self.subTest(schema_name=schema_name), self.assertRaises(PromptContractError):
+                expected_prompt_version(ROOT, "W11", schema_name)
+
+    def test_schema_and_prompt_symlinks_are_rejected(self) -> None:
+        with self.copy_contract_root() as temporary:
+            root = Path(temporary)
+            schema = root / "config" / "schemas" / "agent-proposal.schema.json"
+            replacement = schema.with_name("agent-proposal.real.json")
+            schema.rename(replacement)
+            schema.symlink_to(replacement.name)
+            with self.assertRaisesRegex(PromptContractError, "regular file"):
+                expected_prompt_version(root, "W11", "agent-proposal.schema.json")
+        with self.copy_contract_root() as temporary:
+            root = Path(temporary)
+            registry = root / "prompts" / "registry.json"
+            replacement = registry.with_name("registry.real.json")
+            registry.rename(replacement)
+            registry.symlink_to(replacement.name)
+            with self.assertRaisesRegex(PromptIntegrityError, "registry"):
+                expected_prompt_version(root, "W11", "agent-proposal.schema.json")
+        with self.copy_contract_root() as temporary:
+            root = Path(temporary)
+            prompts = root / "prompts"
+            replacement = root / "prompts.real"
+            prompts.rename(replacement)
+            prompts.symlink_to(replacement.name, target_is_directory=True)
+            with self.assertRaisesRegex(PromptIntegrityError, "prompts directory"):
+                expected_prompt_version(root, "W11", "agent-proposal.schema.json")
+
 
 if __name__ == "__main__":
     unittest.main()

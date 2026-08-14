@@ -33,6 +33,8 @@ ROLE_IDS = frozenset({
 })
 IMMUTABLE_IDS = frozenset({"global", *ROLE_IDS})
 OVERLAY_ROLE_IDS = ROLE_IDS - {"M00"}
+OUTPUT_SCHEMAS = frozenset({"agent-proposal.schema.json", "department-packet.schema.json"})
+INTERNAL_SCHEMAS = OUTPUT_SCHEMAS | frozenset({"agent-task.schema.json"})
 TASK_CONTEXT_FIELDS = (
     "run_id", "cycle_id", "base_hash", "activation_mode", "scope", "input_locators",
 )
@@ -73,9 +75,17 @@ class PromptRegistry:
 
     def __init__(self, root: str | Path):
         self.root = Path(root)
+        if self.root.is_symlink():
+            raise PromptIntegrityError("prompt root may not be a symlink")
         self.prompt_root = self.root / "prompts"
+        registry_path = self.prompt_root / "registry.json"
+        if self.prompt_root.is_symlink() or not self.prompt_root.is_dir():
+            raise PromptIntegrityError("prompts directory must be a regular contained directory")
+        if (registry_path.is_symlink() or not registry_path.is_file()
+                or registry_path.resolve().parent != self.prompt_root.resolve()):
+            raise PromptIntegrityError("prompt registry must be a regular contained file")
         try:
-            self.registry = json.loads((self.prompt_root / "registry.json").read_text(encoding="utf-8"))
+            self.registry = json.loads(registry_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
             raise PromptIntegrityError("prompt registry is unreadable") from error
         if self.registry.get("schema_version") != "1.0.0":
@@ -206,16 +216,36 @@ class PromptRegistry:
         return "\n\n# Overlay versionado\n" + document["instructions"].strip() + "\n", document
 
 
+def _schema_path(root: Path, name: str) -> Path:
+    if name not in INTERNAL_SCHEMAS:
+        raise PromptContractError("schema is not in the internal allowlist")
+    if root.is_symlink():
+        raise PromptContractError("root may not be a symlink")
+    schemas_root = root / "config" / "schemas"
+    if schemas_root.is_symlink() or not schemas_root.is_dir():
+        raise PromptContractError("config/schemas must be a regular contained directory")
+    current = root
+    for part in ("config", "schemas"):
+        current = current / part
+        if current.is_symlink():
+            raise PromptContractError("config/schemas may not traverse a symlink")
+    path = schemas_root / name
+    if (path.is_symlink() or not path.is_file()
+            or path.resolve().parent != schemas_root.resolve()):
+        raise PromptContractError("schema must be a regular file directly in config/schemas")
+    return path
+
+
 def _schema(root: Path, name: str) -> Mapping[str, Any]:
     try:
-        return json.loads((root / "config" / "schemas" / name).read_text(encoding="utf-8"))
+        return json.loads(_schema_path(root, name).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise PromptContractError(f"output schema unavailable: {name}") from error
 
 
 def _schema_hash(root: Path, name: str) -> str:
     try:
-        return _sha256_bytes((root / "config" / "schemas" / name).read_bytes())
+        return _sha256_bytes(_schema_path(root, name).read_bytes())
     except OSError as error:
         raise PromptContractError(f"output schema unavailable: {name}") from error
 
@@ -224,6 +254,8 @@ def expected_prompt_version(root: str | Path, role_id: str, output_schema: str, 
     """Return the content-addressed identity required before an AgentTask exists."""
     if role_id not in ROLE_IDS:
         raise PromptContractError("prompt version requires a canonical role")
+    if output_schema not in OUTPUT_SCHEMAS:
+        raise PromptContractError("prompt version requires an allowed output schema")
     root_path = Path(root)
     registry = PromptRegistry(root_path)
     _, global_hash = registry.immutable("global")
@@ -245,7 +277,7 @@ def expected_prompt_version(root: str | Path, role_id: str, output_schema: str, 
 
 
 def validate_output(root: str | Path, schema_name: str, output: Mapping[str, Any]) -> None:
-    if schema_name not in {"agent-proposal.schema.json", "department-packet.schema.json"}:
+    if schema_name not in OUTPUT_SCHEMAS:
         raise PromptContractError("unsupported output schema")
     try:
         jsonschema.Draft202012Validator(_schema(Path(root), schema_name), format_checker=FORMAT_CHECKER).validate(dict(output))

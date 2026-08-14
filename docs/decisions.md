@@ -368,6 +368,13 @@ com hashes global e do papel, versão e hash do overlay (ou ausência explícita
 e nome e hash do schema de saída. A compilação exige coincidência exata. Toda
 validação JSON Schema usa `FormatChecker`, inclusive timestamps.
 
+**Garantia adicional de contenção:** schemas de saída são uma allowlist
+explícita e a API pública de identidade os valida antes de construir caminhos.
+O carregamento interno aceita apenas essa allowlist mais o schema de tarefa;
+nomes com barras, `..`, caminhos absolutos, aliases e outros JSONs são
+rejeitados. A raiz, `prompts/`, `prompts/registry.json`, `config/schemas/` e o
+schema selecionado devem ser caminhos regulares contidos, sem symlinks.
+
 **Motivo:** separar núcleo auditável, ajuste contextual e envelope de saída
 impede deriva silenciosa de instruções, vazamento de contexto ou que uma
 proposta seja confundida com alteração de candidato/champion.

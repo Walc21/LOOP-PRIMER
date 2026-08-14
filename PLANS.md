@@ -229,3 +229,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   listas válidas; `prompt_version` identifica o conteúdo composto; e schemas
   validam formatos. Onze testes M4 e a suíte completa de 109 testes passaram,
   sem modelos, Prime Agent, rede ou dependências novas.
+- 2026-08-13 — Correção contratual M4 adicional concluída: a API pública de
+  identidade aceita apenas schemas de saída canônicos e rejeita escapes,
+  aliases e symlinks nas raízes e arquivos de prompts e schemas. Treze testes
+  M4 e a suíte completa de 111 testes passaram localmente.
