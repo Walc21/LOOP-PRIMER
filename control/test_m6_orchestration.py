@@ -256,6 +256,65 @@ class M6OrchestrationTests(unittest.TestCase):
             with self.subTest(constraint=constraint):
                 with self.assertRaises(OrchestrationError): self.o._plan(forged(constraint))
 
+    def test_activation_plan_rejects_adversarial_entries_before_side_effects(self):
+        def durable_bytes():
+            return {
+                path.relative_to(self.root).as_posix(): path.read_bytes()
+                for directory in (self.root / "state/events", self.root / "state/snapshots")
+                for path in directory.rglob("*")
+                if path.is_file()
+            }
+
+        before_store = durable_bytes()
+        before_events = list(self.o._events(self.run))
+        before_workspaces = sorted((self.root / "workspaces").rglob("*"))
+        before_calls = list(self.fake.calls)
+
+        def rejects(mutator):
+            forged = json.loads(json.dumps(self.plan)); mutator(forged)
+            with self.assertRaises(OrchestrationError): self.o._plan(forged)
+            with self.assertRaises(OrchestrationError): asyncio.run(self.o.run_cycle(run_id=self.run, plan=forged))
+            self.assertEqual(durable_bytes(), before_store)
+            self.assertEqual(self.o._events(self.run), before_events)
+            self.assertEqual(sorted((self.root / "workspaces").rglob("*")), before_workspaces)
+            self.assertEqual(self.fake.calls, before_calls)
+
+        def entry(plan, role): return next(item for item in plan["roles"] if item["role_id"] == role)
+        rejects(lambda p: p.update(paused=True, checkpoint={"reason":"mandatory_coverage_missing", "constraints":["missing_mandatory"], "mandatory_roles":["W22"], "missing_mandatory":["W22"], "active_roles":sum(x["mode"] != "FREEZE" for x in p["roles"]), "estimated_tokens":p["budget"]["estimated_tokens"], "wall_time_seconds":p["budget"]["wall_time_seconds"], "limits":dict(p["budget"]["limits"])}))
+        for mandatory in (["W11"], ["W51"]):
+            rejects(lambda p, mandatory=mandatory: p.update(paused=True, checkpoint={"reason":"mandatory_coverage_exceeds_limits", "constraints":["token_limit"], "mandatory_roles":mandatory, "missing_mandatory":[], "active_roles":sum(x["mode"] != "FREEZE" for x in p["roles"]), "estimated_tokens":p["budget"]["estimated_tokens"], "wall_time_seconds":p["budget"]["wall_time_seconds"], "limits":{**p["budget"]["limits"], "max_estimated_tokens":1}}))
+        for bad_inputs in ([{}], [1], [""], ["a", "a"], ["z", "a"]):
+            rejects(lambda p, bad_inputs=bad_inputs: entry(p, "M00").update(inputs=bad_inputs))
+        rejects(lambda p: entry(p, "M00").update(inputs=["other-locator"]))
+        rejects(lambda p: entry(p, "M00").update(expected_outputs=[]))
+        rejects(lambda p: entry(p, "M00").update(expected_outputs=["wrong.schema.json"]))
+        rejects(lambda p: entry(p, "M00").update(expected_outputs=["activation_map.json", "extra"]))
+        rejects(lambda p: entry(p, "M00").update(justification=""))
+        rejects(lambda p: (entry(p, "M00").update(estimated_tokens=501), p["budget"].update(estimated_tokens=p["budget"]["estimated_tokens"] + 1)))
+        rejects(lambda p: (entry(p, "W11").update(wall_time_seconds=121), p["budget"].update(wall_time_seconds=p["budget"]["wall_time_seconds"] + 1)))
+        rejects(lambda p: p["roles"].__setitem__(1, p["roles"][2]))
+        rejects(lambda p: entry(p, "S10").update(mode="FREEZE", estimated_tokens=0, wall_time_seconds=0, inputs=[], expected_outputs=[]))
+        rejects(lambda p: p.update(cycle_id=-1))
+
+    def test_public_m5_activation_maps_remain_accepted(self):
+        proof = Impact((), (), (), (), ("W22",), 1)
+        cases = [
+            ActivationPlanner().plan(cycle_id=0, impact=Impact((), (), (), (), ("W11",), 1)),
+            ActivationPlanner().plan(cycle_id=2, impact=Impact((), (), (), (), ("W11",), 1)),
+            ActivationPlanner().plan(cycle_id=2, impact=proof),
+            ActivationPlanner().plan(cycle_id=2, impact=Impact((), (), (), (), (), 1), finalization_requested=True),
+            ActivationPlanner().plan(cycle_id=2, impact=proof, finalization_requested=True),
+            ActivationPlanner(PlanningLimits(max_estimated_tokens=1)).plan(cycle_id=0, impact=proof),
+            ActivationPlanner(PlanningLimits(max_wall_time_seconds=1)).plan(cycle_id=0, impact=Impact((), (), (), (), (), 1)),
+            ActivationPlanner(PlanningLimits(max_active_per_cycle=1)).plan(cycle_id=0, impact=Impact((), (), (), (), (), 1)),
+            ActivationPlanner(PlanningLimits(max_active_per_department=1)).plan(cycle_id=0, impact=Impact((), (), (), (), (), 1)),
+            ActivationPlanner(PlanningLimits(max_children_per_manager=0)).plan(cycle_id=0, impact=proof),
+            ActivationPlanner(PlanningLimits(max_active_per_role=0)).plan(cycle_id=0, impact=Impact((), (), (), (), (), 1)),
+        ]
+        for plan in cases:
+            with self.subTest(plan=plan.checkpoint):
+                self.o._plan(plan.activation_map())
+
     def test_receipt_retry_uses_frozen_copy_before_workspace(self):
         self.cycle(); self.admit_workers("S10"); path,digest=self.write_proposal("W11")
         asyncio.run(self.o.receipt(self.run,sender_role="W11",parent_role="S10",path=path,sha256=digest))

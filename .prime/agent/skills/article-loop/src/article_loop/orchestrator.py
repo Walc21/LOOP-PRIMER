@@ -271,7 +271,9 @@ class Orchestrator:
         elif isinstance(plan, Mapping): raw = dict(plan); paused = bool(raw.get("paused"))
         else: raise OrchestrationError("ActivationPlan M5 is required")
         roles = raw.get("roles"); expected = {"cycle_id","paused","checkpoint","budget","roles"}
-        if set(raw) != expected or type(raw.get("cycle_id")) is not int or type(raw.get("paused")) is not bool or not isinstance(roles, list) or not isinstance(raw.get("budget"), Mapping): raise OrchestrationError("invalid ActivationPlan activation_map")
+        if (set(raw) != expected or type(raw.get("cycle_id")) is not int or raw["cycle_id"] < 0
+                or type(raw.get("paused")) is not bool or not isinstance(roles, list) or not isinstance(raw.get("budget"), Mapping)):
+            raise OrchestrationError("invalid ActivationPlan activation_map")
         budget=raw["budget"]; limits=budget.get("limits")
         if set(budget) != {"limits","estimated_tokens","wall_time_seconds"} or not isinstance(limits, Mapping) or set(limits) != set(PlanningLimits.__dataclass_fields__) or any(type(v) is not int for v in limits.values()): raise OrchestrationError("invalid ActivationPlan budget")
         checkpoint = raw["checkpoint"]
@@ -279,13 +281,22 @@ class Orchestrator:
             raise OrchestrationError("paused plan requires exactly one checkpoint")
         required={"role_id","mode","justification","estimated_tokens","wall_time_seconds","inputs","expected_outputs"}
         if any(not isinstance(x, Mapping) or set(x)!=required for x in roles): raise OrchestrationError("invalid ActivationPlan role entry")
+        if any(not isinstance(x["role_id"], str) or not isinstance(x["mode"], str)
+               or not isinstance(x["justification"], str) for x in roles):
+            raise OrchestrationError("activation role fields are invalid")
+        role_order = ("M00", *tuple(role for department in DEPARTMENTS for role in (department, *CHILDREN[department])))
+        all_roles=set(role_order)
         mapping = {x["role_id"]: x["mode"] for x in roles}
-        all_roles={"M00", *DEPARTMENTS, *[w for x in CHILDREN.values() for w in x]}
-        if len(roles)!=21 or len(mapping)!=21 or set(mapping) != all_roles or any(v not in {x.value for x in ActivationMode} for v in mapping.values()) or mapping["M00"] != "RUN":
+        if (len(roles) != len(role_order) or tuple(x["role_id"] for x in roles) != role_order
+                or len(mapping) != len(role_order) or set(mapping) != all_roles
+                or any(v not in {x.value for x in ActivationMode} for v in mapping.values())
+                or mapping["M00"] != "RUN"):
             raise OrchestrationError("activation map is incomplete or invalid")
         active=[]
         for entry in roles:
-            if not isinstance(entry["role_id"], str) or not isinstance(entry["mode"], str) or not isinstance(entry["justification"], str):
+            if (not isinstance(entry["role_id"], str) or not entry["role_id"]
+                    or not isinstance(entry["mode"], str) or not entry["mode"]
+                    or not isinstance(entry["justification"], str) or not entry["justification"]):
                 raise OrchestrationError("activation role fields are invalid")
             if type(entry["estimated_tokens"]) is not int or type(entry["wall_time_seconds"]) is not int or not isinstance(entry["inputs"],list) or not isinstance(entry["expected_outputs"],list):
                 raise OrchestrationError("activation role work fields are invalid")
@@ -293,8 +304,35 @@ class Orchestrator:
             if entry["mode"] == "FREEZE":
                 if not zero: raise OrchestrationError("FREEZE activation entry carries work")
             else:
-                if entry["estimated_tokens"] <= 0 or entry["wall_time_seconds"] <= 0: raise OrchestrationError("active activation entry invalid")
+                expected_outputs = (["activation_map.json"] if entry["role_id"] == "M00" else
+                                    ["department-packet.schema.json"] if entry["role_id"].startswith("S") else
+                                    ["agent-proposal.schema.json"])
+                expected_tokens = 500 if entry["role_id"] == "M00" or entry["role_id"].startswith("S") else 900
+                expected_wall = 60 if expected_tokens == 500 else 120
+                inputs = entry["inputs"]
+                if (entry["estimated_tokens"] != expected_tokens or entry["wall_time_seconds"] != expected_wall
+                        or entry["expected_outputs"] != expected_outputs
+                        or not inputs or any(not isinstance(value, str) or not value for value in inputs)
+                        or len(inputs) != len(set(inputs))
+                        or (inputs != ["snapshot"] and inputs != sorted(inputs))):
+                    raise OrchestrationError("active activation entry diverges from M5")
                 active.append(entry)
+        active_inputs = [entry["inputs"] for entry in active]
+        if not active_inputs or any(inputs != active_inputs[0] for inputs in active_inputs):
+            raise OrchestrationError("active ActivationPlan inputs diverge")
+        for department in DEPARTMENTS:
+            if mapping[department] == "FREEZE" and any(mapping[child] != "FREEZE" for child in CHILDREN[department]):
+                raise OrchestrationError("active worker requires active department")
+        if raw["cycle_id"] == 0:
+            if any(mapping[department] != "RUN" for department in DEPARTMENTS):
+                raise OrchestrationError("cycle zero departments must RUN")
+            if any(all(mapping[child] == "FREEZE" for child in CHILDREN[department]) for department in DEPARTMENTS):
+                raise OrchestrationError("cycle zero requires one focal worker per department")
+            for role in role_order:
+                if mapping[role] != "FREEZE" and mapping[role] != ("CHECK" if role in {"W22", "W53"} else "RUN"):
+                    raise OrchestrationError("cycle zero mode diverges from M5")
+        elif any(mapping[role] != "CHECK" for role in ("W22", "W53") if mapping[role] != "FREEZE"):
+            raise OrchestrationError("critical verifier mode diverges from M5")
         if budget["estimated_tokens"] != sum(x["estimated_tokens"] for x in active) or budget["wall_time_seconds"] != sum(x["wall_time_seconds"] for x in active): raise OrchestrationError("activation budget is forged")
         def constraints_for(mandatory: set[str]) -> tuple[list[str], list[str]]:
             active_roles={entry["role_id"] for entry in active}
@@ -319,16 +357,27 @@ class Orchestrator:
             if (not isinstance(checkpoint, Mapping) or set(checkpoint) != checkpoint_fields
                     or checkpoint.get("reason") not in allowed_reasons
                     or not isinstance(checkpoint.get("constraints"), list)
-                    or not checkpoint["constraints"] or len(checkpoint["constraints"]) != len(set(checkpoint["constraints"]))
+                    or not checkpoint["constraints"]
+                    or any(not isinstance(item, str) for item in checkpoint["constraints"])
+                    or len(checkpoint["constraints"]) != len(set(checkpoint["constraints"]))
                     or any(item not in allowed_constraints for item in checkpoint["constraints"])
                     or any(not isinstance(checkpoint.get(name), list) for name in ("mandatory_roles", "missing_mandatory"))
+                    or any(not isinstance(role, str) for role in checkpoint["mandatory_roles"] + checkpoint["missing_mandatory"])
                     or any(type(checkpoint.get(name)) is not int for name in ("active_roles", "estimated_tokens", "wall_time_seconds"))
                     or not isinstance(checkpoint.get("limits"), Mapping)
                     or set(checkpoint["limits"]) != set(PlanningLimits.__dataclass_fields__)):
                 raise OrchestrationError("invalid paused ActivationPlan checkpoint")
             mandatory = checkpoint["mandatory_roles"]; missing = checkpoint["missing_mandatory"]
+            proof_mandatory = ["S20", "W22"]
+            finalization_mandatory = ["S50", "W51", "W53"]
+            permitted_mandatory = ([], proof_mandatory, finalization_mandatory, sorted(proof_mandatory + finalization_mandatory))
             if (mandatory != sorted(set(mandatory)) or missing != sorted(set(missing))
                     or any(role not in all_roles for role in mandatory + missing)
+                    or mandatory not in permitted_mandatory
+                    or missing != []
+                    or any(mapping[role] == "FREEZE" for role in mandatory)
+                    or (mapping["W22"] != "FREEZE" and proof_mandatory != mandatory and sorted(proof_mandatory + finalization_mandatory) != mandatory)
+                    or (mapping["W53"] != "FREEZE" and finalization_mandatory != mandatory and sorted(proof_mandatory + finalization_mandatory) != mandatory)
                     or any(type(value) is not int for value in checkpoint["limits"].values())
                     or checkpoint["active_roles"] != len(active)
                     or checkpoint["estimated_tokens"] != budget["estimated_tokens"]

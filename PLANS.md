@@ -307,3 +307,16 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   somente bytes congelados autoritativos. Passaram 34 testes M6, 162 na suíte
   completa com `jsonschema` real e `py_compile` em `src` e `control`; M7 não
   foi iniciado.
+- 2026-08-14 — Quinta correção cirúrgica de M6 iniciada: fechar antes de toda
+  persistência ou admissão a validação do `ActivationPlan` contra o subconjunto
+  exato emitível pelo planejador M5, incluindo ordem, entradas, custos, saídas,
+  modos, cobertura obrigatória e checkpoints pausados. Runtime, receipts,
+  retries, reconciliação e `DurableStore` permanecem fora de escopo; M7 não
+  será iniciado.
+- 2026-08-14 — Quinta correção cirúrgica de M6 concluída: `_plan()` agora
+  aceita apenas a forma canônica publicamente emitível pelo M5, antes de
+  `PLAN`, DurableStore, workspace ou spawn: 21 papéis ordenados, entradas
+  compartilhadas e determinísticas, custos/saídas/modos emitidos e os únicos
+  grupos obrigatórios válidos. Planos pausados são recalculados sem permitir
+  ausência obrigatória inventada. Passaram 36 testes M6 e 164 na suíte
+  completa com `jsonschema` real, além de `py_compile`; M7 não foi iniciado.

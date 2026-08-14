@@ -512,3 +512,17 @@ packet congelado já aceito, restaura atomicamente o arquivo mutável apenas com
 esses bytes quando necessário e reenvia ao pai o caminho e hash previamente
 aceitos. Cópias congeladas ausentes, symlinkadas ou corrompidas falham
 fechadas.
+
+**Quarto complemento corretivo (2026-08-14):** antes de persistir `PLAN`,
+alterar o `DurableStore`, criar workspace ou admitir filho, M6 aceita somente
+o `activation_map()` que o `ActivationPlanner` M5 público pode emitir: os 21
+papéis vêm uma vez na ordem canônica, campos de trabalho são tipados e não
+vazios, entradas ativas são a mesma lista determinística e custos/saídas são
+os fixos do papel. `FREEZE` continua integralmente vazio, M00 é `RUN`, e um
+departamento não congela enquanto houver trabalhador ativo. A validação de
+modo reconstitui regras do ciclo 0 que independem de histórico, inclusive
+W22/W53 como `CHECK`. Cobertura obrigatória só admite os conjuntos M5 de
+prova, finalização ou sua união; cada obrigatório deve estar ativo, e o
+checkpoint pausado só pode declarar a saída efetivamente produzível pelo
+planejador, impedindo que uma ausência inventada converta plano normal em
+pausa.
