@@ -378,3 +378,35 @@ schema selecionado devem ser caminhos regulares contidos, sem symlinks.
 **Motivo:** separar núcleo auditável, ajuste contextual e envelope de saída
 impede deriva silenciosa de instruções, vazamento de contexto ou que uma
 proposta seja confundida com alteração de candidato/champion.
+
+## ADR-021 — Blackboard append-only e planejamento determinístico de M5
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** M5 introduz um blackboard local em JSONL, particionado por
+execução e por ledger (`claims`, `issues`, `tasks`, `dependencies`, `evidence`
+e `decisions`). As linhas nunca são alteradas; a projeção de um claim usa sua
+última revisão, preservando todas as anteriores. O `claim_id` é derivado de
+texto canônico, tipo, localização e hash da fonte, portanto é estável entre
+reexecuções do mesmo snapshot. O grafo de impacto percorre dependências em
+ambos os sentidos e traduz tipos/localizadores em seções, equações,
+referências e papéis canônicos.
+
+O planejador é uma função pura do snapshot, histórico e limites declarados.
+Ele sempre inclui M00, emite exatamente cinco pacotes departamentais (ativos ou
+`NO_CHANGE`), nunca cria tarefa para `FREEZE`, impõe cobertura por idade quando
+dependências mudaram e reserva W22 para teoremas/provas e W51+W53 para
+finalização. Orçamentos excedidos retornam um checkpoint de pausa explícito;
+não há expansão silenciosa. As views removem contexto não necessário: um
+especialista vê sua tarefa e evidência local; um subgerente vê propostas dos
+filhos; M00 vê somente cinco DepartmentPackets/NO_CHANGE.
+
+**Hipótese/limite:** o mapeamento semântico de alterações é deliberadamente
+conservador por palavras-chave e tipos de localização até que M6 forneça
+resultados de agentes. M5 não executa agentes, não atualiza a máquina de
+estados e não persiste checkpoint no event log; ele apenas o devolve como dado
+para a integração futura.
+
+**Motivo:** separar memória auditável, decisão de ativação e execução futura
+permite testar economia, cobertura e orçamento sem custo de modelo nem estado
+implícito de sessão.

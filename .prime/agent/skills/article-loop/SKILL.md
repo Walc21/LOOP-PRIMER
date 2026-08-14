@@ -5,7 +5,7 @@ description: Núcleo local de estado durável do article-loop, sem runtime Prime
 
 # article-loop
 
-No Marco 3, esta skill fornece persistência e ingestão local, offline e
+Até o Marco 5, esta skill fornece persistência, ingestão e planejamento local, offline e
 determinística. Não inicia agentes, modelos, rede ou operações de runtime.
 
 ## API pública
@@ -60,6 +60,24 @@ entradas inseguras ou baseline insuficiente.
 
 A função assíncrona `run(*args, **kwargs)` permanece deliberadamente
 indisponível e levanta `RuntimeError` até a integração autorizada do Marco 6.
+
+## Memória e ativação M5
+
+`Blackboard(root)` mantém ledgers JSONL append-only, separados por execução,
+para claims, issues, tasks, dependencies, evidence e decisions. `append()`
+rejeita conflito de identificador; `claims()` projeta a revisão mais recente
+sem apagar a trilha; `impact()` produz claims, objetos documentais e papéis
+afetados. Claims exigem texto, tipo, localização, dependências, evidências,
+status, severidade, SHA-256 de fonte e ciclo da última validação; seu ID é
+determinístico.
+
+`ActivationPlanner(limits).plan(...)` é puro e retorna `ActivationPlan`, sem
+disparar papel algum. Ele emite entradas RUN/CHECK/SHIFT/FREEZE, checkpoint de
+pausa se algum limite for excedido e um `activation_map.json` recusando
+sobrescrita. `specialist_view`, `submanager_view` e `manager_view` expõem,
+respectivamente, apenas dados locais, propostas dos filhos e cinco pacotes
+departamentais. A integração M6 deverá respeitar `paused` e nunca criar tarefa
+ou chamada para entradas FREEZE.
 
 Os marcos futuros devem preservar os contratos em `config/schemas/` e só podem
 ativar integração Prime Agent após o preflight previsto em
