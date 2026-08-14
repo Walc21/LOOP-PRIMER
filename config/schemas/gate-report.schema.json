@@ -13,6 +13,9 @@
     "generated_at": {"type": "string", "format": "date-time"},
     "overall_pass": {"type": "boolean"},
     "correctness_math_pass": {"type": "boolean"},
+    "candidate_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "report_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "report_locator": {"type": "string", "minLength": 1},
     "gates": {
       "type": "array",
       "minItems": 1,
@@ -31,7 +34,8 @@
           "classification": {"enum": ["scientific", "technical", "inconclusive"]},
           "timeout_seconds": {"type": "integer", "minimum": 0},
           "duration_ms": {"type": "integer", "minimum": 0},
-          "output": {"type": "string"}
+          "output": {"type": "string"},
+          "input_hash_after": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
         }
       }
     }

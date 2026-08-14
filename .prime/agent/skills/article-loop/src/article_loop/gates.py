@@ -1,22 +1,61 @@
-"""Deterministic M7 gates over a frozen challenger."""
+"""Local fail-closed M7 gates and a pure comparison function."""
 from __future__ import annotations
-import json, time
+import json
 from pathlib import Path
 from typing import Any, Mapping
-from .synthesis import SynthesisError, _json, _sha, tree_hash
-REQUIRED=("manifest_integrity","correctness_math")
-def run_gates(candidate: str|Path, *, math_evidence: bool=False) -> dict[str,Any]:
-    root=Path(candidate); manifest=json.loads((root/"manifest.json").read_text()); before=tree_hash(root,exclude={"manifest.json"})
-    if before!=manifest.get("content_hash"): raise SynthesisError("candidate hash mismatch")
-    gates=[]
-    gates.append({"gate_id":"manifest_integrity","verifier_version":"m7.1","classification":"technical","passed":True,"command":"internal","timeout_seconds":0,"input_hash":before,"exit_code":0,"duration_ms":0,"output":"manifest/tree verified","evidence_locators":[]})
-    gates.append({"gate_id":"correctness_math","verifier_version":"m7.1","classification":"scientific" if math_evidence else "inconclusive","passed":bool(math_evidence),"command":"canonical evidence only","timeout_seconds":0,"input_hash":before,"exit_code":0 if math_evidence else 1,"duration_ms":0,"output":"evidence present" if math_evidence else "canonical mathematical evidence absent","evidence_locators":[]})
-    after=tree_hash(root,exclude={"manifest.json"})
-    if after!=before: raise SynthesisError("candidate mutated during gates")
-    overall=all(x["passed"] for x in gates) and {x["gate_id"] for x in gates}==set(REQUIRED)
-    report={"schema_version":"1.1.0","report_id":"g-"+_sha(_json(gates))[:24],"candidate_id":manifest["candidate_id"],"candidate_content_hash":before,"generated_at":"1970-01-01T00:00:00Z","overall_pass":overall,"correctness_math_pass":bool(math_evidence),"gates":gates}
-    return report
-def compare(left: Mapping[str,Any], right: Mapping[str,Any]) -> Mapping[str,Any]:
-    """Evidence-only ranking: mathematical hard gate, critical issues, Pareto, cost."""
-    if bool(left.get("correctness_math_pass")) != bool(right.get("correctness_math_pass")): return {"winner":"left" if left.get("correctness_math_pass") else "right","reason":"correctness_math"}
-    return {"winner":None,"reason":"pareto_evidence_required"}
+from .synthesis import IntegrityError, _atomic, _json, _sha, _inventory, tree_hash
+REQUIRED_GATES=("contracts_state","source_provenance","latex_compile_safe","render","pdf_valid","references_labels","asset_inventory","claim_dependencies","math_critical_issues","forbidden_metatext","local_budget","manifest_integrity","correctness_math")
+def _result(gate, before, passed=False, classification="inconclusive", output="evidence absent", code=1, evidence=()):
+    return {"gate_id":gate,"command":"local-fixture-adapter","verifier_version":"m7.2","timeout_seconds":1,"input_hash":before,"exit_code":code,"duration_ms":0,"output":output[:4096],"passed":bool(passed),"classification":classification,"evidence_locators":list(evidence)}
+def _manifest(candidate):
+    path=candidate/"manifest.json"
+    try: m=json.loads(path.read_text())
+    except Exception as e: raise IntegrityError("invalid manifest") from e
+    if m.get("content_hash")!=tree_hash(candidate,exclude={"manifest.json"}) or m.get("inventory")!=_inventory(candidate,{"manifest.json"}): raise IntegrityError("manifest integrity failure")
+    return m
+def run_gates(candidate: str|Path, *, adapter: Any|None=None, required=REQUIRED_GATES) -> dict[str,Any]:
+    """Run only named local adapters. Missing adapters never pass a gate."""
+    candidate=Path(candidate).resolve(); manifest=_manifest(candidate)
+    if tuple(required)!=REQUIRED_GATES or len(set(required))!=len(required): raise IntegrityError("unknown or missing required gate")
+    report=[]; frozen=tree_hash(candidate)
+    for gate in REQUIRED_GATES:
+        before=tree_hash(candidate)
+        if before!=frozen: raise IntegrityError("candidate mutated before gate")
+        if gate=="manifest_integrity":
+            passed=True; classification="technical"; output="manifest/inventory verified"; code=0; evidence=["manifest.json"]
+        elif adapter is None:
+            passed=False; classification="inconclusive"; output="no local verifier configured"; code=1; evidence=[]
+        else:
+            value=adapter.verify(gate,candidate,manifest) if hasattr(adapter,"verify") else None
+            if not isinstance(value,Mapping): value={}
+            passed=value.get("passed") is True
+            classification=value.get("classification","inconclusive")
+            if classification not in {"scientific","technical","inconclusive"}: passed=False; classification="inconclusive"
+            output=str(value.get("output","adapter evidence absent")); code=int(value.get("exit_code",0 if passed else 1)); evidence=value.get("evidence_locators",[])
+            if not isinstance(evidence,list) or any(not isinstance(x,str) or not (candidate/x).is_file() for x in evidence): passed=False; evidence=[]; output="invalid evidence locator"; code=1
+            if gate=="correctness_math" and not (passed and classification=="scientific" and any("S20" in x or "W22" in x for x in evidence)):
+                passed=False; classification="inconclusive"; output="canonical S20/W22 mathematical evidence absent"; code=1
+        after=tree_hash(candidate)
+        item=_result(gate,before,passed,classification,output,code,evidence); item["input_hash_after"]=after
+        if after!=before: item.update(passed=False,classification="technical",exit_code=1,output="candidate mutated during gate")
+        report.append(item)
+    body={"schema_version":"1.1.0","candidate_id":manifest["candidate_id"],"candidate_content_hash":manifest["content_hash"],"candidate_hash":frozen,"generated_at":"1970-01-01T00:00:00Z","gates":report}
+    body["correctness_math_pass"]=next(x["passed"] for x in report if x["gate_id"]=="correctness_math")
+    body["overall_pass"]=all(x["passed"] for x in report) and body["correctness_math_pass"]
+    body["report_hash"]=_sha(_json(body)); body["report_id"]="g-"+body["report_hash"][:32]
+    root=candidate.parents[2]; path=root/"state/gates"/manifest["candidate_id"]/(body["report_hash"]+".json")
+    path.parent.mkdir(parents=True,exist_ok=True); raw=_json(body)
+    if path.exists():
+        if path.read_bytes()!=raw: raise IntegrityError("gate report collision")
+    else: _atomic(path,raw)
+    body["report_locator"]=path.relative_to(root).as_posix()
+    return body
+def compare(left: Mapping[str,Any],right: Mapping[str,Any],*,cost_tiebreak=True):
+    """Pure evidence ordering; it cannot publish, reject, archive or promote."""
+    def key(x):
+        math=bool(x.get("correctness_math_pass")); critical=sum(1 for i in x.get("issues",[]) if i.get("severity")=="CRITICAL")
+        severe=sum({"CRITICAL":4,"HIGH":3,"MEDIUM":2,"LOW":1}.get(i.get("severity"),4) for i in x.get("issues",[]))
+        vector=tuple(x.get("pareto_vector",[]))
+        cost=x.get("cost",0) if cost_tiebreak else 0
+        return (math and not critical,-critical,-severe,vector,-cost)
+    a,b=key(left),key(right); return {"winner":"left" if a>b else "right" if b>a else "tie","left_key":a,"right_key":b,"promotion_authorized":False}

@@ -543,3 +543,12 @@ identidade comum, congela seus bytes e opera sobre cópia regular do champion.
 Operações estruturadas usam paths contidos; links e arquivos especiais falham
 fechados. Gates conferem a árvore antes/depois; `correctness_math` fica
 inconclusivo sem evidência canônica. M7 não muda champion nem aplica decisão.
+
+**Complemento corretivo (2026-08-14):** a identidade de síntese passa a
+comprometer os bytes congelados e receipts dos cinco pacotes, a decisão
+estruturada e os hashes integrais das propostas aceitas. A cópia preserva
+diretórios normais e recusa links, hardlinks e arquivos especiais; staging,
+inventário, manifest e publicação são verificados write-once. Gates locais
+configurados são fail-closed, registram entrada/saída limitada e não aceitam
+booleano para `correctness_math`. A única ponte de estado M7 é
+`DEPARTMENTS_RUNNING → SYNTHESIS_READY → CANDIDATE_BUILT → GATES_PASSED`.

@@ -19,7 +19,12 @@
     "merge_receipt_locator": {"type": ["string", "null"], "minLength": 1},
     "immutable": {"const": true},
     "inventory": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["path", "sha256", "size"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "size": {"type": "integer", "minimum": 0}}}},
-    "merge_receipt": {"type": "object"}
+    "merge_receipt": {"type": "object"},
+    "base_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "synthesis_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "proposal_hashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "proposal_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "prompt_versions": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
   },
   "allOf": [
     {
