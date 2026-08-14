@@ -241,6 +241,53 @@ class M6OrchestrationTests(unittest.TestCase):
             with self.subTest(forged=forged["checkpoint"]):
                 with self.assertRaises(OrchestrationError): self.o._plan(forged)
 
+    def test_paused_checkpoint_recalculates_every_m5_constraint(self):
+        normal=json.loads(json.dumps(self.plan)); self.assertFalse(normal["paused"])
+        def forged(constraint):
+            plan=json.loads(json.dumps(normal)); plan["paused"]=True
+            plan["checkpoint"]={"reason":"budget_exhausted","constraints":[constraint],
+                "mandatory_roles":[],"missing_mandatory":[],
+                "active_roles":sum(role["mode"] != "FREEZE" for role in plan["roles"]),
+                "estimated_tokens":plan["budget"]["estimated_tokens"],
+                "wall_time_seconds":plan["budget"]["wall_time_seconds"],
+                "limits":dict(plan["budget"]["limits"])}
+            return plan
+        for constraint in ("token_limit", "cycle_limit", "wall_time_limit", "department_limit", "children_limit", "role_limit"):
+            with self.subTest(constraint=constraint):
+                with self.assertRaises(OrchestrationError): self.o._plan(forged(constraint))
+
+    def test_receipt_retry_uses_frozen_copy_before_workspace(self):
+        self.cycle(); self.admit_workers("S10"); path,digest=self.write_proposal("W11")
+        asyncio.run(self.o.receipt(self.run,sender_role="W11",parent_role="S10",path=path,sha256=digest))
+        receipt_events=lambda: len([event for event in self.o._events(self.run) if event["event_type"] == "RECEIPT"])
+        accepted=asyncio.run(self.o.status(self.run))["receipts"]["W11"]; events=receipt_events()
+        path.unlink()
+        asyncio.run(self.o.receipt(self.run,sender_role="W11",parent_role="S10",path=path,sha256=digest))
+        path.write_text("{}")
+        asyncio.run(self.o.receipt(self.run,sender_role="W11",parent_role="S10",path=path,sha256=digest))
+        self.assertEqual(receipt_events(),events)
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.receipt(self.run,sender_role="W11",parent_role="S10",path=path.with_name("other.json"),sha256=digest))
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.receipt(self.run,sender_role="W11",parent_role="S10",path=path,sha256="0"*64))
+        Path(accepted["immutable_path"]).write_bytes(b"{}")
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.receipt(self.run,sender_role="W11",parent_role="S10",path=path,sha256=digest))
+
+    def test_department_packet_retry_restores_frozen_bytes_and_envelope(self):
+        self.cycle(); self.admit_workers("S10")
+        for role in ("W11", "W12", "W13"):
+            path,digest=self.write_proposal(role); asyncio.run(self.o.receipt(self.run,sender_role=role,parent_role="S10",path=path,sha256=digest))
+        manager=self.manager("S10"); state=asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=manager))
+        accepted=state["receipts"]["S10"]; packet=Path(accepted["path"]); frozen=Path(accepted["immutable_path"])
+        original=packet.read_bytes(); created_at=json.loads(original)["created_at"]; events=len([e for e in self.o._events(self.run) if e["event_type"]=="RECEIPT"])
+        packet.unlink(); asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=manager))
+        self.assertEqual(packet.read_bytes(),original)
+        packet.write_bytes(b"{}"); asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=manager))
+        self.assertEqual(packet.read_bytes(),original); self.assertEqual(json.loads(packet.read_bytes())["created_at"],created_at)
+        self.assertEqual(hashlib.sha256(packet.read_bytes()).hexdigest(),accepted["sha256"])
+        self.assertEqual(len([e for e in self.o._events(self.run) if e["event_type"]=="RECEIPT"]),events)
+        envelope=json.loads(manager.messages[-1]["message"]); self.assertEqual(envelope["sha256"],accepted["sha256"]); self.assertEqual(envelope["path"],accepted["path"])
+        frozen.write_bytes(b"{}")
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=manager))
+
     def test_receipt_is_read_once_and_frozen_copy_corruption_fails_closed(self):
         self.cycle(); self.admit_workers("S10"); path,digest=self.write_proposal("W11")
         original=Path.read_bytes; reads=[]

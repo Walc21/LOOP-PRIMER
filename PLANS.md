@@ -296,3 +296,14 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   reconciliam retries sem eventos duplicados. Passaram 31 testes M6 e 159 na
   suíte completa com `jsonschema` real, além de `py_compile`; M7 não foi
   iniciado.
+- 2026-08-14 — Quarta e última correção cirúrgica de M6 iniciada: validar o
+  checkpoint pausado por recálculo exato das constraints M5 e tornar retries
+  de receipts e `DepartmentPacket` independentes do workspace mutável, sempre
+  a partir da cópia congelada autoritativa. Não haverá Prime, modelos, rede ou
+  trabalho de M7.
+- 2026-08-14 — Quarta e última correção cirúrgica de M6 concluída: o
+  checkpoint pausado recalcula e compara exatamente as sete constraints e o
+  `reason` do M5; retries de receipt e `DepartmentPacket` validam e restauram
+  somente bytes congelados autoritativos. Passaram 34 testes M6, 162 na suíte
+  completa com `jsonschema` real e `py_compile` em `src` e `control`; M7 não
+  foi iniciado.

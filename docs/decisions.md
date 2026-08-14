@@ -501,3 +501,14 @@ ativo sem trabalhador publica somente `no_change` com justificativa e evidência
 Tasks e views expõem locators imutáveis do baseline, extratos, rubrica e slice
 local do blackboard; especialistas não recebem contexto global nem champion
 editável. Replay valida tipo e payload de todos os eventos e falha fechado.
+
+**Terceiro complemento corretivo (2026-08-14):** a aceitação de plano pausado
+recálcula, na ordem do `ActivationPlanner._within_limits()`, todas as sete
+constraints e o `reason` M5 a partir das entradas, orçamento, limites e
+cobertura obrigatória; checkpoint meramente bem-formado não basta. Antes de
+tocar o workspace, retry de receipt compara o envelope com o receipt já
+aceito e valida somente os bytes congelados. Retry de consolidação usa o
+packet congelado já aceito, restaura atomicamente o arquivo mutável apenas com
+esses bytes quando necessário e reenvia ao pai o caminho e hash previamente
+aceitos. Cópias congeladas ausentes, symlinkadas ou corrompidas falham
+fechadas.

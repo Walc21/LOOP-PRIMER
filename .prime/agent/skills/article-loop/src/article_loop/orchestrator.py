@@ -296,20 +296,22 @@ class Orchestrator:
                 if entry["estimated_tokens"] <= 0 or entry["wall_time_seconds"] <= 0: raise OrchestrationError("active activation entry invalid")
                 active.append(entry)
         if budget["estimated_tokens"] != sum(x["estimated_tokens"] for x in active) or budget["wall_time_seconds"] != sum(x["wall_time_seconds"] for x in active): raise OrchestrationError("activation budget is forged")
-        # A paused M5 checkpoint intentionally captures an over-limit
-        # candidate for audit and later resumption.  Only runnable plans must
-        # be inside every limit; paused plans are checked against their closed
-        # checkpoint below.
-        if not paused:
-            if len(active)>limits["max_active_per_cycle"] or budget["estimated_tokens"]>limits["max_estimated_tokens"] or budget["wall_time_seconds"]>limits["max_wall_time_seconds"]:
-                raise OrchestrationError("activation limits incoherent")
-            for department in DEPARTMENTS:
-                department_active = [entry for entry in active if entry["role_id"] == department or entry["role_id"] in CHILDREN[department]]
-                child_active = [entry for entry in active if entry["role_id"] in CHILDREN[department]]
-                if len(department_active) > limits["max_active_per_department"] or len(child_active) > limits["max_children_per_manager"]:
-                    raise OrchestrationError("activation department limits incoherent")
-            if any(sum(entry["role_id"] == role for entry in active) > limits["max_active_per_role"] for role in mapping):
-                raise OrchestrationError("activation role limit incoherent")
+        def constraints_for(mandatory: set[str]) -> tuple[list[str], list[str]]:
+            active_roles={entry["role_id"] for entry in active}
+            missing=sorted(mandatory-active_roles)
+            department_counts={department:sum(entry["role_id"] == department or entry["role_id"] in CHILDREN[department] for entry in active) for department in DEPARTMENTS}
+            child_counts={department:sum(entry["role_id"] in CHILDREN[department] for entry in active) for department in DEPARTMENTS}
+            constraints=[]
+            if missing: constraints.append("missing_mandatory")
+            if len(active)>limits["max_active_per_cycle"]: constraints.append("cycle_limit")
+            if budget["estimated_tokens"]>limits["max_estimated_tokens"]: constraints.append("token_limit")
+            if budget["wall_time_seconds"]>limits["max_wall_time_seconds"]: constraints.append("wall_time_limit")
+            if any(value>limits["max_active_per_department"] for value in department_counts.values()): constraints.append("department_limit")
+            if any(value>limits["max_children_per_manager"] for value in child_counts.values()): constraints.append("children_limit")
+            if limits["max_active_per_role"]<1 and active: constraints.append("role_limit")
+            return constraints, missing
+        if not paused and constraints_for(set())[0]:
+            raise OrchestrationError("activation limits incoherent")
         if paused:
             checkpoint_fields = {"reason", "constraints", "mandatory_roles", "missing_mandatory", "active_roles", "estimated_tokens", "wall_time_seconds", "limits"}
             allowed_reasons = {"mandatory_coverage_missing", "mandatory_coverage_exceeds_limits", "department_limit_exhausted", "budget_exhausted"}
@@ -334,7 +336,11 @@ class Orchestrator:
                     or dict(checkpoint["limits"]) != dict(limits)
                     or missing != sorted(set(mandatory) - {entry["role_id"] for entry in active})):
                 raise OrchestrationError("paused ActivationPlan checkpoint diverges from plan")
-            constraints = checkpoint["constraints"]
+            constraints, real_missing = constraints_for(set(mandatory))
+            if missing != real_missing or checkpoint["constraints"] != constraints:
+                raise OrchestrationError("paused ActivationPlan checkpoint constraints diverge from plan")
+            if not constraints:
+                raise OrchestrationError("paused ActivationPlan has no real constraint violation")
             expected_reason = (
                 "mandatory_coverage_missing" if missing else
                 "mandatory_coverage_exceeds_limits" if mandatory else
@@ -533,6 +539,20 @@ class Orchestrator:
         with self._lock(run):
             state=self._state(run); self._guard(state); child=state["children"].get(sender_role)
             if not child or child["cycle_id"] != state["cycle_id"] or child["status"] in {"FAILED","CANCELLED"}: raise OrchestrationError("sender is not receipt-compatible")
+            old=state["receipts"].get(sender_role)
+            if old:
+                if old.get("sha256") != sha256 or old.get("path") != str(Path(path)) or old.get("parent_role") != parent_role or old.get("schema_version") != schema_version or old.get("cycle_id") != state["cycle_id"]:
+                    raise OrchestrationError("conflicting second receipt")
+                data=self._frozen_receipt(run,old)
+                schema="department-packet.schema.json" if sender_role.startswith("S") else "agent-proposal.schema.json"
+                try: document=json.loads(data); validate_output(self.root,schema,document)
+                except (json.JSONDecodeError,PromptContractError) as error: raise OrchestrationError("immutable receipt schema invalid") from error
+                if sender_role.startswith("W"):
+                    good=document.get("role_id")==sender_role and document.get("cycle_id")==state["cycle_id"] and document.get("base_hash")==state["base_hash"]
+                else:
+                    good=document.get("department_id")==sender_role and document.get("run_id")==run and document.get("cycle_id")==state["cycle_id"] and document.get("base_hash")==state["base_hash"]
+                if not good: raise OrchestrationError("immutable receipt identity differs")
+                return state
             workspace=self._workspace(run,state["cycle_id"],sender_role); target=Path(path)
             self._regular(target,workspace)
             # The untrusted workspace file is consumed exactly once.  Hashing,
@@ -547,10 +567,6 @@ class Orchestrator:
                 good=document.get("role_id")==sender_role and document.get("cycle_id")==state["cycle_id"] and document.get("base_hash")==state["base_hash"]
             else: good=document.get("department_id")==sender_role and document.get("run_id")==run and document.get("cycle_id")==state["cycle_id"] and document.get("base_hash")==state["base_hash"]
             if not good: raise OrchestrationError("receipt identity differs")
-            old=state["receipts"].get(sender_role)
-            if old:
-                if old["sha256"] == sha256 and old["path"] == str(target): return state
-                raise OrchestrationError("conflicting second receipt")
             immutable=self._managed("state","orchestration",run,"receipts",sha256,create=True)/"artifact.json"
             if immutable.exists() and immutable.read_bytes()!=data: raise OrchestrationError("content-addressed receipt conflict")
             if not immutable.exists(): self._atomic_bytes(immutable,data)
@@ -581,7 +597,25 @@ class Orchestrator:
     async def consolidate_department(self, run_id: str, department: str, *, adapter: Any | None=None) -> dict[str, Any]:
         run=self._run(run_id); adapter=adapter or self.adapter
         if getattr(adapter,"actor_role",None)!=department: raise OrchestrationError("only the owning submanager consolidates")
-        state=self._state(run); self._guard(state); workers=[r for r in CHILDREN[department] if state["activation"].get(r)!="FREEZE"]
+        state=self._state(run); self._guard(state); target=self._workspace(run,state["cycle_id"],department)/"department-packet.json"
+        accepted=state["receipts"].get(department)
+        if accepted:
+            if accepted.get("parent_role") != "M00" or accepted.get("path") != str(target) or accepted.get("cycle_id") != state["cycle_id"] or accepted.get("schema_version") != SCHEMA_VERSION:
+                raise OrchestrationError("accepted DepartmentPacket envelope differs")
+            encoded=self._frozen_receipt(run,accepted)
+            try: packet=json.loads(encoded); validate_output(self.root,"department-packet.schema.json",packet)
+            except (json.JSONDecodeError, PromptContractError) as error: raise OrchestrationError("immutable DepartmentPacket schema invalid") from error
+            if packet.get("run_id") != run or packet.get("cycle_id") != state["cycle_id"] or packet.get("department_id") != department or packet.get("base_hash") != state["base_hash"]:
+                raise OrchestrationError("immutable DepartmentPacket identity differs")
+            if target.is_symlink(): raise OrchestrationError("symlinked DepartmentPacket workspace")
+            if target.exists() and not target.is_file(): raise OrchestrationError("DepartmentPacket workspace is not a regular file")
+            # The frozen receipt is authoritative: never consult mutable bytes
+            # to decide a retry or to derive the receipt hash.
+            self._atomic_bytes(target,encoded)
+            result=await self.receipt(run,sender_role=department,parent_role="M00",path=accepted["path"],sha256=accepted["sha256"],schema_version=accepted["schema_version"])
+            await adapter.send_parent(_bytes({"path":accepted["path"],"sha256":accepted["sha256"],"schema_version":accepted["schema_version"]}).decode())
+            return result
+        workers=[r for r in CHILDREN[department] if state["activation"].get(r)!="FREEZE"]
         if any(r not in state["receipts"] for r in workers): raise OrchestrationError("department has pending receipts")
         proposals=[]
         for r in workers:
@@ -591,7 +625,6 @@ class Orchestrator:
             if proposal.get("role_id")!=r or proposal.get("cycle_id")!=state["cycle_id"] or proposal.get("base_hash")!=state["base_hash"]: raise OrchestrationError("immutable receipt identity differs")
             proposals.append(proposal)
         technical=[x for x in proposals if x.get("risk",{}).get("technical_effect_possible")]
-        target=self._workspace(run,state["cycle_id"],department)/"department-packet.json"
         if target.exists():
             self._regular(target, self._workspace(run,state["cycle_id"],department))
             # Publication is write-once.  A retry only reuses these exact bytes
@@ -638,8 +671,9 @@ class Orchestrator:
                         raise OrchestrationError("concurrent DepartmentPacket identity differs")
                 else:
                     self._atomic_bytes(target,encoded)
-        result=await self.receipt(run,sender_role=department,parent_role="M00",path=target,sha256=_hash(target.read_bytes()))
-        await adapter.send_parent(_bytes({"path":str(target),"sha256":_hash(target.read_bytes()),"schema_version":SCHEMA_VERSION}).decode())
+        digest=_hash(encoded)
+        result=await self.receipt(run,sender_role=department,parent_role="M00",path=target,sha256=digest)
+        await adapter.send_parent(_bytes({"path":str(target),"sha256":digest,"schema_version":SCHEMA_VERSION}).decode())
         return result
 
     async def pause(self, run_id: str) -> dict[str, Any]:
