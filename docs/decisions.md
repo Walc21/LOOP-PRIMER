@@ -326,3 +326,30 @@ de pacotes.
 **Motivo:** o repositório deve poder ser copiado sem carregar ambientes locais,
 mas a automação não pode ocultar instalações globais, variar silenciosamente
 por distribuição ou ampliar o escopo da integração Prime Agent.
+
+## ADR-020 — Prompts M4 imutáveis, content-addressed e compostos localmente
+
+**Estado:** aceito em 2026-08-13.
+
+**Decisão:** o núcleo global e os 21 núcleos de papel são arquivos Markdown
+imutáveis em `prompts/immutable/`, identificados por SHA-256 no
+`prompts/registry.json`. O compilador local verifica todos esses hashes antes
+de compor, põe o prefixo estável obrigatoriamente em primeiro lugar e rejeita
+papel, versão ou hash desconhecido. Um overlay é YAML versionado em
+`prompts/overlays/<role_id>/<version>.yaml`, declara versão-pai, diagnóstico,
+autor, evidência, escopo, hash e rollback, e só é aceito se também estiver no
+registro e se seu conteúdo conferir. O rollback é um identificador de versão
+anterior registrada, nunca uma alteração do núcleo.
+
+O contexto de ciclo é uma lista fechada de campos de `AgentTask`; campos que
+não forem explicitamente permitidos são bloqueados antes da composição. A
+saída é sempre referenciada pelo schema canônico `AgentProposal` ou
+`DepartmentPacket`. Os prompts solicitam conclusão, evidência, objeções e
+justificativa concisa, sem cadeia de raciocínio privada. Eles proíbem
+autoelogio, texto meta, alegações sem localizador e escrita direta no champion.
+S30 e S40 exigem revisão de S20 para os efeitos definidos na arquitetura; S50
+não recebe autoridade semântica.
+
+**Motivo:** separar núcleo auditável, ajuste contextual e envelope de saída
+impede deriva silenciosa de instruções, vazamento de contexto ou que uma
+proposta seja confundida com alteração de candidato/champion.

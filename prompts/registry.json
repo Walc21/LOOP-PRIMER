@@ -1,5 +1,35 @@
 {
   "schema_version": "1.0.0",
-  "prompts": [],
-  "note": "Registry reserved for M4; no executable prompts exist in M1."
+  "immutable": {
+    "global": {"path": "immutable/global.md", "sha256": "5208c566bdda0c00ec1b2662a3f04b35b3ca1d056c2563437a1fee9494cdd9d0"},
+    "M00": {"path": "immutable/M00.md", "sha256": "1402a87066b65bf77912b24f3e5f63ffe6f2f658ebb0a6d327e50a3826665863"},
+    "S10": {"path": "immutable/S10.md", "sha256": "5340ef36bec7dc44fefcd7fa6331694720394ec56bfcb5809972b62273ace2d0"},
+    "S20": {"path": "immutable/S20.md", "sha256": "8e93748a15dbd6bb051d54eb0a985841a39132402ce610069030f697b965c1a2"},
+    "S30": {"path": "immutable/S30.md", "sha256": "c9cc07e1a5f2a126c635ae4cfe1592d9fefb2540dd34bdbafb264cecee845748"},
+    "S40": {"path": "immutable/S40.md", "sha256": "d5413f2b610b24789a2ee8b0ee754be1c67599ffe2e93c8eb88c851579da394f"},
+    "S50": {"path": "immutable/S50.md", "sha256": "c09d11197fbbd3dbe09df30f60f0e4b2a88c29082ecf156abc216fa8c23c9283"},
+    "W11": {"path": "immutable/W11.md", "sha256": "2ebd5db03463b4db59efe43a8ff446a8a25e9644ccf5dc3a8de7c704b664b2e9"},
+    "W12": {"path": "immutable/W12.md", "sha256": "628d22963904976ee84e32dbc2a4a6ba4dd6694b640bb1a3bd0f7b4c82bc2924"},
+    "W13": {"path": "immutable/W13.md", "sha256": "304b43994e91d4c32cef202194977a443a72ef359b59045b99bdcedc9d8b21e5"},
+    "W21": {"path": "immutable/W21.md", "sha256": "b72a2f204e3dd913a05d7442cd85e31cb0ee29d9c021ab5e80a665d8d8f4f83c"},
+    "W22": {"path": "immutable/W22.md", "sha256": "6be0be1bea11f18c327ac3ad65d14d76d3aee6f2921180c3857015652f7ed3f0"},
+    "W23": {"path": "immutable/W23.md", "sha256": "07e43ac1939c3c136678aa3ac596ff7b81844924ce714af449f5f8e6e9763c6e"},
+    "W31": {"path": "immutable/W31.md", "sha256": "58fd5f6b892c3a455fa5fd035d4516aa4ee04dc3a8cc9ed4c168e795ed85c24c"},
+    "W32": {"path": "immutable/W32.md", "sha256": "923a69dfe78f82eb77f066595046a2b7b798d799206720c5ef6b1f91fe48261d"},
+    "W33": {"path": "immutable/W33.md", "sha256": "21c984351d37505e6362b1a813bf92e6ba52bac4cd0673ba7ee5a8ecfaa6db25"},
+    "W41": {"path": "immutable/W41.md", "sha256": "fe2d53f0c40bd3fcd0ff069ca0cb220ecc490c9789e8ee849e91f1c5c927d703"},
+    "W42": {"path": "immutable/W42.md", "sha256": "c8e1c9e92bf091f532408b89e9d1c3a7ae4585ecc708041693a1f7f901a2e6ec"},
+    "W43": {"path": "immutable/W43.md", "sha256": "f5b843c0d6c5c62bb4577f3352441e418c7dab52ff025478a48387dc5a46eabf"},
+    "W51": {"path": "immutable/W51.md", "sha256": "61b7b92e9eb52a6fc2062a52df664bcf4106ba149466a1fc084fb406b2357a8d"},
+    "W52": {"path": "immutable/W52.md", "sha256": "9c754e8c3e51cc614f531f393b0f0a879124a16784b1e1841b733ae15402b4b0"},
+    "W53": {"path": "immutable/W53.md", "sha256": "62d26e4d6a877848206e3b3669a772bf0cb68598622a217897985b3704bca927"}
+  },
+  "overlays": {
+    "W11": {
+      "v1": {
+        "path": "overlays/W11/v1.yaml",
+        "hash": "631767fced5dd2ed1d4bff8189fc68924091678142c0774212aadbc2501a6934"
+      }
+    }
+  }
 }

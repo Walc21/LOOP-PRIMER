@@ -1,0 +1,10 @@
+parent_version: null
+diagnostic: Fixture M4 para priorizar localizadores explícitos.
+author: m4-fixture
+evidence:
+  - control/fixtures/m4#W11
+scope:
+  - page:1
+hash: 631767fced5dd2ed1d4bff8189fc68924091678142c0774212aadbc2501a6934
+rollback: null
+instructions: Priorize localizadores explícitos; não amplie o escopo da página 1.

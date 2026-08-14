@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.1.0",
+  "proposal_id": "proposal-W11-fixture",
+  "cycle_id": 0,
+  "role_id": "W11",
+  "base_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "scope": ["page:1"],
+  "evidence_locators": ["article.pdf#page=1;line=4"],
+  "patch_or_operations": {
+    "kind": "operations",
+    "operations": [
+      {
+        "op": "annotate",
+        "target": "page:1",
+        "value": "Padronizar a notação local."
+      }
+    ]
+  },
+  "affected_claims": [],
+  "dependencies": [],
+  "risk": {
+    "level": "low",
+    "factors": ["linguistic"],
+    "technical_effect_possible": false
+  },
+  "confidence": 0.8,
+  "requested_validations": ["schema"],
+  "prompt_version": "m4"
+}

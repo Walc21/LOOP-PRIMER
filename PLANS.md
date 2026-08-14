@@ -25,6 +25,8 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - Versão instalada auditada: `prime-agent 0.7.1`.
 - M3 correção final de identidade concluída: vincula `source.zip` aos eventos,
   à recuperação e ao champion; M4 permanece pendente.
+- M4 concluído: contratos de prompt content-addressed, overlays versionados e
+  compilação local cobrem os 21 papéis sem iniciar agentes nem alterar o catálogo.
 
 ## Contratos já decididos
 
@@ -64,7 +66,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M1 | scaffold e contratos canônicos | concluído | árvore materializada, 21 papéis, 8 dimensões e 12 schemas validados localmente |
 | M2 | máquina de estados, event log e recuperação | concluído após correção contratual final | API e replay aplicam integralmente `event.schema.json`; 30 testes M2 e 76 testes locais aprovados |
 | M3 | ingestão PDF e baseline editável | concluído | original publicado e registrado em `INGESTED` antes das derivações; PDF, presença/hash/tamanho de ZIP e modo de fonte são imutáveis até `v0000`, com contenção de caminhos e falha fechada |
-| M4 | papéis, prompts imutáveis e compilador | pendente | os 21 papéis canônicos usam os contratos imutáveis aprovados |
+| M4 | papéis, prompts imutáveis e compilador | concluído | os 21 papéis canônicos compilam deterministicamente a partir de núcleos verificados, contexto fechado, overlay registrado e schema de saída |
 | M5 | blackboard, grafo de claims e ativação esparsa | pendente | RUN/CHECK/SHIFT/FREEZE seguem o grafo de impacto |
 | M6 | integração RLM hierárquica | pendente | profundidade 2, handles, mensagens e arquivos passam teste controlado |
 | M7 | síntese, merge, gates e arquivos de versões | pendente | somente merge constrói challenger antes de gates e júri; champion e Pareto preservam histórico |
@@ -215,3 +217,9 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   pacotes de sistema ausentes mediante `sudo`, e cria o ambiente virtual local
   com as versões de `requirements-dev.txt`. Prime Agent continua fora do
   escopo, por ser opcional e uma instalação global.
+- 2026-08-13 — M4 concluído: os 21 prompts compilam deterministicamente de
+  núcleos Markdown verificados por SHA-256; contexto é fechado pelo
+  `AgentTask`, overlay YAML é versionado e registrado, e `AgentProposal` e
+  `DepartmentPacket` são validados pelos schemas existentes. Seis testes M4 e
+  a suíte completa de 104 testes passaram localmente, sem modelos, Prime
+  Agent, rede ou dependências novas.
