@@ -484,3 +484,20 @@ com hash, schema, ciclo e base conferidos. A API pública não escolhe o fake:
 live sem `PrimeRLMAdapter` explícito falha fechada; dry-run grava só preview.
 Pausa, parada e finalização impedem mutações e o cancelamento é persistido
 antes da remoção.
+
+**Segundo complemento corretivo (2026-08-14):** a admissão é serializada por
+`SPAWN_INTENT` sob o lock do journal; retomada reconcilia intent sem handle
+somente entre os filhos diretos pelo nome determinístico. O contrato do handle
+Prime exige `rlm_child_id`, `name`, `session_dir` e `model`; handles parciais
+falham fechados. PLAN, activation, filhos e receipts são particionados por
+ciclo e um novo PLAN só é aceito se a máquina canônica estiver em
+`CYCLE_COMPLETE`. Receipts publicam uma cópia content-addressed imutável e a
+consolidação relê/verifica esses bytes. Pausa/retomada têm passagens monotônicas
+e são espelhadas no `DurableStore`; finalização continua exclusiva de M10.
+`DepartmentPacket` é write-once e reenvia seus bytes persistidos depois de
+falha de mensagem. Propostas técnicas de S30/S40 exigem revisão aprovada de
+S20 no mesmo proposal/ciclo/base; sem ela o pacote é `blocked`. Um departamento
+ativo sem trabalhador publica somente `no_change` com justificativa e evidência.
+Tasks e views expõem locators imutáveis do baseline, extratos, rubrica e slice
+local do blackboard; especialistas não recebem contexto global nem champion
+editável. Replay valida tipo e payload de todos os eventos e falha fechado.

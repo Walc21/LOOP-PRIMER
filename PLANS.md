@@ -275,3 +275,15 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   projeta snapshots por ciclo; a árvore M00→Sxx→Wxx é contextual e reentrante;
   planos, tarefas, views, prompts e receipts são validados e duráveis. A
   cobertura adversarial permanece offline; M7 não foi iniciado.
+- 2026-08-14 — Segunda correção cirúrgica de M6 iniciada: corrigir contratos
+  Prime, ciclo/PLAN particionado, pausa/stop canônicos, receipts imutáveis,
+  dependência S20, contexto real e admissão concorrente; M7 permanece fora de
+  escopo e não haverá runtime, rede ou chamadas de modelo.
+- 2026-08-14 — Segunda correção cirúrgica de M6 concluída: handles Prime são
+  estritamente `rlm_child_id`/`name`/`session_dir`/`model`; PLAN, activation e
+  projeções são imutáveis e particionados por ciclo; intent de spawn é
+  journalizado antes da admissão. Receipts congelam bytes content-addressed e
+  pacotes departamentais são write-once/reenviáveis. Pausa/retomada têm IDs de
+  passagem, stop cancela antes de remover, e S30/S40 técnicos ficam bloqueados
+  sem revisão S20 válida. Passaram 24 testes M6 locais e 152 testes na suíte
+  completa; M7 não foi iniciado.

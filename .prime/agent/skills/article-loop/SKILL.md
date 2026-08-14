@@ -119,3 +119,15 @@ ou chamada para entradas FREEZE.
 Os marcos futuros devem preservar os contratos em `config/schemas/` e só podem
 executar integração Prime Agent após o preflight previsto em
 `docs/compatibility.md`.
+
+## Complemento corretivo M6 (segundo)
+
+O adaptador Prime só aceita handles documentados com `rlm_child_id`, `name`,
+`session_dir` e `model`; `preflight()` apenas verifica superfícies e informa
+`/rlm-max-depth 2`, sem executar sessão. Cada PLAN M5 é imutável por ciclo e
+um ciclo seguinte exige `CYCLE_COMPLETE` no `DurableStore`. `SPAWN_INTENT` é o
+token de proprietário da admissão e a recuperação consulta somente os filhos
+diretos pelo nome determinístico. Todo receipt é copiado por SHA-256 para área
+imutável antes de consumo; mudança no arquivo original rejeita consolidação.
+S30/S40 técnicos precisam de review S20 canônico do mesmo ciclo/base/proposta.
+M6 permanece offline e não inicia M7.

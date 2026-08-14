@@ -35,25 +35,55 @@ class PrimeRLMAdapter:
         self.rlm_api, self.agent_message = rlm_api, agent_message
         self.actor_role, self.actor_id, self.depth = actor_role, actor_id, depth
 
+    def _handle(self, value: Any) -> ChildHandle:
+        """Convert only the documented Prime handle, never an object repr."""
+        child_id = getattr(value, "rlm_child_id", None)
+        name = getattr(value, "name", None)
+        session_dir = getattr(value, "session_dir", None)
+        model = getattr(value, "model", None)
+        if not all(isinstance(x, str) and x for x in (child_id, name, session_dir)):
+            raise ValueError("Prime returned an incomplete child handle")
+        if model is not None and not isinstance(model, str):
+            raise ValueError("Prime returned an invalid child model")
+        return ChildHandle(child_id, name, session_dir, model, self.actor_id,
+                           self.actor_role, self.depth + 1)
+
+    async def preflight(self) -> dict[str, Any]:
+        surfaces = {
+            "rlm": callable(self.rlm_api),
+            "list_subagents": callable(getattr(self.rlm_api, "list_subagents", None)),
+            "delete_subagent": callable(getattr(self.rlm_api, "delete_subagent", None)),
+            "agent_message.send": callable(getattr(self.agent_message, "send", None)),
+        }
+        if self.actor_role not in {"M00", "S10", "S20", "S30", "S40", "S50"} or self.depth not in {0, 1}:
+            raise ValueError("invalid Prime actor role or depth")
+        if (self.actor_role == "M00") != (self.depth == 0) or (self.actor_role != "M00") != (self.depth == 1):
+            raise ValueError("Prime actor role/depth mismatch")
+        if not all(surfaces.values()):
+            raise ValueError("required Prime surface is unavailable")
+        return {"adapter": "prime", "actor_role": self.actor_role, "depth": self.depth,
+                "surfaces": surfaces, "required_session_command": "/rlm-max-depth 2"}
+
     async def spawn(self, prompt: str, *, name: str) -> ChildHandle:
         handle = await self.rlm_api(prompt, name=name)
-        return ChildHandle(str(getattr(handle, "id", handle)), name,
-                           str(getattr(handle, "session_dir", "")),
-                           getattr(handle, "model", None), self.actor_id,
-                           self.actor_role, self.depth + 1)
+        child = self._handle(handle)
+        if child.name != name: raise ValueError("Prime child name differs from requested name")
+        return child
 
     async def list_subagents(self) -> list[ChildHandle]:
         result = await self.rlm_api.list_subagents()
-        return [ChildHandle(str(getattr(x, "id", x)), str(getattr(x, "name", "")),
-                            str(getattr(x, "session_dir", "")), getattr(x, "model", None),
-                            self.actor_id, self.actor_role, self.depth + 1) for x in result]
+        if not isinstance(result, list): raise ValueError("Prime list_subagents returned invalid value")
+        return [self._handle(x) for x in result]
 
     async def send_parent(self, message: str) -> None:
         # The installed documented subset has no ``mode`` argument.
         await self.agent_message.send(message, receiver_role="parent")
 
     async def delete_subagent(self, child_id: str) -> None:
-        await self.rlm_api.delete_subagent(child_id)
+        child = next((x for x in await self.list_subagents() if x.child_id == child_id), None)
+        if child is None: raise ValueError("Prime child is not a direct child of this actor")
+        # The installed API documents deletion by the direct child identity.
+        await self.rlm_api.delete_subagent(child.child_id)
 
 
 class FakeRLMAdapter:

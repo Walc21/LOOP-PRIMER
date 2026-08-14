@@ -19,11 +19,13 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["proposal_id", "reviewer_role_id", "status", "evidence_locators"],
+        "required": ["proposal_id", "reviewer_role_id", "status", "cycle_id", "base_hash", "evidence_locators"],
         "properties": {
           "proposal_id": {"type": "string", "minLength": 1},
           "reviewer_role_id": {"const": "S20"},
           "status": {"enum": ["approved", "changes_requested", "not_applicable"]},
+          "cycle_id": {"type": "integer", "minimum": 0},
+          "base_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
           "evidence_locators": {"type": "array", "items": {"type": "string", "minLength": 1}}
         }
       }

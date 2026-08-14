@@ -126,11 +126,47 @@ class Orchestrator:
                     or not isinstance(item["event_type"], str) or not isinstance(item["payload"], dict)
                     or not _SHA.fullmatch(item["event_hash"]) or item["event_hash"] != _hash(_bytes(body))):
                 raise OrchestrationError("invalid orchestration journal chain")
+            self._validate_event(item["event_type"], item["payload"])
             if any(x["idempotency_key"] == item["idempotency_key"] for x in result): raise OrchestrationError("duplicate journal idempotency key")
             result.append(item)
         return result
 
+    @staticmethod
+    def _validate_event(kind: str, payload: Mapping[str, Any]) -> None:
+        """Keep replay closed: every event has one small, typed envelope."""
+        required: dict[str, set[str]] = {
+            "BOOTSTRAPPED": {"run_id", "pdf_path", "pdf_sha256", "base_hash"},
+            "PLAN": {"cycle_id", "activation", "activation_hash", "raw"},
+            "DEPARTMENTS_RUNNING": set(),
+            "ADMISSION_PREPARED": {"role_id", "cycle_id", "task_hash", "view_hash", "prompt_hash", "prompt_version", "workspace"},
+            "SPAWN_INTENT": {"role_id", "cycle_id", "name", "parent_id"},
+            "HANDLE": {"role_id", "cycle_id", "child_id", "name", "session_dir", "model", "parent_id", "actor_role", "depth", "status", "task_hash", "view_hash", "prompt_hash", "prompt_version", "workspace"},
+            "RECEIPT": {"sender_role", "parent_role", "path", "immutable_path", "sha256", "schema_version", "cycle_id"},
+            "FAILED": {"role_id", "reason"}, "CANCELLED": {"role_id"},
+            "PAUSED": {"pause_id", "resume_state"}, "RESUMED": {"pause_id"},
+            "STOPPED": set(), "FINALIZED": set(),
+        }
+        if kind not in required or not isinstance(payload, Mapping):
+            raise OrchestrationError("unknown or malformed orchestration event")
+        keys = set(payload)
+        if kind == "CANCELLED":
+            if not keys.issubset({"role_id", "pending_owner"}) or "role_id" not in keys:
+                raise OrchestrationError("invalid CANCELLED payload")
+        elif keys != required[kind]:
+            raise OrchestrationError("invalid orchestration event payload")
+        if kind in {"PLAN", "ADMISSION_PREPARED", "SPAWN_INTENT", "HANDLE", "RECEIPT"} and type(payload.get("cycle_id")) is not int:
+            raise OrchestrationError("event cycle_id is invalid")
+        if kind == "PLAN" and (not isinstance(payload["activation"], Mapping) or not isinstance(payload["raw"], Mapping) or not _SHA.fullmatch(str(payload["activation_hash"]))):
+            raise OrchestrationError("invalid PLAN payload")
+        if kind == "HANDLE" and (payload["status"] != "ADMITTED" or type(payload["depth"]) is not int or not all(isinstance(payload[x], str) and payload[x] for x in ("role_id", "child_id", "name", "session_dir", "parent_id", "actor_role"))):
+            raise OrchestrationError("invalid HANDLE payload")
+        if kind == "RECEIPT" and (not _SHA.fullmatch(str(payload["sha256"])) or payload["schema_version"] != SCHEMA_VERSION):
+            raise OrchestrationError("invalid RECEIPT payload")
+        if kind in {"PAUSED", "RESUMED"} and not isinstance(payload["pause_id"], str):
+            raise OrchestrationError("invalid pause event")
+
     def _append(self, run: str, kind: str, key: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+        self._validate_event(kind, payload)
         events = self._events(run)
         for event in events:
             if event["idempotency_key"] == key:
@@ -147,12 +183,16 @@ class Orchestrator:
         events = self._events(run)
         state: dict[str, Any] = {"run_id": run, "cycle_id": 0, "state": "SOURCE_READY", "paused": False, "stopped": False, "finalized": False,
                                  "base_hash": None, "pdf_path": None, "activation": {}, "activation_hash": None,
+                                 "plans_by_cycle": {}, "activation_by_cycle": {}, "activation_hash_by_cycle": {},
                                  "children": {}, "receipts": {}, "children_by_cycle": {}, "receipts_by_cycle": {}, "events": len(events)}
         for e in events:
             p = e["payload"]; k = e["event_type"]
             if k == "BOOTSTRAPPED": state.update(p)
             elif k == "PLAN":
                 cycle = str(p["cycle_id"])
+                state["plans_by_cycle"][cycle] = p["raw"]
+                state["activation_by_cycle"][cycle] = p["activation"]
+                state["activation_hash_by_cycle"][cycle] = p["activation_hash"]
                 state.update({"cycle_id": p["cycle_id"], "activation": p["activation"], "activation_hash": p["activation_hash"], "state": "CYCLE_PLANNED",
                               "children": state["children_by_cycle"].setdefault(cycle, {}), "receipts": state["receipts_by_cycle"].setdefault(cycle, {})})
             elif k == "DEPARTMENTS_RUNNING": state["state"] = "DEPARTMENTS_RUNNING"
@@ -162,11 +202,12 @@ class Orchestrator:
             elif k == "RECEIPT":
                 state["receipts_by_cycle"].setdefault(str(p["cycle_id"]), {})[p["sender_role"]] = p
                 if p["cycle_id"] == state["cycle_id"]:
-                    state["receipts"][p["sender_role"]] = p; state["children"][p["sender_role"]]["status"] = "RECEIVED"
-            elif k == "FAILED": state["children"][p["role_id"]]["status"] = "FAILED"
-            elif k == "CANCELLED": state["children"][p["role_id"]]["status"] = "CANCELLED"
-            elif k == "PAUSED": state["paused"] = True
-            elif k == "RESUMED": state["paused"] = False
+                    state["receipts"][p["sender_role"]] = p
+                    if p["sender_role"] in state["children"]: state["children"][p["sender_role"]]["status"] = "RECEIVED"
+            elif k == "FAILED" and p["role_id"] in state["children"]: state["children"][p["role_id"]]["status"] = "FAILED"
+            elif k == "CANCELLED" and p["role_id"] in state["children"]: state["children"][p["role_id"]]["status"] = "CANCELLED"
+            elif k == "PAUSED": state.update({"paused": True, "pause_id": p["pause_id"], "resume_state": p["resume_state"]})
+            elif k == "RESUMED": state.update({"paused": False, "resume_state": None})
             elif k == "STOPPED": state["stopped"] = True
             elif k == "FINALIZED": state["finalized"] = True
         return state
@@ -229,11 +270,40 @@ class Orchestrator:
         if isinstance(plan, ActivationPlan): raw = plan.activation_map(); paused = plan.paused
         elif isinstance(plan, Mapping): raw = dict(plan); paused = bool(raw.get("paused"))
         else: raise OrchestrationError("ActivationPlan M5 is required")
-        roles = raw.get("roles")
-        if not isinstance(raw.get("cycle_id"), int) or not isinstance(roles, list): raise OrchestrationError("invalid ActivationPlan activation_map")
-        mapping = {x.get("role_id"): x.get("mode") for x in roles if isinstance(x, Mapping)}
-        if set(mapping) != {"M00", *DEPARTMENTS, *[w for x in CHILDREN.values() for w in x]} or any(v not in {x.value for x in ActivationMode} for v in mapping.values()):
+        roles = raw.get("roles"); expected = {"cycle_id","paused","checkpoint","budget","roles"}
+        if set(raw) != expected or type(raw.get("cycle_id")) is not int or type(raw.get("paused")) is not bool or not isinstance(roles, list) or not isinstance(raw.get("budget"), Mapping): raise OrchestrationError("invalid ActivationPlan activation_map")
+        budget=raw["budget"]; limits=budget.get("limits")
+        if set(budget) != {"limits","estimated_tokens","wall_time_seconds"} or not isinstance(limits, Mapping) or set(limits) != set(PlanningLimits.__dataclass_fields__) or any(type(v) is not int for v in limits.values()): raise OrchestrationError("invalid ActivationPlan budget")
+        if raw["paused"] != (raw["checkpoint"] is not None) or (raw["checkpoint"] is not None and not isinstance(raw["checkpoint"], str)):
+            raise OrchestrationError("paused plan requires exactly one checkpoint")
+        required={"role_id","mode","justification","estimated_tokens","wall_time_seconds","inputs","expected_outputs"}
+        if any(not isinstance(x, Mapping) or set(x)!=required for x in roles): raise OrchestrationError("invalid ActivationPlan role entry")
+        mapping = {x["role_id"]: x["mode"] for x in roles}
+        all_roles={"M00", *DEPARTMENTS, *[w for x in CHILDREN.values() for w in x]}
+        if len(roles)!=21 or len(mapping)!=21 or set(mapping) != all_roles or any(v not in {x.value for x in ActivationMode} for v in mapping.values()) or mapping["M00"] != "RUN":
             raise OrchestrationError("activation map is incomplete or invalid")
+        active=[]
+        for entry in roles:
+            if not isinstance(entry["role_id"], str) or not isinstance(entry["mode"], str) or not isinstance(entry["justification"], str):
+                raise OrchestrationError("activation role fields are invalid")
+            if type(entry["estimated_tokens"]) is not int or type(entry["wall_time_seconds"]) is not int or not isinstance(entry["inputs"],list) or not isinstance(entry["expected_outputs"],list):
+                raise OrchestrationError("activation role work fields are invalid")
+            zero = entry["estimated_tokens"] == 0 and entry["wall_time_seconds"] == 0 and entry["inputs"] == [] and entry["expected_outputs"] == []
+            if entry["mode"] == "FREEZE":
+                if not zero: raise OrchestrationError("FREEZE activation entry carries work")
+            else:
+                if entry["estimated_tokens"] <= 0 or entry["wall_time_seconds"] <= 0: raise OrchestrationError("active activation entry invalid")
+                active.append(entry)
+        if budget["estimated_tokens"] != sum(x["estimated_tokens"] for x in active) or budget["wall_time_seconds"] != sum(x["wall_time_seconds"] for x in active): raise OrchestrationError("activation budget is forged")
+        if len(active)>limits["max_active_per_cycle"] or budget["estimated_tokens"]>limits["max_estimated_tokens"] or budget["wall_time_seconds"]>limits["max_wall_time_seconds"]:
+            raise OrchestrationError("activation limits incoherent")
+        for department in DEPARTMENTS:
+            department_active = [entry for entry in active if entry["role_id"] == department or entry["role_id"] in CHILDREN[department]]
+            child_active = [entry for entry in active if entry["role_id"] in CHILDREN[department]]
+            if len(department_active) > limits["max_active_per_department"] or len(child_active) > limits["max_children_per_manager"]:
+                raise OrchestrationError("activation department limits incoherent")
+        if any(sum(entry["role_id"] == role for entry in active) > limits["max_active_per_role"] for role in mapping):
+            raise OrchestrationError("activation role limit incoherent")
         return mapping, raw, paused
 
     def _load_plan(self, run: str, cycle_id: int | None) -> Mapping[str, Any]:
@@ -254,27 +324,37 @@ class Orchestrator:
         if not dry_run and not isinstance(self.adapter, PrimeRLMAdapter) and self.adapter is None:
             raise OrchestrationError("live execution requires an explicit PrimeRLMAdapter")
         if self.adapter is not None and getattr(self.adapter, "actor_role", "M00") != "M00": raise OrchestrationError("only M00 may plan a root cycle")
-        if plan is None: plan = self._load_plan(run, cycle_id)
+        persisted = self._load_plan(run, cycle_id)
+        if plan is None: plan = persisted
         mapping, raw, paused = self._plan(plan); cycle = raw["cycle_id"] if cycle_id is None else cycle_id
         if cycle != raw["cycle_id"]: raise OrchestrationError("cycle differs from ActivationPlan")
         digest = _hash(_bytes(raw))
+        if _hash(_bytes(persisted)) != digest:
+            raise OrchestrationError("ActivationPlan hash differs from persisted M5 artifact")
         with self._lock(run):
             state = self._state(run); self._guard(state)
-            if state["activation_hash"] and (state["cycle_id"] == cycle and state["activation_hash"] != digest): raise OrchestrationError("cannot replace a persisted activation map")
+            old_hash=state["activation_hash_by_cycle"].get(str(cycle))
+            if old_hash and old_hash != digest: raise OrchestrationError("cannot replace a persisted activation map")
+            if cycle != state["cycle_id"] and cycle != state["cycle_id"] + 1: raise OrchestrationError("cycle is not the next canonical cycle")
             preview = self._file(run, f"preview-c{cycle:04d}.json")
             if dry_run:
                 self._atomic(preview, {"dry_run":True,"activation_hash":digest,"activation_map":raw}); return self._snapshot(run)
-            if not state["activation_hash"]:
-                self._atomic(self._file(run, f"activation-c{cycle:04d}.json"), raw)
-                self._append(run,"PLAN",f"{run}:c{cycle}:plan",{"cycle_id":cycle,"activation":mapping,"activation_hash":digest})
-            if paused:
-                self._append(run,"PAUSED",f"{run}:c{cycle}:plan-paused",{"reason":"activation_plan_paused"}); return self._save_snapshot(run)
+            if not old_hash:
+                if cycle != state["cycle_id"] and DurableStore(self.root).snapshot(run)["state"] != State.CYCLE_COMPLETE.value: raise OrchestrationError("prior cycle is not complete")
+                plan_file=self._file(run, f"activation-c{cycle:04d}.json")
+                if plan_file.exists(): raise OrchestrationError("immutable PLAN artifact already exists without journal entry")
+                self._atomic(plan_file, raw)
+                self._append(run,"PLAN",f"{run}:c{cycle}:plan",{"cycle_id":cycle,"activation":mapping,"activation_hash":digest,"raw":raw})
         store = DurableStore(self.root)
         try:
-            if store.snapshot(run)["state"] == State.SOURCE_READY.value:
+            if store.snapshot(run)["state"] in {State.SOURCE_READY.value, State.CYCLE_COMPLETE.value}:
                 store.record(run, State.CYCLE_PLANNED, event_id=f"{run}:m6:c{cycle}:planned", idempotency_key=f"{run}:m6:c{cycle}:planned", actor_id="m6", event_type="M6_CYCLE_PLANNED", payload={"activation_hash":digest})
         except (StoreError, TransitionError) as error:
             raise OrchestrationError("canonical M3/M6 transition rejected") from error
+        if paused:
+            # A paused M5 plan is recorded as CYCLE_PLANNED, then paused with
+            # the same concrete transition rules as an operator request.
+            return await self.pause(run)
         # Each admission persists independently under the run lock.
         for role in DEPARTMENTS:
             if mapping[role] != "FREEZE": await self._admit(run, cycle, role, self.adapter)
@@ -308,7 +388,22 @@ class Orchestrator:
                 raise OrchestrationError("AgentTask is invalid") from error
             task_bytes = _bytes(task) + b"\n"; task_hash = _hash(task_bytes)
             compiled = compile_prompt(self.root, task, self._context(task))
-            view = submanager_view(task, []) if role.startswith("S") else specialist_view(task, excerpts=[], dependent_claims=[], rubric={"role":role}, local_history=[])
+            if role.startswith("S"):
+                # A submanager receives only task/proposal material of direct
+                # children.  It never receives another department's context.
+                children = [{"role_id": child, "task_hash": state["children"][child]["task_hash"]}
+                            for child in CHILDREN[role] if child in state["children"]]
+                view = submanager_view(task, children)
+            else:
+                # A specialist gets an explicit local slice, never an editable
+                # champion nor a global blackboard dump.
+                view = specialist_view(
+                    task,
+                    excerpts=[item for item in task["input_locators"] if item.startswith("readonly:")],
+                    dependent_claims=[{"locator": item} for item in task["input_locators"] if item.startswith("blackboard:")],
+                    rubric={"locator": next(item for item in task["input_locators"] if item.endswith("evaluation.yaml")), "role_id": role},
+                    local_history=[{"locator": item} for item in task["input_locators"] if item.startswith("readonly:history:")],
+                )
             for name, value in (("task.json",task),("view.json",view)):
                 target=workspace/name
                 if target.exists() and target.read_bytes() != (_bytes(value)+b"\n"): raise OrchestrationError("refusing to overwrite workspace artifact")
@@ -319,22 +414,53 @@ class Orchestrator:
             if not prompt_target.exists(): self._atomic_bytes(prompt_target,prompt_bytes)
             artifact = {"task_hash":task_hash,"view_hash":_hash(_bytes(view)+b"\n"),"prompt_hash":_hash(prompt_bytes),"prompt_version":task["prompt_version"],"workspace":str(workspace)}
             self._append(run,"ADMISSION_PREPARED",f"{run}:c{cycle}:{role}:prepared",{"role_id":role,"cycle_id":cycle,**artifact})
+            # This intent is the admission ownership token.  A concurrent pass
+            # can reconcile it but must not issue a second spawn.
+            intent_key=f"{run}:c{cycle}:{role}:intent"
+            owns_intent=not any(event["idempotency_key"] == intent_key for event in self._events(run))
+            self._append(run,"SPAWN_INTENT",intent_key,{"role_id":role,"cycle_id":cycle,"name":_name(run,cycle,role),"parent_id":getattr(adapter,"actor_id",None)})
         # A process may die after rlm() admits the child but before HANDLE is
         # journaled. The deterministic name reconciles that narrow window.
         name = _name(run, cycle, role)
         existing = next((item for item in await adapter.list_subagents() if item.name == name), None)
-        handle = existing or await adapter.spawn(compiled.text + "\nWorkspace permitido: " + str(workspace) + "\nEnvie ao pai apenas receipt {path,sha256,schema_version}.", name=name)
+        if existing is not None:
+            handle = existing
+        elif not owns_intent:
+            # A prior owner may have died after intent.  Do not turn this
+            # uncertainty into a duplicate child; a later reconciliation can
+            # observe the deterministic name and journal HANDLE.
+            raise OrchestrationError("active SPAWN_INTENT awaits reconciliation")
+        else:
+            handle = await adapter.spawn(compiled.text + "\nWorkspace permitido: " + str(workspace) + "\nEnvie ao pai apenas receipt {path,sha256,schema_version}.", name=name)
         with self._lock(run):
             state=self._state(run); old=state["children"].get(role)
             if old and old["cycle_id"] == cycle: return old
-            record={"role_id":role,"cycle_id":cycle,"child_id":handle.child_id,"name":handle.name,"session_dir":handle.session_dir,"parent_id":handle.parent_id,"actor_role":handle.actor_role,"depth":handle.depth,"status":"ADMITTED",**artifact}
+            if not isinstance(handle, ChildHandle) or not all(isinstance(x,str) and x for x in (handle.child_id,handle.name,handle.session_dir)):
+                raise OrchestrationError("adapter returned incomplete handle")
+            if handle.parent_id != getattr(adapter,"actor_id",None) or handle.actor_role != getattr(adapter,"actor_role",None) or handle.depth != expected_depth:
+                raise OrchestrationError("adapter handle parent, actor or depth differs")
+            record={"role_id":role,"cycle_id":cycle,"child_id":handle.child_id,"name":handle.name,"session_dir":handle.session_dir,"model":handle.model,"parent_id":handle.parent_id,"actor_role":handle.actor_role,"depth":handle.depth,"status":"ADMITTED",**artifact}
             self._append(run,"HANDLE",f"{run}:c{cycle}:{role}:handle",record); return self._save_snapshot(run)["children"][role]
 
     def _context(self, task: Mapping[str, Any]) -> dict[str, Any]: return {k:task[k] for k in ("run_id","cycle_id","base_hash","activation_mode","scope","input_locators")}
     def _task(self, state: Mapping[str, Any], role: str, workspace: Path) -> dict[str, Any]:
         schema="department-packet.schema.json" if role.startswith("S") else "agent-proposal.schema.json"
-        scope=[f"role:{role}"]; inputs=[f"workspace:{workspace}"]
-        return {"schema_version":SCHEMA_VERSION,"task_id":f"{state['run_id']}-{role}-c{state['cycle_id']:04d}","run_id":state["run_id"],"cycle_id":state["cycle_id"],"role_id":role,"activation_mode":state["activation"][role],"created_at":_now(),"base_hash":state["base_hash"],"scope":scope,"input_locators":inputs,"requested_output_schema":schema,"prompt_version":expected_prompt_version(self.root,role,schema),"constraints":["workspace_isolated","receipt_only","no_champion_write"]}
+        champion=self.root / "versions" / "champion" / "v0000"
+        extracted=self.root / "artifacts" / "extracted" / str(state["pdf_sha256"])
+        rendered=self.root / "artifacts" / "rendered" / str(state["pdf_sha256"])
+        rubric=self.root / "config" / "rubrics" / "evaluation.yaml"
+        plan_inputs=state["plans_by_cycle"][str(state["cycle_id"])]["roles"]
+        entry=next(item for item in plan_inputs if item["role_id"] == role)
+        scope=sorted(set([f"role:{role}", *entry["inputs"]]))
+        inputs=[f"readonly:{champion / 'baseline.pdf'}", f"readonly:{champion / 'manifest.json'}", f"readonly:{extracted}", f"readonly:{rendered}", f"readonly:{rubric}", *[f"blackboard:{item}" for item in entry["inputs"]]]
+        if role.startswith("W"):
+            # A specialist sees only the immutable source context and its own
+            # local blackboard slice; its output workspace is deliberately not
+            # advertised as an input locator.
+            inputs.append(f"readonly:history:{self._dir(state['run_id']) / 'snapshot.json'}")
+        else:
+            inputs.extend(f"child-task:{state['children'][child]['task_hash']}" for child in CHILDREN[role] if child in state["children"])
+        return {"schema_version":SCHEMA_VERSION,"task_id":f"{state['run_id']}-{role}-c{state['cycle_id']:04d}","run_id":state["run_id"],"cycle_id":state["cycle_id"],"role_id":role,"activation_mode":state["activation"][role],"created_at":_now(),"base_hash":state["base_hash"],"scope":scope,"input_locators":inputs,"requested_output_schema":schema,"prompt_version":expected_prompt_version(self.root,role,schema),"constraints":["workspace_isolated_output_only","receipt_only","no_champion_write","inputs_read_only"]}
 
     async def advance_department(self, run_id: str, department: str, *, adapter: Any | None = None, dry_run: bool = False) -> dict[str, Any]:
         run=self._run(run_id); adapter=adapter or self.adapter
@@ -366,7 +492,11 @@ class Orchestrator:
             if old:
                 if old["sha256"] == sha256 and old["path"] == str(target): return state
                 raise OrchestrationError("conflicting second receipt")
-            payload={"sender_role":sender_role,"parent_role":parent_role,"path":str(target),"sha256":sha256,"schema_version":schema_version,"cycle_id":state["cycle_id"]}
+            immutable=self._managed("state","orchestration",run,"receipts",sha256,create=True)/"artifact.json"
+            data=target.read_bytes()
+            if immutable.exists() and immutable.read_bytes()!=data: raise OrchestrationError("content-addressed receipt conflict")
+            if not immutable.exists(): self._atomic_bytes(immutable,data)
+            payload={"sender_role":sender_role,"parent_role":parent_role,"path":str(target),"immutable_path":str(immutable),"sha256":sha256,"schema_version":schema_version,"cycle_id":state["cycle_id"]}
             self._append(run,"RECEIPT",f"{run}:c{state['cycle_id']}:{sender_role}:receipt",payload); return self._save_snapshot(run)
 
     async def mark_failed(self, run_id: str, sender_role: str, reason: str) -> dict[str, Any]:
@@ -391,22 +521,115 @@ class Orchestrator:
         if getattr(adapter,"actor_role",None)!=department: raise OrchestrationError("only the owning submanager consolidates")
         state=self._state(run); self._guard(state); workers=[r for r in CHILDREN[department] if state["activation"].get(r)!="FREEZE"]
         if any(r not in state["receipts"] for r in workers): raise OrchestrationError("department has pending receipts")
-        proposals=[json.loads(Path(state["receipts"][r]["path"]).read_text()) for r in workers]
-        packet={"schema_version":SCHEMA_VERSION,"packet_id":f"{run}-{department}-c{state['cycle_id']:04d}","run_id":run,"cycle_id":state["cycle_id"],"department_id":department,"base_hash":state["base_hash"],"proposal_ids":[x["proposal_id"] for x in proposals],"specialist_task_ids":[state["children"][r]["task_hash"] for r in workers],"dependency_reviews":[],"status":"complete","no_change_justification":None,"evidence_locators":[state["receipts"][r]["path"] for r in workers],"created_at":_now()}
-        target=self._workspace(run,state["cycle_id"],department)/"department-packet.json"; self._atomic(target,packet)
+        proposals=[]
+        for r in workers:
+            receipt=state["receipts"][r]; mutable=Path(receipt["path"]); workspace=self._workspace(run,state["cycle_id"],r)
+            self._regular(mutable, workspace)
+            if _hash(mutable.read_bytes()) != receipt["sha256"]: raise OrchestrationError("receipt bytes changed after acceptance")
+            frozen=Path(receipt["immutable_path"])
+            if frozen.is_symlink() or not frozen.is_file() or _hash(frozen.read_bytes()) != receipt["sha256"]: raise OrchestrationError("immutable receipt is unsafe")
+            try: proposal=json.loads(frozen.read_text()); validate_output(self.root,"agent-proposal.schema.json",proposal)
+            except (json.JSONDecodeError, PromptContractError) as error: raise OrchestrationError("immutable receipt schema invalid") from error
+            if proposal.get("role_id")!=r or proposal.get("cycle_id")!=state["cycle_id"] or proposal.get("base_hash")!=state["base_hash"]: raise OrchestrationError("immutable receipt identity differs")
+            proposals.append(proposal)
+        technical=[x for x in proposals if x.get("risk",{}).get("technical_effect_possible")]
+        target=self._workspace(run,state["cycle_id"],department)/"department-packet.json"
+        if target.exists():
+            self._regular(target, self._workspace(run,state["cycle_id"],department))
+            # Publication is write-once.  A retry only reuses these exact bytes
+            # (including created_at), then may resend its envelope to M00.
+            encoded=target.read_bytes()
+            try:
+                packet=json.loads(encoded)
+                validate_output(self.root,"department-packet.schema.json",packet)
+            except (json.JSONDecodeError, PromptContractError) as error: raise OrchestrationError("existing DepartmentPacket is invalid") from error
+            if packet.get("run_id") != run or packet.get("cycle_id") != state["cycle_id"] or packet.get("department_id") != department or packet.get("base_hash") != state["base_hash"]:
+                raise OrchestrationError("existing DepartmentPacket identity differs")
+        else:
+            review_index: dict[str, dict[str, Any]]={}
+            s20=state["receipts"].get("S20")
+            if s20:
+                frozen=Path(s20["immutable_path"])
+                if frozen.is_symlink() or not frozen.is_file() or _hash(frozen.read_bytes()) != s20["sha256"]: raise OrchestrationError("S20 dependency packet is unsafe")
+                try: source_packet=json.loads(frozen.read_text()); validate_output(self.root,"department-packet.schema.json",source_packet)
+                except (json.JSONDecodeError, PromptContractError) as error: raise OrchestrationError("S20 dependency packet is invalid") from error
+                if source_packet.get("department_id") != "S20" or source_packet.get("run_id") != run or source_packet.get("cycle_id") != state["cycle_id"] or source_packet.get("base_hash") != state["base_hash"]: raise OrchestrationError("S20 dependency packet identity differs")
+                review_index={x["proposal_id"]:x for x in source_packet["dependency_reviews"]}
+            reviews=[]; missing_review=False
+            for proposal in technical:
+                review=review_index.get(proposal["proposal_id"])
+                valid=isinstance(review,dict) and review.get("proposal_id")==proposal["proposal_id"] and review.get("reviewer_role_id")=="S20" and review.get("status")=="approved" and review.get("cycle_id")==state["cycle_id"] and review.get("base_hash")==state["base_hash"] and isinstance(review.get("evidence_locators"),list) and bool(review["evidence_locators"])
+                if valid: reviews.append(review)
+                else: missing_review=True
+            status="no_change" if not workers else ("blocked" if missing_review else "complete")
+            packet={"schema_version":SCHEMA_VERSION,"packet_id":f"{run}-{department}-c{state['cycle_id']:04d}","run_id":run,"cycle_id":state["cycle_id"],"department_id":department,"base_hash":state["base_hash"],"proposal_ids":[x["proposal_id"] for x in proposals],"specialist_task_ids":[state["children"][r]["task_hash"] for r in workers],"dependency_reviews":reviews,"status":status,"no_change_justification":"no active worker exists for this department" if not workers else None,"evidence_locators":[state["receipts"][r]["immutable_path"] for r in workers] or [str(self.root / "versions" / "champion" / "v0000" / "manifest.json")],"created_at":_now()}
+            try: validate_output(self.root,"department-packet.schema.json",packet)
+            except PromptContractError as error: raise OrchestrationError("generated DepartmentPacket is invalid") from error
+            encoded=_bytes(packet)+b"\n"
+            # Admission/consolidation can be resumed concurrently.  Only the
+            # owner holding this journal lock can publish a new packet; a
+            # loser consumes the already-published immutable byte sequence.
+            with self._lock(run):
+                if target.exists():
+                    self._regular(target, self._workspace(run,state["cycle_id"],department))
+                    encoded=target.read_bytes()
+                    try:
+                        packet=json.loads(encoded)
+                        validate_output(self.root,"department-packet.schema.json",packet)
+                    except (json.JSONDecodeError, PromptContractError) as error:
+                        raise OrchestrationError("concurrent DepartmentPacket is invalid") from error
+                    if packet.get("run_id") != run or packet.get("cycle_id") != state["cycle_id"] or packet.get("department_id") != department or packet.get("base_hash") != state["base_hash"]:
+                        raise OrchestrationError("concurrent DepartmentPacket identity differs")
+                else:
+                    self._atomic_bytes(target,encoded)
         result=await self.receipt(run,sender_role=department,parent_role="M00",path=target,sha256=_hash(target.read_bytes()))
         await adapter.send_parent(_bytes({"path":str(target),"sha256":_hash(target.read_bytes()),"schema_version":SCHEMA_VERSION}).decode())
         return result
 
-    async def pause(self, run_id: str) -> dict[str, Any]: return await self._flag(run_id,"PAUSED",{})
+    async def pause(self, run_id: str) -> dict[str, Any]:
+        run=self._run(run_id)
+        with self._lock(run):
+            state=self._state(run)
+            if state["paused"]: return state
+            if state["stopped"] or state["finalized"]: raise OrchestrationError("execution is terminal")
+            pause_id=f"{run}:pause:{len(self._events(run))}"
+            self._append(run,"PAUSED",pause_id,{"pause_id":pause_id,"resume_state":state["state"]})
+            try: DurableStore(self.root).pause(run,event_id=pause_id,idempotency_key=pause_id,actor_id="m6")
+            except (StoreError, TransitionError) as error: raise OrchestrationError("canonical pause rejected") from error
+            return self._save_snapshot(run)
     async def resume(self, run_id: str) -> dict[str, Any]:
         run=self._run(run_id)
         with self._lock(run):
             state=self._state(run)
             if state["stopped"] or state["finalized"] or not state["paused"]: raise OrchestrationError("execution cannot resume")
-            self._append(run,"RESUMED",f"{run}:resume:{len(self._events(run))}",{}); return self._save_snapshot(run)
-    async def stop(self, run_id: str) -> dict[str, Any]: return await self._flag(run_id,"STOPPED",{})
-    async def finalize(self, run_id: str) -> dict[str, Any]: return await self._flag(run_id,"FINALIZED",{})
+            key=f"{run}:resume:{state.get('pause_id')}"; self._append(run,"RESUMED",key,{"pause_id":state.get("pause_id")})
+            try: DurableStore(self.root).resume(run,event_id=key,idempotency_key=key,actor_id="m6")
+            except (StoreError, TransitionError) as error: raise OrchestrationError("canonical resume rejected") from error
+            return self._save_snapshot(run)
+    async def stop(self, run_id: str) -> dict[str, Any]:
+        run=self._run(run_id)
+        with self._lock(run):
+            state=self._state(run)
+            if state["stopped"]: return state
+            for role, child in state["children"].items():
+                if child["status"] == "ADMITTED": self._append(run,"CANCELLED",f"{run}:c{state['cycle_id']}:{role}:cancelled",{"role_id":role,"pending_owner":child["parent_id"] != getattr(self.adapter,"actor_id",None)})
+            self._append(run,"STOPPED",f"{run}:stopped:{len(self._events(run))}",{})
+            try:
+                store=DurableStore(self.root)
+                if store.snapshot(run)["state"] not in {State.TECHNICAL_FAILURE.value, State.FINALIZED.value}:
+                    store.record(run,State.TECHNICAL_FAILURE,event_id=f"{run}:m6:stopped",idempotency_key=f"{run}:m6:stopped",actor_id="m6",event_type="M6_STOPPED",payload={"reason":"operator_stop"})
+            except (StoreError, TransitionError) as error: raise OrchestrationError("canonical stop rejected") from error
+            result=self._save_snapshot(run)
+        # Only the owning actor may remove direct children; unresolved owners
+        # remain journaled as pending cancellation, never false success.
+        if self.adapter:
+            for child in state["children"].values():
+                if child["parent_id"] == getattr(self.adapter,"actor_id",None): await self.adapter.delete_subagent(child["child_id"])
+        return result
+    async def finalize(self, run_id: str) -> dict[str, Any]:
+        run=self._run(run_id)
+        if DurableStore(self.root).snapshot(run)["state"] != State.CYCLE_COMPLETE.value: raise OrchestrationError("M10 finalization requires CYCLE_COMPLETE")
+        return await self._flag(run,"FINALIZED",{})
     async def _flag(self, run_id: str, event: str, payload: Mapping[str,Any]) -> dict[str, Any]:
         run=self._run(run_id)
         with self._lock(run):

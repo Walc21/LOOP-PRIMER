@@ -12,6 +12,8 @@
       "proposal_id": "proposal-W31-fixture",
       "reviewer_role_id": "S20",
       "status": "approved",
+      "cycle_id": 0,
+      "base_hash": "0000000000000000000000000000000000000000000000000000000000000000",
       "evidence_locators": ["review-S20.json#proposal-W31-fixture"]
     }
   ],

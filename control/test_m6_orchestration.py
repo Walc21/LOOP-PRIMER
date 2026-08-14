@@ -3,7 +3,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
 sys.path.insert(0, str(ROOT / ".prime/agent/skills/article-loop/src"))
-from article_loop import FakeRLMAdapter, Orchestrator, OrchestrationError, ingest, run_cycle
+from article_loop import ChildHandle, FakeRLMAdapter, Orchestrator, OrchestrationError, PrimeRLMAdapter, ingest, run_cycle
+from article_loop.store import DurableStore
+from article_loop.activation import ActivationPlanner
+from article_loop.blackboard import Impact
 
 
 class M6OrchestrationTests(unittest.TestCase):
@@ -20,9 +23,15 @@ class M6OrchestrationTests(unittest.TestCase):
         ingest(self.root)
         self.fake = FakeRLMAdapter(); self.o = Orchestrator(self.root, self.fake)
         self.state = asyncio.run(self.o.bootstrap(self.pdf)); self.run = self.state["run_id"]
-        roles = ["M00", *[f"S{i}0" for i in range(1, 6)], *[f"W{i}{j}" for i in range(1, 6) for j in range(1, 4)]]
-        self.plan = {"cycle_id": 0, "paused": False, "checkpoint": None, "budget": {}, "roles": [{"role_id": role, "mode": "RUN"} for role in roles]}
+        impact = Impact(claims=("claim:fixture",), sections=("section:proof",), equations=("equation:1",), references=("reference:1",), roles=tuple(f"W{i}{j}" for i in range(1, 6) for j in range(1, 4)), severity=10)
+        self.plan = ActivationPlanner().plan(cycle_id=0, impact=impact).activation_map()
+        self.persist_plan(self.plan)
     def tearDown(self): self.temp.cleanup()
+    def persist_plan(self, plan):
+        directory=self.root / "state/blackboard" / self.run; directory.mkdir(parents=True, exist_ok=True)
+        encoded=json.dumps(plan, sort_keys=True, separators=(",", ":"))
+        (directory / f"activation-c{plan['cycle_id']:04d}.json").write_text(encoded)
+        if plan["cycle_id"] == 0: (directory / "activation_map.json").write_text(encoded)
     def cycle(self): return asyncio.run(self.o.run_cycle(run_id=self.run, plan=self.plan))
     def manager(self, department):
         child = asyncio.run(self.o.status(self.run))["children"][department]
@@ -88,18 +97,16 @@ class M6OrchestrationTests(unittest.TestCase):
         (self.root / "versions/champion/v0000/baseline.pdf").write_bytes(b"changed")
         with self.assertRaises(OrchestrationError): asyncio.run(Orchestrator(self.root, self.fake).bootstrap(self.pdf))
 
-    def test_paused_freeze_and_dry_run_never_admit(self):
+    def test_forged_freeze_and_dry_run_never_admit(self):
         frozen = {**self.plan, "roles":[{**entry, "mode":"FREEZE" if entry["role_id"] == "S10" else entry["mode"]} for entry in self.plan["roles"]]}
-        asyncio.run(self.o.run_cycle(run_id=self.run, plan=frozen, dry_run=True)); self.assertEqual(self.fake.calls, [])
-        paused = {**self.plan, "paused": True}
-        asyncio.run(self.o.run_cycle(run_id=self.run, plan=paused)); self.assertEqual(self.fake.calls, [])
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.run_cycle(run_id=self.run, plan=frozen, dry_run=True))
+        asyncio.run(self.o.run_cycle(run_id=self.run, plan=self.plan, dry_run=True)); self.assertEqual(self.fake.calls, [])
 
-    def test_dry_run_then_live_and_next_cycle_have_distinct_identities(self):
+    def test_dry_run_then_live_and_next_cycle_is_blocked_until_complete(self):
         asyncio.run(self.o.run_cycle(run_id=self.run, plan=self.plan, dry_run=True)); self.assertEqual(self.fake.calls, [])
         self.cycle(); self.assertEqual(len(self.fake.calls), 5)
-        next_plan = {**self.plan, "cycle_id": 1}
-        asyncio.run(self.o.run_cycle(run_id=self.run, plan=next_plan)); self.assertEqual(len(self.fake.calls), 10)
-        self.assertEqual(len({x["name"] for x in self.fake.calls}), 10)
+        next_plan = ActivationPlanner().plan(cycle_id=1, impact=Impact((), (), (), (), ("W11",), 1)).activation_map(); self.persist_plan(next_plan)
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.run_cycle(run_id=self.run, plan=next_plan))
 
     def test_actor_topology_depth_and_reconciliation(self):
         self.cycle(); s10 = asyncio.run(self.o.status(self.run))["children"]["S10"]
@@ -142,8 +149,74 @@ class M6OrchestrationTests(unittest.TestCase):
         with self.assertRaises(OrchestrationError): asyncio.run(self.o.mark_failed(self.run, "S20", "late"))
         asyncio.run(self.o.resume(self.run)); asyncio.run(self.o.stop(self.run))
         with self.assertRaises(OrchestrationError): asyncio.run(self.o.resume(self.run))
-        with self.assertRaises(OrchestrationError): asyncio.run(self.o.advance_department(self.run, "S20", adapter=self.manager("S20")))
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.advance_department(self.run, "S20", adapter=self.fake))
 
     def test_public_live_requires_explicit_real_adapter(self):
         self.cycle()
         with self.assertRaises(OrchestrationError): asyncio.run(run_cycle(root=self.root, cycle_id=0))
+
+    def test_prime_documented_handle_and_preflight_are_closed(self):
+        class Handle:
+            rlm_child_id="prime-1"; name="named"; session_dir="/session"; model="model"
+        class API:
+            async def __call__(self, prompt, *, name): return Handle()
+            async def list_subagents(self): return [Handle()]
+            async def delete_subagent(self, child): self.deleted=child
+        class Message:
+            async def send(self, message, *, receiver_role): pass
+        api=API(); prime=PrimeRLMAdapter(api, Message(), actor_role="M00", actor_id="root", depth=0)
+        self.assertEqual(asyncio.run(prime.preflight())["required_session_command"], "/rlm-max-depth 2")
+        child=asyncio.run(prime.spawn("p",name="named")); self.assertEqual((child.child_id,child.name,child.session_dir,child.model),("prime-1","named","/session","model"))
+        asyncio.run(prime.delete_subagent("prime-1")); self.assertEqual(api.deleted,"prime-1")
+        class Bad: name="named"; session_dir="/session"; model="model"
+        async def bad_list(): return [Bad()]
+        api.list_subagents = bad_list
+        with self.assertRaises(ValueError): asyncio.run(prime.list_subagents())
+
+    def test_pause_resume_pause_stop_and_finalize_are_canonical(self):
+        self.cycle(); asyncio.run(self.o.pause(self.run)); first=asyncio.run(self.o.status(self.run))["pause_id"]
+        events=len(self.o._events(self.run)); asyncio.run(self.o.pause(self.run)); self.assertEqual(len(self.o._events(self.run)),events)
+        asyncio.run(self.o.resume(self.run)); asyncio.run(self.o.pause(self.run)); state=asyncio.run(self.o.status(self.run))
+        self.assertTrue(state["paused"]); self.assertNotEqual(first,state["pause_id"]); self.assertEqual(DurableStore(self.root).snapshot(self.run)["state"],"PAUSED")
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.finalize(self.run))
+        asyncio.run(self.o.stop(self.run)); stopped=asyncio.run(self.o.status(self.run)); self.assertTrue(stopped["stopped"])
+        self.assertTrue(all(child["status"] == "CANCELLED" for child in stopped["children"].values()))
+        cancelled=[i for i,e in enumerate(self.o._events(self.run)) if e["event_type"] == "CANCELLED"]
+        self.assertLess(max(cancelled), next(i for i,e in enumerate(self.o._events(self.run)) if e["event_type"] == "STOPPED"))
+
+    def test_receipt_freeze_and_packet_publication_are_immutable(self):
+        self.cycle(); self.admit_workers("S10")
+        for role in ("W11","W12","W13"):
+            path,digest=self.write_proposal(role); asyncio.run(self.o.receipt(self.run,sender_role=role,parent_role="S10",path=path,sha256=digest))
+        path=self.root / "workspaces" / self.run / "cycle-0000" / "W11" / "receipt.json"; original=path.read_bytes(); path.write_text("{}")
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=self.manager("S10")))
+        # A separately valid department can publish once; retries preserve bytes.
+        path.write_bytes(original)
+        state=asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=self.manager("S10")))
+        packet=Path(state["receipts"]["S10"]["path"]); before=packet.read_bytes()
+        asyncio.run(self.o.consolidate_department(self.run,"S10",adapter=self.manager("S10"))); self.assertEqual(before,packet.read_bytes())
+
+    def test_s20_dependency_reviews_gate_technical_departments(self):
+        self.cycle(); self.admit_workers("S30")
+        for role in ("W31","W32","W33"):
+            p=self.proposal(role); p["risk"]["technical_effect_possible"]=True
+            path=self.root / "workspaces" / self.run / "cycle-0000" / role / "receipt.json"; path.write_text(json.dumps(p)); asyncio.run(self.o.receipt(self.run,sender_role=role,parent_role="S30",path=path,sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+        state=asyncio.run(self.o.consolidate_department(self.run,"S30",adapter=self.manager("S30")))
+        packet=json.loads(Path(state["receipts"]["S30"]["path"]).read_text()); self.assertEqual(packet["status"],"blocked"); self.assertEqual(packet["dependency_reviews"],[])
+
+    def test_real_m5_map_budget_freeze_and_views_are_checked(self):
+        forged=json.loads(json.dumps(self.plan)); forged["budget"]["estimated_tokens"] += 1
+        with self.assertRaises(OrchestrationError): self.o._plan(forged)
+        frozen=json.loads(json.dumps(self.plan)); entry=next(x for x in frozen["roles"] if x["role_id"]=="W11"); entry["mode"]="FREEZE"; entry["estimated_tokens"]=1
+        with self.assertRaises(OrchestrationError): self.o._plan(frozen)
+        self.cycle(); self.admit_workers("S10"); child=asyncio.run(self.o.status(self.run))["children"]["W11"]
+        view=json.loads((Path(child["workspace"])/"view.json").read_text()); self.assertTrue(view["excerpts"] and view["rubric"]["locator"].endswith("evaluation.yaml"))
+
+    def test_intent_reconciliation_concurrency_and_closed_replay(self):
+        self.cycle(); manager=self.manager("S10")
+        async def concurrent_admission():
+            return await asyncio.gather(self.o._admit(self.run,0,"W11",manager),self.o._admit(self.run,0,"W11",manager))
+        asyncio.run(concurrent_admission())
+        self.assertEqual(len([x for x in self.fake.calls if x["name"].endswith("-w11")]),1)
+        with self.assertRaises(OrchestrationError): self.o._append(self.run,"UNKNOWN","unknown",{})
+        with self.assertRaises(OrchestrationError): self.o._append(self.run,"HANDLE","bad",{"role_id":"W12"})
