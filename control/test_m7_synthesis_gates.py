@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 
 import jsonschema
 
@@ -16,10 +17,11 @@ sys.path.insert(0, str(ROOT / ".prime/agent/skills/article-loop/src"))
 
 from article_loop import FakeRLMAdapter, Orchestrator, ingest
 from article_loop.activation import ActivationPlanner
-from article_loop.blackboard import Impact
-from article_loop.gates import REQUIRED_GATES, compare, run_gates
-from article_loop.store import DurableStore
-from article_loop.synthesis import M7Pipeline, SynthesisError
+from article_loop.blackboard import Blackboard, Impact
+from article_loop.gates import REQUIRED_GATES, compare, record_math_verification, run_gates
+from article_loop.state_machine import State
+from article_loop.store import DurableStore, IntegrityError
+from article_loop.synthesis import M7Pipeline, SynthesisError, tree_hash
 
 
 class M7ReceiptIntegrationTests(unittest.TestCase):
@@ -47,15 +49,26 @@ class M7ReceiptIntegrationTests(unittest.TestCase):
         shutil.copytree(ROOT / "prompts", self.root / "prompts")
         self.pdf = self.root / "input/inbox" / "artigo.pdf"
         shutil.copyfile(self.fixture_pdf, self.pdf)
+        with zipfile.ZipFile(self.root / "input/inbox/source.zip", "w") as archive:
+            archive.writestr(
+                "paper.tex",
+                "\\documentclass{article}\n\\begin{document}\nFixture $x=1$.\\label{fixture}\n\\end{document}\n",
+            )
         ingest(self.root)
         self.fake = FakeRLMAdapter()
         self.orchestrator = Orchestrator(self.root, self.fake)
         self.initial = asyncio.run(self.orchestrator.bootstrap(self.pdf))
         self.run_id = self.initial["run_id"]
-        impact = Impact(claims=("claim:fixture",), sections=("section:proof",), equations=("equation:1",), references=("reference:1",), roles=tuple(f"W{i}{j}" for i in range(1, 6) for j in range(1, 4)), severity=10)
+        claim = Blackboard(self.root).append(self.run_id, "claims", {
+            "text": "Fixture theorem", "type": "theorem", "location": {"page": 1, "section": "proof"},
+            "dependencies": [], "evidence": ["page:1"], "status": "active", "severity": 10,
+            "source_hash": self.initial["base_hash"], "last_validated_cycle": 0,
+        })
+        self.claim_id = claim["claim_id"]
+        impact = Impact(claims=(self.claim_id,), sections=("section:proof",), equations=("equation:1",), references=("reference:1",), roles=tuple(f"W{i}{j}" for i in range(1, 6) for j in range(1, 4)), severity=10)
         self.plan = ActivationPlanner().plan(cycle_id=0, impact=impact).activation_map()
         board = self.root / "state/blackboard" / self.run_id
-        board.mkdir(parents=True)
+        board.mkdir(parents=True, exist_ok=True)
         raw = json.dumps(self.plan, sort_keys=True, separators=(",", ":"))
         (board / "activation-c0000.json").write_text(raw, encoding="utf-8")
         (board / "activation_map.json").write_text(raw, encoding="utf-8")
@@ -68,13 +81,13 @@ class M7ReceiptIntegrationTests(unittest.TestCase):
         return self.fake.for_child(child["child_id"], actor_role=department)
 
     def _proposal(self, role):
-        target = "article.tex" if role == "W11" else f"evidence/{role.lower()}.txt"
-        value = ("\\documentclass{article}\n\\begin{document}\nFixture $x=1$.\\label{fixture}\n\\end{document}\n" if role == "W11" else f"M6 evidence for {role}\n")
+        target = f"evidence/{role.lower()}.txt"
+        value = f"M6 evidence for {role}\n"
         return {
             "schema_version": "1.1.0", "proposal_id": f"p-{role}", "role_id": role, "cycle_id": 0,
             "base_hash": self.initial["base_hash"], "scope": ["proof"], "evidence_locators": ["page:1"],
             "patch_or_operations": {"kind": "operations", "operations": [{"op": "add", "target": target, "value": value}]},
-            "affected_claims": ["claim:fixture"] if role == "W22" else [], "dependencies": [],
+            "affected_claims": [self.claim_id] if role == "W22" else [], "dependencies": [],
             "risk": {"level": "low", "factors": [], "technical_effect_possible": False}, "confidence": 1,
             "requested_validations": ["correctness_math"] if role == "W22" else [], "prompt_version": "m7-integration",
         }
@@ -96,6 +109,29 @@ class M7ReceiptIntegrationTests(unittest.TestCase):
             asyncio.run(self.orchestrator.consolidate_department(self.run_id, department, adapter=self._manager(department)))
         return asyncio.run(self.orchestrator.status(self.run_id))
 
+    def _approve(self, candidate):
+        return record_math_verification(
+            candidate, claim_id=self.claim_id, proposal_id="p-W22", verifier_id="local-fixture",
+            verifier_version="1.0.0", method="manual-proof-check", summary="Fixture identity checked independently.",
+        )
+
+    def _candidate_state(self, *, approve=False):
+        state = self._m6_state()
+        pipe = M7Pipeline(self.root)
+        synthesis = pipe.synthesize(state["receipts"], run_id=self.run_id)
+        store = DurableStore(self.root)
+        pipe.record_synthesis(store, synthesis)
+        manifest = pipe.build(synthesis, self.root / "versions/champion/v0000")
+        pipe.record_candidate(store, manifest)
+        candidate = self.root / "versions/challengers" / manifest["candidate_id"]
+        if approve:
+            self._approve(candidate)
+        return state, pipe, store, manifest, candidate
+
+    @staticmethod
+    def _canonical(value):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+
     def test_real_m6_receipts_drive_all_m7_transitions_and_gates(self):
         state = self._m6_state()
         pipe = M7Pipeline(self.root)
@@ -109,13 +145,16 @@ class M7ReceiptIntegrationTests(unittest.TestCase):
         jsonschema.validate(manifest, json.loads((self.root / "config/schemas/candidate-manifest.schema.json").read_text()))
         pipe.record_candidate(store, manifest)
         candidate = self.root / "versions/challengers" / manifest["candidate_id"]
+        approval = self._approve(candidate)
+        self.assertEqual(approval["claim_id"], self.claim_id)
         self.assertFalse(any(path.stat().st_mode & 0o222 for path in candidate.rglob("*")))
+        self.assertFalse(candidate.stat().st_mode & 0o222)
         self.assertNotEqual((champion / "baseline.pdf").stat().st_ino, (candidate / "baseline.pdf").stat().st_ino)
-        report = run_gates(candidate)
+        self.assertTrue((candidate / "latex-source/paper.tex").is_file())
+        report = pipe.execute_and_record_gates(store, candidate)
+        self.assertTrue(report["overall_pass"], report)
         jsonschema.validate(report, json.loads((self.root / "config/schemas/gate-report.schema.json").read_text()))
         self.assertEqual(tuple(item["gate_id"] for item in report["gates"]), REQUIRED_GATES)
-        self.assertTrue(report["overall_pass"])
-        pipe.record_gates(store, report)
         self.assertEqual(store.snapshot(self.run_id)["state"], "GATES_PASSED")
 
     def test_receipt_path_hash_and_permission_tampering_fail_closed(self):
@@ -127,9 +166,22 @@ class M7ReceiptIntegrationTests(unittest.TestCase):
         synthesis = pipe.synthesize(state["receipts"], run_id=self.run_id)
         manifest = pipe.build(synthesis, self.root / "versions/champion/v0000")
         candidate = self.root / "versions/challengers" / manifest["candidate_id"]
-        os.chmod(candidate / "article.tex", 0o644)
+        os.chmod(candidate / "evidence/w11.txt", 0o644)
         with self.assertRaises(Exception):
             pipe.build(synthesis, self.root / "versions/champion/v0000")
+
+    def test_writable_published_root_is_rejected(self):
+        state = self._m6_state()
+        pipe = M7Pipeline(self.root)
+        synthesis = pipe.synthesize(state["receipts"], run_id=self.run_id)
+        manifest = pipe.build(synthesis, self.root / "versions/champion/v0000")
+        candidate = self.root / "versions/challengers" / manifest["candidate_id"]
+        os.chmod(candidate, 0o755)
+        try:
+            with self.assertRaises(IntegrityError):
+                pipe.build(synthesis, self.root / "versions/champion/v0000")
+        finally:
+            os.chmod(candidate, 0o555)
 
     def test_semantically_equivalent_receipt_with_different_bytes_is_rejected(self):
         state = self._m6_state()
@@ -168,13 +220,18 @@ class M7ReceiptIntegrationTests(unittest.TestCase):
         state = self._m6_state()
         pipe = M7Pipeline(self.root)
         synthesis = pipe.synthesize(state["receipts"], run_id=self.run_id)
+        store = DurableStore(self.root)
+        pipe.record_synthesis(store, synthesis)
         manifest = pipe.build(synthesis, self.root / "versions/champion/v0000")
+        pipe.record_candidate(store, manifest)
+        candidate = self.root / "versions/challengers" / manifest["candidate_id"]
+        self._approve(candidate)
 
         class LyingAdapter:
             def __getattr__(self, name):
                 raise AssertionError(f"gate adapter was consulted: {name}")
 
-        report = run_gates(self.root / "versions/challengers" / manifest["candidate_id"], adapter=LyingAdapter())
+        report = run_gates(candidate, adapter=LyingAdapter())
         self.assertTrue(report["overall_pass"])
 
     def test_publication_recovers_before_and_after_rename_without_duplicates(self):
@@ -197,35 +254,74 @@ class M7ReceiptIntegrationTests(unittest.TestCase):
         manifest = normal.build(synthesis, self.root / "versions/champion/v0000")
         self.assertEqual(list((self.root / "versions/challengers").iterdir()), [self.root / "versions/challengers" / manifest["candidate_id"]])
 
-    def test_s20_and_w22_must_remain_canonical_m6_evidence(self):
+    def test_publication_recovers_when_interrupted_after_parent_fsync(self):
         state = self._m6_state()
-        pipe = M7Pipeline(self.root)
-        synthesis = pipe.synthesize(state["receipts"], run_id=self.run_id)
-        manifest = pipe.build(synthesis, self.root / "versions/champion/v0000")
-        # A similarly named untrusted file cannot stand in for a missing M6 receipt.
+        normal = M7Pipeline(self.root)
+        synthesis = normal.synthesize(state["receipts"], run_id=self.run_id)
+        with self.assertRaises(RuntimeError):
+            M7Pipeline(self.root, fault=lambda point: (_ for _ in ()).throw(RuntimeError(point)) if point == "after_parent_fsync" else None).build(synthesis, self.root / "versions/champion/v0000")
+        manifest = normal.build(synthesis, self.root / "versions/champion/v0000")
+        candidate = self.root / "versions/challengers" / manifest["candidate_id"]
+        self.assertFalse(candidate.stat().st_mode & 0o222)
+        self.assertEqual(list((self.root / "versions/challengers").iterdir()), [candidate])
+
+    def test_candidate_event_retry_is_exactly_once_around_both_fault_points(self):
+        state = self._m6_state()
+        normal = M7Pipeline(self.root)
+        synthesis = normal.synthesize(state["receipts"], run_id=self.run_id)
+        store = DurableStore(self.root)
+        normal.record_synthesis(store, synthesis)
+        manifest = normal.build(synthesis, self.root / "versions/champion/v0000")
+        for fault_point, expected_after_fault in (("before_candidate_built_event", "SYNTHESIS_READY"),
+                                                  ("after_candidate_built_event", "CANDIDATE_BUILT")):
+            faulty = M7Pipeline(
+                self.root,
+                fault=lambda point, target=fault_point: (_ for _ in ()).throw(RuntimeError(point)) if point == target else None,
+            )
+            with self.assertRaises(RuntimeError):
+                faulty.record_candidate(store, manifest)
+            self.assertEqual(store.snapshot(self.run_id)["state"], expected_after_fault)
+            normal.record_candidate(store, manifest)
+            events = [event for event in store.read_events(self.run_id) if event["state_to"] == "CANDIDATE_BUILT"]
+            self.assertEqual(len(events), 1)
+
+    def test_request_and_similarly_named_file_do_not_count_as_math_approval(self):
+        _, _, _, _, candidate = self._candidate_state()
+        # A canonical W22 request and a suggestive filename are still not an approval.
         (self.root / "S20-W22-approval.json").write_text('{"approved": true}', encoding="utf-8")
-        w22 = Path(state["receipts"]["W22"]["immutable_path"])
-        os.chmod(w22.parent, 0o700)
-        os.unlink(w22)
-        report = run_gates(self.root / "versions/challengers" / manifest["candidate_id"])
+        report = run_gates(candidate)
         checks = {item["gate_id"]: item["passed"] for item in report["gates"]}
-        self.assertFalse(checks["math_critical_issues"])
+        self.assertTrue(checks["math_critical_issues"])
         self.assertFalse(checks["correctness_math"])
 
     def test_failed_gates_leave_the_run_at_candidate_built(self):
+        _, pipe, store, _, candidate = self._candidate_state()
+        report = run_gates(candidate)
+        with self.assertRaises(SynthesisError):
+            pipe.record_gates(store, report["report_locator"])
+        self.assertEqual(store.snapshot(self.run_id)["state"], "CANDIDATE_BUILT")
+
+    def test_candidate_built_event_must_bind_the_exact_published_candidate(self):
         state = self._m6_state()
         pipe = M7Pipeline(self.root)
         synthesis = pipe.synthesize(state["receipts"], run_id=self.run_id)
         store = DurableStore(self.root)
         pipe.record_synthesis(store, synthesis)
         manifest = pipe.build(synthesis, self.root / "versions/champion/v0000")
-        pipe.record_candidate(store, manifest)
-        w22 = Path(state["receipts"]["W22"]["immutable_path"])
-        os.chmod(w22.parent, 0o700)
-        os.unlink(w22)
-        report = run_gates(self.root / "versions/challengers" / manifest["candidate_id"])
+        store.record(
+            self.run_id, State.CANDIDATE_BUILT,
+            event_id="fixture:wrong-candidate", idempotency_key="fixture:wrong-candidate",
+            actor_id="fixture", event_type="M7_ARTIFACT",
+            payload={"candidate_id": "c-wrong", "candidate_hash": "0" * 64},
+            artifact_hashes=["0" * 64],
+        )
+        candidate = self.root / "versions/challengers" / manifest["candidate_id"]
+        self._approve(candidate)
+        report = run_gates(candidate)
+        checks = {gate["gate_id"]: gate["passed"] for gate in report["gates"]}
+        self.assertFalse(checks["contracts_state"])
         with self.assertRaises(SynthesisError):
-            pipe.record_gates(store, report)
+            pipe.record_gates(store, report["report_locator"])
         self.assertEqual(store.snapshot(self.run_id)["state"], "CANDIDATE_BUILT")
 
     def test_m7_never_mutates_champion_pareto_or_rejected_records(self):
@@ -234,27 +330,77 @@ class M7ReceiptIntegrationTests(unittest.TestCase):
         rejected.parent.mkdir(parents=True)
         pareto.write_bytes(b'{"frontier":[]}\n')
         rejected.write_bytes(b'{"candidate":"retained"}\n')
-        before = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in (pareto, rejected, self.root / "versions/champion/v0000/manifest.json")}
+        champion = self.root / "versions/champion/v0000"
+        before = {
+            "champion": tree_hash(champion),
+            "pareto": hashlib.sha256(pareto.read_bytes()).hexdigest(),
+            "rejected": hashlib.sha256(rejected.read_bytes()).hexdigest(),
+        }
         state = self._m6_state()
         pipe = M7Pipeline(self.root)
         synthesis = pipe.synthesize(state["receipts"], run_id=self.run_id)
         manifest = pipe.build(synthesis, self.root / "versions/champion/v0000")
         run_gates(self.root / "versions/challengers" / manifest["candidate_id"])
-        self.assertEqual(before, {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in before})
+        self.assertEqual(before, {
+            "champion": tree_hash(champion),
+            "pareto": hashlib.sha256(pareto.read_bytes()).hexdigest(),
+            "rejected": hashlib.sha256(rejected.read_bytes()).hexdigest(),
+        })
 
-    def test_gate_report_rejects_unknown_duplicate_or_failed_report(self):
-        state = self._m6_state()
-        pipe = M7Pipeline(self.root)
-        synthesis = pipe.synthesize(state["receipts"], run_id=self.run_id)
-        store = DurableStore(self.root)
-        pipe.record_synthesis(store, synthesis)
-        manifest = pipe.build(synthesis, self.root / "versions/champion/v0000")
-        pipe.record_candidate(store, manifest)
-        report = run_gates(self.root / "versions/challengers" / manifest["candidate_id"])
-        forged = json.loads(json.dumps(report)); forged["gates"][1]["gate_id"] = forged["gates"][0]["gate_id"]
-        with self.assertRaises(SynthesisError): pipe.record_gates(store, forged)
-        forged = json.loads(json.dumps(report)); forged["overall_pass"] = False
-        with self.assertRaises(SynthesisError): pipe.record_gates(store, forged)
+    def test_forged_persisted_gate_report_cannot_advance_state(self):
+        _, pipe, store, manifest, candidate = self._candidate_state(approve=True)
+        report = run_gates(candidate)
+        self.assertTrue(report["overall_pass"])
+        forged = json.loads(json.dumps(report))
+        forged["gates"][0].update({"passed": False, "exit_code": 99, "command": "false"})
+        forged["overall_pass"] = True
+        for field in ("report_hash", "report_id", "report_locator"):
+            forged.pop(field)
+        digest = hashlib.sha256(self._canonical(forged)).hexdigest()
+        forged["report_hash"] = digest
+        forged["report_id"] = "g-" + digest[:32]
+        forged["report_locator"] = f"state/gates/{manifest['candidate_id']}/{digest}.json"
+        path = self.root / forged["report_locator"]
+        path.write_bytes(self._canonical(forged))
+        with self.assertRaises(SynthesisError):
+            pipe.record_gates(store, forged["report_locator"])
+        self.assertEqual(store.snapshot(self.run_id)["state"], "CANDIDATE_BUILT")
+
+    def test_entirely_forged_mapping_without_run_gates_is_rejected(self):
+        _, pipe, store, _, _ = self._candidate_state()
+        with self.assertRaises(SynthesisError):
+            pipe.record_gates(store, {"overall_pass": True, "correctness_math_pass": True})
+        self.assertEqual(store.snapshot(self.run_id)["state"], "CANDIDATE_BUILT")
+
+    def test_bad_math_evidence_locator_fails_correctness_gate(self):
+        _, _, _, manifest, candidate = self._candidate_state(approve=True)
+        directory = self.root / "state/math-verifications" / manifest["candidate_id"]
+        original = next(directory.glob("*.json"))
+        verification = json.loads(original.read_bytes())
+        verification["evidence_locator"] = f"state/math-evidence/{manifest['candidate_id']}/{'0' * 64}.json"
+        for field in ("verification_hash", "verification_id", "verification_locator"):
+            verification.pop(field)
+        digest = hashlib.sha256(self._canonical(verification)).hexdigest()
+        verification["verification_hash"] = digest
+        verification["verification_id"] = "mv-" + digest[:32]
+        verification["verification_locator"] = f"state/math-verifications/{manifest['candidate_id']}/{digest}.json"
+        os.unlink(original)
+        (self.root / verification["verification_locator"]).write_bytes(self._canonical(verification))
+        report = run_gates(candidate)
+        self.assertFalse({gate["gate_id"]: gate["passed"] for gate in report["gates"]}["correctness_math"])
+
+    def test_persisted_open_critical_math_issue_fails_gate(self):
+        _, _, _, manifest, candidate = self._candidate_state(approve=True)
+        Blackboard(self.root).append(self.run_id, "issues", {
+            "record_id": "issue-critical-fixture", "issue_type": "math", "run_id": self.run_id,
+            "cycle_id": 0, "base_hash": manifest["base_hash"], "candidate_id": manifest["candidate_id"],
+            "claim_id": self.claim_id, "severity": "CRITICAL", "status": "open",
+            "summary": "Unresolved fixture objection", "evidence_locators": ["page:1"],
+        })
+        report = run_gates(candidate)
+        checks = {gate["gate_id"]: gate["passed"] for gate in report["gates"]}
+        self.assertFalse(checks["math_critical_issues"])
+        self.assertFalse(report["overall_pass"])
 
 
 class M7ParetoTests(unittest.TestCase):

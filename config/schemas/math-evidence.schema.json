@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "math-evidence.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "run_id", "cycle_id", "base_hash", "candidate_id", "candidate_content_hash", "claim_id", "proposal_id", "request_receipt_sha256", "method", "conclusion", "summary"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0}, "base_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "candidate_id": {"type": "string", "minLength": 1}, "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "claim_id": {"type": "string", "minLength": 1}, "proposal_id": {"type": "string", "minLength": 1},
+    "request_receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "method": {"enum": ["formal", "symbolic", "manual-proof-check", "independent-recalculation"]},
+    "conclusion": {"const": "valid"}, "summary": {"type": "string", "minLength": 1}
+  }
+}

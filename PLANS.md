@@ -12,7 +12,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
-- Atualizado em 2026-08-13.
+- Atualizado em 2026-08-14.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
 - M2 — máquina de estados, event log e recuperação: concluído após correção contratual final.
@@ -73,7 +73,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M4 | papéis, prompts imutáveis e compilador | concluído | os 21 papéis canônicos compilam deterministicamente a partir de núcleos verificados, contexto fechado, overlay registrado e schema de saída |
 | M5 | blackboard, grafo de claims e ativação esparsa | concluído (corrigido) | localizadores estruturados, lock, limites e regras de ativação corrigidos; M6 permanece não iniciado |
 | M6 | integração RLM hierárquica | concluído | adapters Prime/Fake, receipts validados, árvore esparsa e retomada local aprovados sem modelo |
-| M7 | síntese, merge, gates e arquivos de versões | em correção cirúrgica | substituir fixtures por receipts M6 imutáveis, fechar pós-condições e verificadores locais; júri e decisão continuam fora do escopo |
+| M7 | síntese, merge, gates e arquivos de versões | concluído após correção final restrita | publica um único challenger integralmente read-only, verifica o `GateReport` canônico persistido antes de `GATES_PASSED` e executa os 13 gates locais de modo fail-closed; júri, decisão e M8 continuam fora do escopo |
 | M8 | avaliador externo cego em júri | pendente | rubrica cega não expõe autoria, ordem ou status de champion |
 | M9 | detecção de progresso e refoco | pendente | estagnação e refoco são produzidos pelos scripts canônicos |
 | M10 | política de compensação e finalizador | pendente | finalizador revalida hashes e aplica ações atômicas sem modificar o challenger avaliado |
@@ -128,6 +128,23 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
 ## Registro de progresso
+
+- 2026-08-14 — Correção final restrita de M7 concluída: publicação atômica
+  integralmente read-only, verificação canônica do `GateReport`, contratos de
+  evidência matemática e os 13 gates locais foram cobertos por ataques e pela
+  suíte completa de 192 testes. Champion, Pareto e rejected foram conferidos
+  por hash e permaneceram inalterados; M8 não foi iniciado.
+
+- 2026-08-14 — Correção final restrita de M7 iniciada: o mesmo verificador
+  operacional do `GateReport` será aplicado após a execução e imediatamente
+  antes da transição; a publicação não fará `chmod` após o `rename`; evidência
+  matemática será um contrato canônico ligado a run/ciclo/base/candidato,
+  claim e receipt; e os gates reconstruirão estado, proveniência,
+  dependências, assets, referências e entrypoint LaTeX. Hipóteses: contratos
+  locais fechados podem representar aprovação matemática auditável sem chamar
+  modelos; ausência ou ambiguidade de evidência reprova. Incerteza: ferramentas
+  LaTeX locais podem faltar, caso em que o gate falha fechadamente. M8,
+  champion, Pareto e rejected não serão alterados.
 
 - 2026-08-14 — Correção final de M7 em curso: a hipótese de trabalho é que o
   contrato publicado por M6 (recibo absoluto em

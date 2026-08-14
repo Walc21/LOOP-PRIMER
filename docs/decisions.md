@@ -577,3 +577,25 @@ vez e confere o SHA-256 exato. As transições M7 passam a ser operações com
 pós-condições verificadas sobre artefatos congelados/publicados, e os gates
 são verificadores locais configurados que falham fechados. Esta decisão não
 introduz júri, avaliação externa, promoção ou qualquer estado M8.
+
+**Quarto complemento corretivo (2026-08-14, correção final restrita):** o
+artefato que autoriza `GATES_PASSED` é exclusivamente o `GateReport` canônico,
+serializado e persistido no localizador derivado do próprio hash. Um único
+verificador relê seus bytes, valida schema, identidade, configuração dos 13
+gates, relações operacionais, hashes, localização, árvore atual do candidato
+e estado `CANDIDATE_BUILT`; ele é reutilizado após `run_gates()` e
+imediatamente antes da transição. `record_gates()` não aceita `Mapping` como
+prova. Relatórios inconclusivos, forjados, internamente contraditórios ou
+divergentes da configuração falham fechados.
+
+A publicação finaliza, sincroniza e torna staging, descendentes e raiz
+read-only antes do `rename`; depois dele há somente sincronização do pai e
+revalidação, nunca um `chmod` tardio. `correctness_math` separa solicitação de
+validação, evidência e aprovação: a aprovação é um contrato fechado persistido
+e ligado a run, ciclo, base, candidato, claim, receipt e hashes. Os gates de
+estado, proveniência M3, grafo de claims, assets, referências e LaTeX
+reconstroem suas evidências locais; exceções viram resultados reprovados com
+classificação e código de saída. O entrypoint LaTeX segue a regra determinista
+`article.tex`, `paper.tex`, `latex-source/paper.tex`, preservando o diretório
+de trabalho dos includes. Esta decisão termina no M7 e não autoriza júri,
+promoção, Pareto, rejected nem M8.

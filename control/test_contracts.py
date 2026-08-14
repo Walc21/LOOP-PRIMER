@@ -48,7 +48,8 @@ SCHEMA_FILES = {
     "department-packet.schema.json", "candidate-manifest.schema.json",
     "gate-report.schema.json", "jury-verdict.schema.json",
     "diagnosis.schema.json", "decision.schema.json",
-    "finalization-receipt.schema.json",
+    "finalization-receipt.schema.json", "math-evidence.schema.json",
+    "math-issue.schema.json", "math-verification.schema.json",
 }
 
 
@@ -124,7 +125,7 @@ class SchemaContractTests(unittest.TestCase):
     def test_exact_schema_catalog_and_meta_validation(self):
         paths = sorted(SCHEMA_DIR.glob("*.schema.json"))
         self.assertEqual({path.name for path in paths}, SCHEMA_FILES)
-        self.assertEqual(len(paths), 12)
+        self.assertEqual(len(paths), 15)
         for path in paths:
             with self.subTest(path=path.name):
                 schema = load_json(path)
@@ -701,16 +702,16 @@ class ConditionalContractTests(unittest.TestCase):
 
     def test_gate_report_positive_and_hard_math_negative(self):
         gate_ids = [
-            "contracts_state", "provenance", "latex_safe", "render",
-            "pdf_valid", "refs_labels", "asset_inventory", "claims_deps",
-            "math_critical", "forbidden_meta", "local_budget",
-            "manifest_inventory_hash", "correctness_math",
+            "contracts_state", "source_provenance", "latex_compile_safe", "render",
+            "pdf_valid", "references_labels", "asset_inventory", "claim_dependencies",
+            "math_critical_issues", "forbidden_metatext", "local_budget",
+            "manifest_integrity", "correctness_math",
         ]
         report = {
             "schema_version": "1.1.0",
-            "report_id": "gate-report-1",
+            "report_id": "g-" + "a" * 32,
             "report_hash": self.HASH_B,
-            "report_locator": "reports/gates/gate-report-1.json",
+            "report_locator": f"state/gates/v0001/{self.HASH_B}.json",
             "run_id": "run-1",
             "cycle_id": 1,
             "candidate_id": "v0001",
