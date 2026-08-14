@@ -274,7 +274,7 @@ class ConditionalContractTests(unittest.TestCase):
 
     def candidate(self, kind):
         baseline = kind == "baseline"
-        return {
+        candidate = {
             "schema_version": "1.1.0",
             "candidate_id": "v0000" if baseline else "v0001",
             "candidate_kind": kind,
@@ -288,6 +288,32 @@ class ConditionalContractTests(unittest.TestCase):
             "merge_receipt_locator": None if baseline else "reports/merge-v0001.json",
             "immutable": True,
         }
+        if not baseline:
+            candidate.update({
+                "base_hash": self.HASH_A,
+                "proposal_ids": ["proposal-1"],
+                "prompt_versions": ["prompt-v1"],
+                "merge_receipt": {
+                    "synthesis_hash": self.HASH_A,
+                    "proposal_hashes": {"proposal-1": self.HASH_B},
+                    "proposal_receipts": {
+                        "proposal-1": {
+                            "sender_role": "W11",
+                            "parent_role": "S10",
+                            "path": "state/orchestration/run-1/receipts/b/artifact.json",
+                            "immutable_path": "/state/orchestration/run-1/receipts/b/artifact.json",
+                            "sha256": self.HASH_B,
+                            "schema_version": "1.1.0",
+                            "cycle_id": 1,
+                        }
+                    },
+                    "base_hash": self.HASH_A,
+                },
+                "synthesis_hash": self.HASH_A,
+                "proposal_hashes": {"proposal-1": self.HASH_B},
+                "inventory": [],
+            })
+        return candidate
 
     def department_packet(self, status):
         no_change = status == "no_change"
@@ -674,23 +700,39 @@ class ConditionalContractTests(unittest.TestCase):
         self.assert_invalid("snapshot.schema.json", initial)
 
     def test_gate_report_positive_and_hard_math_negative(self):
+        gate_ids = [
+            "contracts_state", "provenance", "latex_safe", "render",
+            "pdf_valid", "refs_labels", "asset_inventory", "claims_deps",
+            "math_critical", "forbidden_meta", "local_budget",
+            "manifest_inventory_hash", "correctness_math",
+        ]
         report = {
             "schema_version": "1.1.0",
             "report_id": "gate-report-1",
+            "report_hash": self.HASH_B,
+            "report_locator": "reports/gates/gate-report-1.json",
+            "run_id": "run-1",
+            "cycle_id": 1,
             "candidate_id": "v0001",
             "candidate_content_hash": self.HASH_A,
+            "candidate_hash": self.HASH_A,
             "generated_at": self.WHEN,
             "overall_pass": True,
             "correctness_math_pass": True,
             "gates": [{
-                "gate_id": "math",
+                "gate_id": gate_id,
                 "command": "local-check",
                 "verifier_version": "1",
                 "input_hash": self.HASH_A,
+                "input_hash_after": self.HASH_A,
                 "exit_code": 0,
                 "passed": True,
+                "classification": "scientific" if gate_id == "correctness_math" else "technical",
+                "timeout_seconds": 10,
+                "duration_ms": 1,
+                "output": "ok",
                 "evidence_locators": ["reports/gates/math.txt"],
-            }],
+            } for gate_id in gate_ids],
         }
         self.assert_valid("gate-report.schema.json", report)
         report["correctness_math_pass"] = False

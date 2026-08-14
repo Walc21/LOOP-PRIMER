@@ -73,7 +73,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M4 | papéis, prompts imutáveis e compilador | concluído | os 21 papéis canônicos compilam deterministicamente a partir de núcleos verificados, contexto fechado, overlay registrado e schema de saída |
 | M5 | blackboard, grafo de claims e ativação esparsa | concluído (corrigido) | localizadores estruturados, lock, limites e regras de ativação corrigidos; M6 permanece não iniciado |
 | M6 | integração RLM hierárquica | concluído | adapters Prime/Fake, receipts validados, árvore esparsa e retomada local aprovados sem modelo |
-| M7 | síntese, merge, gates e arquivos de versões | concluído | síntese congelada, challenger write-once e gates locais foram cobertos por fixtures; júri e decisão continuam fora do escopo |
+| M7 | síntese, merge, gates e arquivos de versões | em correção cirúrgica | substituir fixtures por receipts M6 imutáveis, fechar pós-condições e verificadores locais; júri e decisão continuam fora do escopo |
 | M8 | avaliador externo cego em júri | pendente | rubrica cega não expõe autoria, ordem ou status de champion |
 | M9 | detecção de progresso e refoco | pendente | estagnação e refoco são produzidos pelos scripts canônicos |
 | M10 | política de compensação e finalizador | pendente | finalizador revalida hashes e aplica ações atômicas sem modificar o challenger avaliado |
@@ -128,6 +128,15 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
 ## Registro de progresso
+
+- 2026-08-14 — Correção final de M7 em curso: a hipótese de trabalho é que o
+  contrato publicado por M6 (recibo absoluto em
+  `state/orchestration/<run>/receipts/<sha256>/artifact.json`, inclusive bytes
+  com quebra final) é a única origem aceitável para pacotes e propostas. A
+  incerteza remanescente é a disponibilidade dos executáveis locais de
+  compilação/renderização; sua ausência deverá reprovar o gate, nunca ser
+  mascarada por adapter. O escopo não inclui M8, promoção, Pareto persistido ou
+  disposição de versões.
 
 - 2026-08-14 — Correção cirúrgica de M7 iniciada sobre `6f9e8b2`, após
   precheck limpo, leitura dos handoffs M6/M7 e suíte local. O escopo corrige

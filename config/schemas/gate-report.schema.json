@@ -3,9 +3,11 @@
   "$id": "gate-report.schema.json",
   "title": "GateReport",
   "type": "object",
-          "additionalProperties": false,
-  "required": ["schema_version", "report_id", "candidate_id", "candidate_content_hash", "generated_at", "overall_pass", "correctness_math_pass", "gates"],
+  "additionalProperties": false,
+  "required": ["schema_version", "report_id", "report_hash", "report_locator", "run_id", "cycle_id", "candidate_id", "candidate_content_hash", "candidate_hash", "generated_at", "overall_pass", "correctness_math_pass", "gates"],
   "properties": {
+    "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0},
     "schema_version": {"const": "1.1.0"},
     "report_id": {"type": "string", "minLength": 1},
     "candidate_id": {"type": "string", "minLength": 1},
@@ -18,11 +20,12 @@
     "report_locator": {"type": "string", "minLength": 1},
     "gates": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 13,
+      "maxItems": 13,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["gate_id", "command", "verifier_version", "input_hash", "exit_code", "passed", "evidence_locators"],
+        "required": ["gate_id", "command", "verifier_version", "input_hash", "input_hash_after", "exit_code", "passed", "classification", "timeout_seconds", "duration_ms", "output", "evidence_locators"],
         "properties": {
           "gate_id": {"type": "string", "minLength": 1},
           "command": {"type": "string", "minLength": 1},

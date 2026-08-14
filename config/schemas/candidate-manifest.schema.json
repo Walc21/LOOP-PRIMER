@@ -19,7 +19,7 @@
     "merge_receipt_locator": {"type": ["string", "null"], "minLength": 1},
     "immutable": {"const": true},
     "inventory": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["path", "sha256", "size"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "size": {"type": "integer", "minimum": 0}}}},
-    "merge_receipt": {"type": "object"},
+    "merge_receipt": {"type": "object", "additionalProperties": false, "required": ["synthesis_hash", "proposal_hashes", "proposal_receipts", "base_hash"], "properties": {"synthesis_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "proposal_hashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "proposal_receipts": {"type": "object", "additionalProperties": {"type": "object", "additionalProperties": false, "required": ["sender_role", "parent_role", "path", "immutable_path", "sha256", "schema_version", "cycle_id"], "properties": {"sender_role": {"type": "string", "pattern": "^W[1-5][1-3]$"}, "parent_role": {"type": "string", "pattern": "^S[1-5]0$"}, "path": {"type": "string", "minLength": 1}, "immutable_path": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "schema_version": {"const": "1.1.0"}, "cycle_id": {"type": "integer", "minimum": 0}}}}, "base_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}},
     "base_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "synthesis_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "proposal_hashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
@@ -37,10 +37,12 @@
         }
       },
       "else": {
+        "required": ["base_hash", "proposal_ids", "prompt_versions", "merge_receipt", "synthesis_hash", "proposal_hashes", "inventory"],
         "properties": {
           "base_candidate_id": {"type": "string", "minLength": 1},
+          "merge_receipt_locator": {"type": "string", "minLength": 1},
           "source_proposal_ids": {"minItems": 1},
-          "merge_receipt_locator": {"type": "string", "minLength": 1}
+          "proposal_ids": {"minItems": 1}
         }
       }
     }

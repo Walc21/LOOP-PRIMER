@@ -568,3 +568,12 @@ conjunto aceito; o retry relê o recibo congelado por contenção; e falhas
 injetadas antes/depois do `rename` recuperam de forma idempotente. A suíte
 local M0–M7 foi executada em módulos por limite de tempo do ambiente (183
 testes, sem skips novos); M8 não foi iniciado.
+
+**Terceiro complemento corretivo (2026-08-14, em implementação):** M7 deixa
+de aceitar dicionários/fixtures como evidência de pacote ou proposta. Antes de
+decodificar JSON, ele resolve o caminho absoluto canônico do receipt M6 pelo
+par `(run_id, sha256)`, confirma contenção, faz `lstat`, lê os bytes uma única
+vez e confere o SHA-256 exato. As transições M7 passam a ser operações com
+pós-condições verificadas sobre artefatos congelados/publicados, e os gates
+são verificadores locais configurados que falham fechados. Esta decisão não
+introduz júri, avaliação externa, promoção ou qualquer estado M8.

@@ -49,3 +49,20 @@ gates:
     command: .venv/bin/python -m unittest -v control.test_contracts.SchemaContractTests
     timeout_seconds: 300
     deterministic: true
+
+# M7 accepts only this exact ordered local verifier set.  The executable names
+# are policy evidence; their resolution is checked at runtime and fails closed.
+m7_gates:
+  - {id: contracts_state, command: internal:contracts_state, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: source_provenance, command: internal:source_provenance, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: latex_compile_safe, command: pdflatex, verifier_version: m7.3, timeout_seconds: 30}
+  - {id: render, command: pdftoppm, verifier_version: m7.3, timeout_seconds: 30}
+  - {id: pdf_valid, command: pdfinfo, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: references_labels, command: internal:references_labels, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: asset_inventory, command: internal:asset_inventory, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: claim_dependencies, command: internal:claim_dependencies, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: math_critical_issues, command: internal:math_critical_issues, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: forbidden_metatext, command: internal:forbidden_metatext, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: local_budget, command: internal:local_budget, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: manifest_integrity, command: internal:manifest_integrity, verifier_version: m7.3, timeout_seconds: 10}
+  - {id: correctness_math, command: internal:correctness_math, verifier_version: m7.3, timeout_seconds: 10}
