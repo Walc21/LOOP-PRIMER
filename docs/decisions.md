@@ -737,11 +737,13 @@ prompt filhos imutáveis, reversíveis e sem ampliação de privilégios.
    - Precedência determinística:
      1. `TECHNICAL_FAILURE`: falhas técnicas de compilação LaTeX, renderização ou gates determinísticos;
      2. `REGRESSING`: perda de hard gate matemático (`correctness_math_pass == False`), que não pode ser mascarada por júri inconclusivo;
-     3. `INCONCLUSIVE`: divergência total do júri, evidência ausente ou janela insuficiente sem sinal forte;
-     4. `OSCILLATING`: reversões de notas e trade-offs alternantes entre ciclos na janela ou reabertura de issues;
-     5. `LOCAL_PLATEAU`: janela completa com ganhos globais abaixo do MDE (`Minimum Detectable Effect`) e gargalo localizado em departamento/papel específico;
-     6. `GLOBAL_PLATEAU`: janela completa sem ganho material nem direção segura em todos os departamentos;
-     7. `EVOLVING`: ganho global validado $\ge MDE$ com aprovação matemática integral.
+     3. `INCONCLUSIVE`: divergência do júri ou todas as dimensões especializadas congeladas;
+     4. `REGRESSING`: queda de notas centrais ou aumento material de severidade de issues;
+     5. `OSCILLATING`: reversões materiais entre ciclos na janela ou reabertura de issues;
+     6. `EVOLVING`: ganho global validado $\ge MDE$, challenger elegível e aprovação matemática integral;
+     7. `LOCAL_PLATEAU`: janela completa com ganhos globais abaixo do MDE (`Minimum Detectable Effect`) e gargalo localizado em departamento/papel específico;
+     8. `GLOBAL_PLATEAU`: janela completa sem ganho material nem direção segura em todos os departamentos;
+     9. `INCONCLUSIVE`: fallback para janela insuficiente ou direção não validada por M8.
    - Melhorias cosméticas (clareza/estilo/economia de custo) jamais compensam perda matemática.
 
 3. **Janela Móvel Parametrizada e FREEZE Normalizado**:
@@ -773,3 +775,14 @@ prompt filhos imutáveis, reversíveis e sem ampliação de privilégios.
 - A identificação de causas de estagnação torna-se 100% determinística, auditável e rastreável.
 - Ajustes de contexto via prompt overlays tornam-se reversíveis, contidos e sem ampliação de privilégios.
 - O pipeline respeita estritamente a fronteira entre diagnóstico (M9) e decisão/finalização (M10).
+
+**Complemento corretivo de verificação semântica (2026-08-28):**
+
+- A validade do `diagnosis_id`, dos hashes do manifesto e do evento é necessária,
+  mas não suficiente: `verify_published_diagnosis()` recompõe classificação,
+  sinais, modo recomendado e foco com o histórico revalidado e os parâmetros
+  `window_size`/`mde` comprometidos.
+- O evento `DIAGNOSED` deve vincular explicitamente `candidate_content_hash` ao
+  ciclo avaliado; ausência ou divergência falha fechado.
+- Um invasor que reescreva diagnosis, manifesto e evento com hashes internos
+  coerentes não pode substituir o resultado do classificador determinístico.

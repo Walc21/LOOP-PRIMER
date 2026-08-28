@@ -668,6 +668,25 @@ def classify_cycle_progress(
     return "INCONCLUSIVE", signals, "CHECK", ["ambiguous_direction"]
 
 
+def _verify_diagnosis_classification(
+    diagnosis: Mapping[str, Any],
+    series: Sequence[CycleRecord],
+) -> None:
+    """Recompute the diagnosis decision from its committed source parameters."""
+    classification, signals, recommended_mode, focus = classify_cycle_progress(
+        series,
+        window_size=diagnosis.get("window_size"),
+        mde=diagnosis.get("mde"),
+    )
+    if (
+        diagnosis.get("classification") != classification
+        or diagnosis.get("signals") != signals
+        or diagnosis.get("recommended_mode") != recommended_mode
+        or diagnosis.get("focus") != focus
+    ):
+        raise DiagnosisError("published diagnosis classification differs from recomputed history")
+
+
 def _diagnosis_id_for(diagnosis_without_id: Mapping[str, Any]) -> str:
     body = dict(diagnosis_without_id)
     body.pop("diagnosis_id", None)
@@ -829,6 +848,7 @@ def verify_published_diagnosis(
         or payload.get("classification") != diagnosis.get("classification")
         or payload.get("recommended_mode") != diagnosis.get("recommended_mode")
         or payload.get("diagnosis_locator") != canonical_locator
+        or payload.get("candidate_content_hash") != current_record.candidate_content_hash
         or payload.get("base_hash") != current_record.base_hash
         or event.get("artifact_hashes") != hashes
     ):
@@ -854,6 +874,7 @@ def verify_published_diagnosis(
         or diagnosis.get("evidence_locators") != expected_evidence
     ):
         raise DiagnosisError("published diagnosis evidence differs from verified evaluation history")
+    _verify_diagnosis_classification(diagnosis, series)
     return diagnosis, hashes
 
 
@@ -973,6 +994,7 @@ def diagnose_cycle(
             expected_window_size=window_size,
             expected_mde=mde,
         )
+        _verify_diagnosis_classification(existing_diag, series)
         event_id = f"evt-diagnosed-c{effective_cycle_id:04d}-{event_candidate_id}"
         idempotency_key = f"diagnosed:{run_id}:c{effective_cycle_id:04d}:{event_candidate_id}"
         store.record(

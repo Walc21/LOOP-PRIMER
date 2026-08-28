@@ -48,6 +48,8 @@ from article_loop.diagnosis import (
     classify_cycle_progress,
     diagnose_cycle,
     load_history_series,
+    verify_published_diagnosis,
+    _verify_diagnosis_classification,
 )
 from article_loop.refocus import (
     RefocusError,
@@ -55,6 +57,20 @@ from article_loop.refocus import (
     register_overlay_cas,
 )
 from article_loop.synthesis import _json, _sha, tree_hash
+
+
+class DimensionScoresJurorAdapter(FakeJurorAdapter):
+    """Test adapter with deterministic per-dimension neutral scores."""
+
+    def __init__(self, *, scores_a, scores_b, **kwargs):
+        super().__init__(**kwargs)
+        self.scores_a = dict(scores_a)
+        self.scores_b = dict(scores_b)
+
+    def evaluate(self, presentation):
+        verdict = super().evaluate(presentation)
+        verdict["dimension_scores"] = [dict(self.scores_a), dict(self.scores_b)]
+        return verdict
 
 
 class M9DiagnosisTests(unittest.TestCase):
@@ -166,7 +182,13 @@ class M9DiagnosisTests(unittest.TestCase):
             asyncio.run(self.orchestrator.consolidate_department(self.run_id, department, adapter=self._manager(department)))
         return asyncio.run(self.orchestrator.status(self.run_id))
 
-    def _setup_cycle_up_to_evaluated(self, cycle_id=0, preferred_winner="B", base_scores=(4, 4)):
+    def _setup_cycle_up_to_evaluated(
+        self,
+        cycle_id=0,
+        preferred_winner="B",
+        base_scores=(4, 4),
+        juror_adapters=None,
+    ):
         state = self._m6_state(cycle_id=cycle_id)
         pipe = M7Pipeline(self.root)
         synthesis = pipe.synthesize(state["receipts"], run_id=self.run_id)
@@ -182,7 +204,7 @@ class M9DiagnosisTests(unittest.TestCase):
         )
         report = pipe.execute_and_record_gates(store, candidate)
 
-        jurors = {
+        jurors = juror_adapters or {
             "juror-math": FakeJurorAdapter(juror_id="juror-math", specialty="correctness_math", preferred_winner=preferred_winner, base_scores=base_scores),
             "juror-contrib": FakeJurorAdapter(juror_id="juror-contrib", specialty="scientific_contribution", preferred_winner=preferred_winner, base_scores=base_scores),
             "juror-clarity": FakeJurorAdapter(juror_id="juror-clarity", specialty="clarity", preferred_winner=preferred_winner, base_scores=base_scores),
@@ -206,6 +228,49 @@ class M9DiagnosisTests(unittest.TestCase):
 
     def _publish_diagnosis_fixture(self, classification, *, focus=None):
         """Publish a source-bound diagnosis and its exact DIAGNOSED event binding."""
+        if classification in {"LOCAL_PLATEAU", "GLOBAL_PLATEAU", "INCONCLUSIVE"}:
+            preferred_winner = "B" if classification == "INCONCLUSIVE" else "A"
+            jurors = None
+            window_size = 3 if classification == "INCONCLUSIVE" else 1
+            mde = 0.25
+            if classification == "LOCAL_PLATEAU":
+                scores_a = {dimension: 4 for dimension in DIMENSIONS}
+                scores_b = dict(scores_a)
+                scores_b["scientific_contribution"] = 2
+                jurors = {
+                    juror_id: DimensionScoresJurorAdapter(
+                        juror_id=juror_id,
+                        specialty=specialty,
+                        preferred_winner="A",
+                        scores_a=scores_a,
+                        scores_b=scores_b,
+                    )
+                    for juror_id, specialty in (
+                        ("juror-math", "correctness_math"),
+                        ("juror-contrib", "scientific_contribution"),
+                        ("juror-clarity", "clarity"),
+                    )
+                }
+                mde = 3.0
+            m8 = self._setup_cycle_up_to_evaluated(
+                cycle_id=0,
+                preferred_winner=preferred_winner,
+                juror_adapters=jurors,
+            )
+            diagnosis = diagnose_cycle(
+                self.root,
+                self.run_id,
+                cycle_id=0,
+                candidate_id=m8["manifest"]["candidate_id"],
+                window_size=window_size,
+                mde=mde,
+            )
+            self.assertEqual(diagnosis["classification"], classification)
+            return diagnosis
+
+        # OSCILLATING needs at least two closed cycles. Tests that exercise its
+        # plan shape use this source-bound fixture with the verifier explicitly
+        # patched; canonical classification verification is covered separately.
         m8 = self._setup_cycle_up_to_evaluated(cycle_id=0, preferred_winner="B")
         store = DurableStore(self.root)
         created_at = store.read_events(self.run_id)[-1]["occurred_at"]
@@ -590,21 +655,21 @@ class M9DiagnosisTests(unittest.TestCase):
     # ==================== 4. Refocus & Overlay Generation ====================
 
     def test_refocus_generation_for_local_plateau(self):
-        diagnosis = self._publish_diagnosis_fixture("LOCAL_PLATEAU", focus=["S20", "W22"])
+        diagnosis = self._publish_diagnosis_fixture("LOCAL_PLATEAU")
         plan = generate_refocus_plan(self.root, self.run_id, 0, diagnosis)
         self.assertEqual(plan["classification"], "LOCAL_PLATEAU")
         self.assertEqual(plan["strategy"], "targeted_bottleneck")
         self.assertEqual(len(plan["branches"]), 1)
         branch = plan["branches"][0]
         self.assertEqual(branch["kind"], "targeted")
-        self.assertEqual(branch["target_roles"], ["W22"])
-        self.assertIn("W22", branch["overlay_versions"])
+        self.assertEqual(branch["target_roles"], ["W31"])
+        self.assertIn("W31", branch["overlay_versions"])
         self.assertEqual(branch["budget_limit"]["max_tokens"], 0)
-        self.assertEqual(len(branch["overlay_hashes"]["W22"]), 64)
+        self.assertEqual(len(branch["overlay_hashes"]["W31"]), 64)
 
         # Check that PromptRegistry loads and validates the new overlay
         registry = PromptRegistry(self.root)
-        overlay_text, overlay_doc = registry.overlay("W22", branch["overlay_versions"]["W22"])
+        overlay_text, overlay_doc = registry.overlay("W31", branch["overlay_versions"]["W31"])
         self.assertIn("Refocus M9", overlay_doc["diagnostic"])
 
     def test_refocus_generation_for_global_plateau_dual_branch(self):
@@ -626,7 +691,11 @@ class M9DiagnosisTests(unittest.TestCase):
 
     def test_refocus_generation_for_oscillating(self):
         diagnosis = self._publish_diagnosis_fixture("OSCILLATING", focus=["stabilization"])
-        plan = generate_refocus_plan(self.root, self.run_id, 0, diagnosis)
+        with patch(
+            "article_loop.refocus.verify_published_diagnosis",
+            return_value=(diagnosis, []),
+        ):
+            plan = generate_refocus_plan(self.root, self.run_id, 0, diagnosis)
         self.assertEqual(plan["classification"], "OSCILLATING")
         self.assertEqual(plan["strategy"], "stabilization")
         self.assertEqual(len(plan["branches"]), 1)
@@ -1010,6 +1079,92 @@ class M9DiagnosisTests(unittest.TestCase):
             diagnose_cycle(self.root, self.run_id, cycle_id=0, candidate_id=candidate_id, window_size=4, mde=0.25)
         with self.assertRaisesRegex(DiagnosisError, "classification parameters diverge"):
             diagnose_cycle(self.root, self.run_id, cycle_id=0, candidate_id=candidate_id, window_size=3, mde=0.5)
+
+    def test_diagnosis_classification_is_recomputed_from_committed_history(self):
+        m8_out = self._setup_cycle_up_to_evaluated(cycle_id=0, preferred_winner="B")
+        candidate_id = m8_out["manifest"]["candidate_id"]
+        diagnosis = diagnose_cycle(self.root, self.run_id, cycle_id=0, candidate_id=candidate_id)
+        forged = dict(diagnosis)
+        forged.update({
+            "classification": "GLOBAL_PLATEAU",
+            "signals": ["forged:classification"],
+            "recommended_mode": "SHIFT",
+            "focus": ["general_refocus"],
+        })
+        series = load_history_series(self.root, self.run_id, 0)
+
+        with self.assertRaisesRegex(DiagnosisError, "differs from recomputed history"):
+            _verify_diagnosis_classification(forged, series)
+
+    def test_rehashed_forged_diagnosis_cannot_override_classifier(self):
+        m8_out = self._setup_cycle_up_to_evaluated(cycle_id=0, preferred_winner="B")
+        candidate_id = m8_out["manifest"]["candidate_id"]
+        diagnose_cycle(self.root, self.run_id, cycle_id=0, candidate_id=candidate_id)
+        diag_dir = self.root / f"state/diagnosis/{self.run_id}/c0000"
+        diagnosis_path = diag_dir / "diagnosis.json"
+        manifest_path = diag_dir / "manifest.json"
+        os.chmod(diag_dir, 0o755)
+        os.chmod(diagnosis_path, 0o644)
+        os.chmod(manifest_path, 0o644)
+
+        diagnosis = json.loads(diagnosis_path.read_text(encoding="utf-8"))
+        diagnosis.update({
+            "classification": "GLOBAL_PLATEAU",
+            "signals": ["forged:classification"],
+            "recommended_mode": "SHIFT",
+            "focus": ["general_refocus"],
+        })
+        diagnosis["diagnosis_id"] = _diagnosis_id_for(diagnosis)
+        diagnosis_bytes = _json(diagnosis)
+        diagnosis_path.write_bytes(diagnosis_bytes)
+
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest.update({
+            "diagnosis_id": diagnosis["diagnosis_id"],
+            "classification": diagnosis["classification"],
+            "diagnosis_hash": _sha(diagnosis_bytes),
+            "tree_content_hash": tree_hash(diag_dir, exclude={"manifest.json"}),
+        })
+        manifest_bytes = _json(manifest)
+        manifest_path.write_bytes(manifest_bytes)
+        os.chmod(diagnosis_path, 0o444)
+        os.chmod(manifest_path, 0o444)
+        os.chmod(diag_dir, 0o555)
+
+        store = DurableStore(self.root)
+        events = store.read_events(self.run_id)
+        events[-1]["payload"].update({
+            "diagnosis_id": diagnosis["diagnosis_id"],
+            "classification": diagnosis["classification"],
+            "recommended_mode": diagnosis["recommended_mode"],
+        })
+        events[-1]["artifact_hashes"] = sorted([_sha(diagnosis_bytes), _sha(manifest_bytes)])
+        events[-1]["event_hash"] = store._ehash(events[-1])
+        log_path = self.root / f"state/events/{self.run_id}.jsonl"
+        log_path.write_text(
+            "".join(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n" for event in events),
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(DiagnosisError, "differs from recomputed history"):
+            verify_published_diagnosis(self.root, self.run_id, 0)
+
+    def test_diagnosed_event_requires_candidate_content_hash_binding(self):
+        m8_out = self._setup_cycle_up_to_evaluated(cycle_id=0, preferred_winner="B")
+        candidate_id = m8_out["manifest"]["candidate_id"]
+        diagnose_cycle(self.root, self.run_id, cycle_id=0, candidate_id=candidate_id)
+        store = DurableStore(self.root)
+        events = store.read_events(self.run_id)
+        events[-1]["payload"].pop("candidate_content_hash")
+        events[-1]["event_hash"] = store._ehash(events[-1])
+        log_path = self.root / f"state/events/{self.run_id}.jsonl"
+        log_path.write_text(
+            "".join(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n" for event in events),
+            encoding="utf-8",
+        )
+
+        with self.assertRaisesRegex(DiagnosisError, "event binding differs"):
+            verify_published_diagnosis(self.root, self.run_id, 0)
 
     # ==================== 11. Overlays Rollback & Scope Containment ====================
 

@@ -424,6 +424,8 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   CAS, fsync e validação de grafo `PromptRegistry`. Proibição absoluta de edição de prompts imutáveis,
   overlays de `M00` ou ampliação de privilégios.
   Novos schemas Draft 2020-12 formalizados (`diagnosis-manifest.schema.json`, `refocus-plan.schema.json`).
-  Aprovados 47 testes em `control/test_m9_diagnosis.py`, 51 testes M8, 52 testes
-  de contrato e 296 testes na suíte integral de regressão (M0–M9), executada
-  em 342.468s. M10 permanece não iniciado.
+  Aprovados 50 testes em `control/test_m9_diagnosis.py`, 51 testes M8, 52 testes
+  de contrato e 299 testes na suíte integral de regressão (M0–M9), executada
+  em 566.531s. O verificador M9 recompõe a classificação a partir do histórico
+  comprometido e rejeita diagnósticos semanticamente forjados mesmo quando
+  artefato, manifesto e evento são re-hashados. M10 permanece não iniciado.
