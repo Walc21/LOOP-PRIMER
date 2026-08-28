@@ -658,3 +658,118 @@ aos hashes de conteúdo avaliados.
   estritamente fail-closed.
 - A máquina de estados preserva a separação de autoridade entre avaliação (M8) e
   decisão/diagnóstico/promoção (M9+).
+
+**Complemento corretivo de endurecimento (2026-08-28):**
+1. **Separação de Adapters Operacionais vs Teste**:
+   - `FakeJurorAdapter` e `FakeMetaReviewerAdapter` são declarados restritos a teste (`test_only`).
+   - O caminho operacional (`evaluate_candidate` e o CLI `scripts/01_external_evaluator.py`)
+     falha fechado (`EvaluationError`) caso não haja adapters operacionais explicitamente configurados.
+   - Proibido qualquer fallback padrão silencioso que favoreça o challenger.
+2. **Vinculação Semântica Estrita dos Vereditos**:
+   - Cada resposta do jurado é validada não apenas contra o schema sintático, mas
+     contra a apresentação exata enviada: `comparison_id`, `juror_id`, `candidate_neutral_ids == ["A", "B"]`,
+     `presentation_order`, `order_seed`, `rubric_version`, `content_hashes` fixos na ordem neutra `[hash_A, hash_B]`.
+   - Vereditos duplicados, ordens repetidas (`A/B` retornado duas vezes), hashes trocados ou `verdict_id` reutilizado
+     são rejeitados antes de qualquer persistência.
+3. **Reuso do Verificador Canônico de GateReport**:
+   - M8 reutiliza `article_loop.gates.verify_gate_report` para validar o `GateReport` contra o candidato atual.
+   - Exige que o último evento do store seja estritamente `GATES_PASSED` e vincula `run_id`, `cycle_id`, `candidate_id`,
+     `candidate_hash` e `report_locator` ao evento ativo.
+   - Qualquer discrepância em `cycle_id`, `candidate_id` ou `gate_report_locator` falha fechada.
+4. **Publicação Transacional Write-Once em Staging**:
+   - A avaliação prepara toda a árvore em diretório temporário de staging no mesmo filesystem.
+   - Gera e valida `manifest.json` da avaliação comprometendo todos os hashes (GateReport, champion, challenger, apresentações, vereditos, meta-veredicto e relatório).
+   - Torna arquivos `0444` e diretórios `0555` antes do `rename` atômico para `state/evaluations/<run_id>/c<cycle_id:04d>`.
+   - Caso o diretório de destino já exista, ele é revalidado integralmente; se idêntico, é aceito como replay idempotente; se divergente, rejeita por colisão.
+   - Replay após falha entre publicação e evento revalida e reutiliza a árvore existente sem reescrevê-la.
+5. **Sanitização Integral e Blinding de Caminhos**:
+   - Nomes de arquivo, diretórios e metadados entregues aos jurados são mapeados para identificadores neutros,
+     impedindo vazamento de roles (`M00`, `S10-S50`, `W11-W53`), versões (`v0000`, `v0001`), labels (`champion`, `challenger`)
+     ou identificadores de ciclo/run.
+6. **Durabilidade Estrita Pré-Rename (`fsync`)**:
+   - Cada arquivo (`verdicts/*.json`, `meta-verdict.json`, `evaluation.json`, `manifest.json`) é gravado em bytes canônicos
+     com `fsync` individual do descritor de arquivo.
+   - Sincronização explícita dos diretórios do staging (`_fsync_tree_dirs`) antes e após a alteração de permissões (`_harden_read_only`),
+     antes de `os.replace`.
+   - Sincronização do diretório-pai após o rename.
+7. **Limpeza Confiável de Staging Read-Only (`_cleanup_staging`)**:
+   - Falha ou interrupção durante a montagem do staging limpa recursivamente o diretório temporário após restaurar permissões
+     de escrita (`0o700` dirs, `0o600` files), sem suprimir erros (`ignore_errors=False`), impedindo arquivos órfãos em
+     `state/evaluations/<run_id>/`.
+8. **Preservação de Evidências em Recuperação**:
+   - O caminho de recuperação do evento `EVALUATED` revalida e obtém os hashes diretamente da árvore publicada
+     (`evaluation.json`, `meta-verdict.json`, `manifest.json` e os 6 `verdicts/*.json`), registrando exatamente a mesma lista
+     canônica de 9 hashes que o caminho normal.
+9. **Vinculação Estrita de `candidate_hash`**:
+   - O payload do evento `GATES_PASSED` deve conter obrigatoriamente `candidate_hash` e este deve ser igual a
+     `gate_report["candidate_hash"]` (sem fallback para `candidate_content_hash`), falhando fechado com `EvaluationError`
+     antes de qualquer execução de jurados.
+10. **Imposição Ativa de Fronteira de Test Doubles (`allow_test_doubles`)**:
+    - `evaluate_candidate()` valida estritamente `allow_test_doubles` como tipo booleano (`isinstance(..., bool)`),
+      recusando valores truthy ou não-booleanos (e.g. `"false"`, `1`, `{}`) com `EvaluationError`.
+    - Por padrão (`allow_test_doubles=False`), inspeciona se qualquer adaptador de jurado ou meta-revisor possui
+      `is_test_double=True` e falha fechado antes de produzir ou publicar qualquer artefato.
+    - O CLI `scripts/01_external_evaluator.py` aceita a habilitação de dublês estritamente via flag CLI `--test-mode`,
+      ignorando qualquer chave `test_mode` inserida no payload JSON de `--input`.
+    - A separação entre adapters operacionais e dublês de teste passa a ser estritamente ativa e garantida em tempo de execução.
+
+## ADR-025 — M9: Detecção Determinística de Estagnação, Diagnóstico Canônico e Refoco Reversível
+
+**Data:** 2026-08-28
+**Status:** Aceito
+
+### Contexto
+O Milestone 09 (M9) é responsável por processar o histórico validado de ciclos fechados a partir do estado `EVALUATED`,
+gerando um `Diagnosis` determinístico, estruturado e content-addressed, e, exclusivamente quando diagnosticada
+estagnação ou oscilação (`LOCAL_PLATEAU`, `GLOBAL_PLATEAU`, `OSCILLATING`), gerar um `RefocusPlan` com overlays de
+prompt filhos imutáveis, reversíveis e sem ampliação de privilégios.
+
+### Decisão
+1. **Reconstituição Rigorosa e Isolamento Histórico**:
+   - `load_history_series()` carrega exclusivamente ciclos fechados anteriores `c0..cN`, revalidando schemas,
+     integridade criptográfica e hashes de `GateReport`, `evaluation.json` e manifestos.
+   - Proibido qualquer look-ahead: artefatos ou eventos de ciclos futuros `> cN` são ignorados ou rejeitados.
+   - Mistura de `run_id`, quebra de continuidade de sequência ou candidatos órfãos falham fechados (`DiagnosisError`).
+
+2. **Motor de Classificação Puro e Precedência Fechada**:
+   - Implementação estrita das 7 classificações canônicas: `EVOLVING`, `LOCAL_PLATEAU`, `GLOBAL_PLATEAU`,
+     `OSCILLATING`, `REGRESSING`, `INCONCLUSIVE`, `TECHNICAL_FAILURE`.
+   - Precedência determinística:
+     1. `TECHNICAL_FAILURE`: falhas técnicas de compilação LaTeX, renderização ou gates determinísticos;
+     2. `REGRESSING`: perda de hard gate matemático (`correctness_math_pass == False`), que não pode ser mascarada por júri inconclusivo;
+     3. `INCONCLUSIVE`: divergência total do júri, evidência ausente ou janela insuficiente sem sinal forte;
+     4. `OSCILLATING`: reversões de notas e trade-offs alternantes entre ciclos na janela ou reabertura de issues;
+     5. `LOCAL_PLATEAU`: janela completa com ganhos globais abaixo do MDE (`Minimum Detectable Effect`) e gargalo localizado em departamento/papel específico;
+     6. `GLOBAL_PLATEAU`: janela completa sem ganho material nem direção segura em todos os departamentos;
+     7. `EVOLVING`: ganho global validado $\ge MDE$ com aprovação matemática integral.
+   - Melhorias cosméticas (clareza/estilo/economia de custo) jamais compensam perda matemática.
+
+3. **Janela Móvel Parametrizada e FREEZE Normalizado**:
+   - Janela deslizante default de 3 ciclos. Janela incompleta nunca inventa plateau.
+   - O denominador de progresso departamental considera exclusivamente papéis ativos no `activation_map`,
+     desconsiderando papéis em `FREEZE` legítimo.
+
+4. **Publicação Transacional Write-Once e Transição de Estado**:
+   - `Diagnosis` content-addressed (`diag-<sha256>`) validado contra `diagnosis.schema.json`.
+   - Publicação em staging com permissões `0444`/`0555`, sincronização `fsync` de descritores e `os.replace` em
+     `state/diagnosis/<run_id>/c<cycle:04d>/`.
+   - Transição durável exclusivamente para `State.DIAGNOSED` (`EVALUATED -> DIAGNOSED`).
+   - M9 nunca realiza transição para `DECIDED`, não promove candidatos e não modifica o conteúdo do artigo.
+
+5. **Refoco Autorizado e Overlays Imutáveis**:
+   - Refoco executa exclusivamente para `LOCAL_PLATEAU`, `GLOBAL_PLATEAU` e `OSCILLATING`. Para `EVOLVING`, `REGRESSING`,
+     `INCONCLUSIVE` e `TECHNICAL_FAILURE`, a geração de overlays é proibida, seguindo diretamente para o M10.
+   - Overlays são gerados como novos arquivos YAML imutáveis em `prompts/overlays/<role_id>/<new_ver>.yaml`,
+     vinculados por `parent_version`, `rollback` acíclico e escopo contido.
+   - Modificação de núcleos `prompts/immutable/`, overlays para `M00` ou ampliação de orçamento/autonomia são bloqueados.
+   - No plateau global, são gerados no máximo 2 ramos: `exploitation` (refinamento matemático/estrutural) e `exploration` (reformulação alternativa de hipóteses).
+
+6. **Transacionalidade e CAS no Registry**:
+   - Gravações em `prompts/registry.json` utilizam lock exclusivo de arquivo (`prompts/.registry.lock`),
+     validação de grafo `PromptRegistry`, escrita via arquivo temporário com `fsync` e substituição atômica.
+   - Concorrência de múltiplos writers é serializada sob lock sem corrupção de ponteiros.
+
+### Consequências
+- A identificação de causas de estagnação torna-se 100% determinística, auditável e rastreável.
+- Ajustes de contexto via prompt overlays tornam-se reversíveis, contidos e sem ampliação de privilégios.
+- O pipeline respeita estritamente a fronteira entre diagnóstico (M9) e decisão/finalização (M10).

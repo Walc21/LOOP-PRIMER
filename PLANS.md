@@ -12,7 +12,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
-- Atualizado em 2026-08-14.
+- Atualizado em 2026-08-28.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
 - M2 — máquina de estados, event log e recuperação: concluído após correção contratual final.
@@ -74,9 +74,9 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M5 | blackboard, grafo de claims e ativação esparsa | concluído (corrigido) | localizadores estruturados, lock, limites e regras de ativação corrigidos; M6 permanece não iniciado |
 | M6 | integração RLM hierárquica | concluído | adapters Prime/Fake, receipts validados, árvore esparsa e retomada local aprovados sem modelo |
 | M7 | síntese, merge, gates e arquivos de versões | concluído após correção final restrita | publica um único challenger integralmente read-only, verifica o `GateReport` canônico persistido antes de `GATES_PASSED` e executa os 13 gates locais de modo fail-closed; júri, decisão e M8 continuam fora do escopo |
-| M8 | avaliador externo cego em júri | pendente | rubrica cega não expõe autoria, ordem ou status de champion |
-| M9 | detecção de progresso e refoco | pendente | estagnação e refoco são produzidos pelos scripts canônicos |
-| M10 | política de compensação e finalizador | pendente | finalizador revalida hashes e aplica ações atômicas sem modificar o challenger avaliado |
+| M8 | avaliador externo cego em júri | concluído | avaliação cega externa por júri e meta-revisão com separação de test doubles e publicação transacional write-once |
+| M9 | detecção de progresso e refoco | concluído | diagnóstico determinístico em 7 classificações canônicas, transição EVALUATED -> DIAGNOSED e refoco reversível com overlays imutáveis sob CAS |
+| M10 | política de compensação e finalizador | pendente; não iniciado | finalizador revalida hashes e aplica ações atômicas sem modificar o challenger avaliado |
 | M11 | comandos e configuração do Prime Agent | pendente | recursos `.prime/agent/` seguem a compatibilidade instalada |
 | M12 | orçamento, observabilidade e execução prolongada | pendente | limites, custos e recuperação são observáveis sem alterar globais |
 | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
@@ -381,13 +381,49 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   todos os papéis, combinações críticas, ambos estados de finalização e todos
   os limites restritivos). Passaram 43 testes M6 e 171 na suíte completa com
   `jsonschema` real, além de `py_compile`; M7 não foi iniciado.
-- 2026-08-27 — Milestone 08 (M8) concluído: implementação da avaliação externa
-  cega por júri externo (3 especialistas), verificação de inversão consistente
-  nas ordens A/B e B/A para neutralização de viés posicional e drift de notas,
-  supervisão por Meta-Revisor com veto fail-closed e persistência imutável dos
-  vereditos e do `EvaluationReport`. A transição `GATES_PASSED → EVALUATED` foi
-  formalizada no `DurableStore` com verificação de imutabilidade estrita das
-  árvores de conteúdo do champion e challenger. Passaram 21 testes unitários do
-  M8 e 213 testes na suíte completa de regressão do repositório (M0–M8); M9 não
-  foi iniciado.
+- 2026-08-28 — Milestone 08 (M8) concluído e endurecido com sucesso:
+  avaliação cega externa por júri e meta-revisão implementadas com estrita
+  separação operacional (adapters de teste `FakeJurorAdapter` e `FakeMetaReviewerAdapter`
+  declarados `is_test_double=True`, e `evaluate_candidate()` impondo
+  `allow_test_doubles=False` por padrão, falhando fechado com `EvaluationError`
+  caso dublês de teste sejam injetados sem autorização explícita; CLI
+  `scripts/01_external_evaluator.py` repassa autorização somente via `--test-mode`),
+  vinculação semântica estrita dos vereditos à apresentação enviada (anti-replay,
+  ordem bijetiva, matching de `comparison_id`, `order_seed`, `rubric_version` e
+  `content_hashes`), verificação canônica de `GateReport` (`verify_gate_report`) e
+  vinculação estrita com o evento ativo `GATES_PASSED` (exigindo `candidate_hash`
+  idêntico sem fallback), publicação transacional write-once em staging com fsync
+  individual de arquivos e diretórios antes e após `_harden_read_only`, rename atômico,
+  fsync pós-rename do diretório pai, limpeza segura de staging read-only (`_cleanup_staging`),
+  recuperação auditável preservando todos os 9 hashes de evidência, e manifesto de
+  avaliação (`manifest.json`) com inventário de hashes. Novos schemas Draft 2020-12
+  formalizados (`meta-verdict.schema.json`, `evaluation-report.schema.json`,
+  `evaluation-manifest.schema.json`). Aprovados testes em `control/test_m8_evaluation.py`,
+  `control/test_contracts.py` e na suíte de regressão (M0–M8) com 100% de sucesso.
 
+- 2026-08-28 — Milestone 09 (M9) concluído com sucesso:
+  detecção determinística de estagnação e refoco implementados através de módulos puros
+  `article_loop.diagnosis` e `article_loop.refocus`, e CLIs finas `scripts/02_stagnation_detector.py`
+  e `scripts/03_refocus_generator.py` (JSON-in / JSON-out).
+  Reconstituição de séries históricas exclusivamente com ciclos fechados e artefatos válidos
+  (GateReport, EvaluationReport, manifestos, claims e issues), com isolamento estrito anti-lookahead
+  e verificação de integridade de hashes.
+  Classificação determinística sob 7 estados canônicos (`EVOLVING`, `LOCAL_PLATEAU`, `GLOBAL_PLATEAU`,
+  `OSCILLATING`, `REGRESSING`, `INCONCLUSIVE`, `TECHNICAL_FAILURE`) com precedência fechada,
+  precedência intransponível do hard gate matemático (`correctness_math_pass == False`), janela móvel
+  configurável (default 3 ciclos; janelas incompletas nunca inventam plateau) e normalização de papéis
+  em `FREEZE` via denominador do activation map.
+  Publicação transacional write-once de `Diagnosis` content-addressed (`diag-<sha256>`) em
+  `state/diagnosis/<run_id>/c<cycle:04d>/` com permissões `0444`/`0555` e sincronização `fsync`.
+  Transição de estado durável exclusivamente de `EVALUATED -> DIAGNOSED` registrada no `DurableStore`.
+  Refoco autorizado exclusivamente para `LOCAL_PLATEAU`, `GLOBAL_PLATEAU` e `OSCILLATING`, gerando
+  overlays filhos imutáveis e acíclicos em `prompts/overlays/<role_id>/<new_version>.yaml` e `RefocusPlan`
+  em `state/refocus/<run_id>/c<cycle:04d>/`. No plateau global, são gerados exatamente dois ramos
+  distintos (`exploitation` e `exploration`) com orçamentos e critérios de falsificação.
+  Gravação atômica em `prompts/registry.json` com lock exclusivo de arquivo (`prompts/.registry.lock`),
+  CAS, fsync e validação de grafo `PromptRegistry`. Proibição absoluta de edição de prompts imutáveis,
+  overlays de `M00` ou ampliação de privilégios.
+  Novos schemas Draft 2020-12 formalizados (`diagnosis-manifest.schema.json`, `refocus-plan.schema.json`).
+  Aprovados 47 testes em `control/test_m9_diagnosis.py`, 51 testes M8, 52 testes
+  de contrato e 296 testes na suíte integral de regressão (M0–M9), executada
+  em 342.468s. M10 permanece não iniciado.

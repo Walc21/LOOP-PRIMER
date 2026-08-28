@@ -47,7 +47,10 @@ SCHEMA_FILES = {
     "agent-task.schema.json", "agent-proposal.schema.json",
     "department-packet.schema.json", "candidate-manifest.schema.json",
     "gate-report.schema.json", "jury-verdict.schema.json",
-    "diagnosis.schema.json", "decision.schema.json",
+    "meta-verdict.schema.json", "evaluation-report.schema.json",
+    "evaluation-manifest.schema.json",
+    "diagnosis.schema.json", "diagnosis-manifest.schema.json",
+    "refocus-plan.schema.json", "decision.schema.json",
     "finalization-receipt.schema.json", "math-evidence.schema.json",
     "math-issue.schema.json", "math-verification.schema.json",
 }
@@ -125,7 +128,7 @@ class SchemaContractTests(unittest.TestCase):
     def test_exact_schema_catalog_and_meta_validation(self):
         paths = sorted(SCHEMA_DIR.glob("*.schema.json"))
         self.assertEqual({path.name for path in paths}, SCHEMA_FILES)
-        self.assertEqual(len(paths), 15)
+        self.assertEqual(len(paths), 20)
         for path in paths:
             with self.subTest(path=path.name):
                 schema = load_json(path)
@@ -340,19 +343,87 @@ class ConditionalContractTests(unittest.TestCase):
     def diagnosis(self, classification):
         return {
             "schema_version": "1.1.0",
-            "diagnosis_id": "diagnosis-1",
+            "diagnosis_id": f"diag-{self.HASH_A}",
             "run_id": "run-1",
             "cycle_id": 1,
             "candidate_id": "v0001",
             "candidate_content_hash": self.HASH_A,
+            "base_hash": self.HASH_B,
             "created_at": self.WHEN,
             "gate_report_id": "gate-report-1",
-            "verdict_ids": ["verdict-1"],
+            "gate_report_hash": self.HASH_A,
+            "evaluation_report_hash": self.HASH_B,
+            "history_hash": self.HASH_A,
+            "verdict_ids": [f"verdict-{index}" for index in range(6)],
+            "window_size": 3,
+            "mde": 0.25,
             "classification": classification,
             "signals": ["score-delta"],
             "recommended_mode": "SHIFT" if "PLATEAU" in classification else "CHECK",
             "focus": ["proof:1"],
             "evidence_locators": ["reports/progress.json"],
+        }
+
+    def diagnosis_manifest(self, classification="GLOBAL_PLATEAU"):
+        return {
+            "schema_version": "1.1.0",
+            "diagnosis_id": f"diag-{self.HASH_A}",
+            "run_id": "run-1",
+            "cycle_id": 1,
+            "candidate_id": "v0001",
+            "classification": classification,
+            "diagnosis_hash": self.HASH_A,
+            "gate_report_hash": self.HASH_A,
+            "evaluation_report_hash": self.HASH_B,
+            "tree_content_hash": self.HASH_B,
+            "created_at": self.WHEN,
+        }
+
+    def refocus_plan(self, classification="GLOBAL_PLATEAU"):
+        branch_specs = {
+            "GLOBAL_PLATEAU": [
+                ("branch-exploit", "exploitation", "W22", self.HASH_A),
+                ("branch-explore", "exploration", "W31", self.HASH_B),
+            ],
+            "LOCAL_PLATEAU": [
+                ("branch-targeted", "targeted", "W22", self.HASH_A),
+            ],
+            "OSCILLATING": [
+                ("branch-stabilize", "stabilization", "W12", self.HASH_A),
+            ],
+        }
+        branches = [
+            {
+                "branch_id": branch_id,
+                "kind": kind,
+                "hypothesis": f"Canonical {kind} hypothesis",
+                "falsification_criteria": ["correctness_math_pass == False"],
+                "target_roles": [role_id],
+                "budget_limit": {"max_tokens": 0, "max_cost": 0.0, "max_cycles": 1},
+                "overlay_versions": {role_id: f"v-{kind}"},
+                "overlay_hashes": {role_id: overlay_hash},
+            }
+            for branch_id, kind, role_id, overlay_hash in branch_specs.get(
+                classification,
+                branch_specs["GLOBAL_PLATEAU"],
+            )
+        ]
+        return {
+            "schema_version": "1.1.0",
+            "plan_id": f"plan-{self.HASH_B}",
+            "run_id": "run-1",
+            "cycle_id": 1,
+            "diagnosis_id": f"diag-{self.HASH_A}",
+            "diagnosis_hash": self.HASH_A,
+            "classification": classification,
+            "strategy": {
+                "GLOBAL_PLATEAU": "dual_branch",
+                "LOCAL_PLATEAU": "targeted_bottleneck",
+                "OSCILLATING": "stabilization",
+            }.get(classification, "dual_branch"),
+            "branches": branches,
+            "created_at": self.WHEN,
+            "evidence_locators": ["state/diagnosis/run-1/c0001/diagnosis.json"],
         }
 
     def scores(self, value):
@@ -588,6 +659,37 @@ class ConditionalContractTests(unittest.TestCase):
         diagnosis = self.diagnosis("EVOLVING")
         diagnosis["classification"] = "PLATEAU"
         self.assert_invalid("diagnosis.schema.json", diagnosis)
+
+    def test_diagnosis_manifest_positive(self):
+        self.assert_valid("diagnosis-manifest.schema.json", self.diagnosis_manifest())
+
+    def test_diagnosis_manifest_invalid_hash_negative(self):
+        manifest = self.diagnosis_manifest()
+        manifest["diagnosis_hash"] = "invalid-hash"
+        self.assert_invalid("diagnosis-manifest.schema.json", manifest)
+
+    def test_refocus_plan_positive(self):
+        self.assert_valid("refocus-plan.schema.json", self.refocus_plan("GLOBAL_PLATEAU"))
+        self.assert_valid("refocus-plan.schema.json", self.refocus_plan("LOCAL_PLATEAU"))
+        self.assert_valid("refocus-plan.schema.json", self.refocus_plan("OSCILLATING"))
+
+    def test_refocus_strategy_and_branch_shape_must_match_classification(self):
+        plan = self.refocus_plan("LOCAL_PLATEAU")
+        plan["strategy"] = "dual_branch"
+        self.assert_invalid("refocus-plan.schema.json", plan)
+        plan = self.refocus_plan("GLOBAL_PLATEAU")
+        plan["branches"] = plan["branches"][:1]
+        self.assert_invalid("refocus-plan.schema.json", plan)
+
+    def test_refocus_plan_forbidden_classification_negative(self):
+        plan = self.refocus_plan()
+        plan["classification"] = "REGRESSING"
+        self.assert_invalid("refocus-plan.schema.json", plan)
+
+    def test_refocus_plan_too_many_branches_negative(self):
+        plan = self.refocus_plan()
+        plan["branches"].append(copy.deepcopy(plan["branches"][0]))
+        self.assert_invalid("refocus-plan.schema.json", plan)
 
     def test_jury_ab_positive(self):
         self.assert_valid("jury-verdict.schema.json", self.jury_verdict(("A", "B")))

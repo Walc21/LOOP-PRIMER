@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evaluation-manifest.schema.json",
+  "title": "EvaluationManifest",
+  "description": "Manifesto e receipt content-addressed da avaliação cega do candidato.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evaluation_id",
+    "comparison_id",
+    "run_id",
+    "cycle_id",
+    "candidate_id",
+    "gate_report_locator",
+    "gate_report_hash",
+    "base_hash",
+    "candidate_content_hash",
+    "rubric_version",
+    "diversity_assurance",
+    "verdict_hashes",
+    "meta_verdict_hash",
+    "evaluation_report_hash",
+    "tree_content_hash",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "evaluation_id": {"type": "string", "pattern": "^eval-[a-f0-9]{32}$"},
+    "comparison_id": {"type": "string", "pattern": "^cmp-[a-f0-9]{64}$"},
+    "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "gate_report_locator": {"type": "string", "minLength": 1},
+    "gate_report_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "base_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "rubric_version": {"type": "string", "minLength": 1},
+    "diversity_assurance": {"enum": ["full_diversity", "reduced_diversity_assurance"]},
+    "verdict_hashes": {
+      "type": "object",
+      "minProperties": 6,
+      "maxProperties": 6,
+      "additionalProperties": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+    },
+    "meta_verdict_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "evaluation_report_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "tree_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "created_at": {"type": "string", "format": "date-time"}
+  }
+}

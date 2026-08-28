@@ -18,6 +18,18 @@ from .evaluation import (
     evaluate_candidate,
     load_rubric,
 )
+from .diagnosis import (
+    DiagnosisError,
+    classify_cycle_progress,
+    diagnose_cycle,
+    load_history_series,
+    verify_published_diagnosis,
+)
+from .refocus import (
+    RefocusError,
+    generate_refocus_plan,
+    register_overlay_cas,
+)
 
 __version__ = "0.5.0"
 
@@ -35,16 +47,20 @@ async def run(*args, **kwargs): return await run_cycle(*args, **kwargs)
 __all__ = [
     "ActivationEntry", "ActivationMode", "ActivationPlan", "ActivationPlanner",
     "Blackboard", "BlackboardError", "BlindComparisonBundle", "ChildHandle",
-    "CompiledPrompt", "DurableStore", "EvaluationError", "FakeJurorAdapter",
-    "FakeMetaReviewerAdapter", "FakeRLMAdapter", "INTERNAL_SCHEMAS", "Impact",
-    "ImpactGraph", "IngestionError", "IntegrityError", "M7Pipeline", "OUTPUT_SCHEMAS",
-    "Orchestrator", "OrchestrationError", "PlanningLimits", "PrimeRLMAdapter",
-    "PromptContractError", "PromptIntegrityError", "PromptRegistry", "SourceReadyError",
-    "State", "StopRequested", "StoreError", "SynthesisError", "TransitionError",
-    "bootstrap", "checkpoint", "check_inversion_consistency", "compare",
-    "compile_manager_prompt", "compile_prompt", "evaluate_candidate",
-    "expected_prompt_version", "finalize", "ingest", "load_rubric",
-    "manager_view", "pause", "preflight", "resume", "run", "run_cycle",
-    "run_gates", "specialist_view", "stable_claim_id", "status", "stop",
-    "submanager_view", "tree_hash", "validate_output",
+    "CompiledPrompt", "DiagnosisError", "DurableStore", "EvaluationError",
+    "FakeJurorAdapter", "FakeMetaReviewerAdapter", "FakeRLMAdapter",
+    "INTERNAL_SCHEMAS", "Impact", "ImpactGraph", "IngestionError",
+    "IntegrityError", "M7Pipeline", "OUTPUT_SCHEMAS", "Orchestrator",
+    "OrchestrationError", "PlanningLimits", "PrimeRLMAdapter",
+    "PromptContractError", "PromptIntegrityError", "PromptRegistry",
+    "RefocusError", "SourceReadyError", "State", "StopRequested", "StoreError",
+    "SynthesisError", "TransitionError", "bootstrap", "checkpoint",
+    "check_inversion_consistency", "classify_cycle_progress", "compare",
+    "compile_manager_prompt", "compile_prompt", "diagnose_cycle",
+    "evaluate_candidate", "expected_prompt_version", "finalize",
+    "generate_refocus_plan", "ingest", "load_history_series", "load_rubric",
+    "manager_view", "pause", "preflight", "register_overlay_cas", "resume",
+    "run", "run_cycle", "run_gates", "specialist_view", "stable_claim_id",
+    "status", "stop", "submanager_view", "tree_hash", "validate_output",
+    "verify_published_diagnosis",
 ]
