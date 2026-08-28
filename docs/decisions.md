@@ -599,3 +599,62 @@ classificação e código de saída. O entrypoint LaTeX segue a regra determinis
 `article.tex`, `paper.tex`, `latex-source/paper.tex`, preservando o diretório
 de trabalho dos includes. Esta decisão termina no M7 e não autoriza júri,
 promoção, Pareto, rejected nem M8.
+
+## ADR-024 — M8: Júri Externo Cego, Inversão Consistente e Meta-Review
+
+**Data:** 2026-08-27
+**Status:** Aceito
+
+### Contexto
+O marco M8 é responsável pela avaliação cega, determinística e reproduzível do
+candidato challenger em relação ao champion atual, após a aprovação de todos os
+gates determinísticos do M7 (`GATES_PASSED`). A avaliação deve prevenir
+vazamento de identidade/autoria e viés de posição (1ª vs 2ª apresentação),
+garantindo que qualquer decisão de avanço seja auditável, imutável e vinculada
+aos hashes de conteúdo avaliados.
+
+### Decisão
+1. **Blind Comparison Bundle & Sanitização**:
+   - O `BlindComparisonBundle` extrai o conteúdo do champion e challenger,
+     sanitiza menções a papéis (`M00`, `S10-S50`, `W11-W53`), versões (`v0000`,
+     `v0001`, etc.) e rótulos (`champion`, `challenger`), associando-os aos
+     identificadores neutros `"A"` e `"B"`.
+   - Gera apresentações bijetivas nas ordens `["A", "B"]` e `["B", "A"]` com
+     `order_seed` determinístico.
+
+2. **Inversão Consistente e Detecção de Viés**:
+   - Cada jurado avalia ambas as ordens de apresentação.
+   - `check_inversion_consistency()` detecta viés de 1ª ou 2ª posição, drift de
+     notas por dimensão acima da tolerância, e inconsistências na verificação
+     matemática (`correctness_math_pass`).
+   - Apenas jurados consistentes em ambas as apresentações são contabilizados
+     no veredito final.
+
+3. **Especialidades e Diversidade do Júri**:
+   - Três especialidades canônicas: `juror-math` (foco em correção matemática),
+     `juror-contrib` (foco em contribuição científica) e `juror-clarity` (foco em
+     clareza e estilo).
+   - Avaliação de diversidade de famílias de modelos (`full_diversity` vs
+     `reduced_diversity_assurance`).
+
+4. **Meta-Review e Veto Fail-Closed**:
+   - O Meta-Revisor valida a consistência do júri contra o `GateReport` canônico.
+   - Veto de meta-revisão ou reprovação em `correctness_math` por qualquer jurado
+     consistente torna o resultado estritamente não-elegível (`challenger_eligible = False`).
+
+5. **Imutabilidade e Transição de Estado**:
+   - Todos os vereditos individuais e o relatório final de avaliação são
+     persistidos de forma atômica e imutável em
+     `state/evaluations/<run_id>/c<cycle_id:04d>/`.
+   - Hashes da árvore do champion e challenger são verificados antes e depois
+     da avaliação, garantindo zero mutação.
+   - A única transição de estado permitida e executada é `GATES_PASSED → EVALUATED`.
+   - M8 não altera o champion, não escreve em `versions/pareto/` ou `versions/rejected/`,
+     e não realiza transição para `DIAGNOSED`, `DECIDED`, `COMMITTING`, `CYCLE_COMPLETE` ou `FINALIZED`.
+
+### Consequências
+- A avaliação de artigos opera de forma 100% reproduzível, auditável e imutável.
+- Falhas de consistência, viés posicional ou veto matemático são tratadas de forma
+  estritamente fail-closed.
+- A máquina de estados preserva a separação de autoridade entre avaliação (M8) e
+  decisão/diagnóstico/promoção (M9+).

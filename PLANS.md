@@ -381,3 +381,13 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   todos os papéis, combinações críticas, ambos estados de finalização e todos
   os limites restritivos). Passaram 43 testes M6 e 171 na suíte completa com
   `jsonschema` real, além de `py_compile`; M7 não foi iniciado.
+- 2026-08-27 — Milestone 08 (M8) concluído: implementação da avaliação externa
+  cega por júri externo (3 especialistas), verificação de inversão consistente
+  nas ordens A/B e B/A para neutralização de viés posicional e drift de notas,
+  supervisão por Meta-Revisor com veto fail-closed e persistência imutável dos
+  vereditos e do `EvaluationReport`. A transição `GATES_PASSED → EVALUATED` foi
+  formalizada no `DurableStore` com verificação de imutabilidade estrita das
+  árvores de conteúdo do champion e challenger. Passaram 21 testes unitários do
+  M8 e 213 testes na suíte completa de regressão do repositório (M0–M8); M9 não
+  foi iniciado.
+
