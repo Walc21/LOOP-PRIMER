@@ -1,0 +1,59 @@
+# Prime Agent project-local sessions and transient kernel state
+.prime/agent/sessions/
+.prime/agent/runtime/
+
+# Inputs and derived article artifacts (keep directory sentinels/examples)
+*.pdf
+*.zip
+input/inbox/*
+artifacts/original/*
+artifacts/extracted/*
+artifacts/rendered/*
+!**/.gitkeep
+!**/*.example.*
+
+# Durable runtime state is local; schemas/configuration remain versioned
+state/events/*
+state/snapshots/*
+state/checkpoints/*
+state/claims/*
+state/issues/*
+state/decisions/*
+state/locks/*
+versions/champion/*
+versions/challengers/*
+versions/pareto/*
+versions/rejected/*
+workspaces/*
+reports/*
+logs/*
+!**/.gitkeep
+!**/*.example.*
+
+# Secrets and local overrides
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*credentials*.json
+*secrets*.json
+
+# Python/editor caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+.idea/
+.vscode/
+*.swp
+*~
+
+# Lock transitório do histórico/contexto para IAs
+docs/ai_history.lock
