@@ -249,6 +249,7 @@ class Orchestrator:
         try:
             identity = _persisted_source_identity(store, run)
             if identity is None: raise OrchestrationError("M3 source identity is missing")
+            # M3's verifier also rejects unsafe descendants and a changed frozen PDF.
             hashes = _verify_artifacts(self.root / "artifacts" / "original" / digest,
                                        self.root / "artifacts" / "extracted" / digest,
                                        self.root / "artifacts" / "rendered" / digest, digest)
@@ -458,10 +459,16 @@ class Orchestrator:
                 plan_file=self._file(run, f"activation-c{cycle:04d}.json")
                 if plan_file.exists() and plan_file.read_bytes() != _bytes(raw) + b"\n": raise OrchestrationError("immutable PLAN artifact conflicts")
                 if not plan_file.exists(): self._atomic(plan_file, raw)
+            # Reconcile either side of an interrupted mirror before treating
+            # the cycle as ready.  The DurableStore idempotency key makes this
+            # safe for normal reentry and for a crash after its commit.
             self._canonical(run, State.CYCLE_PLANNED, event_id=f"{run}:m6:c{cycle}:planned", event_type="M6_CYCLE_PLANNED", payload={"activation_hash":digest})
             self._append(run,"PLAN",f"{run}:c{cycle}:plan",{"cycle_id":cycle,"activation":mapping,"activation_hash":digest,"raw":raw})
         if paused:
+            # A paused M5 plan is recorded as CYCLE_PLANNED, then paused with
+            # the same concrete transition rules as an operator request.
             return await self.pause(run)
+        # Each admission persists independently under the run lock.
         for role in DEPARTMENTS:
             if mapping[role] != "FREEZE": await self._admit(run, cycle, role, self.adapter)
         with self._lock(run):
@@ -491,10 +498,14 @@ class Orchestrator:
             task_bytes = _bytes(task) + b"\n"; task_hash = _hash(task_bytes)
             compiled = compile_prompt(self.root, task, self._context(task))
             if role.startswith("S"):
+                # A submanager receives only task/proposal material of direct
+                # children.  It never receives another department's context.
                 children = [{"role_id": child, "task_hash": state["children"][child]["task_hash"]}
                             for child in CHILDREN[role] if child in state["children"]]
                 view = submanager_view(task, children)
             else:
+                # A specialist gets an explicit local slice, never an editable
+                # champion nor a global blackboard dump.
                 view = specialist_view(
                     task,
                     excerpts=[item for item in task["input_locators"] if item.startswith("readonly:")],
@@ -512,14 +523,21 @@ class Orchestrator:
             if not prompt_target.exists(): self._atomic_bytes(prompt_target,prompt_bytes)
             artifact = {"task_hash":task_hash,"view_hash":_hash(_bytes(view)+b"\n"),"prompt_hash":_hash(prompt_bytes),"prompt_version":task["prompt_version"],"workspace":str(workspace)}
             self._append(run,"ADMISSION_PREPARED",f"{run}:c{cycle}:{role}:prepared",{"role_id":role,"cycle_id":cycle,**artifact})
+            # This intent is the admission ownership token.  A concurrent pass
+            # can reconcile it but must not issue a second spawn.
             intent_key=f"{run}:c{cycle}:{role}:intent"
             owns_intent=not any(event["idempotency_key"] == intent_key for event in self._events(run))
             self._append(run,"SPAWN_INTENT",intent_key,{"role_id":role,"cycle_id":cycle,"name":_name(run,cycle,role),"parent_id":getattr(adapter,"actor_id",None)})
+        # A process may die after rlm() admits the child but before HANDLE is
+        # journaled. The deterministic name reconciles that narrow window.
         name = _name(run, cycle, role)
         existing = next((item for item in await adapter.list_subagents() if item.name == name), None)
         if existing is not None:
             handle = existing
         elif not owns_intent:
+            # A prior owner may have died after intent.  Do not turn this
+            # uncertainty into a duplicate child; a later reconciliation can
+            # observe the deterministic name and journal HANDLE.
             raise OrchestrationError("active SPAWN_INTENT awaits reconciliation")
         else:
             handle = await adapter.spawn(compiled.text + "\nWorkspace permitido: " + str(workspace) + "\nEnvie ao pai apenas receipt {path,sha256,schema_version}.", name=name)
@@ -545,6 +563,9 @@ class Orchestrator:
         scope=sorted(set([f"role:{role}", *entry["inputs"]]))
         inputs=[f"readonly:{champion / 'baseline.pdf'}", f"readonly:{champion / 'manifest.json'}", f"readonly:{extracted}", f"readonly:{rendered}", f"readonly:{rubric}", *[f"blackboard:{item}" for item in entry["inputs"]]]
         if role.startswith("W"):
+            # A specialist sees only the immutable source context and its own
+            # local blackboard slice; its output workspace is deliberately not
+            # advertised as an input locator.
             inputs.append(f"readonly:history:{self._dir(state['run_id']) / 'snapshot.json'}")
         else:
             inputs.extend(f"child-task:{state['children'][child]['task_hash']}" for child in CHILDREN[role] if child in state["children"])
@@ -582,6 +603,9 @@ class Orchestrator:
                 return state
             workspace=self._workspace(run,state["cycle_id"],sender_role); target=Path(path)
             self._regular(target,workspace)
+            # The untrusted workspace file is consumed exactly once.  Hashing,
+            # parsing, validation and freezing must all describe this single
+            # byte sequence; rereading it would admit a TOCTOU substitution.
             data=target.read_bytes()
             if target.parent != workspace or _hash(data) != sha256: raise OrchestrationError("receipt location or hash differs")
             schema="department-packet.schema.json" if sender_role.startswith("S") else "agent-proposal.schema.json"
@@ -594,6 +618,8 @@ class Orchestrator:
             immutable=self._managed("state","orchestration",run,"receipts",sha256,create=True)/"artifact.json"
             if immutable.exists() and immutable.read_bytes()!=data: raise OrchestrationError("content-addressed receipt conflict")
             if not immutable.exists(): self._atomic_bytes(immutable,data)
+            # Confirm the bytes we have frozen before making the RECEIPT
+            # durable.  All later consumers use immutable_path exclusively.
             if _hash(self._frozen_receipt(run,{"immutable_path":str(immutable),"sha256":sha256})) != sha256:
                 raise OrchestrationError("immutable receipt hash differs")
             payload={"sender_role":sender_role,"parent_role":parent_role,"path":str(target),"immutable_path":str(immutable),"sha256":sha256,"schema_version":schema_version,"cycle_id":state["cycle_id"]}
@@ -631,6 +657,8 @@ class Orchestrator:
                 raise OrchestrationError("immutable DepartmentPacket identity differs")
             if target.is_symlink(): raise OrchestrationError("symlinked DepartmentPacket workspace")
             if target.exists() and not target.is_file(): raise OrchestrationError("DepartmentPacket workspace is not a regular file")
+            # The frozen receipt is authoritative: never consult mutable bytes
+            # to decide a retry or to derive the receipt hash.
             self._atomic_bytes(target,encoded)
             result=await self.receipt(run,sender_role=department,parent_role="M00",path=accepted["path"],sha256=accepted["sha256"],schema_version=accepted["schema_version"])
             await adapter.send_parent(_bytes({"path":accepted["path"],"sha256":accepted["sha256"],"schema_version":accepted["schema_version"]}).decode())
@@ -647,6 +675,8 @@ class Orchestrator:
         technical=[x for x in proposals if x.get("risk",{}).get("technical_effect_possible")]
         if target.exists():
             self._regular(target, self._workspace(run,state["cycle_id"],department))
+            # Publication is write-once.  A retry only reuses these exact bytes
+            # (including created_at), then may resend its envelope to M00.
             encoded=target.read_bytes()
             try:
                 packet=json.loads(encoded)
@@ -673,6 +703,9 @@ class Orchestrator:
             try: validate_output(self.root,"department-packet.schema.json",packet)
             except PromptContractError as error: raise OrchestrationError("generated DepartmentPacket is invalid") from error
             encoded=_bytes(packet)+b"\n"
+            # Admission/consolidation can be resumed concurrently.  Only the
+            # owner holding this journal lock can publish a new packet; a
+            # loser consumes the already-published immutable byte sequence.
             with self._lock(run):
                 if target.exists():
                     self._regular(target, self._workspace(run,state["cycle_id"],department))
@@ -714,6 +747,8 @@ class Orchestrator:
             pause_id=state.get("pause_id"); resume_state=state.get("resume_state")
             if not isinstance(pause_id,str) or resume_state not in {item.value for item in State}: raise OrchestrationError("paused journal is malformed")
             key=f"{run}:resume:{pause_id}"; payload={"pause_id":pause_id}
+            # Do not use DurableStore.resume(): after a crash between its
+            # commit and RESUMED, record() recognizes this idempotency key.
             self._canonical(run,State(resume_state),event_id=key,event_type="M6_RESUMED",payload=payload)
             self._append(run,"RESUMED",key,payload)
             return self._save_snapshot(run)
@@ -731,6 +766,8 @@ class Orchestrator:
             self._canonical(run,State.TECHNICAL_FAILURE,event_id=stop_id,event_type="M6_STOPPED",payload={"reason":"operator_stop"})
             self._append(run,"STOPPED",stop_id,{})
             result=self._save_snapshot(run)
+        # Only the owning actor may remove direct children; unresolved owners
+        # remain journaled as pending cancellation, never false success.
         if self.adapter:
             for child in state["children"].values():
                 if child["parent_id"] == getattr(self.adapter,"actor_id",None): await self.adapter.delete_subagent(child["child_id"])
