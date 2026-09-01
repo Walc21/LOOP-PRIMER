@@ -137,6 +137,9 @@ def _source_provenance(root: Path, candidate: Path, manifest: Mapping[str, Any],
         raise IntegrityError("base manifest schema failed") from exc
     if (base_manifest.get("candidate_id") != manifest.get("base_candidate_id")
             or base_manifest.get("content_hash") != manifest.get("base_hash")
+            # M3's baseline manifest is bound with its file-only directory hash;
+            # challengers use M7's stricter tree hash.  Verify each artifact with
+            # the algorithm declared by the milestone that published it.
             or _directory_hash(base, exclude={"manifest.json"}) != manifest.get("base_hash")):
         raise IntegrityError("base champion identity/content differs")
     ingestion, _ = _read_json(base / "ingestion-manifest.json")
@@ -191,7 +194,7 @@ def _run(command: str, args: list[str], *, cwd: Path, timeout: int) -> tuple[boo
         return False, 126, str(exc)[:4096], int((time.monotonic() - started) * 1000)
 
 
-def _claims(root: Path, manifest: Mapping[str, Any], proposals: Mapping[str, Mapping[str, Any]]) -> tuple[dict[str, dict[str, Any]], list[str]:
+def _claims(root: Path, manifest: Mapping[str, Any], proposals: Mapping[str, Mapping[str, Any]]) -> tuple[dict[str, dict[str, Any]], list[str]]:
     claims = Blackboard(root).claims(manifest["run_id"])
     visiting: set[str] = set()
     done: set[str] = set()
@@ -551,7 +554,7 @@ def run_gates(candidate: str | Path, *, adapter: Any | None = None,
                     gate_id, candidate, root, manifest, context, entry["timeout_seconds"])
             except IntegrityError as exc:
                 ok, classification, output, code, evidence, duration = False, "technical", str(exc), 70, [], 0
-            except Exception as exc:
+            except Exception as exc:  # verifier failure is evidence, not an absent report
                 ok, classification, output, code, evidence, duration = False, "technical", f"verifier exception: {type(exc).__name__}: {exc}", 70, [], 0
             after = tree_hash(candidate)
             if after != before:

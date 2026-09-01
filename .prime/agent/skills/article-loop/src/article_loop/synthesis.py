@@ -228,6 +228,9 @@ class M7Pipeline:
         proposals=self._frozen_proposals(synthesis); hashes=synthesis["decision"]["proposal_hashes"]; order=synthesis["decision"]["application_order"]
         candidate_id="c-"+_sha(_json({"run":synthesis["run_id"],"cycle":synthesis["cycle_id"],"base":base_hash,"synthesis":synthesis["synthesis_hash"],"hashes":hashes,"order":order}))[:32]; published=self.root/"versions/challengers"/candidate_id
         if published.exists(): return self._existing(published,candidate_id,synthesis,hashes)
+        # Keep staging and publication under the same parent: POSIX may require
+        # write permission on a moved directory when its ``..`` entry changes,
+        # which would contradict the mandatory read-only-before-rename contract.
         stage=Path(tempfile.mkdtemp(prefix=".m7-"+candidate_id+"-",dir=published.parent))
         try:
             self._hit("before_staging"); _copy(source,stage,{"manifest.json"}); self._hit("after_copy"); self._apply(stage,proposals); self._hit("after_apply"); content=tree_hash(stage)

@@ -368,6 +368,10 @@ def _register_overlays_cas(
         finally:
             for temporary, _ in staged_files:
                 if os.path.exists(temporary):
+                    # ``temporary`` may be a hard link to the published
+                    # overlay.  chmod would mutate that shared inode and turn
+                    # the just-published immutable overlay back into 0600.
+                    # Unlinking the staging name is sufficient cleanup.
                     os.unlink(temporary)
         return result
 
@@ -472,6 +476,7 @@ def generate_refocus_plan(
     store: DurableStore | None = None,
     fault: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
+    """Generate an authorized, idempotent RefocusPlan from canonical M9 evidence."""
     if isinstance(cycle_id, bool) or not isinstance(cycle_id, int) or cycle_id < 0:
         raise RefocusError("cycle_id must be a non-negative integer")
     if not isinstance(run_id, str) or not run_id:
