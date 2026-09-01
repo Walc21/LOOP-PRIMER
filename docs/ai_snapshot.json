@@ -1,0 +1,16 @@
+{
+  "files": {
+    ".gitignore": {
+      "bytes": 983,
+      "kind": "text",
+      "lines": 59,
+      "sha256": "1d23a95bcdb4dfb2b33fc2581d598f04bf439a996393f98df061a5fe39baa6cf"
+    },
+    ".prime/agent/APPEND_SYSTEM.md": {
+      "bytes": 807,
+      "kind": "text",
+      "lines": 14,
+      "sha256": "09f65d8308cccb68845df639d3b1e32671d64e3c373eefb282bc82ece65eb9d1"
+    }
+  }
+}
