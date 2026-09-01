@@ -125,6 +125,9 @@ def list_relevant_paths(root: Path) -> list[str]:
                 if name.endswith((".pyc", ".pyo")):
                     continue
                 paths.add((base / name).relative_to(root).as_posix())
+    # Estado científico e artefatos são deliberadamente ignorados pelo Git,
+    # mas precisam aparecer por metadata/hash no snapshot atual. Seu conteúdo
+    # nunca é incorporado ou resumido no documento.
     for relative_directory in CANONICAL_RUNTIME_DIRS:
         directory = root / relative_directory
         if not directory.is_dir() or directory.is_symlink():

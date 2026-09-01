@@ -194,7 +194,10 @@ def _delta_summary(delta: Mapping[str, Sequence[Mapping[str, Any]]]) -> str:
 
 def render_history(root: Path, entries: Sequence[Mapping[str, Any]], snapshot: Mapping[str, Any]) -> str:
     commits = _git_commits(root)
-    adrs = _adr_headings(root)
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for commit in commits:
+        groups.setdefault(infer_milestone(commit["subject"]), []).append(commit)
+
     lines = [
         "# Histórico evolutivo e atualizações de sessão — article-loop",
         "",
@@ -202,9 +205,9 @@ def render_history(root: Path, entries: Sequence[Mapping[str, Any]], snapshot: M
         "",
         "## Baseline registrado",
         "",
-        f"- Fingerprint das fontes: `{snapshot.get('fingerprint') or '-'}`",
-        f"- Registrado em: `{snapshot.get('recorded_at') or '-'}`",
-        f"- Git: branch `{snapshot.get('git', {}).get('branch') or '-'}`, HEAD `{str(snapshot.get('git', {}).get('head') or '-')[:12]}`",
+        f"- Fingerprint das fontes: `{snapshot.get('fingerprint', 'indisponível')}`",
+        f"- Registrado em: `{snapshot.get('recorded_at', 'indisponível')}`",
+        f"- Git: branch `{snapshot.get('git', {}).get('branch') or '-'}`, HEAD `{(snapshot.get('git', {}).get('head') or '-')[:12]}`",
         f"- Arquivos relevantes: {len(snapshot.get('files', {}))}",
         "",
         "## Evolução reconstruída do versionamento",
@@ -212,155 +215,236 @@ def render_history(root: Path, entries: Sequence[Mapping[str, Any]], snapshot: M
         "| Marco | Intervalo | Commits | Evolução inferida | Áreas tocadas |",
         "|---|---:|---:|---|---|",
     ]
-    grouped: dict[str, list[dict[str, Any]]] = {}
-    for commit in commits:
-        grouped.setdefault(infer_milestone(commit["subject"]), []).append(commit)
-    for milestone, list_commits in grouped.items():
-        dates = f"{list_commits[0]['date']}..{list_commits[-1]['date']}" if list_commits[0]["date"] != list_commits[-1]["date"] else list_commits[0]["date"]
-        purpose = MILESTONE_PURPOSES.get(milestone, "Inferida dos assuntos dos commits; consulte a tabela exata abaixo.")
-        touched = sorted({Path(path).parts[0] for commit in list_commits for path in commit["files"]})
-        lines.append(f"| {milestone} | {dates} | {len(list_commits)} | {purpose} | {', '.join(touched[:8])} |")
+    if groups:
+        for milestone, items in groups.items():
+            files = sorted({path for item in items for path in item["files"]})
+            purpose = MILESTONE_PURPOSES.get(milestone, "Inferida dos assuntos dos commits; consulte a tabela exata abaixo.")
+            interval = items[0]["date"] if items[0]["date"] == items[-1]["date"] else f"{items[0]['date']}..{items[-1]['date']}"
+            lines.append(f"| {markdown_cell(milestone)} | {interval} | {len(items)} | {markdown_cell(purpose, 220)} | {markdown_cell(', '.join(files[:7]), 180)} |")
+    else:
+        lines.append("| - | - | 0 | Repositório Git indisponível nesta cópia. | - |")
 
-    lines.extend(["", "### Commits exatos", "", "| Commit | Data | Marco | Assunto | Arquivos principais |", "|---|---:|---|---|---|"])
+    lines.extend([
+        "",
+        "### Commits exatos",
+        "",
+        "| Commit | Data | Marco | Assunto | Arquivos principais |",
+        "|---|---:|---|---|---|",
+    ])
     for commit in commits:
-        top_files = [path for path in commit["files"] if not path.endswith(".gitkeep")]
-        sample = ", ".join(top_files[:3]) + (", …" if len(top_files) > 3 else "")
-        lines.append(f"| `{commit['hash'][:9]}` | {commit['date']} | {infer_milestone(commit['subject'])} | {markdown_cell(commit['subject'], 120)} | {markdown_cell(sample or '-', 140)} |")
+        lines.append(
+            f"| `{commit['hash'][:9]}` | {commit['date']} | {infer_milestone(commit['subject'])} | "
+            f"{markdown_cell(commit['subject'], 180)} | {markdown_cell(', '.join(commit['files'][:6]), 180)} |"
+        )
+    if not commits:
+        lines.append("| - | - | - | Sem commits disponíveis. | - |")
 
     lines.extend(["", "## Decisões arquiteturais", ""])
+    adrs = _adr_headings(root)
     if adrs:
-        for adr in adrs:
-            lines.append(f"- {adr}")
+        lines.extend(f"- {heading}" for heading in adrs)
     else:
-        lines.append("- Nenhuma decisão encontrada em `docs/decisions.md`.")
+        lines.append("- Nenhuma ADR encontrada em `docs/decisions.md`.")
 
     lines.extend(["", "## Atualizações de sessão", ""])
     if not entries:
-        lines.append("- Nenhuma sessão registrada no ledger.")
-    for entry in reversed(entries):
+        lines.append("Nenhuma sessão estruturada foi registrada ainda.")
+    for entry in entries:
         lines.extend([
-            f"### {entry.get('recorded_at')} — {entry.get('summary')}",
+            f"### {entry.get('recorded_at', '-')} — {entry.get('summary', 'sem resumo')}",
             "",
-            f"- Session ID: `{entry.get('session_id')}`",
-            f"- Fingerprint final: `{entry.get('source_fingerprint')}`",
+            f"- Session ID: `{entry.get('session_id', '-')}`",
+            f"- Fingerprint final: `{entry.get('source_fingerprint', '-')}`",
             f"- Git final: `{str(entry.get('git', {}).get('head') or '-')[:12]}`; status relevante: {len(entry.get('git', {}).get('status', []))} item(ns)",
             f"- Delta factual: {_delta_summary(entry.get('file_delta', {}))}",
         ])
         if entry.get("baseline_initialized"):
             lines.append("- Esta sessão inicializou o primeiro baseline; a evolução anterior é reconstruída do Git/ADRs, não tratada como adição de todos os arquivos.")
-        for key, title in (("changes", "Mudanças"), ("decisions", "Decisões"), ("validations", "Validações"), ("risks", "Riscos/limites"), ("next_steps", "Próximos passos")):
+        for title, key in (
+            ("Mudanças", "changes"),
+            ("Decisões", "decisions"),
+            ("Validações", "validations"),
+            ("Riscos/limites", "risks"),
+            ("Próximos passos", "next_steps"),
+        ):
             values = entry.get(key, [])
             if values:
                 lines.extend(["", f"**{title}**", ""])
-                for item in values:
-                    lines.append(f"- {item}")
+                lines.extend(f"- {value}" for value in values)
         delta = entry.get("file_delta", {})
-        if _delta_count(delta) > 0:
+        if _delta_count(delta):
             lines.extend(["", "**Arquivos detectados**", "", "| Tipo | Caminho | SHA anterior | SHA final |", "|---|---|---|---|"])
             for kind in ("added", "modified", "deleted"):
                 for item in delta.get(kind, []):
-                    lines.append(f"| {kind} | `{item['path']}` | `{str(item.get('before') or '-')[:12]}` | `{str(item.get('after') or '-')[:12]}` |")
+                    before = (item.get("before") or "-")[:12]
+                    after = (item.get("after") or "-")[:12]
+                    lines.append(f"| {kind} | `{markdown_cell(item.get('path'), 180)}` | `{before}` | `{after}` |")
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _entry_payload(args: argparse.Namespace) -> dict[str, Any]:
+    payload: dict[str, Any] = {}
+    if args.entry_file:
+        payload = load_json(Path(args.entry_file).resolve(), None)
+        if not isinstance(payload, dict):
+            raise HandoffError("--entry-file deve conter um objeto JSON")
+    if args.stdin_json:
+        try:
+            stdin_value = json.load(sys.stdin)
+        except json.JSONDecodeError as exc:
+            raise HandoffError(f"JSON de stdin inválido: {exc}") from exc
+        if not isinstance(stdin_value, dict):
+            raise HandoffError("stdin deve conter um objeto JSON")
+        payload.update(stdin_value)
+    if args.summary is not None:
+        payload["summary"] = args.summary
+    for key, value in (
+        ("changes", args.change),
+        ("decisions", args.decision),
+        ("validations", args.validation),
+        ("risks", args.risk),
+        ("next_steps", args.next_step),
+    ):
+        if value:
+            payload.setdefault(key, [])
+            payload[key].extend(value)
+    return payload
+
+
+def update_history(root: Path, payload: Mapping[str, Any] | None, *, bootstrap_only: bool = False, automatic: bool = False, timestamp: str | None = None, session_id: str | None = None) -> dict[str, Any]:
+    root = root.resolve()
+    if not root.is_dir():
+        raise HandoffError(f"raiz inexistente: {root}")
+    inventory = build_inventory(root)
+    fingerprint = inventory_fingerprint(inventory)
+    git = git_state(root)
+
+    with _history_lock(root):
+        snapshot_path = root / SNAPSHOT_RELATIVE
+        old_snapshot = load_json(snapshot_path, {})
+        if old_snapshot and not isinstance(old_snapshot.get("files"), dict):
+            raise HandoffError("snapshot anterior não contém mapa de arquivos válido")
+        initial_baseline = not bool(old_snapshot)
+        delta = ({"added": [], "modified": [], "deleted": []} if initial_baseline else inventory_delta(old_snapshot.get("files", {}), inventory))
+        entries = load_entries(root / LEDGER_RELATIVE)
+        recorded_at = _validated_timestamp(timestamp) if timestamp else _now()
+        created = False
+
+        if not bootstrap_only:
+            data = dict(payload or {})
+            if automatic and not data.get("summary"):
+                data["summary"] = f"Registro factual automático: {_delta_summary(delta)}."
+                data["changes"] = [f"{item['path']} ({kind})" for kind in ("added", "modified", "deleted") for item in delta[kind]]
+            summary = _text(data.get("summary"), "summary", required=True)
+            normalized = {
+                "summary": summary,
+                "changes": _strings(data.get("changes", []), "changes"),
+                "decisions": _strings(data.get("decisions", []), "decisions"),
+                "validations": _strings(data.get("validations", []), "validations"),
+                "risks": _strings(data.get("risks", []), "risks"),
+                "next_steps": _strings(data.get("next_steps", []), "next_steps"),
+            }
+            identity_body = {
+                "schema_version": SCHEMA_VERSION,
+                "source_fingerprint": fingerprint,
+                "previous_fingerprint": old_snapshot.get("fingerprint"),
+                **normalized,
+            }
+            identifier = session_id or "session-" + sha256_bytes(canonical_json(identity_body))[:20]
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{5,127}", identifier):
+                raise HandoffError("session_id deve ser identificador simples de 6 a 128 caracteres")
+            existing = next((entry for entry in entries if entry["session_id"] == identifier), None)
+            if existing is None:
+                entry = {
+                    "schema_version": SCHEMA_VERSION,
+                    "session_id": identifier,
+                    "recorded_at": recorded_at,
+                    "source_fingerprint": fingerprint,
+                    "previous_fingerprint": old_snapshot.get("fingerprint"),
+                    "baseline_initialized": initial_baseline,
+                    "git": git,
+                    "file_delta": delta,
+                    **normalized,
+                }
+                ledger_path = root / LEDGER_RELATIVE
+                prior = ledger_path.read_bytes() if ledger_path.exists() else b""
+                if prior and not prior.endswith(b"\n"):
+                    raise HandoffError("ledger anterior está truncado")
+                atomic_write(ledger_path, prior + canonical_json(entry) + b"\n")
+                entries.append(entry)
+                created = True
+            else:
+                if existing.get("source_fingerprint") != fingerprint or existing.get("summary") != summary:
+                    raise HandoffError("session_id já existe com conteúdo diferente")
+                recorded_at = str(existing.get("recorded_at", recorded_at))
+                identifier = existing["session_id"]
+        else:
+            identifier = old_snapshot.get("session_id")
+
+        snapshot = {
+            "schema_version": SCHEMA_VERSION,
+            "recorded_at": recorded_at,
+            "session_id": identifier,
+            "fingerprint": fingerprint,
+            "git": git,
+            "files": snapshot_files(inventory),
+        }
+        if bootstrap_only or created or old_snapshot.get("fingerprint") != fingerprint:
+            atomic_write(snapshot_path, json.dumps(snapshot, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8") + b"\n")
+        else:
+            snapshot = old_snapshot
+        history = render_history(root, entries, snapshot)
+        history_changed = atomic_write(root / HISTORY_RELATIVE, history.encode("utf-8"))
+    return {
+        "status": "recorded" if created else ("bootstrapped" if bootstrap_only else "idempotent"),
+        "session_id": identifier,
+        "fingerprint": fingerprint,
+        "delta": {key: len(delta[key]) for key in delta},
+        "history": HISTORY_RELATIVE.as_posix(),
+        "history_changed": history_changed,
+    }
+
+
 def parser() -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(description="Registra o encerramento de uma sessão de IA.")
+    result = argparse.ArgumentParser(description="Registra uma sessão e atualiza o histórico evolutivo para IAs.")
     result.add_argument("--root", default=str(ROOT), help="Raiz do repositório")
-    result.add_argument("--summary", help="Resumo em uma linha do trabalho realizado")
-    result.add_argument("--change", action="append", default=[], help="Mudança substantiva realizada (repetível)")
-    result.add_argument("--decision", action="append", default=[], help="Decisão tomada (repetível)")
-    result.add_argument("--validation", action="append", default=[], help="Validação realizada (repetível)")
-    result.add_argument("--risk", action="append", default=[], help="Risco, pendência ou limite (repetível)")
-    result.add_argument("--next-step", action="append", default=[], help="Próximo passo recomendado (repetível)")
-    result.add_argument("--auto", action="store_true", help="Modo fallback factual: não inventa decisões")
-    result.add_argument("--timestamp", help="Força timestamp ISO 8601 UTC (para testes)")
-    result.add_argument("--input", help="Lê payload JSON completo de arquivo ou '-'")
+    result.add_argument("--summary", help="Resumo substantivo do resultado da sessão")
+    result.add_argument("--change", action="append", default=[], help="Mudança realizada; pode repetir")
+    result.add_argument("--decision", action="append", default=[], help="Decisão tomada; pode repetir")
+    result.add_argument("--validation", action="append", default=[], help="Validação e resultado; pode repetir")
+    result.add_argument("--risk", action="append", default=[], help="Risco ou limite remanescente; pode repetir")
+    result.add_argument("--next-step", action="append", default=[], help="Próximo passo; pode repetir")
+    result.add_argument("--entry-file", help="Objeto JSON com summary e listas estruturadas")
+    result.add_argument("--stdin-json", action="store_true", help="Lê o objeto de atualização do stdin")
+    result.add_argument("--session-id", help="ID idempotente opcional")
+    result.add_argument("--timestamp", help="Timestamp ISO 8601 opcional, útil em importação/teste")
+    result.add_argument("--auto", action="store_true", help="Fallback factual; não infere decisões")
+    result.add_argument("--bootstrap-only", action="store_true", help="Inicializa baseline sem criar entrada de sessão")
     return result
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
-        root = Path(args.root).resolve()
-        if not root.is_dir():
-            raise HandoffError(f"raiz inexistente: {root}")
-        payload: dict[str, Any] = {}
-        if args.input:
-            raw = sys.stdin.read() if args.input == "-" else Path(args.input).read_text("utf-8")
-            payload = json.loads(raw)
-            if not isinstance(payload, dict):
-                raise HandoffError("payload JSON deve ser objeto")
-        summary = payload.get("summary") or args.summary
-        changes = payload.get("changes") or args.change
-        decisions = payload.get("decisions") or args.decision
-        validations = payload.get("validations") or args.validation
-        risks = payload.get("risks") or args.risk
-        next_steps = payload.get("next_steps") or args.next_step
-        auto = bool(payload.get("auto") or args.auto)
-        timestamp = _validated_timestamp(payload.get("timestamp") or args.timestamp or _now())
-
-        with _history_lock(root):
-            inventory = build_inventory(root)
-            current_fingerprint = inventory_fingerprint(inventory)
-            previous_snapshot = load_json(root / SNAPSHOT_RELATIVE, {})
-            previous_files = previous_snapshot.get("files", {}) if isinstance(previous_snapshot, dict) else {}
-            previous_fingerprint = previous_snapshot.get("fingerprint") if isinstance(previous_snapshot, dict) else None
-            delta = inventory_delta(previous_files if isinstance(previous_files, dict) else {}, inventory)
-            git = git_state(root)
-            entries = load_entries(root / LEDGER_RELATIVE)
-            first_run = not entries and not (root / SNAPSHOT_RELATIVE).exists()
-
-            if not summary:
-                if not auto:
-                    raise HandoffError("encerramento exige --summary (ou use --auto como fallback factual)")
-                summary = "Sessão encerrada em modo automático; consulte as alterações registradas."
-
-            entry = {
-                "schema_version": SCHEMA_VERSION,
-                "session_id": f"session-{sha256_bytes((timestamp + summary + current_fingerprint).encode('utf-8'))[:20]}",
-                "recorded_at": timestamp,
-                "summary": _text(summary, "summary", required=True),
-                "baseline_initialized": first_run,
-                "previous_fingerprint": previous_fingerprint,
-                "source_fingerprint": current_fingerprint,
-                "git": git,
-                "file_delta": delta,
-                "changes": _strings(changes, "changes"),
-                "decisions": _strings(decisions, "decisions"),
-                "validations": _strings(validations, "validations"),
-                "risks": _strings(risks, "risks"),
-                "next_steps": _strings(next_steps, "next_steps"),
-            }
-
-            entries.append(entry)
-            ledger_data = ("\n".join(json.dumps(item, ensure_ascii=False, sort_keys=True) for item in entries) + "\n").encode("utf-8")
-            atomic_write(root / LEDGER_RELATIVE, ledger_data)
-
-            new_snapshot = {
-                "schema_version": SCHEMA_VERSION,
-                "recorded_at": timestamp,
-                "fingerprint": current_fingerprint,
-                "git": git,
-                "files": snapshot_files(inventory),
-            }
-            atomic_write(root / SNAPSHOT_RELATIVE, canonical_json(new_snapshot) + b"\n")
-
-            history_document = render_history(root, entries, new_snapshot)
-            atomic_write(root / HISTORY_RELATIVE, history_document.encode("utf-8"))
-
-            sys.stdout.write(json.dumps({
-                "status": "recorded",
-                "session_id": entry["session_id"],
-                "ledger": LEDGER_RELATIVE.as_posix(),
-                "history": HISTORY_RELATIVE.as_posix(),
-                "fingerprint": current_fingerprint,
-                "delta": _delta_count(delta),
-            }, ensure_ascii=False, indent=2) + "\n")
-            return 0
-    except (HandoffError, OSError, json.JSONDecodeError) as exc:
+        if args.bootstrap_only and any((args.summary, args.change, args.decision, args.validation, args.risk, args.next_step, args.entry_file, args.stdin_json, args.auto)):
+            raise HandoffError("--bootstrap-only não aceita conteúdo de sessão")
+        payload = None if args.bootstrap_only else _entry_payload(args)
+        if not args.bootstrap_only and not args.auto and not payload.get("summary"):
+            raise HandoffError("forneça --summary/--entry-file/--stdin-json; use --auto apenas como fallback factual")
+        result = update_history(
+            Path(args.root),
+            payload,
+            bootstrap_only=args.bootstrap_only,
+            automatic=args.auto,
+            timestamp=args.timestamp,
+            session_id=args.session_id,
+        )
+    except HandoffError as exc:
         sys.stderr.write(json.dumps({"status": "error", "message": str(exc)}, ensure_ascii=False) + "\n")
         return 2
+    sys.stdout.write(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    return 0
 
 
 if __name__ == "__main__":
