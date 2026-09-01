@@ -833,5 +833,19 @@ atualidade entre documentos.
 - Arquivos de instrução auto-descobertos são o gatilho mais forte que um
   repositório pode oferecer, mas não podem coagir clientes de IA que decidam
   ignorar deliberadamente instruções de projeto.
+
+### Reconciliação com a publicação no GitHub — 2026-09-01
+
+Uma publicação posterior adicionou workflow de CI, templates comunitários,
+licença e documentação de contribuição/segurança, além de substituir o README
+introdutório. A comparação com o snapshot content-addressed registrado ao fim
+da implementação confirmou que os utilitários, gatilhos, testes e documentos
+normativos desta decisão permaneceram byte a byte.
+
+As adições comunitárias serão preservadas. O README de apresentação deve,
+porém, manter em posição proeminente o protocolo de entrada e saída para IAs e
+deve distinguir componentes implementados até M9 de stubs reservados para M10.
+O workflow público deve executar a mesma descoberta integral de testes usada
+localmente, com as dependências determinísticas de PDF/LaTeX disponíveis.
 - Esta camada não modifica os cinco scripts científicos canônicos, não inicia
   Prime Agent, não cria agentes e não altera M10 ou marcos posteriores.

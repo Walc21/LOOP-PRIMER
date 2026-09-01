@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -12,12 +13,64 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from ai_context import render_context
+from ai_context import _bounded_excerpt, _normalize_diff_preview, render_context
 from ai_handoff_common import build_inventory, inventory_delta, inventory_fingerprint
 from ai_history import infer_milestone, load_entries, update_history
 
 
 class AIHandoffTests(unittest.TestCase):
+    def test_embedded_previews_are_bounded_and_have_no_trailing_whitespace(self) -> None:
+        normalized = _normalize_diff_preview("+line with spaces  \n+\t\n context\t\n")
+        self.assertEqual(normalized, "+line with spaces\n+\n context")
+        self.assertFalse(any(line.endswith((" ", "\t")) for line in normalized.splitlines()))
+
+        excerpt = _bounded_excerpt("first\n" + "x" * 100, limit=20, label="fixture")
+        self.assertTrue(excerpt.startswith("first\n"))
+        self.assertIn("fixture truncado em 20 caracteres", excerpt)
+        self.assertNotIn("x" * 100, excerpt)
+
+    def test_tracked_generated_context_remains_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+            (root / "PLANS.md").write_text("# Plano\n", encoding="utf-8")
+            (root / "AGENTS.md").write_text("# Regras\n", encoding="utf-8")
+            (root / "AI_CONTEXT.md").write_text("placeholder\n", encoding="utf-8")
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.name", "AI Handoff Test"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.email", "handoff@example.invalid"], cwd=root, check=True)
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "baseline"], cwd=root, check=True)
+
+            first = render_context(root, diff_limit=5_000)
+            (root / "AI_CONTEXT.md").write_text(first, encoding="utf-8")
+            second = render_context(root, diff_limit=5_000)
+
+            self.assertEqual(first, second)
+            self.assertNotIn("diff --git a/AI_CONTEXT.md", second)
+
+    def test_repository_trigger_surfaces_preserve_start_and_end_protocol(self) -> None:
+        required = {
+            "AGENTS.md": ("python3 scripts/ai_context.py", "scripts/ai_history.py", "AI_CONTEXT.md"),
+            "CLAUDE.md": ("python3 scripts/ai_context.py", "scripts/ai_history.py", "AI_CONTEXT.md"),
+            ".prime/agent/APPEND_SYSTEM.md": (
+                "python3 scripts/ai_context.py",
+                "scripts/ai_history.py",
+                "AI_CONTEXT.md",
+            ),
+            "README.md": ("Entrada obrigatória para IAs", "scripts/ai_context.py", "scripts/ai_history.py"),
+        }
+        for relative, markers in required.items():
+            with self.subTest(path=relative):
+                text = (ROOT / relative).read_text(encoding="utf-8")
+                for marker in markers:
+                    self.assertIn(marker, text)
+
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertLess(readme.index("Entrada obrigatória para IAs"), readme.index("# "))
+        self.assertIn("M10", readme)
+        self.assertIn("reserved stubs", readme)
+
     def test_inventory_is_content_addressed_and_excludes_generated_and_caches(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

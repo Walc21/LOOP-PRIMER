@@ -134,6 +134,23 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Registro de progresso
 
+- 2026-09-01 — Reconciliação da camada de handoff com a publicação no GitHub
+  concluída. Os sete arquivos comunitários foram preservados; o README mantém a
+  apresentação nova, mas recupera o gatilho obrigatório e declara M10 como
+  pendente. O gerador agora limita o README extenso, normaliza previews e exclui
+  seus quatro artefatos gerados do diff, permanecendo idempotente mesmo quando
+  `AI_CONTEXT.md` é rastreado. O CI instala TeX/Poppler e executa a descoberta
+  integral. Passaram 59 testes direcionados/contratuais e 306 testes completos,
+  além de `py_compile`, duas gerações idênticas e `git diff --check`.
+
+- 2026-09-01 — Iniciada a reconciliação da camada de handoff para IA com o
+  commit posterior de publicação no GitHub. O snapshot content-addressed da
+  sessão original comprovou que os três utilitários, os gatilhos, os testes e a
+  documentação normativa permaneceram byte a byte; a mudança posterior
+  acrescentou sete arquivos comunitários e substituiu somente `README.md`.
+  Serão preservadas as adições do GitHub, restaurado o aviso obrigatório de
+  entrada para IAs e corrigidas descrições/CI que antecipam M10 como concluído.
+
 - 2026-09-01 — Camada auxiliar de contexto/handoff concluída. O gerador
   content-addressed inventaria fontes e estado/runtime canônico (este último
   somente por metadata/hash), extrai arquitetura/APIs/schemas/testes, incorpora

@@ -6,17 +6,17 @@
 ## Identidade e frescor
 
 - Raiz: `/home/victor/Documentos/PARA SEMPRE/EXECLOOPp/EXECLOOP`
-- Fingerprint atual das fontes: `b179c30014db09573fa09040ceb77f26251c885e51a06f99839bef6cf578d8f0`
-- Baseline da última sessão: `790634e49232fc6bf5ef4ed3e0536f1426a4d7c3ab1c36eec14468754572b721`
-- Git: branch `master`, HEAD `907af5057315`, 19 alteração(ões) relevante(s).
-- Inventário: 158 arquivos relevantes, 1018557 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Fingerprint atual das fontes: `6f2971f08a5feaa6c15b713cedfa0dc50a255fd5378145820f6c83a17f5bd51c`
+- Baseline da última sessão: `6f2971f08a5feaa6c15b713cedfa0dc50a255fd5378145820f6c83a17f5bd51c`
+- Git: branch `master`, HEAD `f9111838d8dc`, 6 alteração(ões) relevante(s).
+- Inventário: 158 arquivos relevantes, 1024613 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
 O `article-loop` é uma integração local, auditável e fail-closed para revisão iterativa de artigos matemáticos. Separa PDF original, baseline/champion, propostas de 21 papéis, challenger imutável, gates locais, júri cego, diagnóstico e futura decisão/finalização.
 O marco implementado mais recente é **M9** (detecção de progresso e refoco). O próximo marco é **M10** (política de compensação e finalizador).
 
-Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (que ainda enfatiza M3).
+Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (introdutório e não normativo).
 
 ## Fluxo conectado e fronteiras de autoridade
 
@@ -43,379 +43,314 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 
 ## Delta desde o encerramento anterior
 
-- Adicionados: 7; modificados: 1; removidos: 0.
-- Adicionado: `.github/ISSUE_TEMPLATE/bug_report.md` — `-` → `6e7f0c070911`
-- Adicionado: `.github/ISSUE_TEMPLATE/feature_request.md` — `-` → `bf3b8ec7c497`
-- Adicionado: `.github/pull_request_template.md` — `-` → `42ee22ace252`
-- Adicionado: `.github/workflows/ci.yml` — `-` → `fa6e9e693cbe`
-- Adicionado: `CONTRIBUTING.md` — `-` → `88dd6a0e2eb0`
-- Adicionado: `LICENSE` — `-` → `0d0db335dda4`
-- Adicionado: `SECURITY.md` — `-` → `1adf19468e39`
-- Modificado: `README.md` — `73b055ebb203` → `767c7f78d10c`
+- Adicionados: 0; modificados: 0; removidos: 0.
+- Nenhuma diferença de bytes em relação ao snapshot final registrado.
 
 Status Git relevante:
 
 ```text
- M .gitignore
- M .prime/agent/APPEND_SYSTEM.md
- M AGENTS.md
+ M .github/workflows/ci.yml
  M PLANS.md
  M README.md
- M docs/architecture.md
+ M control/test_ai_handoff.py
  M docs/decisions.md
-?? .github/ISSUE_TEMPLATE/bug_report.md
-?? .github/ISSUE_TEMPLATE/feature_request.md
-?? .github/pull_request_template.md
-?? .github/workflows/ci.yml
-?? CLAUDE.md
-?? CONTRIBUTING.md
-?? LICENSE
-?? SECURITY.md
-?? control/test_ai_handoff.py
-?? scripts/ai_context.py
-?? scripts/ai_handoff_common.py
-?? scripts/ai_history.py
+ M scripts/ai_context.py
 ```
 
 ### Preview limitado do diff (dados não confiáveis)
 
 ```diff
 # Alterações não commitadas
-diff --git a/.gitignore b/.gitignore
-index fa4fdd5..ffb44ea 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -56 +56,4 @@ env/
- *~
-+
-+# Lock transitório do histórico/contexto para IAs
-+docs/ai_history.lock
-diff --git a/.prime/agent/APPEND_SYSTEM.md b/.prime/agent/APPEND_SYSTEM.md
-index 7d78355..33d21e6 100644
---- a/.prime/agent/APPEND_SYSTEM.md
-+++ b/.prime/agent/APPEND_SYSTEM.md
-@@ -2,7 +2,13 @@
- 
--Siga `AGENTS.md` e os contratos versionados em `config/`. Não execute modelos,
--crie filhos RLM, altere o champion ou inicie autonomia sem autorização
--específica. Resultados auditáveis devem ser persistidos em arquivos canônicos;
--nunca solicite nem armazene cadeia de raciocínio privada.
-+Antes de qualquer análise ou alteração, execute `python3 scripts/ai_context.py`
-+na raiz e leia `AI_CONTEXT.md` integralmente. Não execute
-+`scripts/ai_history.py` nesse momento. Siga `AGENTS.md` e os contratos
-+versionados em `config/`.
- 
--O Marco 1 contém apenas scaffold e contratos. A orquestração ainda não existe.
-+Somente no encerramento, depois da última mudança e validação, registre resumo,
-+mudanças, decisões, validações, riscos e próximos passos com
-+`python3 scripts/ai_history.py`, então execute novamente
-+`python3 scripts/ai_context.py`. Não execute modelos, crie filhos RLM, altere o
-+champion ou inicie autonomia sem autorização específica. Resultados auditáveis
-+devem ser persistidos em arquivos canônicos; nunca solicite nem armazene cadeia
-+de raciocínio privada. O código alcançou M9; M10 permanece pendente.
-diff --git a/AGENTS.md b/AGENTS.md
-index 00567a9..7448384 100644
---- a/AGENTS.md
-+++ b/AGENTS.md
-@@ -2,2 +2,33 @@
- 
-+## Protocolo obrigatório de contexto e encerramento para IAs
-+
-+Estas etapas são obrigatórias para qualquer IA que trabalhe neste repositório.
-+Elas são infraestrutura de handoff e não autorizam execução do pipeline
-+científico, Prime Agent, modelos, rede ou APIs pagas.
-+
-+### No início, antes de analisar ou alterar qualquer arquivo
-+
-+1. Na raiz do repositório, execute exatamente
-+   `python3 scripts/ai_context.py`.
-+2. Leia `AI_CONTEXT.md` integralmente antes de planejar, diagnosticar ou editar.
-+3. Se o gerador falhar, pare e relate a falha; não substitua o contexto por uma
-+   varredura improvisada nem alegue que o snapshot está atual.
-+4. **Não execute `scripts/ai_history.py` no início.** Ele registra o estado
-+   final e só pertence ao encerramento da sessão.
-+
-+### No fim, somente depois de concluir trabalho e validações
-+
-+1. Execute `python3 scripts/ai_history.py` com um `--summary` substantivo e
-+   quantos `--change`, `--decision`, `--validation`, `--risk` e `--next-step`
-+   forem necessários. Registre comandos e resultados reais; não invente
-+   validações ou decisões. Para conteúdo longo, use `--entry-file` ou
-+   `--stdin-json` com o mesmo contrato estruturado.
-+2. Mesmo que a sessão seja apenas diagnóstica, registre a conclusão e declare
-+   explicitamente que não houve alteração quando aplicável. `--auto` é somente
-+   fallback factual e não substitui um resumo de qualidade.
-+3. Depois do histórico, execute novamente `python3 scripts/ai_context.py` para
-+   que `AI_CONTEXT.md` incorpore o estado e o encerramento recém-registrados.
-+4. Não registre o encerramento antes da última edição/teste: isso faria o
-+   snapshot esconder mudanças ainda não documentadas.
-+
- ## Propósito e limites
-@@ -85,2 +116,14 @@ expressa do usuário.
-   inatividade de filho ou saída de `/autonomous`.
-+- **Fronteira de Test Doubles**: Adaptadores e componentes com `is_test_double=True`
-+  devem ser recusados por padrão em APIs de produção/execução, falhando fechado a
-+  menos que autorizados por parâmetro estritamente booleano (`isinstance(..., bool)`).
-+  CLIs devem aceitar dublês exclusivamente por flags explícitas (e.g. `--test-mode`),
-+  nunca por payloads JSON de entrada.
-+- **Durabilidade e Atomicidade**: Publicações duráveis devem persistir arquivos e
-+  diretórios com `fsync` em staging antes de `os.replace` e sincronizar o diretório-pai
-+  após o rename. Árvores read-only temporárias devem ter permissões de escrita
-+  restauradas antes de `shutil.rmtree()` em blocos de limpeza.
-+- **Vinculação Criptográfica**: Eventos no log durável e artefatos em disco devem
-+  conter e validar hashes SHA-256 canônicos exatos, sem fallbacks para hashes
-+  alternativos ou incompletos.
- 
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index fe2e060..5f6ca24 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -29,2 +29,4 @@ jobs:
+         run: |
++          sudo apt-get update
++          sudo apt-get install -y poppler-utils texlive-latex-base
+           python -m pip install --upgrade pip
+@@ -36,15 +38,3 @@ jobs:
+
+-      - name: Run Core Contract Tests
+-        run: |
+-          python -m unittest control.test_contracts
+-          python -m unittest control.test_ai_handoff
+-
+-      - name: Run Milestone Test Suites
+-        run: |
+-          python -m unittest control.test_m2_durable_state \
+-                           control.test_m4_prompts \
+-                           control.test_m5_blackboard_activation \
+-                           control.test_m6_orchestration \
+-                           control.test_m7_synthesis_gates \
+-                           control.test_m8_evaluation \
+-                           control.test_m9_diagnosis
++      - name: Run complete M0-M9 regression suite
++        run: python -m unittest discover -s control -p 'test_*.py' -q
 diff --git a/PLANS.md b/PLANS.md
-index 9d3293b..51bd173 100644
+index 51bd173..efcabe5 100644
 --- a/PLANS.md
 +++ b/PLANS.md
-@@ -14,3 +14,3 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
- 
--- Atualizado em 2026-08-28.
-+- Atualizado em 2026-09-01.
- - M0 — compatibilidade, segurança e documentação-base: concluído.
-@@ -33,2 +33,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
-   modelos.
-+- M9 concluído; M10 continua pendente e não iniciado.
-+- Ferramentas auxiliares de handoff para IA concluídas: um gerador local de
-+  contexto compacto e um registrador local de histórico de sessões. Elas não
-+  alteram a máquina de estados, candidatos, gates ou a autoridade dos scripts
-+  científicos M0--M13.
- 
-@@ -131,2 +136,25 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
- 
-+- 2026-09-01 — Camada auxiliar de contexto/handoff concluída. O gerador
-+  content-addressed inventaria fontes e estado/runtime canônico (este último
-+  somente por metadata/hash), extrai arquitetura/APIs/schemas/testes, incorpora
-+  o histórico e publica `AI_CONTEXT.md` idempotentemente. O registrador
-+  reconstrói 35 commits e 26 ADRs, recebe resumo estruturado de encerramento,
-+  mantém ledger/snapshot e renderiza `docs/AI_HISTORY.md`. Gatilhos foram
-+  adicionados a `AGENTS.md`, `CLAUDE.md` e `APPEND_SYSTEM.md`. Passaram 4 testes
-+  novos e os 52 testes contratuais existentes, além de `py_compile` e
-+  `git diff --check`. A regressão integral iniciou 303 testes, mas terminou com
-+  12 falhas e 181 erros ambientais porque `pdflatex` não está instalado;
-+  nenhuma dependência global foi instalada e esse limite foi registrado sem
-+  atribuí-lo às ferramentas novas.
+@@ -136,2 +136,19 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
+
++- 2026-09-01 — Reconciliação da camada de handoff com a publicação no GitHub
++  concluída. Os sete arquivos comunitários foram preservados; o README mantém a
++  apresentação nova, mas recupera o gatilho obrigatório e declara M10 como
++  pendente. O gerador agora limita o README extenso, normaliza previews e exclui
++  seus quatro artefatos gerados do diff, permanecendo idempotente mesmo quando
++  `AI_CONTEXT.md` é rastreado. O CI instala TeX/Poppler e executa a descoberta
++  integral. Passaram 59 testes direcionados/contratuais e 306 testes completos,
++  além de `py_compile`, duas gerações idênticas e `git diff --check`.
 +
-+- 2026-09-01 — Iniciada a camada auxiliar de contexto/handoff para IA. A
-+  hipótese é que inventário content-addressed, introspecção estrutural,
-+  histórico Git/ADR e deltas desde a última sessão fornecem contexto suficiente
-+  sem concatenar aproximadamente 0,9 MB de fontes e testes. A incerteza
-+  inevitável é semântica: nenhuma ferramenta determinística consegue substituir
-+  uma descrição humana de decisões; por isso o encerramento de sessão exigirá
-+  resumo estruturado da IA e manterá um fallback automático apenas factual.
-+  Não haverá rede, chamada de modelo, alteração do Prime Agent global nem
-+  execução do pipeline científico.
++- 2026-09-01 — Iniciada a reconciliação da camada de handoff para IA com o
++  commit posterior de publicação no GitHub. O snapshot content-addressed da
++  sessão original comprovou que os três utilitários, os gatilhos, os testes e a
++  documentação normativa permaneceram byte a byte; a mudança posterior
++  acrescentou sete arquivos comunitários e substituiu somente `README.md`.
++  Serão preservadas as adições do GitHub, restaurado o aviso obrigatório de
++  entrada para IAs e corrigidas descrições/CI que antecipam M10 como concluído.
 +
- - 2026-08-14 — Correção final restrita de M7 concluída: publicação atômica
+ - 2026-09-01 — Camada auxiliar de contexto/handoff concluída. O gerador
 diff --git a/README.md b/README.md
-index 0b3e775..f6901ca 100644
+index f6901ca..b9a0df8 100644
 --- a/README.md
 +++ b/README.md
-@@ -1,38 +1,173 @@
--# article-loop
-+<div align="center">
- 
--Integração auditável do Prime Agent para revisão iterativa de
--artigos matemáticos. O projeto separa entrada imutável, propostas de 21 papéis,
--challengers, gates determinísticos, júri cego, decisão e finalização
--transacional.
-+# 🔬 LOOP-PRIMER
-+### Autonomous Multi-Agent Peer Review & Refinement Framework for Scientific & Mathematical Manuscripts
- 
--O Marco 3 acrescenta ingestão local e offline: coloque exatamente um PDF
--regular em `input/inbox/artigo.pdf` e execute `bin/preflight.sh`. O comando
--preserva o original em `artifacts/original/<sha256>/`, extrai derivados locais
--e publica `versions/champion/v0000` somente depois do gate `SOURCE_READY`.
--Reexecutar o mesmo PDF é idempotente somente depois de revalidar hashes,
--manifests e árvores sem symlink; qualquer arquivo ambíguo ou existente
--divergente falha sem sobrescrever evidência. PDF e `source.zip` são congelados
--em staging antes da inspeção. `source.zip` é aceito apenas após inspeção UTF-8,
--anti-traversal, anti-duplicidade/criptografia/symlink e com estrutura LaTeX
--confirmada. O log durável registra `NEW → INGESTED → SOURCE_READY`.
-+[![CI Suite](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/ci.yml/badge.svg)](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/ci.yml)
-+[![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-+[![Architecture: RLM](https://img.shields.io/badge/Architecture-RLM%20(Max%20Depth%202)-purple.svg)](docs/architecture.md)
-+[![Agents: 21 Roles](https://img.shields.io/badge/Agents-21%20Specialized%20Roles-orange.svg)](docs/architecture.md#catálogo-exato-de-21-papéis)
-+[![Verification: Deterministic Gates](https://img.shields.io/badge/Verification-13%20Deterministic%20Gates-red.svg)](docs/decisions.md)
- 
--PDF escaneado sem OCR não recebe texto inventado: o manifest contém issues e o
--gate falha por falta de cobertura textual. Nenhum comando inicia o Prime Agent,
--modelo, rede ou API paga.
-+<p align="center">
-+  <b>A zero-hallucination, formally audited, multi-agent peer review loop engineered for LaTeX and PDF scientific literature.</b>
-+</p>
- 
--## Validação local
-+</div>
- 
--Em Debian ou Ubuntu, prepare uma cópia recém-transferida com:
-+---
- 
--```bash
--sh bin/bootstrap-deps.sh
-+## 📌 Table of Contents
+@@ -1 +1,6 @@
++> **Entrada obrigatória para IAs:** execute `python3 scripts/ai_context.py` e
++> leia `AI_CONTEXT.md` integralmente antes de trabalhar. No encerramento, use
++> `scripts/ai_history.py` conforme o protocolo no topo de `AGENTS.md` e regere o
++> contexto. Este README é introdutório e não substitui o snapshot atual.
 +
-+- [Executive Summary](#-executive-summary)
-+- [Key Architectural Pillars](#-key-architectural-pillars)
-+- [System Pipeline Flow](#-system-pipeline-flow)
-+- [The 21-Agent Matrix](#-the-21-agent-matrix)
-+- [Deterministic Gates & Security](#-deterministic-gates--security)
-+- [Quick Start](#-quick-start)
-+- [CLI Reference](#-cli-reference)
-+- [Repository Structure](#-repository-structure)
-+- [Architecture Decision Records (ADRs)](#-architecture-decision-records-adrs)
-+- [Contributing & License](#-contributing--license)
+ <div align="center">
+@@ -13,3 +18,3 @@
+ <p align="center">
+-  <b>A zero-hallucination, formally audited, multi-agent peer review loop engineered for LaTeX and PDF scientific literature.</b>
++  <b>A deterministic, auditable multi-agent review loop engineered for LaTeX and PDF scientific literature.</b>
+ </p>
+@@ -18,2 +23,8 @@
+
++> **Implementation status:** M0–M9 are implemented and locally validated. M10
++> (canonical decision and transactional finalizer) and M11–M13 remain pending;
++> `scripts/04_compensation_policy.py` and
++> `scripts/05_transactional_finalizer.py` are reserved stubs, not operational
++> CLIs. No real article or model is run by the commands documented below.
 +
-+---
-+
-+## 🔭 Executive Summary
-+
-+**LOOP-PRIMER** is an enterprise-grade, deterministic multi-agent framework designed to autonomously analyze, critique, mathematically verify, and iteratively improve complex scientific papers. 
-+
-+Unlike conventional LLM wrappers, LOOP-PRIMER operates under **strict mathematical and architectural constraints**:
-+- **Air-gapped & Offline Verification**: No unauthenticated external network requests or speculative token generation during validation.
-+- **Content-Addressed Immutability**: Cryptographic SHA-256 fingerprinting for every manuscript version, diff, report, and decision.
-+- **Hierarchical Depth Boundary (Max Depth 2)**: Strict 21-agent hierarchy preventing uncontrolled recursion or authority escalation.
-+- **Blind External Jury**: Double-blind randomized evaluation with meta-reviewer consensus before candidate promotion.
-+- **Transactional Finalizer**: Atomic champion upgrades and Pareto frontier tracking with signed audit receipts.
-+
-+---
-+
-+## 🏛 Key Architectural Pillars
-+
-+```
-++-----------------------------------------------------------------------------------+
-+|                                  LOOP-PRIMER                                      |
-++-----------------------------------------------------------------------------------+
-+|  1. Ingestion & Invariants (SHA-256, Anti-Traversal, UTF-8 Normalization)         |
-+|  2. 21 Hierarchical Roles (General Direction -> 5 Departments -> 15 Workers)      |
-+|  3. Sparse Activation Engine (RUN, CHECK, SHIFT, FREEZE)                          |
-+|  4. 13 Deterministic Synthesis Gates (LaTeX Syntax, Theorem Proofs, BibTeX)      |
-+|  5. Blind External Jury & Meta-Review (Double-Blind Candidate Evaluation)         |
-+|  6. Stagnation Detection & Adaptive Refocusing (Plateau & Oscillation Analytics)  |
-+|  7. Transactional State Machine & Append-Only Event Chaining                      |
-++-----------------------------------------------------------------------------------+
-+```
-+
-+---
-+
-+## 🔄 System Pipeline Flow
-+
-+```mermaid
-+flowchart TD
-+    A["📄 Input Manuscript (input/inbox/artigo.pdf or source.zip)"] --> B["🔒 SHA-256 Content-Addressed Staging"]
-+    B --> C{"🛡️ Gate: SOURCE_READY\n(Anti-Traversal & Integrity Check)"}
-+    
-+    C -->|Pass| D["👑 Publish Initial Champion (v0000)"]
-+    C -->|Fail| ERR["❌ Reject Ingestion (No Artifact Overwrite)"]
-+    
-+    D --> E["🎯 M00: General Direction & Agenda Synthesis"]
-+    
-+    subgraph S_DEP ["Departmental Sparse Activation & Proposal Generation"]
-+        E --> S10["S10: Structural & Logic Audit"]
-+        E --> S20["S20: Mathematical Verification"]
-+        E --> S30["S30: Mathematical Strengthening"]
-+        E --> S40["S40: Textual & Semantic Precision"]
-+        E --> S50["S50: LaTeX & Layout Formatting"]
-+        
-+        S10 -.-> W_AUD["W11, W12, W13 Workers"]
-+        S20 -.-> W_VER["W21, W22, W23 Workers"]
-+        S30 -.-> W_STR["W31, W32, W33 Workers"]
-+        S40 -.-> W_SEM["W41, W42, W43 Workers"]
-+        S50 -.-> W_LAT["W51, W52, W53 Workers"]
-+    end
-+    
-+    S_DEP --> F["🔬 S20 Formal Math Cross-Verification"]
-+    F --> G["🧩 Candidate Synthesis (versions/challengers/vXXXX)"]
-+    
-+    G --> H{"🚦 13 Deterministic Gates\n(LaTeX, Math Proofs, Citations)"}
-+    H -->|Fail| I["📦 Archive to versions/rejected/"]
-+    H -->|Pass| J["⚖️ M8: Blind External Jury Evaluation"]
-+    
-+    J --> K{"🏆 Jury & Meta-Review Verdict"}
-+    K -->|Champion Won| L["📈 M9: Stagnation & Oscillation Detector"]
-+    K -->|Challenger Won| M["🌟 Promote to Champion (Atomic Transaction)"]
-+    K -->|Pareto Tradeoff| N["📊 Archive in Pareto Frontier"]
-+    
-+    L --> O["🔄 Refocus Plan & Budget Compensation"]
-+    O --> E
-+    M --> P["🏁 Transactional Finalizer & Signed Receipts"]
+ ---
+@@ -37,3 +48,6 @@
+
+-**LOOP-PRIMER** is an enterprise-grade, deterministic multi-agent framework designed to autonomously analyze, critique, mathematically verify, and iteratively improve complex scientific papers.
++**LOOP-PRIMER** is a contract-first, deterministic framework under incremental
++implementation for auditable analysis, critique, mathematical verification and
++iterative improvement of scientific papers. The implemented pipeline currently
++ends at M9 diagnosis/refocus; decision and finalization remain planned work.
+
+@@ -101,3 +115,3 @@ flowchart TD
+     K -->|Champion Won| L["📈 M9: Stagnation & Oscillation Detector"]
+-    K -->|Challenger Won| M["🌟 Promote to Champion (Atomic Transaction)"]
++    K -->|Challenger Won| M["🧭 M10 planned: Decide disposition"]
+     K -->|Pareto Tradeoff| N["📊 Archive in Pareto Frontier"]
+@@ -106,3 +120,3 @@ flowchart TD
+     O --> E
+-    M --> P["🏁 Transactional Finalizer & Signed Receipts"]
++    M --> P["🏁 M10 planned: Transactional finalizer"]
  ```
- 
--O bootstrap instala, quando faltarem, Python/`venv`, Poppler e LaTeX; cria
--`.venv` no projeto; e instala somente as versões fixadas em
--`requirements-dev.txt`. Ele pode pedir `sudo` e acesso à rede para os pacotes
--locais e o índice Python. Não instala o Prime Agent, que é opcional e externo.
-+---
+@@ -145,3 +159,3 @@ LOOP-PRIMER enforces security by construction:
+
+-1. **Gate Guardrails**: Prohibits speculative hallucination. If OCR confidence fails or textual coverage is insufficient, execution halts immediately with explicit issue diagnostics.
++1. **Gate Guardrails**: Missing or insufficient deterministic evidence fails closed. If OCR confidence or textual coverage is insufficient, execution halts with explicit issue diagnostics.
+ 2. **Immutable Original Staging**: Manuscripts placed in `input/inbox/` are never overwritten in-place. Staging creates content-addressed read-only mirrors in `artifacts/original/<sha256>/`.
+@@ -158,3 +172,3 @@ LOOP-PRIMER enforces security by construction:
+ - Python 3.11+
+-- TeX Live & Poppler (`pdflatex`, `pdfinfo`, `pdftotext`) — *Optional for full PDF compilation, contract tests run offline with standard Python*
++- TeX Live & Poppler (`pdflatex`, `pdfinfo`, `pdftotext`) — required by the full regression suite and installed by `bin/bootstrap-deps.sh` on Debian/Ubuntu
+
+@@ -188,10 +202,4 @@ pip install -r requirements-dev.txt
+
+-# Run all milestone test suites
+-.venv/bin/python -m unittest control.test_m2_durable_state \
+-                         control.test_m4_prompts \
+-                         control.test_m5_blackboard_activation \
+-                         control.test_m6_orchestration \
+-                         control.test_m7_synthesis_gates \
+-                         control.test_m8_evaluation \
+-                         control.test_m9_diagnosis
++# Run the complete M0-M9 regression suite
++.venv/bin/python -m unittest discover -s control -p 'test_*.py' -q
+ ```
+@@ -216,4 +224,4 @@ LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
+ - **`scripts/03_refocus_generator.py`**: Adaptive prompt and parameter refocusing generator (Milestone 9).
+-- **`scripts/04_compensation_policy.py`**: Dynamic budget and attention compensation calculator.
+-- **`scripts/05_transactional_finalizer.py`**: Atomic candidate promotion and Pareto archive manager.
++- **`scripts/04_compensation_policy.py`**: Reserved, inert stub for Milestone 10.
++- **`scripts/05_transactional_finalizer.py`**: Reserved, inert stub for Milestone 10.
+ - **`scripts/ai_context.py`**: Deterministic content-addressed session context snapshot generator.
+@@ -237,3 +245,3 @@ LOOP-PRIMER/
+ │   ├── rubrics/                  # Evaluation rubrics for blind jury
+-│   └── schemas/                  # 19 JSON Schema definitions for strict validation
++│   └── schemas/                  # 20 JSON Schema definitions for strict validation
+ ├── control/                      # Contract and milestone test suites (M1 through M9)
+diff --git a/control/test_ai_handoff.py b/control/test_ai_handoff.py
+index f306cda..564367d 100644
+--- a/control/test_ai_handoff.py
++++ b/control/test_ai_handoff.py
+@@ -3,2 +3,3 @@ from __future__ import annotations
+ import json
++import subprocess
+ import sys
+@@ -14,3 +15,3 @@ if str(SCRIPTS) not in sys.path:
+
+-from ai_context import render_context
++from ai_context import _bounded_excerpt, _normalize_diff_preview, render_context
+ from ai_handoff_common import build_inventory, inventory_delta, inventory_fingerprint
+@@ -20,2 +21,54 @@ from ai_history import infer_milestone, load_entries, update_history
+ class AIHandoffTests(unittest.TestCase):
++    def test_embedded_previews_are_bounded_and_have_no_trailing_whitespace(self) -> None:
++        normalized = _normalize_diff_preview("+line with spaces  \n+\t\n context\t\n")
++        self.assertEqual(normalized, "+line with spaces\n+\n context")
++        self.assertFalse(any(line.endswith((" ", "\t")) for line in normalized.splitlines()))
 +
-+## 👥 The 21-Agent Matrix
++        excerpt = _bounded_excerpt("first\n" + "x" * 100, limit=20, label="fixture")
++        self.assertTrue(excerpt.startswith("first\n"))
++        self.assertIn("fixture truncado em 20 caracteres", excerpt)
++        self.assertNotIn("x" * 100, excerpt)
 +
-+LOOP-PRIMER establishes a strict 3-tier organizational hierarchy:
++    def test_tracked_generated_context_remains_idempotent(self) -> None:
++        with tempfile.TemporaryDirectory() as temporary:
++            root = Path(temporary)
++            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
++            (root / "PLANS.md").write_text("# Plano\n", encoding="utf-8")
++            (root / "AGENTS.md").write_text("# Regras\n", encoding="utf-8")
++            (root / "AI_CONTEXT.md").write_text("placeholder\n", encoding="utf-8")
++            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
++            subprocess.run(["git", "config", "user.name", "AI Handoff Test"], cwd=root, check=True)
++            subprocess.run(["git", "config", "user.email", "handoff@example.invalid"], cwd=root, check=True)
++            subprocess.run(["git", "add", "."], cwd=root, check=True)
++            subprocess.run(["git", "commit", "-q", "-m", "baseline"], cwd=root, check=True)
 +
-+| ID | Role Name | Department | Depth | Focal Responsibility |
-+|:---|:---|:---|:---:|:---|
-+| **M00** | **General Director** | Direction | `0` | Strategic agenda, synthesis, gate verification, decision finalization |
-+| **S10** | **Lead Structural Auditor** | Structural/Auditing | `1` | Global logic, structural hierarchy, consistency audit |
-+| `W11` | Abstract & Introduction Worker | Structural/Auditing | `2` | Framing, thesis clarity, intro-to-conclusion alignment |
-+| `W12` | Logical Architecture Worker | Structural/Auditing | `2` | Argument flow, lemma dependency DAG, section transitions |
-+| `W13` | Contributions & Conclusion Worker | Structural/Auditing | `2` | Claim precision, future work bounds, conclusion integrity |
-+| **S20** | **Lead Math Verifier** | Math Verification | `1` | Formal rigor, theorem correctness, reproducibility consolidation |
-+| `W21` | Definitions & Hypotheses Worker | Math Verification | `2` | Axiomatic precision, notation consistency, hypothesis audit |
-+| `W22` | Theorems & Proofs Worker | Math Verification | `2` | Step-by-step deductive correctness, lemma soundness |
-+| `W23` | Computations & Reproducibility | Math Verification | `2` | Constant calculation, numerical examples, proof verification |
-+| **S30** | **Lead Math Strengthener** | Math Strengthening | `1` | Generalization and theorem strengthening consolidation |
-+| `W31` | Statements & Constants Worker | Math Strengthening | `2` | Tightening bounds, optimizing constants, statement sharpening |
-+| `W32` | Generalizations Worker | Math Strengthening | `2` | Extending proof domains, weakening preconditions |
-+| `W33` | Applications & Counterexamples | Math Strengthening | `2` | Instructive examples, edge cases, boundary checks |
-+| **S40** | **Lead Semantic Auditor** | Semantic Quality | `1` | Technical prose, linguistic clarity, academic cohesion |
-+| `W41` | Orthography & Grammar Worker | Semantic Quality | `2` | Syntax correctness, spelling, typographical standards |
-+| `W42` | Semantic Precision Worker | Semantic Quality | `2` | Eliminating ambiguity, sharpening technical vocabulary |
-+| `W43` | Academic Style & Cohesion | Semantic Quality | `2` | Tone harmonization, register consistency, academic cadence |
-+| **S50** | **Lead LaTeX & Layout** | Formatting/PDF | `1` | Compilation compliance, typographic beauty, PDF hygiene |
-+| `W51` | LaTeX & BibTeX Worker | Formatting/PDF | `2` | Macro hygiene, citation consistency, bibliography validation |
-+| `W52` | Equations & Visuals Worker | Formatting/PDF | `2` | Formula alignment, float placement, table/figure formatting |
-+| `W53` | PDF Compliance Worker | Formatting/PDF | `2` | PDF/A standard checks, font embedding, margin validation |
++            first = render_context(root, diff_limit=5_000)
++            (root / "AI_CONTEXT.md").write_text(first, encoding="utf-8")
++            second = render_context(root, diff_limit=5_000)
 +
-+---
++            self.assertEqual(first, second)
++            self.assertNotIn("diff --git a/AI_CONTEXT.md", second)
 +
-+## 🔒 Deterministic Gates & Security
++    def test_repository_trigger_surfaces_preserve_start_and_end_protocol(self) -> None:
++        required = {
++            "AGENTS.md": ("python3 scripts/ai_context.py", "scripts/ai_history.py", "AI_CONTEXT.md"),
++            "CLAUDE.md": ("python3 scripts/ai_context.py", "scripts/ai_history.py", "AI_CONTEXT.md"),
++            ".prime/agent/APPEND_SYSTEM.md": (
++                "python3 scripts/ai_context.py",
++                "scripts/ai_history.py",
++                "AI_CONTEXT.md",
++            ),
++            "README.md": ("Entrada obrigatória para IAs", "scripts/ai_context.py", "scripts/ai_history.py"),
++        }
++        for relative, markers in required.items():
++            with self.subTest(path=relative):
++                text = (ROOT / relative).read_text(encoding="utf-8")
++                for marker in markers:
++                    self.assertIn(marker, text)
 +
-+LOOP-PRIMER enforces security by construction:
++        readme = (ROOT / "README.md").read_text(encoding="utf-8")
++        self.assertLess(readme.index("Entrada obrigatória para IAs"), readme.index("# "))
++        self.assertIn("M10", readme)
++        self.assertIn("reserved stubs", readme)
 +
-+1. **Gate Guardrails**: Prohibits speculative hallucination. If OCR confidence fails or textual coverage is insufficient, execution halts immediately with explicit issue diagnostics.
-+2. **Immutable Original Staging**: Manuscripts placed in `input/inbox/` are never overwritten in-place. Staging creates content-addressed read-only mirrors in `artifacts/original/<sha256>/`.
-+3. **Cryptographic Chaining**: Every state mutation records an event in `state/events/` referencing parent hashes.
-+4. **Offline Isolation**: Core synthesis and local contract tests require **zero** internet connectivity and **zero** paid API keys.
+     def test_inventory_is_content_addressed_and_excludes_generated_and_caches(self) -> None:
+diff --git a/docs/decisions.md b/docs/decisions.md
+index 77c1218..7eae3b5 100644
+--- a/docs/decisions.md
++++ b/docs/decisions.md
+@@ -835,2 +835,16 @@ atualidade entre documentos.
+   ignorar deliberadamente instruções de projeto.
 +
-+---
++### Reconciliação com a publicação no GitHub — 2026-09-01
 +
-+## 🚀 Quick Start
++Uma publicação posterior adicionou workflow de CI, templates comunitários,
++licença e documentação de contribuição/segurança, além de substituir o README
++introdutório. A comparação com o snapshot content-addressed registrado ao fim
++da implementação confirmou que os utilitários, gatilhos, testes e documentos
++normativos desta decisão permaneceram byte a byte.
 +
-+### 1. Prerequisites
++As adições comunitárias serão preservadas. O README de apresentação deve,
++porém, manter em posição proeminente o protocolo de entrada e saída para IAs e
++deve distinguir componentes implementados até M9 de stubs reservados para M10.
++O workflow público deve executar a mesma descoberta integral de testes usada
++localmente, com as dependências determinísticas de PDF/LaTeX disponíveis.
+ - Esta camada não modifica os cinco scripts científicos canônicos, não inicia
+diff --git a/scripts/ai_context.py b/scripts/ai_context.py
+index 829e504..fd3aa0b 100644
+--- a/scripts/ai_context.py
++++ b/scripts/ai_context.py
+@@ -13,2 +13,3 @@ from typing import Any, Mapping, Sequence
+ from ai_handoff_common import (
++    GENERATED_PATHS,
+     HandoffError,
+@@ -184,2 +185,18 @@ def _history_digest(root: Path, history_text: str) -> list[str]:
+
++def _normalize_diff_preview(text: str) -> str:
++    """Remove whitespace artifacts from untrusted Git patches before embedding."""
++    return "\n".join(line.rstrip(" \t") for line in text.splitlines())
 +
-+- Linux (Ubuntu 22.04+, Debian 12+, Arch, etc.) or macOS
-+- Python 3.11+
-+- TeX Live & Poppler (`pdflatex`, `pdfinfo`, `pdftotext`) — *Optional for full PDF compilation, contract tests run offline with standard Python*
 +
-+### 2. Installation & Automated Bootstrap
++def _bounded_excerpt(text: str, *, limit: int, label: str) -> str:
++    if len(text) <= limit:
++        return text.rstrip()
++    excerpt = text[:limit].rsplit("\n", 1)[0].rstrip()
++    return excerpt + f"\n\n... [{label} truncado em {limit} caracteres; consulte o arquivo original]"
 +
-+```bash
-+# Clone the repository
-+git clone https://github.com/Walc21/LOOP-PRIMER.git
-+cd LOOP-PRIMER
 +
-+# Automated system dependencies and virtual environment setup
-+bash bin/bootstrap-deps.sh
++def _diff_pathspec() -> list[str]:
++    return ["--", ".", *(f":(exclude){path}" for path in sorted(GENERATED_PATHS))]
 +
-... [diff truncado em 18000 caracteres; consulte somente o arquivo necessário]
++
+ def _diff_preview(root: Path, snapshot: Mapping[str, Any], limit: int) -> str:
+@@ -192,9 +209,17 @@ def _diff_preview(root: Path, snapshot: Mapping[str, Any], limit: int) -> str:
+     if isinstance(previous_head, str) and re.fullmatch(r"[0-9a-f]{40}", previous_head) and previous_head != current_head:
+-        committed = run_local(["git", "diff", "--no-ext-diff", "--unified=1", f"{previous_head}..{current_head}", "--"], cwd=root, timeout=30)
++        committed = run_local(
++            ["git", "diff", "--no-ext-diff", "--unified=1", f"{previous_head}..{current_head}", *_diff_pathspec()],
++            cwd=root,
++            timeout=30,
++        )
+         if committed.stdout:
+             pieces.append("# Commits desde o último encerramento\n" + committed.stdout)
+-    working = run_local(["git", "diff", "--no-ext-diff", "--unified=1", "HEAD", "--"], cwd=root, timeout=30)
++    working = run_local(
++        ["git", "diff", "--no-ext-diff", "--unified=1", "HEAD", *_diff_pathspec()],
++        cwd=root,
++        timeout=30,
++    )
+     if working.stdout:
+         pieces.append("# Alterações não commitadas\n" + working.stdout)
+-    text = "\n".join(pieces)
++    text = _normalize_diff_preview("\n".join(pieces))
+     if not text:
+@@ -245,3 +270,3 @@ def render_context(root: Path, *, diff_limit: int = 18_000) -> str:
+         "",
+-        "Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (que ainda enfatiza M3).",
++        "Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (introdutório e não normativo).",
+         "",
+@@ -320,3 +345,12 @@ def render_context(root: Path, *, diff_limit: int = 18_000) -> str:
+
+-    lines.extend(["## README descritivo (possivelmente defasado)", "", "<readme>", readme.rstrip(), "</readme>", ""])
++    lines.extend([
++        "## README descritivo (possivelmente defasado)",
++        "",
++        "O README é incorporado de forma limitada para que uma apresentação extensa do GitHub não volte a inflar o contexto operacional.",
++        "",
++        "<readme>",
++        _bounded_excerpt(readme, limit=6_000, label="README"),
++        "</readme>",
++        "",
++    ])
+
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (19909 bytes; SHA-256 `bbcff465e6aaf142`).
+- Fonte lida: `docs/AI_HISTORY.md` (25316 bytes; SHA-256 `00086695216811ae`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -431,28 +366,28 @@ index 0b3e775..f6901ca 100644
 | M8 | 2026-08-27 | 1 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
 | M9 | 2026-08-28 | 2 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
 
-- Sessões estruturadas registradas: 3.
-- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido..
+- Sessões estruturadas registradas: 5.
+- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido..
 
 Detalhe das três sessões mais recentes:
-- `session-35ff672e405b8ae45f46` — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.
-  - mudanças: Analisados e conectados 151 arquivos relevantes do repositório, o histórico de 35 commits, 26 ADRs, os marcos M0–M9, 21 papéis, 20 schemas e 303 testes detectados por AST.; Adicionados scripts/ai_context.py, scripts/ai_history.py e scripts/ai_handoff_common.py com publicação atômica, idempotência, inventário completo e ausência de rede/modelos/dependências novas.; Adicionados gatilhos auto-descobertos em AGENTS.md, CLAUDE.md e .prime/agent/APPEND_SYSTEM.md; o README aponta para o contexto atual.; Adicionado control/test_ai_handoff.py e documentados ADR-026, arquitetura auxiliar e progresso em PLANS.md.
-  - decisões: O fingerprint exclui os próprios artefatos gerados, ambientes, caches e conteúdo sensível; inclui por hash o estado/runtime científico ignorado pelo Git, sem incorporar seu conteúdo.; O histórico combina evolução factual reconstruída de Git/ADRs com um resumo semântico estruturado obrigatório ao fim de cada sessão.; O registrador de histórico nunca roda no início; após o encerramento, o contexto é regenerado para incorporar o novo baseline.
-  - validações: python3 -m py_compile nos três utilitários e no novo teste: aprovado.; python3 -m unittest -q control.test_ai_handoff control.test_contracts: 56 testes aprovados.; Segunda geração de AI_CONTEXT.md e --check: idempotência aprovada antes do encerramento.; Regressão integral iniciou 303 testes e encerrou com 12 falhas e 181 erros ambientais, todos convergindo para ausência do executável pdflatex; nenhuma dependência foi instalada.; git diff --check: aprovado.
-  - riscos: pdflatex não está instalado; por isso a regressão que depende da ingestão M3 não pôde ser validada integralmente nesta máquina.; Nenhum arquivo pode obrigar um cliente de IA que ignore deliberadamente instruções auto-descobertas; AGENTS.md, CLAUDE.md e APPEND_SYSTEM.md cobrem os runtimes previstos pelo projeto.; Mudanças de bytes são detectadas automaticamente, mas intenção e decisões semânticas ainda exigem um resumo honesto da IA no encerramento.
-  - próximos: M10 continua pendente e não foi iniciado; implementar política de compensação, decisão canônica e finalizador somente em sessão autorizada e separada.
-- `session-349098e294a13203aa59` — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.
-  - mudanças: scripts/ai_context.py agora seleciona somente linhas de marcos M0–M13, excluindo o cabeçalho genérico da tabela.; control/test_ai_handoff.py ganhou regressão que proíbe o cabeçalho duplicado.
-  - decisões: O ledger anterior permaneceu append-only; a correção pós-encerramento foi registrada em nova entrada em vez de reescrever a sessão anterior.
-  - validações: python3 -m py_compile scripts/ai_context.py control/test_ai_handoff.py: aprovado.; python3 -m unittest -q control.test_ai_handoff control.test_contracts: 56 testes aprovados.; git diff --check: aprovado.
-  - riscos: Permanece o bloqueio ambiental de pdflatex já registrado na sessão anterior.
-  - próximos: Regenerar AI_CONTEXT.md e confirmar baseline, ausência de delta e idempotência.
 - `session-2e596a2acf9f4bb2beb3` — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.
   - mudanças: Nenhum arquivo-fonte foi alterado nesta sessão; foi realizada somente validação do ambiente e da suíte completa.
   - decisões: A instalação do pdflatex é agora suficiente para atravessar a ingestão M3 e validar a regressão M0–M9 nesta máquina.
   - validações: command -v pdflatex: /usr/bin/pdflatex; pdfTeX 3.141592653-2.6-1.40.28, TeX Live 2025/Debian.; python3 -m unittest discover -s control -p 'test_*.py' -q: 303 testes executados em 244.057s, resultado OK, código de saída 0.
   - riscos: Permaneceu somente o aviso esperado da fixture negativa M3: Duplicate name: a.tex; não houve falha ou erro.
   - próximos: M10 permanece pendente; a suíte integral atual está verde para servir de baseline antes de qualquer implementação futura.
+- `session-b623adc6ee93e8333134` — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.
+  - mudanças: Nenhuma mudança funcional do M10 foi realizada; somente o snapshot inicial obrigatório foi regenerado e esta conclusão diagnóstica foi registrada conforme AGENTS.md.
+  - decisões: Aplicado fail-closed ao requisito de árvore Git limpa; M10 não foi iniciado.
+  - validações: python3 scripts/ai_context.py: status current; AI_CONTEXT.md regenerado com sucesso.; git status --porcelain=v1: M AI_CONTEXT.md antes da implementação.; git merge-base --is-ancestor 907af50 HEAD e 765aac3 HEAD: ambos retornaram sucesso; checkpoints M9 são ancestrais do HEAD f911183.
+  - riscos: A árvore permanece divergente e não pode receber o commit único do M10 sem uma decisão explícita sobre o AI_CONTEXT.md gerado.
+  - próximos: Limpar ou autorizar a incorporação do AI_CONTEXT.md atual em um baseline separado; então reiniciar o precheck completo do M10.
+- `session-97c4dfa331be26096a7e` — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.
+  - mudanças: A comparação content-addressed comprovou que scripts, gatilhos, testes, plano, arquitetura e ADR originais sobreviveram byte a byte; o commit posterior adicionou sete arquivos e substituiu somente README.md.; O README de apresentação do GitHub foi preservado, recebeu novamente o gatilho obrigatório para IAs e passou a declarar corretamente que M10 e os scripts 04/05 continuam pendentes e inertes.; scripts/ai_context.py agora limita o README incorporado, normaliza espaços finais de previews e exclui AI_CONTEXT.md, AI_HISTORY.md, ai_sessions.jsonl e ai_snapshot.json do preview Git para impedir autorreferência.; O workflow de CI passou a instalar TeX/Poppler e executar a descoberta integral M0-M9; control/test_ai_handoff.py cobre as quatro superfícies de gatilho, preview limitado e idempotência com AI_CONTEXT.md rastreado.
+  - decisões: As sete adições comunitárias da sessão do GitHub foram mantidas; nenhuma versão, candidato, estado científico ou componente M10 foi alterado.; Artefatos gerados permanecem rastreados, mas são excluídos do próprio preview Git; mudanças de fontes continuam aparecendo no fingerprint e no delta.
+  - validações: Comparação do snapshot original contra a árvore posterior: 7 arquivos adicionados, 1 modificado (README.md), 0 removidos; 11 arquivos centrais conferidos por SHA-256 e idênticos.; python3 -m unittest -q control.test_ai_handoff control.test_contracts: 59 testes aprovados.; python3 -m unittest discover -s control -p 'test_*.py' -q: 306 testes aprovados em 178.248s.; python3 -m py_compile dos utilitários/teste, duas gerações idempotentes de AI_CONTEXT.md e git diff --check: aprovados.
+  - riscos: AI_CONTEXT.md é um artefato gerado rastreado e pode mudar após novos commits ou fontes; execute o gerador no início e novamente no encerramento conforme AGENTS.md.
+  - próximos: M10 permanece pendente e deve ser iniciado somente em uma sessão separada e autorizada; esta reconciliação não executou artigo, modelos ou rede.
 
 ## Marcos planejados
 
@@ -560,11 +495,11 @@ Detalhe das três sessões mais recentes:
 
 ## Cobertura estrutural de testes
 
-Total detectado por AST: **303 testes**.
+Total detectado por AST: **306 testes**.
 
 | Arquivo | Testes | Amostra de fronteiras cobertas |
 |---|---:|---|
-| `test_ai_handoff.py` | 4 | inventory is content addressed and excludes generated and caches; delta reports add modify delete; milestone inference covers historical subjects; history update is idempotent and context consumes it |
+| `test_ai_handoff.py` | 7 | embedded previews are bounded and have no trailing whitespace; tracked generated context remains idempotent; repository trigger surfaces preserve start and end protocol; inventory is content addressed and excludes generated and caches; del… |
 | `test_contracts.py` | 52 | all yaml is parseable; canonical states and actions; eight evaluation dimensions; exact ids without duplicates; one plus five plus fifteen; parent child topology; exact schema catalog and meta validation; agent proposal required fields and… |
 | `test_m2_durable_state.py` | 30 | all valid transitions; all invalid transitions; full event log replay and snapshot reconstruction; duplicate event id and idempotency conflict; partially written file and truncated jsonl are rejected; corrupted jsonl is rejected; crash bef… |
 | `test_m3_ingestion.py` | 22 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash divergence and publish failure are safe; valid source zip is p… |
@@ -802,7 +737,14 @@ Todas as operações foram realizadas de modo puramente determinístico, offline
 
 ## README descritivo (possivelmente defasado)
 
+O README é incorporado de forma limitada para que uma apresentação extensa do GitHub não volte a inflar o contexto operacional.
+
 <readme>
+> **Entrada obrigatória para IAs:** execute `python3 scripts/ai_context.py` e
+> leia `AI_CONTEXT.md` integralmente antes de trabalhar. No encerramento, use
+> `scripts/ai_history.py` conforme o protocolo no topo de `AGENTS.md` e regere o
+> contexto. Este README é introdutório e não substitui o snapshot atual.
+
 <div align="center">
 
 # 🔬 LOOP-PRIMER
@@ -816,10 +758,16 @@ Todas as operações foram realizadas de modo puramente determinístico, offline
 [![Verification: Deterministic Gates](https://img.shields.io/badge/Verification-13%20Deterministic%20Gates-red.svg)](docs/decisions.md)
 
 <p align="center">
-  <b>A zero-hallucination, formally audited, multi-agent peer review loop engineered for LaTeX and PDF scientific literature.</b>
+  <b>A deterministic, auditable multi-agent review loop engineered for LaTeX and PDF scientific literature.</b>
 </p>
 
 </div>
+
+> **Implementation status:** M0–M9 are implemented and locally validated. M10
+> (canonical decision and transactional finalizer) and M11–M13 remain pending;
+> `scripts/04_compensation_policy.py` and
+> `scripts/05_transactional_finalizer.py` are reserved stubs, not operational
+> CLIs. No real article or model is run by the commands documented below.
 
 ---
 
@@ -840,7 +788,10 @@ Todas as operações foram realizadas de modo puramente determinístico, offline
 
 ## 🔭 Executive Summary
 
-**LOOP-PRIMER** is an enterprise-grade, deterministic multi-agent framework designed to autonomously analyze, critique, mathematically verify, and iteratively improve complex scientific papers. 
+**LOOP-PRIMER** is a contract-first, deterministic framework under incremental
+implementation for auditable analysis, critique, mathematical verification and
+iterative improvement of scientific papers. The implemented pipeline currently
+ends at M9 diagnosis/refocus; decision and finalization remain planned work.
 
 Unlike conventional LLM wrappers, LOOP-PRIMER operates under **strict mathematical and architectural constraints**:
 - **Air-gapped & Offline Verification**: No unauthenticated external network requests or speculative token generation during validation.
@@ -904,185 +855,12 @@ flowchart TD
     
     J --> K{"🏆 Jury & Meta-Review Verdict"}
     K -->|Champion Won| L["📈 M9: Stagnation & Oscillation Detector"]
-    K -->|Challenger Won| M["🌟 Promote to Champion (Atomic Transaction)"]
+    K -->|Challenger Won| M["🧭 M10 planned: Decide disposition"]
     K -->|Pareto Tradeoff| N["📊 Archive in Pareto Frontier"]
     
     L --> O["🔄 Refocus Plan & Budget Compensation"]
-    O --> E
-    M --> P["🏁 Transactional Finalizer & Signed Receipts"]
-```
 
----
-
-## 👥 The 21-Agent Matrix
-
-LOOP-PRIMER establishes a strict 3-tier organizational hierarchy:
-
-| ID | Role Name | Department | Depth | Focal Responsibility |
-|:---|:---|:---|:---:|:---|
-| **M00** | **General Director** | Direction | `0` | Strategic agenda, synthesis, gate verification, decision finalization |
-| **S10** | **Lead Structural Auditor** | Structural/Auditing | `1` | Global logic, structural hierarchy, consistency audit |
-| `W11` | Abstract & Introduction Worker | Structural/Auditing | `2` | Framing, thesis clarity, intro-to-conclusion alignment |
-| `W12` | Logical Architecture Worker | Structural/Auditing | `2` | Argument flow, lemma dependency DAG, section transitions |
-| `W13` | Contributions & Conclusion Worker | Structural/Auditing | `2` | Claim precision, future work bounds, conclusion integrity |
-| **S20** | **Lead Math Verifier** | Math Verification | `1` | Formal rigor, theorem correctness, reproducibility consolidation |
-| `W21` | Definitions & Hypotheses Worker | Math Verification | `2` | Axiomatic precision, notation consistency, hypothesis audit |
-| `W22` | Theorems & Proofs Worker | Math Verification | `2` | Step-by-step deductive correctness, lemma soundness |
-| `W23` | Computations & Reproducibility | Math Verification | `2` | Constant calculation, numerical examples, proof verification |
-| **S30** | **Lead Math Strengthener** | Math Strengthening | `1` | Generalization and theorem strengthening consolidation |
-| `W31` | Statements & Constants Worker | Math Strengthening | `2` | Tightening bounds, optimizing constants, statement sharpening |
-| `W32` | Generalizations Worker | Math Strengthening | `2` | Extending proof domains, weakening preconditions |
-| `W33` | Applications & Counterexamples | Math Strengthening | `2` | Instructive examples, edge cases, boundary checks |
-| **S40** | **Lead Semantic Auditor** | Semantic Quality | `1` | Technical prose, linguistic clarity, academic cohesion |
-| `W41` | Orthography & Grammar Worker | Semantic Quality | `2` | Syntax correctness, spelling, typographical standards |
-| `W42` | Semantic Precision Worker | Semantic Quality | `2` | Eliminating ambiguity, sharpening technical vocabulary |
-| `W43` | Academic Style & Cohesion | Semantic Quality | `2` | Tone harmonization, register consistency, academic cadence |
-| **S50** | **Lead LaTeX & Layout** | Formatting/PDF | `1` | Compilation compliance, typographic beauty, PDF hygiene |
-| `W51` | LaTeX & BibTeX Worker | Formatting/PDF | `2` | Macro hygiene, citation consistency, bibliography validation |
-| `W52` | Equations & Visuals Worker | Formatting/PDF | `2` | Formula alignment, float placement, table/figure formatting |
-| `W53` | PDF Compliance Worker | Formatting/PDF | `2` | PDF/A standard checks, font embedding, margin validation |
-
----
-
-## 🔒 Deterministic Gates & Security
-
-LOOP-PRIMER enforces security by construction:
-
-1. **Gate Guardrails**: Prohibits speculative hallucination. If OCR confidence fails or textual coverage is insufficient, execution halts immediately with explicit issue diagnostics.
-2. **Immutable Original Staging**: Manuscripts placed in `input/inbox/` are never overwritten in-place. Staging creates content-addressed read-only mirrors in `artifacts/original/<sha256>/`.
-3. **Cryptographic Chaining**: Every state mutation records an event in `state/events/` referencing parent hashes.
-4. **Offline Isolation**: Core synthesis and local contract tests require **zero** internet connectivity and **zero** paid API keys.
-
----
-
-## 🚀 Quick Start
-
-### 1. Prerequisites
-
-- Linux (Ubuntu 22.04+, Debian 12+, Arch, etc.) or macOS
-- Python 3.11+
-- TeX Live & Poppler (`pdflatex`, `pdfinfo`, `pdftotext`) — *Optional for full PDF compilation, contract tests run offline with standard Python*
-
-### 2. Installation & Automated Bootstrap
-
-```bash
-# Clone the repository
-git clone https://github.com/Walc21/LOOP-PRIMER.git
-cd LOOP-PRIMER
-
-# Automated system dependencies and virtual environment setup
-bash bin/bootstrap-deps.sh
-```
-
-Or set up manually:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-```
-
-### 3. Running Contract & Verification Tests
-
-```bash
-# Run core contract tests
-.venv/bin/python -m unittest control.test_contracts
-
-# Run AI context and handoff tests
-.venv/bin/python -m unittest control.test_ai_handoff
-
-# Run all milestone test suites
-.venv/bin/python -m unittest control.test_m2_durable_state \
-                         control.test_m4_prompts \
-                         control.test_m5_blackboard_activation \
-                         control.test_m6_orchestration \
-                         control.test_m7_synthesis_gates \
-                         control.test_m8_evaluation \
-                         control.test_m9_diagnosis
-```
-
-### 4. Running Preflight Ingestion
-
-Place your paper PDF in `input/inbox/artigo.pdf` and execute:
-
-```bash
-bash bin/preflight.sh
-```
-
----
-
-## 🧰 CLI Reference
-
-LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
-
-- **`bin/preflight.sh`**: Ingestion, validation, and `SOURCE_READY` gate verifier.
-- **`scripts/01_external_evaluator.py`**: Double-blind jury evaluator CLI (Milestone 8).
-- **`scripts/02_stagnation_detector.py`**: Plateau, oscillation, and diagnostic detector (Milestone 9).
-- **`scripts/03_refocus_generator.py`**: Adaptive prompt and parameter refocusing generator (Milestone 9).
-- **`scripts/04_compensation_policy.py`**: Dynamic budget and attention compensation calculator.
-- **`scripts/05_transactional_finalizer.py`**: Atomic candidate promotion and Pareto archive manager.
-- **`scripts/ai_context.py`**: Deterministic content-addressed session context snapshot generator.
-- **`scripts/ai_history.py`**: Session ledger and ADR history updater.
-
----
-
-## 📂 Repository Structure
-
-```text
-LOOP-PRIMER/
-├── .github/                      # GitHub Actions CI & community templates
-│   ├── workflows/ci.yml          # Multi-Python version test suite
-│   ├── pull_request_template.md  # PR checklist and verification template
-│   └── ISSUE_TEMPLATE/           # Bug report & feature request schemas
-├── .prime/                       # Prime Agent integration layer & skills
-│   └── agent/skills/article-loop/src/article_loop/ # Core Python framework
-├── bin/                          # Shell entrypoints (bootstrap, preflight, check)
-├── config/                       # Declarative budgets, gates, roles, and JSON schemas
-│   ├── roles/                    # 21 YAML definitions for M00, S10-S50, W11-W53
-│   ├── rubrics/                  # Evaluation rubrics for blind jury
-│   └── schemas/                  # 19 JSON Schema definitions for strict validation
-├── control/                      # Contract and milestone test suites (M1 through M9)
-├── docs/                         # Architecture, ADRs, compatibility, and AI history
-│   ├── architecture.md           # Canonical system architecture
-│   ├── decisions.md              # 26 Architectural Decision Records (ADRs)
-│   └── AI_HISTORY.md             # Chronological ledger of system evolution
-├── prompts/                      # Immutable system prompts and role overlays
-├── scripts/                      # Independent, deterministically tested CLI modules
-├── artifacts/                    # Content-addressed input & extracted cache (gitignored)
-├── state/                        # Append-only durable event logs & locks (gitignored)
-├── versions/                     # Champion, challenger, Pareto & rejected versions
-├── requirements-dev.txt          # Pinned development dependencies
-├── LICENSE                       # MIT License
-├── CONTRIBUTING.md               # Contribution guidelines & commit convention
-└── SECURITY.md                   # Security and sandboxing policy
-```
-
----
-
-## 📜 Architecture Decision Records (ADRs)
-
-All core design choices are formally recorded in [`docs/decisions.md`](docs/decisions.md):
-
-| ADR | Title | Status | Scope |
-|:---|:---|:---:|:---|
-| **ADR-001** | Content-Addressed Preservation & Single Entrypoint | `Accepted` | Ingestion |
-| **ADR-002** | 21-Role Canonical Catalog & RLM Depth $\le 2$ | `Accepted` | Organization |
-| **ADR-003** | Sparse Activation Matrix (`RUN`/`CHECK`/`SHIFT`/`FREEZE`) | `Accepted` | Resource Control |
-| **ADR-008** | Append-Only Event Log & Hash Chaining | `Accepted` | State Storage |
-| **ADR-013** | 13 Deterministic Synthesis Gates | `Accepted` | Verification |
-| **ADR-021** | Double-Blind Jury & Randomized Presentation | `Accepted` | Evaluation |
-| **ADR-024** | Plateau & Oscillation Diagnostic Engine | `Accepted` | Adaptability |
-| **ADR-026** | Content-Addressed AI Handoff & Session Ledger | `Accepted` | AI Protocol |
-
----
-
-## 🤝 Contributing & License
-
-Contributions are welcome! Please review [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md) before opening pull requests.
-
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for complete details.
-
-**Author**: Victor Gabriel de Oliveira ([@Walc21](https://github.com/Walc21))
+... [README truncado em 6000 caracteres; consulte o arquivo original]
 </readme>
 
 ## Inventário content-addressed completo
@@ -1094,7 +872,7 @@ Todo arquivo relevante aparece abaixo. Para aprofundar, leia apenas os caminhos 
 | `.github/ISSUE_TEMPLATE/bug_report.md` | text | 647 | 27 | `6e7f0c070911` | Markdown sem headings |
 | `.github/ISSUE_TEMPLATE/feature_request.md` | text | 745 | 22 | `bf3b8ec7c497` | Markdown sem headings |
 | `.github/pull_request_template.md` | text | 871 | 20 | `42ee22ace252` | seções: Description; Type of Change; Verification Checklist |
-| `.github/workflows/ci.yml` | text | 1581 | 50 | `fa6e9e693cbe` | chaves: name, on, jobs |
+| `.github/workflows/ci.yml` | text | 1174 | 40 | `ab1a06f9a6af` | chaves: name, on, jobs |
 | `.gitignore` | text | 983 | 59 | `1d23a95bcdb4` | # Prime Agent project-local sessions and transient kernel state |
 | `.prime/agent/APPEND_SYSTEM.md` | text | 807 | 14 | `09f65d8308cc` | seções: article-loop — guardrails do projeto |
 | `.prime/agent/prompts/.gitkeep` | text | 1 | 1 | `01ba4719c80b` | arquivo textual vazio |
@@ -1126,8 +904,8 @@ Todo arquivo relevante aparece abaixo. Para aprofundar, leia apenas os caminhos 
 | `CLAUDE.md` | text | 530 | 16 | `277d35ab7a04` | seções: Protocolo de entrada e saída para agentes |
 | `CONTRIBUTING.md` | text | 2175 | 63 | `88dd6a0e2eb0` | seções: Contributing to LOOP-PRIMER; Development Principles; Getting Started; Local Setup; Commit Guidelines |
 | `LICENSE` | text | 1092 | 21 | `0d0db335dda4` | MIT License |
-| `PLANS.md` | text | 33075 | 459 | `287b35b3576f` | seções: ExecPlan vivo — article-loop; Objetivo; Estado atual; Contratos já decididos; Marcos canônicos |
-| `README.md` | text | 14597 | 280 | `767c7f78d10c` | seções: 🔬 LOOP-PRIMER; Autonomous Multi-Agent Peer Review & Refinement Framework for Scientific & Mathematical Manuscripts; 📌 Table of Contents; 🔭 Executive Summary; 🏛 Key Architectural Pillars |
+| `PLANS.md` | text | 34268 | 476 | `e5fdc5c8c8d1` | seções: ExecPlan vivo — article-loop; Objetivo; Estado atual; Contratos já decididos; Marcos canônicos |
+| `README.md` | text | 15020 | 288 | `c4b17d42beac` | seções: 🔬 LOOP-PRIMER; Autonomous Multi-Agent Peer Review & Refinement Framework for Scientific & Mathematical Manuscripts; 📌 Table of Contents; 🔭 Executive Summary; 🏛 Key Architectural Pillars |
 | `SECURITY.md` | text | 1428 | 28 | `1adf19468e39` | seções: Security Policy; Supported Versions; Security Principles & Architecture; Reporting a Vulnerability |
 | `artifacts/extracted/.gitkeep` | runtime | 1 | - | `01ba4719c80b` | estado/artefato local identificado por hash; conteúdo não incorporado |
 | `artifacts/original/.gitkeep` | runtime | 1 | - | `01ba4719c80b` | estado/artefato local identificado por hash; conteúdo não incorporado |
@@ -1186,7 +964,7 @@ Todo arquivo relevante aparece abaixo. Para aprofundar, leia apenas os caminhos 
 | `control/fixtures/m4/agent_task.json` | text | 531 | 15 | `d72f49e6373f` | chaves: schema_version, task_id, run_id, cycle_id, role_id, base_hash, activation_mode, scope, input_locators, requested_output_schema |
 | `control/fixtures/m4/department_packet.json` | text | 791 | 24 | `d2502ecb9f14` | chaves: schema_version, packet_id, run_id, cycle_id, department_id, base_hash, proposal_ids, specialist_task_ids, dependency_reviews, evidence_locators |
 | `control/fixtures/m4/prompt-snapshots.json` | text | 1620 | 23 | `2920d4de74ba` | chaves: M00, S10, S20, S30, S40, S50, W11, W12, W13, W21 |
-| `control/test_ai_handoff.py` | text | 5716 | 119 | `b660fd15651b` | API: AIHandoffTests; 4 testes |
+| `control/test_ai_handoff.py` | text | 8710 | 172 | `9de410fac395` | API: AIHandoffTests; 7 testes |
 | `control/test_contracts.py` | text | 35500 | 869 | `3c538170db94` | API: load_yaml(), load_json(), ConfigurationTests, RoleCatalogTests, SchemaContractTests, RepositorySafetyTests, ScaffoldTests, ConditionalContractTests; 52 testes |
 | `control/test_m2_durable_state.py` | text | 17320 | 375 | `4b328ee7fc6a` | API: DurableStateTests; 30 testes |
 | `control/test_m3_ingestion.py` | text | 18536 | 318 | `bd9d67d994e4` | API: IngestionTests; 22 testes |
@@ -1198,7 +976,7 @@ Todo arquivo relevante aparece abaixo. Para aprofundar, leia apenas os caminhos 
 | `control/test_m9_diagnosis.py` | text | 65419 | 1243 | `0de4b64409e0` | API: DimensionScoresJurorAdapter, M9DiagnosisTests; 50 testes |
 | `docs/architecture.md` | text | 14892 | 335 | `15c0171b2569` | seções: Arquitetura canônica — article-loop; Escopo e imutabilidade do contrato; Entrada, fontes e preservação; Catálogo exato de 21 papéis; Dependências obrigatórias e autoridade de escrita |
 | `docs/compatibility.md` | text | 9921 | 140 | `03174c609124` | seções: Compatibilidade do Prime Agent; Escopo e autoridade; Evidência da instalação; Saída útil de `prime-agent --help` (resumo sanitizado); Documentação oficial consultada |
-| `docs/decisions.md` | text | 50459 | 837 | `6526bb3da3fd` | seções: Decisões arquiteturais; ADR-001 — O repositório possui estado durável próprio; ADR-002 — Topologia lógica 1 + 5 + 15 e profundidade RLM 2; ADR-003 — Mensagem curta, arquivo canônico; ADR-004 — Júri cego separado de autoria e promoç… |
+| `docs/decisions.md` | text | 51300 | 851 | `276e9d1c0e9e` | seções: Decisões arquiteturais; ADR-001 — O repositório possui estado durável próprio; ADR-002 — Topologia lógica 1 + 5 + 15 e profundidade RLM 2; ADR-003 — Mensagem curta, arquivo canônico; ADR-004 — Júri cego separado de autoria e promoç… |
 | `input/inbox/.gitkeep` | runtime | 1 | - | `01ba4719c80b` | estado/artefato local identificado por hash; conteúdo não incorporado |
 | `logs/.gitkeep` | runtime | 1 | - | `01ba4719c80b` | estado/artefato local identificado por hash; conteúdo não incorporado |
 | `prompts/immutable/.gitkeep` | text | 1 | 1 | `01ba4719c80b` | arquivo textual vazio |
@@ -1234,7 +1012,7 @@ Todo arquivo relevante aparece abaixo. Para aprofundar, leia apenas os caminhos 
 | `scripts/03_refocus_generator.py` | text | 5281 | 119 | `abe703c81ac1` | API: main() |
 | `scripts/04_compensation_policy.py` | text | 63 | 1 | `7330a3953b54` | módulo Python interno |
 | `scripts/05_transactional_finalizer.py` | text | 133 | 4 | `9446896eae0b` | módulo Python interno |
-| `scripts/ai_context.py` | text | 21430 | 390 | `4009029f532f` | API: render_context(), parser(), main() |
+| `scripts/ai_context.py` | text | 22442 | 424 | `43b8ac9858f5` | API: render_context(), parser(), main() |
 | `scripts/ai_handoff_common.py` | text | 13786 | 350 | `36c5f8907375` | API: HandoffError, canonical_json(), sha256_bytes(), sha256_file(), is_sensitive_path(), run_local(), git_root(), list_relevant_paths(), summarize_text(), file_record(), build_inventory(), inventory_fingerprint(), snapshot_files(), invento… |
 | `scripts/ai_history.py` | text | 20406 | 451 | `3486b7e1f102` | API: load_entries(), infer_milestone(), render_history(), update_history(), parser(), main() |
 | `state/checkpoints/.gitkeep` | runtime | 1 | - | `01ba4719c80b` | estado/artefato local identificado por hash; conteúdo não incorporado |

@@ -27,6 +27,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils texlive-latex-base
           python -m pip install --upgrade pip
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
@@ -34,17 +36,5 @@ jobs:
         run: |
           python -m py_compile scripts/*.py control/*.py .prime/agent/skills/article-loop/src/article_loop/*.py
 
-      - name: Run Core Contract Tests
-        run: |
-          python -m unittest control.test_contracts
-          python -m unittest control.test_ai_handoff
-
-      - name: Run Milestone Test Suites
-        run: |
-          python -m unittest control.test_m2_durable_state \
-                           control.test_m4_prompts \
-                           control.test_m5_blackboard_activation \
-                           control.test_m6_orchestration \
-                           control.test_m7_synthesis_gates \
-                           control.test_m8_evaluation \
-                           control.test_m9_diagnosis
+      - name: Run complete M0-M9 regression suite
+        run: python -m unittest discover -s control -p 'test_*.py' -q

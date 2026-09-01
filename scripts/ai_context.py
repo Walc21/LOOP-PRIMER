@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ai_handoff_common import (
+    GENERATED_PATHS,
     HandoffError,
     atomic_write,
     build_inventory,
@@ -182,6 +183,22 @@ def _history_digest(root: Path, history_text: str) -> list[str]:
     return lines
 
 
+def _normalize_diff_preview(text: str) -> str:
+    """Remove whitespace artifacts from untrusted Git patches before embedding."""
+    return "\n".join(line.rstrip(" \t") for line in text.splitlines())
+
+
+def _bounded_excerpt(text: str, *, limit: int, label: str) -> str:
+    if len(text) <= limit:
+        return text.rstrip()
+    excerpt = text[:limit].rsplit("\n", 1)[0].rstrip()
+    return excerpt + f"\n\n... [{label} truncado em {limit} caracteres; consulte o arquivo original]"
+
+
+def _diff_pathspec() -> list[str]:
+    return ["--", ".", *(f":(exclude){path}" for path in sorted(GENERATED_PATHS))]
+
+
 def _diff_preview(root: Path, snapshot: Mapping[str, Any], limit: int) -> str:
     git = git_state(root)
     if not git.get("available"):
@@ -190,13 +207,21 @@ def _diff_preview(root: Path, snapshot: Mapping[str, Any], limit: int) -> str:
     previous_head = snapshot.get("git", {}).get("head") if isinstance(snapshot.get("git"), dict) else None
     current_head = git.get("head")
     if isinstance(previous_head, str) and re.fullmatch(r"[0-9a-f]{40}", previous_head) and previous_head != current_head:
-        committed = run_local(["git", "diff", "--no-ext-diff", "--unified=1", f"{previous_head}..{current_head}", "--"], cwd=root, timeout=30)
+        committed = run_local(
+            ["git", "diff", "--no-ext-diff", "--unified=1", f"{previous_head}..{current_head}", *_diff_pathspec()],
+            cwd=root,
+            timeout=30,
+        )
         if committed.stdout:
             pieces.append("# Commits desde o último encerramento\n" + committed.stdout)
-    working = run_local(["git", "diff", "--no-ext-diff", "--unified=1", "HEAD", "--"], cwd=root, timeout=30)
+    working = run_local(
+        ["git", "diff", "--no-ext-diff", "--unified=1", "HEAD", *_diff_pathspec()],
+        cwd=root,
+        timeout=30,
+    )
     if working.stdout:
         pieces.append("# Alterações não commitadas\n" + working.stdout)
-    text = "\n".join(pieces)
+    text = _normalize_diff_preview("\n".join(pieces))
     if not text:
         return "Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem no delta e inventário."
     if len(text) > limit:
@@ -243,7 +268,7 @@ def render_context(root: Path, *, diff_limit: int = 18_000) -> str:
         "O `article-loop` é uma integração local, auditável e fail-closed para revisão iterativa de artigos matemáticos. Separa PDF original, baseline/champion, propostas de 21 papéis, challenger imutável, gates locais, júri cego, diagnóstico e futura decisão/finalização.",
         f"O marco implementado mais recente é **{current['id'] if current else 'indeterminado'}** ({current['delivery'] if current else 'consulte PLANS.md'}). O próximo marco é **{next_pending['id'] if next_pending else 'indeterminado'}** ({next_pending['delivery'] if next_pending else 'consulte PLANS.md'}).",
         "",
-        "Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (que ainda enfatiza M3).",
+        "Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (introdutório e não normativo).",
         "",
         "## Fluxo conectado e fronteiras de autoridade",
         "",
@@ -318,7 +343,16 @@ def render_context(root: Path, *, diff_limit: int = 18_000) -> str:
         handoff_text = latest_handoff.read_text("utf-8")
         lines.extend(["## Handoff técnico mais recente", "", f"Fonte: `{latest_handoff.relative_to(root).as_posix()}`.", "", "<latest_handoff>", handoff_text.rstrip(), "</latest_handoff>", ""])
 
-    lines.extend(["## README descritivo (possivelmente defasado)", "", "<readme>", readme.rstrip(), "</readme>", ""])
+    lines.extend([
+        "## README descritivo (possivelmente defasado)",
+        "",
+        "O README é incorporado de forma limitada para que uma apresentação extensa do GitHub não volte a inflar o contexto operacional.",
+        "",
+        "<readme>",
+        _bounded_excerpt(readme, limit=6_000, label="README"),
+        "</readme>",
+        "",
+    ])
 
     lines.extend(["## Inventário content-addressed completo", "", "Todo arquivo relevante aparece abaixo. Para aprofundar, leia apenas os caminhos indicados pelo componente/delta; hashes tornam qualquer mudança visível.", "", "| Caminho | Tipo | Bytes | Linhas | SHA-256 | Resumo estrutural |", "|---|---|---:|---:|---|---|"])
     for relative, item in inventory.items():

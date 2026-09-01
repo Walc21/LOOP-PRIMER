@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `790634e49232fc6bf5ef4ed3e0536f1426a4d7c3ab1c36eec14468754572b721`
-- Registrado em: `2026-09-01T09:48:32Z`
-- Git: branch `master`, HEAD `907af5057315`
-- Arquivos relevantes: 151
+- Fingerprint das fontes: `6f2971f08a5feaa6c15b713cedfa0dc50a255fd5378145820f6c83a17f5bd51c`
+- Registrado em: `2026-09-01T11:52:21Z`
+- Git: branch `master`, HEAD `f9111838d8dc`
+- Arquivos relevantes: 158
 
 ## Evolução reconstruída do versionamento
 
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
-| sem marco explícito | 2026-08-13 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/handoffs/03_para_04.md, PLANS.md, control/test_m3_ingestion.py |
+| sem marco explícito | 2026-08-13..2026-09-01 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/pull_request_template.md, .github/workflows/ci.yml, .gitignore, .prime/agent/APPEND_SYSTEM… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14 | 7 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -65,6 +65,7 @@
 | `f8264d61a` | 2026-08-27 | M8 | feat(m8): implement blind external jury evaluation and meta-review | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
 | `765aac3e4` | 2026-08-28 | M9 | feat(m9): implement diagnosis and harden evaluation | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
 | `907af5057` | 2026-08-28 | M9 | fix(m9): recompute published diagnosis semantics | .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/handoffs/08_para_09.md, .prime/handoffs/09_para_10.md, PLANS.md, control/test_m9_diagnosis.py, docs/decision… |
+| `f9111838d` | 2026-09-01 | sem marco explícito | feat: initialize LOOP-PRIMER with CI workflows, community standards, and AI context layer | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/pull_request_template.md, .github/workflows/ci.yml, .gitignore, .prime/agent/APPEND_SYSTEM… |
 
 ## Decisões arquiteturais
 
@@ -200,3 +201,90 @@
 **Próximos passos**
 
 - M10 permanece pendente; a suíte integral atual está verde para servir de baseline antes de qualquer implementação futura.
+
+### 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.
+
+- Session ID: `session-b623adc6ee93e8333134`
+- Fingerprint final: `b179c30014db09573fa09040ceb77f26251c885e51a06f99839bef6cf578d8f0`
+- Git final: `f9111838d8dc`; status relevante: 0 item(ns)
+- Delta factual: 7 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- Nenhuma mudança funcional do M10 foi realizada; somente o snapshot inicial obrigatório foi regenerado e esta conclusão diagnóstica foi registrada conforme AGENTS.md.
+
+**Decisões**
+
+- Aplicado fail-closed ao requisito de árvore Git limpa; M10 não foi iniciado.
+
+**Validações**
+
+- python3 scripts/ai_context.py: status current; AI_CONTEXT.md regenerado com sucesso.
+- git status --porcelain=v1: M AI_CONTEXT.md antes da implementação.
+- git merge-base --is-ancestor 907af50 HEAD e 765aac3 HEAD: ambos retornaram sucesso; checkpoints M9 são ancestrais do HEAD f911183.
+
+**Riscos/limites**
+
+- A árvore permanece divergente e não pode receber o commit único do M10 sem uma decisão explícita sobre o AI_CONTEXT.md gerado.
+
+**Próximos passos**
+
+- Limpar ou autorizar a incorporação do AI_CONTEXT.md atual em um baseline separado; então reiniciar o precheck completo do M10.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.github/ISSUE_TEMPLATE/bug_report.md` | `-` | `6e7f0c070911` |
+| added | `.github/ISSUE_TEMPLATE/feature_request.md` | `-` | `bf3b8ec7c497` |
+| added | `.github/pull_request_template.md` | `-` | `42ee22ace252` |
+| added | `.github/workflows/ci.yml` | `-` | `fa6e9e693cbe` |
+| added | `CONTRIBUTING.md` | `-` | `88dd6a0e2eb0` |
+| added | `LICENSE` | `-` | `0d0db335dda4` |
+| added | `SECURITY.md` | `-` | `1adf19468e39` |
+| modified | `README.md` | `73b055ebb203` | `767c7f78d10c` |
+
+### 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.
+
+- Session ID: `session-97c4dfa331be26096a7e`
+- Fingerprint final: `6f2971f08a5feaa6c15b713cedfa0dc50a255fd5378145820f6c83a17f5bd51c`
+- Git final: `f9111838d8dc`; status relevante: 6 item(ns)
+- Delta factual: 0 adicionados, 6 modificados, 0 removidos
+
+**Mudanças**
+
+- A comparação content-addressed comprovou que scripts, gatilhos, testes, plano, arquitetura e ADR originais sobreviveram byte a byte; o commit posterior adicionou sete arquivos e substituiu somente README.md.
+- O README de apresentação do GitHub foi preservado, recebeu novamente o gatilho obrigatório para IAs e passou a declarar corretamente que M10 e os scripts 04/05 continuam pendentes e inertes.
+- scripts/ai_context.py agora limita o README incorporado, normaliza espaços finais de previews e exclui AI_CONTEXT.md, AI_HISTORY.md, ai_sessions.jsonl e ai_snapshot.json do preview Git para impedir autorreferência.
+- O workflow de CI passou a instalar TeX/Poppler e executar a descoberta integral M0-M9; control/test_ai_handoff.py cobre as quatro superfícies de gatilho, preview limitado e idempotência com AI_CONTEXT.md rastreado.
+
+**Decisões**
+
+- As sete adições comunitárias da sessão do GitHub foram mantidas; nenhuma versão, candidato, estado científico ou componente M10 foi alterado.
+- Artefatos gerados permanecem rastreados, mas são excluídos do próprio preview Git; mudanças de fontes continuam aparecendo no fingerprint e no delta.
+
+**Validações**
+
+- Comparação do snapshot original contra a árvore posterior: 7 arquivos adicionados, 1 modificado (README.md), 0 removidos; 11 arquivos centrais conferidos por SHA-256 e idênticos.
+- python3 -m unittest -q control.test_ai_handoff control.test_contracts: 59 testes aprovados.
+- python3 -m unittest discover -s control -p 'test_*.py' -q: 306 testes aprovados em 178.248s.
+- python3 -m py_compile dos utilitários/teste, duas gerações idempotentes de AI_CONTEXT.md e git diff --check: aprovados.
+
+**Riscos/limites**
+
+- AI_CONTEXT.md é um artefato gerado rastreado e pode mudar após novos commits ou fontes; execute o gerador no início e novamente no encerramento conforme AGENTS.md.
+
+**Próximos passos**
+
+- M10 permanece pendente e deve ser iniciado somente em uma sessão separada e autorizada; esta reconciliação não executou artigo, modelos ou rede.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.github/workflows/ci.yml` | `fa6e9e693cbe` | `ab1a06f9a6af` |
+| modified | `PLANS.md` | `287b35b3576f` | `e5fdc5c8c8d1` |
+| modified | `README.md` | `767c7f78d10c` | `c4b17d42beac` |
+| modified | `control/test_ai_handoff.py` | `b660fd15651b` | `9de410fac395` |
+| modified | `docs/decisions.md` | `6526bb3da3fd` | `276e9d1c0e9e` |
+| modified | `scripts/ai_context.py` | `4009029f532f` | `43b8ac9858f5` |
