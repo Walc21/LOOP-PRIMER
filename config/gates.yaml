@@ -1,0 +1,68 @@
+# Gates locais e determinísticos. Nenhum gate chama modelos ou rede.
+schema_version: "1.0.0"
+policy:
+  fail_closed: true
+  allow_unconfigured_gate: false
+  model_calls_allowed: false
+  network_allowed: false
+  correctness_math_is_hard_gate: true
+  style_can_compensate_correctness_math: false
+
+required_before_jury:
+  - config_contracts
+  - role_topology
+  - schema_meta_validation
+
+# M3: SOURCE_READY é local e deliberadamente conservador.  Ele valida a
+# rastreabilidade e a comparabilidade do baseline; não prova correção
+# matemática nem substitui inspeção humana.
+source_ready:
+  maximum_pdf_bytes: 52428800
+  maximum_pages: 1000
+  maximum_zip_members: 1000
+  maximum_zip_member_bytes: 10485760
+  maximum_zip_total_bytes: 52428800
+  maximum_zip_expansion_ratio: 100
+  minimum_text_coverage: 0.80
+  minimum_reference_coverage: 0.80
+  minimum_equation_coverage: 0.80
+  visual_sample_pages: 3
+  # A 20dpi sample of a sparse mathematical page may contain only a small
+  # title/equation footprint; this is still a measured, non-zero threshold.
+  visual_minimum_nonblank_ratio: 0.001
+  ocr_enabled: false
+
+gates:
+  - id: SOURCE_READY
+    command: bin/preflight.sh
+    timeout_seconds: 300
+    deterministic: true
+  - id: config_contracts
+    command: .venv/bin/python -m unittest -v control.test_contracts
+    timeout_seconds: 300
+    deterministic: true
+  - id: role_topology
+    command: .venv/bin/python -m unittest -v control.test_contracts.RoleCatalogTests
+    timeout_seconds: 300
+    deterministic: true
+  - id: schema_meta_validation
+    command: .venv/bin/python -m unittest -v control.test_contracts.SchemaContractTests
+    timeout_seconds: 300
+    deterministic: true
+
+# M7 accepts only this exact ordered local verifier set.  The executable names
+# are policy evidence; their resolution is checked at runtime and fails closed.
+m7_gates:
+  - {id: contracts_state, command: internal:contracts_state, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: source_provenance, command: internal:source_provenance, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: latex_compile_safe, command: pdflatex, verifier_version: m7.4, timeout_seconds: 30}
+  - {id: render, command: pdftoppm, verifier_version: m7.4, timeout_seconds: 30}
+  - {id: pdf_valid, command: pdfinfo, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: references_labels, command: internal:references_labels, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: asset_inventory, command: internal:asset_inventory, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: claim_dependencies, command: internal:claim_dependencies, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: math_critical_issues, command: internal:math_critical_issues, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: forbidden_metatext, command: internal:forbidden_metatext, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: local_budget, command: internal:local_budget, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: manifest_integrity, command: internal:manifest_integrity, verifier_version: m7.4, timeout_seconds: 10}
+  - {id: correctness_math, command: internal:correctness_math, verifier_version: m7.4, timeout_seconds: 10}

@@ -1,0 +1,30 @@
+# Defaults fail-closed: M1 não autoriza qualquer uso pago ou chamada de modelo.
+schema_version: "1.0.0"
+model_execution:
+  enabled: false
+  paid_apis_enabled: false
+  provider: null
+  currency: null
+  total_cost_limit: 0
+  per_cycle_cost_limit: 0
+  max_model_calls: 0
+  max_concurrent_children: 0
+
+rlm:
+  max_depth: 2
+  max_active_submanagers: 5
+  max_specialists_per_submanager: 3
+  sparse_activation_required: true
+
+local_execution:
+  network_allowed: false
+  global_install_allowed: false
+  deterministic_tests_allowed: true
+  max_gate_output_bytes: 65536
+  default_gate_timeout_seconds: 300
+
+# Uma autorização futura deve alterar estes valores em configuração versionada.
+authorization:
+  required_for_model_calls: true
+  required_for_paid_apis: true
+  approval_reference: null

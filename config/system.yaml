@@ -1,0 +1,69 @@
+# Contrato central do article-loop. Não contém credenciais nem comandos de modelo.
+schema_version: "1.0.0"
+project:
+  id: article-loop
+  rlm_max_depth: 2
+  first_auditable_cycle_all_departments: true
+  preserve_original_by_sha256: true
+
+input:
+  primary_pdf: input/inbox/artigo.pdf
+  optional_source: input/inbox/source.zip
+  source_preference: safe_source_zip_then_pdf_reconstruction
+  pdf_only_mode: PDF_ONLY_RECONSTRUCTION
+  required_ready_state: SOURCE_READY
+
+activation_modes:
+  - RUN
+  - CHECK
+  - SHIFT
+  - FREEZE
+
+# Ordem e grafia são canônicas; mudanças exigem nova ADR.
+states:
+  - NEW
+  - INGESTED
+  - SOURCE_READY
+  - CYCLE_PLANNED
+  - DEPARTMENTS_RUNNING
+  - SYNTHESIS_READY
+  - CANDIDATE_BUILT
+  - GATES_PASSED
+  - EVALUATED
+  - DIAGNOSED
+  - DECIDED
+  - COMMITTING
+  - CYCLE_COMPLETE
+  - PAUSED
+  - FINALIZED
+  - TECHNICAL_FAILURE
+
+actions:
+  - PROMOTE
+  - ARCHIVE_PARETO
+  - REJECT
+  - REFOCUS_AND_CONTINUE
+  - CONTINUE_UNCHANGED
+  - REQUEST_EXTRA_JUDGMENT
+  - PAUSE
+  - FINALIZE
+  - ABORT_TECHNICAL
+
+pipeline:
+  - structured_proposals
+  - departmental_consolidation
+  - manager_synthesis
+  - isolated_workspace_merge
+  - immutable_challenger
+  - deterministic_gates
+  - blind_jury
+  - diagnosis
+  - canonical_decision
+  - transactional_finalizer
+  - disposition
+
+authority:
+  challenger_writer: merge
+  agents_write_champion: false
+  finalizer_modifies_evaluated_content: false
+  reevaluate_after_content_change: true
