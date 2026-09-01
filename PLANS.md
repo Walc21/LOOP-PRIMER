@@ -12,7 +12,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
-- Atualizado em 2026-08-28.
+- Atualizado em 2026-09-01.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
 - M2 — máquina de estados, event log e recuperação: concluído após correção contratual final.
@@ -31,6 +31,11 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - M5 corrigido cirurgicamente: memória operacional append-only, grafo de impacto, views
   fechadas e planejador determinístico foram validados sem chamada a agentes ou
   modelos.
+- M9 concluído; M10 continua pendente e não iniciado.
+- Ferramentas auxiliares de handoff para IA concluídas: um gerador local de
+  contexto compacto e um registrador local de histórico de sessões. Elas não
+  alteram a máquina de estados, candidatos, gates ou a autoridade dos scripts
+  científicos M0--M13.
 
 ## Contratos já decididos
 
@@ -128,6 +133,29 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
 ## Registro de progresso
+
+- 2026-09-01 — Camada auxiliar de contexto/handoff concluída. O gerador
+  content-addressed inventaria fontes e estado/runtime canônico (este último
+  somente por metadata/hash), extrai arquitetura/APIs/schemas/testes, incorpora
+  o histórico e publica `AI_CONTEXT.md` idempotentemente. O registrador
+  reconstrói 35 commits e 26 ADRs, recebe resumo estruturado de encerramento,
+  mantém ledger/snapshot e renderiza `docs/AI_HISTORY.md`. Gatilhos foram
+  adicionados a `AGENTS.md`, `CLAUDE.md` e `APPEND_SYSTEM.md`. Passaram 4 testes
+  novos e os 52 testes contratuais existentes, além de `py_compile` e
+  `git diff --check`. A regressão integral iniciou 303 testes, mas terminou com
+  12 falhas e 181 erros ambientais porque `pdflatex` não está instalado;
+  nenhuma dependência global foi instalada e esse limite foi registrado sem
+  atribuí-lo às ferramentas novas.
+
+- 2026-09-01 — Iniciada a camada auxiliar de contexto/handoff para IA. A
+  hipótese é que inventário content-addressed, introspecção estrutural,
+  histórico Git/ADR e deltas desde a última sessão fornecem contexto suficiente
+  sem concatenar aproximadamente 0,9 MB de fontes e testes. A incerteza
+  inevitável é semântica: nenhuma ferramenta determinística consegue substituir
+  uma descrição humana de decisões; por isso o encerramento de sessão exigirá
+  resumo estruturado da IA e manterá um fallback automático apenas factual.
+  Não haverá rede, chamada de modelo, alteração do Prime Agent global nem
+  execução do pipeline científico.
 
 - 2026-08-14 — Correção final restrita de M7 concluída: publicação atômica
   integralmente read-only, verificação canônica do `GateReport`, contratos de

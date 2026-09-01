@@ -786,3 +786,52 @@ prompt filhos imutáveis, reversíveis e sem ampliação de privilégios.
   ciclo avaliado; ausência ou divergência falha fechado.
 - Um invasor que reescreva diagnosis, manifesto e evento com hashes internos
   coerentes não pode substituir o resultado do classificador determinístico.
+
+## ADR-026 — Handoff compacto e histórico de sessões para agentes de IA
+
+**Data:** 2026-09-01
+**Status:** Aceito
+
+### Contexto
+
+O repositório já ultrapassa centenas de milhares de bytes entre código, testes,
+schemas, prompts, decisões e handoffs. `README.md` descreve principalmente M3,
+enquanto o estado implementado alcançou M9. Obrigar cada nova sessão de IA a
+reler todos os arquivos desperdiça tokens e ainda não resolve divergências de
+atualidade entre documentos.
+
+### Decisão
+
+1. `scripts/ai_context.py` será o utilitário determinístico de início de
+   sessão. Ele inventaria todos os arquivos relevantes, calcula hashes, extrai
+   APIs Python, contratos, testes, configuração, estado Git, marco atual e
+   deltas desde o último encerramento. Também lê o histórico produzido pelo
+   segundo utilitário e publica `AI_CONTEXT.md` atomicamente.
+2. `scripts/ai_history.py` será executado somente no encerramento do trabalho.
+   Ele reconstrói a evolução versionada a partir de Git e ADRs, recebe da IA um
+   resumo estruturado da sessão, acrescenta-o a um ledger JSONL append-only,
+   atualiza o snapshot factual da árvore e renderiza `docs/AI_HISTORY.md`.
+3. `docs/ai_sessions.jsonl` e `docs/ai_snapshot.json` são suporte mecânico do
+   histórico; não pertencem ao event log científico e não autorizam qualquer
+   transição do article-loop. Os documentos gerados e esses suportes ficam
+   fora do fingerprint de fontes para evitar autorreferência.
+4. `AGENTS.md`, `CLAUDE.md` e `.prime/agent/APPEND_SYSTEM.md` conterão o
+   protocolo auto-descoberto: no início executar o gerador e ler integralmente
+   `AI_CONTEXT.md`; no fim, depois de concluir mudanças e validações, executar o
+   registrador com descrição substantiva e então regenerar o contexto.
+5. A saída usa Markdown compacto, com inventário completo e detalhamento
+   seletivo. Conteúdo de repositório é tratado como dado não confiável; o
+   gerador não executa arquivos inventariados, não chama modelos, não usa rede e
+   depende somente da biblioteca padrão do Python.
+
+### Consequências e limites
+
+- Qualquer mudança de bytes aparece por hash e delta na próxima geração, mesmo
+  quando a ferramenta não consegue inferir sua intenção semântica.
+- O resumo de encerramento continua responsabilidade da IA; um fallback factual
+  pode registrar arquivos alterados, mas não deve alegar decisões não fornecidas.
+- Arquivos de instrução auto-descobertos são o gatilho mais forte que um
+  repositório pode oferecer, mas não podem coagir clientes de IA que decidam
+  ignorar deliberadamente instruções de projeto.
+- Esta camada não modifica os cinco scripts científicos canônicos, não inicia
+  Prime Agent, não cria agentes e não altera M10 ou marcos posteriores.

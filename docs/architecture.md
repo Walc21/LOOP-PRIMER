@@ -267,6 +267,20 @@ concorrentes com a mesma autoridade de decisão. Em especial,
 challenger: apenas revalidará hashes e aplicará atomicamente `PROMOTE`,
 `ARCHIVE_PARETO`, `REJECT`, `FINALIZE` ou outra ação autorizada.
 
+### Ferramentas auxiliares de handoff para IA
+
+`scripts/ai_context.py`, `scripts/ai_history.py` e o módulo compartilhado
+`scripts/ai_handoff_common.py` são ferramentas de manutenção do repositório,
+não scripts científicos externos. Eles não pertencem à máquina de estados, não
+emitem ações canônicas e não possuem autoridade sobre PDF, champion,
+challengers, gates, júri ou finalização.
+
+O primeiro publica `AI_CONTEXT.md` a partir do inventário atual e do histórico.
+O segundo mantém `docs/AI_HISTORY.md`, apoiado pelo ledger
+`docs/ai_sessions.jsonl` e pelo snapshot `docs/ai_snapshot.json`. Esses
+artefatos ficam deliberadamente fora do fingerprint de fontes para impedir
+recursão, mas são lidos e identificados por hash no documento de contexto.
+
 ## Fluxo de dados e resultados de agentes
 
 A ordem canônica do pipeline é imutável:

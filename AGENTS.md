@@ -1,5 +1,36 @@
 # Instruções duráveis — article-loop
 
+## Protocolo obrigatório de contexto e encerramento para IAs
+
+Estas etapas são obrigatórias para qualquer IA que trabalhe neste repositório.
+Elas são infraestrutura de handoff e não autorizam execução do pipeline
+científico, Prime Agent, modelos, rede ou APIs pagas.
+
+### No início, antes de analisar ou alterar qualquer arquivo
+
+1. Na raiz do repositório, execute exatamente
+   `python3 scripts/ai_context.py`.
+2. Leia `AI_CONTEXT.md` integralmente antes de planejar, diagnosticar ou editar.
+3. Se o gerador falhar, pare e relate a falha; não substitua o contexto por uma
+   varredura improvisada nem alegue que o snapshot está atual.
+4. **Não execute `scripts/ai_history.py` no início.** Ele registra o estado
+   final e só pertence ao encerramento da sessão.
+
+### No fim, somente depois de concluir trabalho e validações
+
+1. Execute `python3 scripts/ai_history.py` com um `--summary` substantivo e
+   quantos `--change`, `--decision`, `--validation`, `--risk` e `--next-step`
+   forem necessários. Registre comandos e resultados reais; não invente
+   validações ou decisões. Para conteúdo longo, use `--entry-file` ou
+   `--stdin-json` com o mesmo contrato estruturado.
+2. Mesmo que a sessão seja apenas diagnóstica, registre a conclusão e declare
+   explicitamente que não houve alteração quando aplicável. `--auto` é somente
+   fallback factual e não substitui um resumo de qualidade.
+3. Depois do histórico, execute novamente `python3 scripts/ai_context.py` para
+   que `AI_CONTEXT.md` incorpore o estado e o encerramento recém-registrados.
+4. Não registre o encerramento antes da última edição/teste: isso faria o
+   snapshot esconder mudanças ainda não documentadas.
+
 ## Propósito e limites
 
 Este repositório implementará uma revisão iterativa, auditável e esparsa de
@@ -83,6 +114,18 @@ expressa do usuário.
   estado; nunca descarte candidatos sem preservar a justificativa.
 - Não marque tarefa como concluída por limite de tokens, compactação,
   inatividade de filho ou saída de `/autonomous`.
+- **Fronteira de Test Doubles**: Adaptadores e componentes com `is_test_double=True`
+  devem ser recusados por padrão em APIs de produção/execução, falhando fechado a
+  menos que autorizados por parâmetro estritamente booleano (`isinstance(..., bool)`).
+  CLIs devem aceitar dublês exclusivamente por flags explícitas (e.g. `--test-mode`),
+  nunca por payloads JSON de entrada.
+- **Durabilidade e Atomicidade**: Publicações duráveis devem persistir arquivos e
+  diretórios com `fsync` em staging antes de `os.replace` e sincronizar o diretório-pai
+  após o rename. Árvores read-only temporárias devem ter permissões de escrita
+  restauradas antes de `shutil.rmtree()` em blocos de limpeza.
+- **Vinculação Criptográfica**: Eventos no log durável e artefatos em disco devem
+  conter e validar hashes SHA-256 canônicos exatos, sem fallbacks para hashes
+  alternativos ou incompletos.
 
 ## Mudanças e testes
 
