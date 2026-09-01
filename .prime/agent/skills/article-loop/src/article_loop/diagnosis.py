@@ -294,6 +294,14 @@ def load_history_series(
     *,
     store: DurableStore | None = None,
 ) -> list[CycleRecord]:
+    """Load and revalidate closed cycle records from cycle 0 up to target_cycle_id.
+
+    Revalidates integrity of each cycle and strictly enforces:
+      - Continuous cycle sequence (0, 1, ..., target_cycle_id)
+      - Run ID matching
+      - Zero look-ahead: cycles > target_cycle_id are ignored/forbidden
+      - Artifact presence and hash verification
+    """
     if isinstance(target_cycle_id, bool) or not isinstance(target_cycle_id, int) or target_cycle_id < 0:
         raise DiagnosisError("target_cycle_id must be a non-negative integer")
     root = Path(root).resolve()
@@ -402,6 +410,8 @@ def load_history_series(
         for verdict in verdicts:
             if verdict["verdict_id"] not in consistent_ids:
                 continue
+            # dimension_scores and correctness_math_pass are always indexed by
+            # neutral identity [A, B], independently of presentation_order.
             for dimension in DIMENSIONS:
                 scores_champion[dimension].append(float(verdict["dimension_scores"][0][dimension]))
                 scores_challenger[dimension].append(float(verdict["dimension_scores"][1][dimension]))
@@ -443,6 +453,21 @@ def classify_cycle_progress(
     window_size: int = DEFAULT_WINDOW_SIZE,
     mde: float = DEFAULT_MDE,
 ) -> tuple[str, list[str], str, list[str]]:
+    """Determine the deterministic progress classification and explanation signals.
+
+    Returns:
+      (classification, signals, recommended_mode, focus_areas)
+
+    Strict Precedence Order:
+      1. TECHNICAL_FAILURE
+      2. REGRESSING on a lost mathematical hard gate
+      3. INCONCLUSIVE (insufficient window, jury noise / all divergent)
+      4. REGRESSING (core dimension regression or worsened severity)
+      5. OSCILLATING (score flip-flops or reopened issues over window)
+      6. LOCAL_PLATEAU (full window, global delta < MDE, localized bottleneck)
+      7. GLOBAL_PLATEAU (full window, global delta < MDE, no localized bottleneck)
+      8. EVOLVING (material gain >= MDE, no regression)
+    """
     window_size, mde = _validate_classification_parameters(window_size, mde)
     if not series:
         return "INCONCLUSIVE", ["empty_series"], "CHECK", ["all"]
@@ -460,11 +485,14 @@ def classify_cycle_progress(
     effective_window = list(series[-min(len(series), window_size):])
     signals.append(f"effective_window_length:{len(effective_window)}")
 
+    # 1. Check TECHNICAL_FAILURE
+    # Look for technical gate failures or unmeasured article quality
     gate_failures: list[str] = []
     for g in current.gate_report.get("gates", []):
         if not g.get("passed"):
             gate_failures.append(g.get("gate_id", "unknown_gate"))
 
+    # If any gate failed, inspect if it is technical vs scientific math
     technical_gates = {
         "contracts_state", "source_provenance", "latex_compile_safe", "render",
         "pdf_valid", "references_labels", "asset_inventory", "local_budget",
@@ -483,10 +511,13 @@ def classify_cycle_progress(
         signals.append("gate_report_overall_pass_false_non_math")
         return "TECHNICAL_FAILURE", signals, "CHECK", ["infrastructure"]
 
+    # A mathematical hard-gate loss is never masked by an inconclusive jury.
     if not current.correctness_math_pass or not current.gate_report.get("correctness_math_pass"):
         signals.append("math_hard_gate_lost")
         return "REGRESSING", signals, "CHECK", ["section:proof", "theorem"]
 
+    # 2. Check INCONCLUSIVE
+    # Check if jury was inconclusive or divergent
     consistent_jurors = current.evaluation_report.get("consistent_jurors", 0)
     if consistent_jurors < 2 or current.overall_outcome == "inconclusive":
         signals.append(f"jury_inconclusive:consistent_count={consistent_jurors}")
@@ -494,18 +525,22 @@ def classify_cycle_progress(
             signals.append(f"meta_reviewer_veto:{current.meta_verdict.get('veto_reason')}")
         return "INCONCLUSIVE", signals, "CHECK", ["jury_divergence"]
 
+    # 3. Check remaining REGRESSING signals
     active_dimensions = _active_dimensions(current)
     if not active_dimensions:
         signals.append("all_specialist_dimensions_frozen")
         return "INCONCLUSIVE", signals, "CHECK", ["activation"]
 
+    # B. Score regression on correctness_math or core dimensions
     math_delta = current.dimension_scores_challenger.get("correctness_math", 0) - current.dimension_scores_champion.get("correctness_math", 0)
     if "correctness_math" in active_dimensions and math_delta < -0.01:
         signals.append(f"math_score_regressed:{math_delta:.2f}")
         return "REGRESSING", signals, "CHECK", ["correctness_math"]
 
+    # C. Strong regression in multiple dimensions (e.g. champion favored)
     if current.overall_outcome == "champion_favored":
         signals.append("champion_favored_by_jury")
+        # Identify which dimensions dropped most
         dropped_dims = [
             d for d in active_dimensions
             if (current.dimension_scores_challenger.get(d, 0) - current.dimension_scores_champion.get(d, 0)) < -mde
@@ -514,14 +549,16 @@ def classify_cycle_progress(
             signals.append(f"regressed_dimensions:{','.join(sorted(dropped_dims))}")
             return "REGRESSING", signals, "CHECK", dropped_dims or ["all"]
 
+    # D. Issue severity worsened
     if len(effective_window) >= 2:
         prev = effective_window[-2]
         sev_curr = _issue_severity_total(current.active_issues)
         sev_prev = _issue_severity_total(prev.active_issues)
-        if sev_curr > sev_prev + 5:
+        if sev_curr > sev_prev + 5:  # significant severity spike
             signals.append(f"issue_severity_increased:{sev_prev}->{sev_curr}")
             return "REGRESSING", signals, "CHECK", ["issues"]
 
+    # 4. Check OSCILLATING (requires window >= 2)
     if len(effective_window) >= 2:
         reopened_issue_ids = sorted({
             str(issue.get("record_id") or issue.get("issue_id"))
@@ -533,6 +570,7 @@ def classify_cycle_progress(
             signals.append(f"issues_reopened:{','.join(reopened_issue_ids)}")
             return "OSCILLATING", signals, "SHIFT", ["issues", "stabilization"]
 
+        # Check for alternating trade-offs or reversals in dimensions
         reversals = 0
         for d in _active_dimensions(current):
             deltas: list[float] = []
@@ -540,6 +578,8 @@ def classify_cycle_progress(
                 c_rec = effective_window[i]
                 d_delta = c_rec.dimension_scores_challenger.get(d, 0) - c_rec.dimension_scores_champion.get(d, 0)
                 deltas.append(d_delta)
+            # Check every adjacent pair in the effective window, not only the
+            # most recent pair, and ignore sub-MDE numerical noise.
             if any(
                 left * right < 0 and min(abs(left), abs(right)) >= mde
                 for left, right in zip(deltas, deltas[1:])
@@ -551,6 +591,8 @@ def classify_cycle_progress(
             signals.append(f"multiple_reversals_detected:{reversals}")
             return "OSCILLATING", signals, "SHIFT", ["stabilization"]
 
+    # 5. Check EVOLVING (material validated gain in current cycle)
+    # Calculate overall score delta for challenger vs champion in current cycle
     score_deltas = {
         d: current.dimension_scores_challenger.get(d, 0) - current.dimension_scores_champion.get(d, 0)
         for d in active_dimensions
@@ -567,10 +609,14 @@ def classify_cycle_progress(
         signals.append(f"material_gain_validated:delta={avg_delta:.2f}>={mde:.2f}")
         return "EVOLVING", signals, "RUN", ["continuation"]
 
+    # 6. Check PLATEAU (Local vs Global)
+    # Stagnation / Plateau CANNOT be declared with an incomplete window!
+    # If the window is smaller than required window_size and no evolving/regressing, return INCONCLUSIVE
     if len(effective_window) < window_size:
         signals.append(f"insufficient_window_for_plateau:{len(effective_window)}<{window_size}")
         return "INCONCLUSIVE", signals, "CHECK", ["insufficient_history"]
 
+    # Full window available: check if all cycles in window have |avg_delta| < mde
     window_deltas = []
     for c_rec in effective_window:
         c_deltas = [
@@ -583,6 +629,8 @@ def classify_cycle_progress(
     signals.append(f"window_average_deltas:{[round(x, 2) for x in window_deltas]}")
 
     if is_stagnant:
+        # Differentiate between LOCAL_PLATEAU and GLOBAL_PLATEAU
+        # Inspect departmental / dimension bottlenecks
         dept_avg_scores: dict[str, float] = {}
         active_departments = _active_departments(current)
         active_roles = _active_roles(current.activation_map)
@@ -591,6 +639,7 @@ def classify_cycle_progress(
             scores = [current.dimension_scores_challenger.get(d, 0) for d in dims]
             dept_avg_scores[dept] = sum(scores) / len(scores) if scores else 0.0
 
+        # Check if there is a single clear lagging department (e.g. score < 3.0 or significantly lower than others)
         sorted_depts = sorted(dept_avg_scores.items(), key=lambda kv: kv[1])
         lowest_dept, lowest_score = sorted_depts[0]
         second_score = sorted_depts[1][1] if len(sorted_depts) > 1 else 5.0
@@ -599,6 +648,7 @@ def classify_cycle_progress(
 
         if lowest_score < 3.0 and second_score >= 3.0:
             signals.append(f"localized_departmental_bottleneck:{lowest_dept}={lowest_score:.2f}")
+            # Map department to primary specialist role
             preferred_role = _DEPARTMENT_PRIMARY_ROLE[lowest_dept]
             focus_role = preferred_role if preferred_role in active_roles else next(
                 (role for role in CHILDREN[lowest_dept] if role in active_roles),
@@ -606,9 +656,12 @@ def classify_cycle_progress(
             )
             return "LOCAL_PLATEAU", signals, "SHIFT", [lowest_dept, focus_role]
 
+        # No single localized bottleneck -> GLOBAL_PLATEAU
         signals.append("global_stagnation_across_all_departments")
         return "GLOBAL_PLATEAU", signals, "SHIFT", ["general_refocus"]
 
+    # A score direction that was not validated by the M8 eligibility and
+    # challenger-favored outcome may never be promoted to EVOLVING.
     if avg_delta >= 0.0:
         signals.append("positive_direction_not_validated_by_jury")
         return "INCONCLUSIVE", signals, "CHECK", ["unvalidated_direction"]
@@ -619,6 +672,7 @@ def _verify_diagnosis_classification(
     diagnosis: Mapping[str, Any],
     series: Sequence[CycleRecord],
 ) -> None:
+    """Recompute the diagnosis decision from its committed source parameters."""
     classification, signals, recommended_mode, focus = classify_cycle_progress(
         series,
         window_size=diagnosis.get("window_size"),
@@ -654,6 +708,7 @@ def _revalidate_published_diagnosis(
     expected_window_size: int | None = None,
     expected_mde: float | None = None,
 ) -> tuple[dict[str, Any], list[str]]:
+    """Revalidate a canonical diagnosis and all manifest bindings."""
     root = Path(root).resolve()
     canonical_dir = f"state/diagnosis/{expected_run_id}/c{expected_cycle_id:04d}"
     try:
@@ -750,6 +805,7 @@ def verify_published_diagnosis(
     *,
     store: DurableStore | None = None,
 ) -> tuple[dict[str, Any], list[str]]:
+    """Verify the canonical M9 artifact and its durable DIAGNOSED event."""
     if not isinstance(run_id, str) or not run_id:
         raise DiagnosisError("run_id must be a non-empty string")
     if isinstance(cycle_id, bool) or not isinstance(cycle_id, int) or cycle_id < 0:
@@ -833,6 +889,18 @@ def diagnose_cycle(
     store: DurableStore | None = None,
     fault: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
+    """Execute the canonical progress stagnation detection and diagnosis pipeline for M9.
+
+    Preconditions:
+      - Active state in DurableStore must be State.EVALUATED
+      - Historical series of closed cycles up to cycle_id is valid and contiguous
+      - Evaluation artifacts and GateReports verify cryptographically
+    Postconditions:
+      - Canonical Diagnosis object generated and schema-validated
+      - Published transactionally in state/diagnosis/<run_id>/c<cycle:04d>/
+      - State transitioned to State.DIAGNOSED in DurableStore
+      - State.DECIDED is NEVER reached by M9
+    """
     if not isinstance(run_id, str) or not run_id:
         raise DiagnosisError("run_id must be a non-empty string")
     if cycle_id is not None and (
@@ -849,6 +917,7 @@ def diagnose_cycle(
         if fault:
             fault(stage)
 
+    # 1. Verify active state in DurableStore
     events = store.read_events(run_id)
     if not events:
         raise DiagnosisError("run has no events")
@@ -893,6 +962,8 @@ def diagnose_cycle(
 
     _trigger_fault("after_preconditions_verified")
 
+    # 2. Revalidate the complete M8 history and its event-log bindings before
+    # accepting either a fresh or a crash-recovered diagnosis publication.
     series = load_history_series(root, run_id, effective_cycle_id, store=store)
     if not series:
         raise DiagnosisError(f"no historical series available for cycle {effective_cycle_id}")
@@ -905,6 +976,7 @@ def diagnose_cycle(
     ):
         raise DiagnosisError("active EVALUATED event differs from verified evaluation history")
 
+    # 3. Check for already published diagnosis (Idempotent Recovery & Crash Safety)
     diag_parent = _managed_directory(root, f"state/diagnosis/{run_id}", create=False)
     diag_dir = diag_parent / f"c{effective_cycle_id:04d}"
     if diag_dir.exists():
@@ -945,6 +1017,7 @@ def diagnose_cycle(
         )
         return existing_diag
 
+    # 4. Classify progress using pure classification engine
     classification, signals, recommended_mode, focus = classify_cycle_progress(
         series,
         window_size=window_size,
@@ -953,6 +1026,8 @@ def diagnose_cycle(
 
     _trigger_fault("after_classification_computed")
 
+    # 5. Build a fully content-addressed, retry-stable Diagnosis.  The durable
+    # EVALUATED event timestamp supplies a stable creation time across crashes.
     evidence_locators = [
         f"state/evaluations/{run_id}/c{effective_cycle_id:04d}/evaluation.json",
         current_record.gate_report["report_locator"],
@@ -986,6 +1061,7 @@ def diagnose_cycle(
     except EvaluationError as exc:
         raise DiagnosisError("generated diagnosis does not satisfy its schema") from exc
 
+    # 6. Write-once staging and transactional publication
     diag_parent = _managed_directory(root, f"state/diagnosis/{run_id}", create=True)
     staging = tempfile.mkdtemp(prefix=f".staging_diag_c{effective_cycle_id:04d}_", dir=diag_parent)
     staging_path = Path(staging)
@@ -1051,6 +1127,7 @@ def diagnose_cycle(
         expected_mde=mde,
     )
 
+    # 7. Record DIAGNOSED event in DurableStore
     artifact_hashes = sorted([
         diag_hash,
         manifest_hash,
