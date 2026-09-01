@@ -1,0 +1,19 @@
+schema_version: "1.0.0"
+id: S10
+name: subgerente estrutural/auditorial
+kind: submanager
+department: estrutural/auditorial
+rlm_depth: 1
+parent_id: M00
+children_ids:
+  - W11
+  - W12
+  - W13
+responsibility: Consolidar a auditoria estrutural.
+allowed_activation_modes:
+  - RUN
+  - CHECK
+  - SHIFT
+  - FREEZE
+produces_proposals_only: true
+writes_champion: false

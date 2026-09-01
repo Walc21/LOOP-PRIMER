@@ -1,0 +1,18 @@
+schema_version: "1.0.0"
+id: M00
+name: gerente geral
+kind: manager
+department: direção
+rlm_depth: 0
+parent_id: null
+children_ids:
+  - S10
+  - S20
+  - S30
+  - S40
+  - S50
+responsibility: Planejar ciclos, sintetizar propostas e aplicar decisões canônicas.
+allowed_activation_modes:
+  - RUN
+produces_proposals_only: true
+writes_champion: false

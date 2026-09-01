@@ -1,0 +1,16 @@
+schema_version: "1.0.0"
+id: W13
+name: contribuições e conclusão
+kind: specialist
+department: estrutural/auditorial
+rlm_depth: 2
+parent_id: S10
+children_ids: []
+responsibility: Propor correções de contribuições e conclusão.
+allowed_activation_modes:
+  - RUN
+  - CHECK
+  - SHIFT
+  - FREEZE
+produces_proposals_only: true
+writes_champion: false
