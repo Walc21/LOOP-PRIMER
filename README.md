@@ -1,3 +1,8 @@
+> **Entrada obrigatória para IAs:** execute `python3 scripts/ai_context.py` e
+> leia `AI_CONTEXT.md` integralmente antes de trabalhar. No encerramento, use
+> `scripts/ai_history.py` conforme o protocolo no topo de `AGENTS.md` e regere o
+> contexto. Este README é introdutório e não substitui o snapshot atual.
+
 <div align="center">
 
 # 🔬 LOOP-PRIMER
@@ -11,10 +16,16 @@
 [![Verification: Deterministic Gates](https://img.shields.io/badge/Verification-13%20Deterministic%20Gates-red.svg)](docs/decisions.md)
 
 <p align="center">
-  <b>A zero-hallucination, formally audited, multi-agent peer review loop engineered for LaTeX and PDF scientific literature.</b>
+  <b>A deterministic, auditable multi-agent review loop engineered for LaTeX and PDF scientific literature.</b>
 </p>
 
 </div>
+
+> **Implementation status:** M0–M9 are implemented and locally validated. M10
+> (canonical decision and transactional finalizer) and M11–M13 remain pending;
+> `scripts/04_compensation_policy.py` and
+> `scripts/05_transactional_finalizer.py` are reserved stubs, not operational
+> CLIs. No real article or model is run by the commands documented below.
 
 ---
 
@@ -35,7 +46,10 @@
 
 ## 🔭 Executive Summary
 
-**LOOP-PRIMER** is an enterprise-grade, deterministic multi-agent framework designed to autonomously analyze, critique, mathematically verify, and iteratively improve complex scientific papers. 
+**LOOP-PRIMER** is a contract-first, deterministic framework under incremental
+implementation for auditable analysis, critique, mathematical verification and
+iterative improvement of scientific papers. The implemented pipeline currently
+ends at M9 diagnosis/refocus; decision and finalization remain planned work.
 
 Unlike conventional LLM wrappers, LOOP-PRIMER operates under **strict mathematical and architectural constraints**:
 - **Air-gapped & Offline Verification**: No unauthenticated external network requests or speculative token generation during validation.
@@ -99,12 +113,12 @@ flowchart TD
     
     J --> K{"🏆 Jury & Meta-Review Verdict"}
     K -->|Champion Won| L["📈 M9: Stagnation & Oscillation Detector"]
-    K -->|Challenger Won| M["🌟 Promote to Champion (Atomic Transaction)"]
+    K -->|Challenger Won| M["🧭 M10 planned: Decide disposition"]
     K -->|Pareto Tradeoff| N["📊 Archive in Pareto Frontier"]
     
     L --> O["🔄 Refocus Plan & Budget Compensation"]
     O --> E
-    M --> P["🏁 Transactional Finalizer & Signed Receipts"]
+    M --> P["🏁 M10 planned: Transactional finalizer"]
 ```
 
 ---
@@ -143,7 +157,7 @@ LOOP-PRIMER establishes a strict 3-tier organizational hierarchy:
 
 LOOP-PRIMER enforces security by construction:
 
-1. **Gate Guardrails**: Prohibits speculative hallucination. If OCR confidence fails or textual coverage is insufficient, execution halts immediately with explicit issue diagnostics.
+1. **Gate Guardrails**: Missing or insufficient deterministic evidence fails closed. If OCR confidence or textual coverage is insufficient, execution halts with explicit issue diagnostics.
 2. **Immutable Original Staging**: Manuscripts placed in `input/inbox/` are never overwritten in-place. Staging creates content-addressed read-only mirrors in `artifacts/original/<sha256>/`.
 3. **Cryptographic Chaining**: Every state mutation records an event in `state/events/` referencing parent hashes.
 4. **Offline Isolation**: Core synthesis and local contract tests require **zero** internet connectivity and **zero** paid API keys.
@@ -156,7 +170,7 @@ LOOP-PRIMER enforces security by construction:
 
 - Linux (Ubuntu 22.04+, Debian 12+, Arch, etc.) or macOS
 - Python 3.11+
-- TeX Live & Poppler (`pdflatex`, `pdfinfo`, `pdftotext`) — *Optional for full PDF compilation, contract tests run offline with standard Python*
+- TeX Live & Poppler (`pdflatex`, `pdfinfo`, `pdftotext`) — required by the full regression suite and installed by `bin/bootstrap-deps.sh` on Debian/Ubuntu
 
 ### 2. Installation & Automated Bootstrap
 
@@ -185,15 +199,6 @@ pip install -r requirements-dev.txt
 
 # Run AI context and handoff tests
 .venv/bin/python -m unittest control.test_ai_handoff
-
-# Run all milestone test suites
-.venv/bin/python -m unittest control.test_m2_durable_state \
-                         control.test_m4_prompts \
-                         control.test_m5_blackboard_activation \
-                         control.test_m6_orchestration \
-                         control.test_m7_synthesis_gates \
-                         control.test_m8_evaluation \
-                         control.test_m9_diagnosis
 ```
 
 ### 4. Running Preflight Ingestion
@@ -214,8 +219,8 @@ LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
 - **`scripts/01_external_evaluator.py`**: Double-blind jury evaluator CLI (Milestone 8).
 - **`scripts/02_stagnation_detector.py`**: Plateau, oscillation, and diagnostic detector (Milestone 9).
 - **`scripts/03_refocus_generator.py`**: Adaptive prompt and parameter refocusing generator (Milestone 9).
-- **`scripts/04_compensation_policy.py`**: Dynamic budget and attention compensation calculator.
-- **`scripts/05_transactional_finalizer.py`**: Atomic candidate promotion and Pareto archive manager.
+- **`scripts/04_compensation_policy.py`**: Reserved, inert stub for Milestone 10.
+- **`scripts/05_transactional_finalizer.py`**: Reserved, inert stub for Milestone 10.
 - **`scripts/ai_context.py`**: Deterministic content-addressed session context snapshot generator.
 - **`scripts/ai_history.py`**: Session ledger and ADR history updater.
 
@@ -235,7 +240,7 @@ LOOP-PRIMER/
 ├── config/                       # Declarative budgets, gates, roles, and JSON schemas
 │   ├── roles/                    # 21 YAML definitions for M00, S10-S50, W11-W53
 │   ├── rubrics/                  # Evaluation rubrics for blind jury
-│   └── schemas/                  # 19 JSON Schema definitions for strict validation
+│   └── schemas/                  # 20 JSON Schema definitions for strict validation
 ├── control/                      # Contract and milestone test suites (M1 through M9)
 ├── docs/                         # Architecture, ADRs, compatibility, and AI history
 │   ├── architecture.md           # Canonical system architecture
