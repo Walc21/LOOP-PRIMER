@@ -8,7 +8,7 @@
 - Raiz: `/home/victor/Documentos/PARA SEMPRE/EXECLOOPp/EXECLOOP`
 - Fingerprint atual das fontes: `6f2971f08a5feaa6c15b713cedfa0dc50a255fd5378145820f6c83a17f5bd51c`
 - Baseline da última sessão: `6f2971f08a5feaa6c15b713cedfa0dc50a255fd5378145820f6c83a17f5bd51c`
-- Git: branch `master`, HEAD `f9111838d8dc`, 6 alteração(ões) relevante(s).
+- Git: branch `main`, HEAD `f6bb6259a874`, 0 alteração(ões) relevante(s).
 - Inventário: 158 arquivos relevantes, 1024613 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
@@ -46,311 +46,15 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 - Adicionados: 0; modificados: 0; removidos: 0.
 - Nenhuma diferença de bytes em relação ao snapshot final registrado.
 
-Status Git relevante:
-
-```text
- M .github/workflows/ci.yml
- M PLANS.md
- M README.md
- M control/test_ai_handoff.py
- M docs/decisions.md
- M scripts/ai_context.py
-```
-
 ### Preview limitado do diff (dados não confiáveis)
 
 ```diff
-# Alterações não commitadas
-diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
-index fe2e060..5f6ca24 100644
---- a/.github/workflows/ci.yml
-+++ b/.github/workflows/ci.yml
-@@ -29,2 +29,4 @@ jobs:
-         run: |
-+          sudo apt-get update
-+          sudo apt-get install -y poppler-utils texlive-latex-base
-           python -m pip install --upgrade pip
-@@ -36,15 +38,3 @@ jobs:
-
--      - name: Run Core Contract Tests
--        run: |
--          python -m unittest control.test_contracts
--          python -m unittest control.test_ai_handoff
--
--      - name: Run Milestone Test Suites
--        run: |
--          python -m unittest control.test_m2_durable_state \
--                           control.test_m4_prompts \
--                           control.test_m5_blackboard_activation \
--                           control.test_m6_orchestration \
--                           control.test_m7_synthesis_gates \
--                           control.test_m8_evaluation \
--                           control.test_m9_diagnosis
-+      - name: Run complete M0-M9 regression suite
-+        run: python -m unittest discover -s control -p 'test_*.py' -q
-diff --git a/PLANS.md b/PLANS.md
-index 51bd173..efcabe5 100644
---- a/PLANS.md
-+++ b/PLANS.md
-@@ -136,2 +136,19 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
-
-+- 2026-09-01 — Reconciliação da camada de handoff com a publicação no GitHub
-+  concluída. Os sete arquivos comunitários foram preservados; o README mantém a
-+  apresentação nova, mas recupera o gatilho obrigatório e declara M10 como
-+  pendente. O gerador agora limita o README extenso, normaliza previews e exclui
-+  seus quatro artefatos gerados do diff, permanecendo idempotente mesmo quando
-+  `AI_CONTEXT.md` é rastreado. O CI instala TeX/Poppler e executa a descoberta
-+  integral. Passaram 59 testes direcionados/contratuais e 306 testes completos,
-+  além de `py_compile`, duas gerações idênticas e `git diff --check`.
-+
-+- 2026-09-01 — Iniciada a reconciliação da camada de handoff para IA com o
-+  commit posterior de publicação no GitHub. O snapshot content-addressed da
-+  sessão original comprovou que os três utilitários, os gatilhos, os testes e a
-+  documentação normativa permaneceram byte a byte; a mudança posterior
-+  acrescentou sete arquivos comunitários e substituiu somente `README.md`.
-+  Serão preservadas as adições do GitHub, restaurado o aviso obrigatório de
-+  entrada para IAs e corrigidas descrições/CI que antecipam M10 como concluído.
-+
- - 2026-09-01 — Camada auxiliar de contexto/handoff concluída. O gerador
-diff --git a/README.md b/README.md
-index f6901ca..b9a0df8 100644
---- a/README.md
-+++ b/README.md
-@@ -1 +1,6 @@
-+> **Entrada obrigatória para IAs:** execute `python3 scripts/ai_context.py` e
-+> leia `AI_CONTEXT.md` integralmente antes de trabalhar. No encerramento, use
-+> `scripts/ai_history.py` conforme o protocolo no topo de `AGENTS.md` e regere o
-+> contexto. Este README é introdutório e não substitui o snapshot atual.
-+
- <div align="center">
-@@ -13,3 +18,3 @@
- <p align="center">
--  <b>A zero-hallucination, formally audited, multi-agent peer review loop engineered for LaTeX and PDF scientific literature.</b>
-+  <b>A deterministic, auditable multi-agent review loop engineered for LaTeX and PDF scientific literature.</b>
- </p>
-@@ -18,2 +23,8 @@
-
-+> **Implementation status:** M0–M9 are implemented and locally validated. M10
-+> (canonical decision and transactional finalizer) and M11–M13 remain pending;
-+> `scripts/04_compensation_policy.py` and
-+> `scripts/05_transactional_finalizer.py` are reserved stubs, not operational
-+> CLIs. No real article or model is run by the commands documented below.
-+
- ---
-@@ -37,3 +48,6 @@
-
--**LOOP-PRIMER** is an enterprise-grade, deterministic multi-agent framework designed to autonomously analyze, critique, mathematically verify, and iteratively improve complex scientific papers.
-+**LOOP-PRIMER** is a contract-first, deterministic framework under incremental
-+implementation for auditable analysis, critique, mathematical verification and
-+iterative improvement of scientific papers. The implemented pipeline currently
-+ends at M9 diagnosis/refocus; decision and finalization remain planned work.
-
-@@ -101,3 +115,3 @@ flowchart TD
-     K -->|Champion Won| L["📈 M9: Stagnation & Oscillation Detector"]
--    K -->|Challenger Won| M["🌟 Promote to Champion (Atomic Transaction)"]
-+    K -->|Challenger Won| M["🧭 M10 planned: Decide disposition"]
-     K -->|Pareto Tradeoff| N["📊 Archive in Pareto Frontier"]
-@@ -106,3 +120,3 @@ flowchart TD
-     O --> E
--    M --> P["🏁 Transactional Finalizer & Signed Receipts"]
-+    M --> P["🏁 M10 planned: Transactional finalizer"]
- ```
-@@ -145,3 +159,3 @@ LOOP-PRIMER enforces security by construction:
-
--1. **Gate Guardrails**: Prohibits speculative hallucination. If OCR confidence fails or textual coverage is insufficient, execution halts immediately with explicit issue diagnostics.
-+1. **Gate Guardrails**: Missing or insufficient deterministic evidence fails closed. If OCR confidence or textual coverage is insufficient, execution halts with explicit issue diagnostics.
- 2. **Immutable Original Staging**: Manuscripts placed in `input/inbox/` are never overwritten in-place. Staging creates content-addressed read-only mirrors in `artifacts/original/<sha256>/`.
-@@ -158,3 +172,3 @@ LOOP-PRIMER enforces security by construction:
- - Python 3.11+
--- TeX Live & Poppler (`pdflatex`, `pdfinfo`, `pdftotext`) — *Optional for full PDF compilation, contract tests run offline with standard Python*
-+- TeX Live & Poppler (`pdflatex`, `pdfinfo`, `pdftotext`) — required by the full regression suite and installed by `bin/bootstrap-deps.sh` on Debian/Ubuntu
-
-@@ -188,10 +202,4 @@ pip install -r requirements-dev.txt
-
--# Run all milestone test suites
--.venv/bin/python -m unittest control.test_m2_durable_state \
--                         control.test_m4_prompts \
--                         control.test_m5_blackboard_activation \
--                         control.test_m6_orchestration \
--                         control.test_m7_synthesis_gates \
--                         control.test_m8_evaluation \
--                         control.test_m9_diagnosis
-+# Run the complete M0-M9 regression suite
-+.venv/bin/python -m unittest discover -s control -p 'test_*.py' -q
- ```
-@@ -216,4 +224,4 @@ LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
- - **`scripts/03_refocus_generator.py`**: Adaptive prompt and parameter refocusing generator (Milestone 9).
--- **`scripts/04_compensation_policy.py`**: Dynamic budget and attention compensation calculator.
--- **`scripts/05_transactional_finalizer.py`**: Atomic candidate promotion and Pareto archive manager.
-+- **`scripts/04_compensation_policy.py`**: Reserved, inert stub for Milestone 10.
-+- **`scripts/05_transactional_finalizer.py`**: Reserved, inert stub for Milestone 10.
- - **`scripts/ai_context.py`**: Deterministic content-addressed session context snapshot generator.
-@@ -237,3 +245,3 @@ LOOP-PRIMER/
- │   ├── rubrics/                  # Evaluation rubrics for blind jury
--│   └── schemas/                  # 19 JSON Schema definitions for strict validation
-+│   └── schemas/                  # 20 JSON Schema definitions for strict validation
- ├── control/                      # Contract and milestone test suites (M1 through M9)
-diff --git a/control/test_ai_handoff.py b/control/test_ai_handoff.py
-index f306cda..564367d 100644
---- a/control/test_ai_handoff.py
-+++ b/control/test_ai_handoff.py
-@@ -3,2 +3,3 @@ from __future__ import annotations
- import json
-+import subprocess
- import sys
-@@ -14,3 +15,3 @@ if str(SCRIPTS) not in sys.path:
-
--from ai_context import render_context
-+from ai_context import _bounded_excerpt, _normalize_diff_preview, render_context
- from ai_handoff_common import build_inventory, inventory_delta, inventory_fingerprint
-@@ -20,2 +21,54 @@ from ai_history import infer_milestone, load_entries, update_history
- class AIHandoffTests(unittest.TestCase):
-+    def test_embedded_previews_are_bounded_and_have_no_trailing_whitespace(self) -> None:
-+        normalized = _normalize_diff_preview("+line with spaces  \n+\t\n context\t\n")
-+        self.assertEqual(normalized, "+line with spaces\n+\n context")
-+        self.assertFalse(any(line.endswith((" ", "\t")) for line in normalized.splitlines()))
-+
-+        excerpt = _bounded_excerpt("first\n" + "x" * 100, limit=20, label="fixture")
-+        self.assertTrue(excerpt.startswith("first\n"))
-+        self.assertIn("fixture truncado em 20 caracteres", excerpt)
-+        self.assertNotIn("x" * 100, excerpt)
-+
-+    def test_tracked_generated_context_remains_idempotent(self) -> None:
-+        with tempfile.TemporaryDirectory() as temporary:
-+            root = Path(temporary)
-+            (root / "README.md").write_text("# Demo\n", encoding="utf-8")
-+            (root / "PLANS.md").write_text("# Plano\n", encoding="utf-8")
-+            (root / "AGENTS.md").write_text("# Regras\n", encoding="utf-8")
-+            (root / "AI_CONTEXT.md").write_text("placeholder\n", encoding="utf-8")
-+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-+            subprocess.run(["git", "config", "user.name", "AI Handoff Test"], cwd=root, check=True)
-+            subprocess.run(["git", "config", "user.email", "handoff@example.invalid"], cwd=root, check=True)
-+            subprocess.run(["git", "add", "."], cwd=root, check=True)
-+            subprocess.run(["git", "commit", "-q", "-m", "baseline"], cwd=root, check=True)
-+
-+            first = render_context(root, diff_limit=5_000)
-+            (root / "AI_CONTEXT.md").write_text(first, encoding="utf-8")
-+            second = render_context(root, diff_limit=5_000)
-+
-+            self.assertEqual(first, second)
-+            self.assertNotIn("diff --git a/AI_CONTEXT.md", second)
-+
-+    def test_repository_trigger_surfaces_preserve_start_and_end_protocol(self) -> None:
-+        required = {
-+            "AGENTS.md": ("python3 scripts/ai_context.py", "scripts/ai_history.py", "AI_CONTEXT.md"),
-+            "CLAUDE.md": ("python3 scripts/ai_context.py", "scripts/ai_history.py", "AI_CONTEXT.md"),
-+            ".prime/agent/APPEND_SYSTEM.md": (
-+                "python3 scripts/ai_context.py",
-+                "scripts/ai_history.py",
-+                "AI_CONTEXT.md",
-+            ),
-+            "README.md": ("Entrada obrigatória para IAs", "scripts/ai_context.py", "scripts/ai_history.py"),
-+        }
-+        for relative, markers in required.items():
-+            with self.subTest(path=relative):
-+                text = (ROOT / relative).read_text(encoding="utf-8")
-+                for marker in markers:
-+                    self.assertIn(marker, text)
-+
-+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
-+        self.assertLess(readme.index("Entrada obrigatória para IAs"), readme.index("# "))
-+        self.assertIn("M10", readme)
-+        self.assertIn("reserved stubs", readme)
-+
-     def test_inventory_is_content_addressed_and_excludes_generated_and_caches(self) -> None:
-diff --git a/docs/decisions.md b/docs/decisions.md
-index 77c1218..7eae3b5 100644
---- a/docs/decisions.md
-+++ b/docs/decisions.md
-@@ -835,2 +835,16 @@ atualidade entre documentos.
-   ignorar deliberadamente instruções de projeto.
-+
-+### Reconciliação com a publicação no GitHub — 2026-09-01
-+
-+Uma publicação posterior adicionou workflow de CI, templates comunitários,
-+licença e documentação de contribuição/segurança, além de substituir o README
-+introdutório. A comparação com o snapshot content-addressed registrado ao fim
-+da implementação confirmou que os utilitários, gatilhos, testes e documentos
-+normativos desta decisão permaneceram byte a byte.
-+
-+As adições comunitárias serão preservadas. O README de apresentação deve,
-+porém, manter em posição proeminente o protocolo de entrada e saída para IAs e
-+deve distinguir componentes implementados até M9 de stubs reservados para M10.
-+O workflow público deve executar a mesma descoberta integral de testes usada
-+localmente, com as dependências determinísticas de PDF/LaTeX disponíveis.
- - Esta camada não modifica os cinco scripts científicos canônicos, não inicia
-diff --git a/scripts/ai_context.py b/scripts/ai_context.py
-index 829e504..fd3aa0b 100644
---- a/scripts/ai_context.py
-+++ b/scripts/ai_context.py
-@@ -13,2 +13,3 @@ from typing import Any, Mapping, Sequence
- from ai_handoff_common import (
-+    GENERATED_PATHS,
-     HandoffError,
-@@ -184,2 +185,18 @@ def _history_digest(root: Path, history_text: str) -> list[str]:
-
-+def _normalize_diff_preview(text: str) -> str:
-+    """Remove whitespace artifacts from untrusted Git patches before embedding."""
-+    return "\n".join(line.rstrip(" \t") for line in text.splitlines())
-+
-+
-+def _bounded_excerpt(text: str, *, limit: int, label: str) -> str:
-+    if len(text) <= limit:
-+        return text.rstrip()
-+    excerpt = text[:limit].rsplit("\n", 1)[0].rstrip()
-+    return excerpt + f"\n\n... [{label} truncado em {limit} caracteres; consulte o arquivo original]"
-+
-+
-+def _diff_pathspec() -> list[str]:
-+    return ["--", ".", *(f":(exclude){path}" for path in sorted(GENERATED_PATHS))]
-+
-+
- def _diff_preview(root: Path, snapshot: Mapping[str, Any], limit: int) -> str:
-@@ -192,9 +209,17 @@ def _diff_preview(root: Path, snapshot: Mapping[str, Any], limit: int) -> str:
-     if isinstance(previous_head, str) and re.fullmatch(r"[0-9a-f]{40}", previous_head) and previous_head != current_head:
--        committed = run_local(["git", "diff", "--no-ext-diff", "--unified=1", f"{previous_head}..{current_head}", "--"], cwd=root, timeout=30)
-+        committed = run_local(
-+            ["git", "diff", "--no-ext-diff", "--unified=1", f"{previous_head}..{current_head}", *_diff_pathspec()],
-+            cwd=root,
-+            timeout=30,
-+        )
-         if committed.stdout:
-             pieces.append("# Commits desde o último encerramento\n" + committed.stdout)
--    working = run_local(["git", "diff", "--no-ext-diff", "--unified=1", "HEAD", "--"], cwd=root, timeout=30)
-+    working = run_local(
-+        ["git", "diff", "--no-ext-diff", "--unified=1", "HEAD", *_diff_pathspec()],
-+        cwd=root,
-+        timeout=30,
-+    )
-     if working.stdout:
-         pieces.append("# Alterações não commitadas\n" + working.stdout)
--    text = "\n".join(pieces)
-+    text = _normalize_diff_preview("\n".join(pieces))
-     if not text:
-@@ -245,3 +270,3 @@ def render_context(root: Path, *, diff_limit: int = 18_000) -> str:
-         "",
--        "Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (que ainda enfatiza M3).",
-+        "Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (introdutório e não normativo).",
-         "",
-@@ -320,3 +345,12 @@ def render_context(root: Path, *, diff_limit: int = 18_000) -> str:
-
--    lines.extend(["## README descritivo (possivelmente defasado)", "", "<readme>", readme.rstrip(), "</readme>", ""])
-+    lines.extend([
-+        "## README descritivo (possivelmente defasado)",
-+        "",
-+        "O README é incorporado de forma limitada para que uma apresentação extensa do GitHub não volte a inflar o contexto operacional.",
-+        "",
-+        "<readme>",
-+        _bounded_excerpt(readme, limit=6_000, label="README"),
-+        "</readme>",
-+        "",
-+    ])
-
+Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem no delta e inventário.
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (25316 bytes; SHA-256 `00086695216811ae`).
+- Fonte lida: `docs/AI_HISTORY.md` (34889 bytes; SHA-256 `56f07b2feec0d425`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -361,21 +65,19 @@ index 829e504..fd3aa0b 100644
 | M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M6 | 2026-08-14 | 7 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
-| M7 | 2026-08-14 | 5 | Síntese, merge isolado, challenger write-once e 13 gates locais. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/synthe… |
-| M8 | 2026-08-27 | 1 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
-| M9 | 2026-08-28 | 2 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
+| M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
+| M7 | 2026-08-14..2026-09-01 | 6 | Síntese, merge isolado, challenger write-once e 13 gates locais. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/synthe… |
+| M8 | 2026-08-27..2026-09-01 | 3 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
+| M9 | 2026-08-28..2026-09-01 | 5 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
+| M8/M9 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | bin/bootstrap-deps.sh, bin/check.sh, bin/preflight.sh, bin/start-prime.sh, scripts/01_external_evaluator.py, scripts/02_stagnation_detector.py, scripts/03_refocus_generator.py |
+| M0 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | config/roles/M00.yaml, config/roles/S10.yaml, config/roles/S20.yaml, config/roles/S30.yaml, config/roles/S40.yaml, config/roles/S50.yaml, config/roles/W11.yaml |
+| M2/M3 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m2_durable_state.py, control/test_m3_ingestion.py |
+| M4/M5 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m4_prompts.py, control/test_m5_blackboard_activation.py |
 
-- Sessões estruturadas registradas: 5.
-- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido..
+- Sessões estruturadas registradas: 6.
+- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.; 2026-09-01T12:18:53Z — Preparada a publicação da reconciliação no GitHub e preservados os históricos local e remoto; o push não foi aplicado porque a máquina não possui credencial HTTPS, GitHub CLI ou chave SSH autorizada..
 
 Detalhe das três sessões mais recentes:
-- `session-2e596a2acf9f4bb2beb3` — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.
-  - mudanças: Nenhum arquivo-fonte foi alterado nesta sessão; foi realizada somente validação do ambiente e da suíte completa.
-  - decisões: A instalação do pdflatex é agora suficiente para atravessar a ingestão M3 e validar a regressão M0–M9 nesta máquina.
-  - validações: command -v pdflatex: /usr/bin/pdflatex; pdfTeX 3.141592653-2.6-1.40.28, TeX Live 2025/Debian.; python3 -m unittest discover -s control -p 'test_*.py' -q: 303 testes executados em 244.057s, resultado OK, código de saída 0.
-  - riscos: Permaneceu somente o aviso esperado da fixture negativa M3: Duplicate name: a.tex; não houve falha ou erro.
-  - próximos: M10 permanece pendente; a suíte integral atual está verde para servir de baseline antes de qualquer implementação futura.
 - `session-b623adc6ee93e8333134` — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.
   - mudanças: Nenhuma mudança funcional do M10 foi realizada; somente o snapshot inicial obrigatório foi regenerado e esta conclusão diagnóstica foi registrada conforme AGENTS.md.
   - decisões: Aplicado fail-closed ao requisito de árvore Git limpa; M10 não foi iniciado.
@@ -388,6 +90,12 @@ Detalhe das três sessões mais recentes:
   - validações: Comparação do snapshot original contra a árvore posterior: 7 arquivos adicionados, 1 modificado (README.md), 0 removidos; 11 arquivos centrais conferidos por SHA-256 e idênticos.; python3 -m unittest -q control.test_ai_handoff control.test_contracts: 59 testes aprovados.; python3 -m unittest discover -s control -p 'test_*.py' -q: 306 testes aprovados em 178.248s.; python3 -m py_compile dos utilitários/teste, duas gerações idempotentes de AI_CONTEXT.md e git diff --check: aprovados.
   - riscos: AI_CONTEXT.md é um artefato gerado rastreado e pode mudar após novos commits ou fontes; execute o gerador no início e novamente no encerramento conforme AGENTS.md.
   - próximos: M10 permanece pendente e deve ser iniciado somente em uma sessão separada e autorizada; esta reconciliação não executou artigo, modelos ou rede.
+- `session-af3c5e022c055dd4c430` — Preparada a publicação da reconciliação no GitHub e preservados os históricos local e remoto; o push não foi aplicado porque a máquina não possui credencial HTTPS, GitHub CLI ou chave SSH autorizada.
+  - mudanças: Criado o commit bb04d98 com a reconciliação validada do contexto, README, testes e CI.; Os históricos sem ancestral comum foram unidos pelo merge f6bb625 com origin/main como segundo pai e árvore idêntica à versão local validada; a branch local foi renomeada de master para main.
+  - decisões: Foi recusado force-push. Como o remoto tinha zero arquivos exclusivos ausentes localmente, o merge de preservação manteve todos os commits remotos no grafo e exatamente a árvore local validada.
+  - validações: git fetch --prune origin confirmou main como branch padrão e origin/master removida.; Comparação de árvores: remote_only_count=0, local_only_count=1; tree antes e depois do merge f6bb625 permaneceu a89f954bea809c2b427ac7f768737590ecfe805c.; git push --set-upstream origin main foi recusado antes de qualquer atualização remota com could not read Username; gh ausente e SSH respondeu Permission denied (publickey).
+  - riscos: Os commits estão somente na máquina local até o usuário autenticar HTTPS ou SSH para github.com.
+  - próximos: Após autenticação do GitHub nesta máquina, repetir git push --set-upstream origin main e verificar o SHA remoto.
 
 ## Marcos planejados
 
