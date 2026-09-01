@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.1.0",
+  "packet_id": "packet-S30-fixture",
+  "run_id": "run-fixture",
+  "cycle_id": 0,
+  "department_id": "S30",
+  "base_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "proposal_ids": ["proposal-W31-fixture"],
+  "specialist_task_ids": ["task-W31-fixture"],
+  "dependency_reviews": [
+    {
+      "proposal_id": "proposal-W31-fixture",
+      "reviewer_role_id": "S20",
+      "status": "approved",
+      "cycle_id": 0,
+      "base_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "evidence_locators": ["review-S20.json#proposal-W31-fixture"]
+    }
+  ],
+  "evidence_locators": ["article.pdf#page=1;line=4"],
+  "status": "complete",
+  "no_change_justification": null,
+  "created_at": "2026-08-13T12:00:00Z"
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.1.0",
+  "task_id": "task-W11-fixture",
+  "run_id": "run-fixture",
+  "cycle_id": 0,
+  "role_id": "W11",
+  "base_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "activation_mode": "RUN",
+  "scope": ["page:1"],
+  "input_locators": ["article.pdf#page=1"],
+  "requested_output_schema": "agent-proposal.schema.json",
+  "prompt_version": "sha256:088870f2f8c8e5d65b4bdc6feb873089da6f55eb8575e6f1210ce95745efef59",
+  "constraints": ["offline"],
+  "created_at": "2026-08-13T12:00:00Z"
+}
