@@ -1,129 +1,63 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "decision.schema.json",
-  "title": "Decision",
   "type": "object",
-  "additionalProperties": false,
-  "required": ["schema_version", "decision_id", "run_id", "cycle_id", "candidate_id", "candidate_content_hash", "decided_at", "action", "gate_report_id", "verdict_ids", "diagnosis_id", "basis_locators", "reason_code", "inconclusive_evaluation_id", "final_gate_report_ids", "content_modification_allowed", "authorized_by"],
+  "title": "Decision Ledger Schema (M1.1 / ADR-001)",
+  "required": [
+    "schema_version",
+    "decision_id",
+    "cycle",
+    "type",
+    "target_id",
+    "verdict",
+    "rationale",
+    "timestamp"
+  ],
   "properties": {
-    "schema_version": {"const": "1.1.0"},
-    "decision_id": {"type": "string", "minLength": 1},
-    "run_id": {"type": "string", "minLength": 1},
-    "cycle_id": {"type": "integer", "minimum": 0},
-    "candidate_id": {"type": ["string", "null"], "minLength": 1},
-    "candidate_content_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
-    "decided_at": {"type": "string", "format": "date-time"},
-    "action": {"enum": ["PROMOTE", "ARCHIVE_PARETO", "REJECT", "REFOCUS_AND_CONTINUE", "CONTINUE_UNCHANGED", "REQUEST_EXTRA_JUDGMENT", "PAUSE", "FINALIZE", "ABORT_TECHNICAL"]},
-    "gate_report_id": {"type": ["string", "null"], "minLength": 1},
-    "verdict_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-    "diagnosis_id": {"type": ["string", "null"], "minLength": 1},
-    "basis_locators": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-    "reason_code": {"type": [\"string\", \"null\"], \"minLength\": 1},
-    "inconclusive_evaluation_id": {"type": ["string", "null"], "minLength": 1},
-    "final_gate_report_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-    "content_modification_allowed": {"const": false},
-    "authorized_by": {"const": "M00"}
-  },
-  "oneOf": [
-    {
-      "properties": {
-        "action": {"const": "PROMOTE"},
-        "candidate_id": {"type": "string", "minLength": 1},
-        "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "gate_report_id": {"type": "string", "minLength": 1},
-        "verdict_ids": {"minItems": 1},
-        "reason_code": {"const": null},
-        "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
-      }
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0.0"]
     },
-    {
-      "properties": {
-        "action": {"const": "ARCHIVE_PARETO"},
-        "candidate_id": {"type": "string", "minLength": 1},
-        "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "gate_report_id": {"type": "string", "minLength": 1},
-        "verdict_ids": {"minItems": 1},
-        "reason_code": {"const": null},
-        "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
-      }
+    "decision_id": {
+      "type": "string",
+      "pattern": "^dec-[a-f0-9]{8,64}$"
     },
-    {
-      "properties": {
-        "action": {"const": "REJECT"},
-        "candidate_id": {"type": "string", "minLength": 1},
-        "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
-      },
-      "oneOf": [
-        {"properties": {"reason_code": {"const": "GATE_FAILED"}, "gate_report_id": {"type": "string", "minLength": 1}, "verdict_ids": {"maxItems": 0}}},
-        {"properties": {"reason_code": {"const": "JURY_UNFAVORABLE"}, "gate_report_id": {"type": "string", "minLength": 1}, "verdict_ids": {"minItems": 1}}}
+    "cycle": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "promote_champion",
+        "update_pareto",
+        "reject_candidate",
+        "trigger_stagnation",
+        "final_accept",
+        "final_reject"
       ]
     },
-    {
-      "properties": {
-        "action": {"const": "REFOCUS_AND_CONTINUE"},
-        "candidate_id": {"type": "string", "minLength": 1},
-        "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "diagnosis_id": {"type": "string", "minLength": 1},
-        "reason_code": {"enum": ["LOCAL_PLATEAU", "GLOBAL_PLATEAU", "OSCILLATING", "REGRESSING"]},
-        "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
+    "target_id": {
+      "type": "string",
+      "pattern": "^(cand|snap|chk)-[a-f0-9]{8,64}$"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["accepted", "rejected", "diverged", "stagnant"]
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     },
-    {
-      "properties": {
-        "action": {"const": "CONTINUE_UNCHANGED"},
-        "candidate_id": {"type": "string", "minLength": 1},
-        "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "diagnosis_id": {"type": "string", "minLength": 1},
-        "reason_code": {"enum": ["EVOLVING", "NO_MATERIAL_CHANGE"]},
-        "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
-      }
-    },
-    {
-      "properties": {
-        "action": {"const": "REQUEST_EXTRA_JUDGMENT"},
-        "candidate_id": {"type": "string", "minLength": 1},
-        "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "gate_report_id": {"type": "string", "minLength": 1},
-        "verdict_ids": {"minItems": 1},
-        "reason_code": {"const": "INCONCLUSIVE_EVALUATION"},
-        "inconclusive_evaluation_id": {"type": "string", "minLength": 1},
-        "final_gate_report_ids": {"maxItems": 0}
-      }
-    },
-    {
-      "properties": {
-        "action": {"const": "PAUSE"},
-        "reason_code": {"enum": ["BUDGET_EXHAUSTED", "USER_REQUESTED", "TECHNICAL_BLOCK"]},
-        "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
-      }
-    },
-    {
-      "properties": {
-        "action": {"const": "FINALIZE"},
-        "candidate_id": {"type": "string", "minLength": 1},
-        "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-        "gate_report_id": {"type": "string", "minLength": 1},
-        "verdict_ids": {"minItems": 1},
-        "reason_code": {"const": "POLICY_SATISFIED"},
-        "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"minItems": 1}
-      }
-    },
-    {
-      "properties": {
-        "action": {"const": "ABORT_TECHNICAL"},
-        "verdict_ids": {"maxItems": 0},
-        "reason_code": {"enum": ["TECHNICAL_FAILURE", "INVALID_STATE", "COMPATIBILITY_FAILURE"]},
-        "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
-      }
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
     }
-  ]
+  },
+  "additionalProperties": false
 }
