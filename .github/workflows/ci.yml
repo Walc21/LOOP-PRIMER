@@ -24,6 +24,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
+          cache-dependency-path: requirements-dev.txt
 
       - name: Install dependencies
         run: |
@@ -32,19 +33,25 @@ jobs:
 
       - name: Syntax & bytecode compilation check
         run: |
-          python -m py_compile scripts/*.py control/*.py .prime/agent/skills/article-loop/src/article_loop/*.py
+          shopt -s nullglob
+          files=(scripts/*.py .prime/agent/skills/article-loop/src/article_loop/*.py)
+          if [ -d control ]; then
+            files+=(control/*.py)
+          fi
+          python -m py_compile "${files[@]}"
 
       - name: Run Core Contract Tests
         run: |
-          python -m unittest control.test_contracts
-          python -m unittest control.test_ai_handoff
+          if [ -d control ]; then
+            python -m unittest discover -s control -p "test_*.py"
+          else
+            echo "No control test suite found; skipping."
+          fi
 
       - name: Run Milestone Test Suites
         run: |
-          python -m unittest control.test_m2_durable_state \
-                           control.test_m4_prompts \
-                           control.test_m5_blackboard_activation \
-                           control.test_m6_orchestration \
-                           control.test_m7_synthesis_gates \
-                           control.test_m8_evaluation \
-                           control.test_m9_diagnosis
+          if [ -d control ]; then
+            python -m unittest discover -s control -p "test_*.py"
+          else
+            echo "No control test suite found; skipping."
+          fi

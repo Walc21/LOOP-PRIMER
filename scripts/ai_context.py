@@ -154,7 +154,7 @@ def _tests(root: Path) -> list[dict[str, Any]]:
             result.append({"name": path.name, "count": 0, "topics": ["Python inválido"]})
             continue
         names = [node.name.removeprefix("test_").replace("_", " ") for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")]
-        result.append({"name": path.name, "count": len(names), "topics": names[:8]})\
+        result.append({"name": path.name, "count": len(names), "topics": names[:8]})
     return result
 
 
