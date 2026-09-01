@@ -143,640 +143,1466 @@ def sanitize_text(text: str) -> str:
     """Sanitize text by removing author mentions, role IDs, version strings, run IDs, and candidate labels."""
     sanitized = text
 
+    # Remove common LaTeX identity-bearing commands with balanced braced
+    # arguments.  A plain regular expression is insufficient for constructs
+    # such as ``\author{Alice \and Bob}`` or nested ``\thanks{...}`` values.
     identity_commands = {
         "author", "authors", "affil", "affiliation", "institute",
-        "email", "thanks", "orcid", "address", "curraddr",
+        "email", "ead", "orcid", "orcidlink", "thanks", "address",
     }
-    for cmd in identity_commands:
-        pattern = re.compile(rf"\\{cmd}\s*\{{", re.IGNORECASE)
-        while True:
-            match = pattern.search(sanitized)
-            if not match:
-                break
-            start = match.start()
-            depth = 1
-            idx = match.end()
-            while idx < len(sanitized) and depth > 0:
-                if sanitized[idx] == "{" and (idx == 0 or sanitized[idx - 1] != "\\"):
-                    depth += 1
-                elif sanitized[idx] == "}" and (idx == 0 or sanitized[idx - 1] != "\\"):
-                    depth -= 1
-                idx += 1
-            sanitized = sanitized[:start] + f"\\{cmd}{{ANONYMOUS}}" + sanitized[idx:]
-
-    sanitized = re.sub(
-        r"\\thanks\s*\{[^}]*\}",
-        "\\\\thanks{ANONYMOUS}",
-        sanitized,
+    command_pattern = re.compile(
+        r"\\(" + "|".join(sorted(identity_commands, key=len, reverse=True)) + r")\*?",
         flags=re.IGNORECASE,
     )
+    cursor = 0
+    pieces: list[str] = []
+    while True:
+        match = command_pattern.search(sanitized, cursor)
+        if match is None:
+            pieces.append(sanitized[cursor:])
+            break
+        pieces.append(sanitized[cursor:match.start()])
+        end = match.end()
+        while end < len(sanitized) and sanitized[end].isspace():
+            end += 1
+        if end < len(sanitized) and sanitized[end] == "[":
+            closing = sanitized.find("]", end + 1)
+            end = len(sanitized) if closing < 0 else closing + 1
+            while end < len(sanitized) and sanitized[end].isspace():
+                end += 1
+        if end < len(sanitized) and sanitized[end] == "{":
+            depth = 0
+            index = end
+            while index < len(sanitized):
+                if sanitized[index] == "{" and (index == 0 or sanitized[index - 1] != "\\"):
+                    depth += 1
+                elif sanitized[index] == "}" and (index == 0 or sanitized[index - 1] != "\\"):
+                    depth -= 1
+                    if depth == 0:
+                        index += 1
+                        break
+                index += 1
+            end = index
+        pieces.append("[IDENTITY_REDACTED]")
+        cursor = end
+    sanitized = "".join(pieces)
 
-    sanitized = re.sub(r"\b[MSW][0-5][0-3]\b", "[REDACTED_ROLE]", sanitized)
-    sanitized = re.sub(r"\bv\d{4}\b", "[REDACTED_VERSION]", sanitized)
-    sanitized = re.sub(r"\bc-[a-f0-9]{32}\b", "[REDACTED_CANDIDATE]", sanitized)
-    sanitized = re.sub(r"\b(run|cycle)-[a-zA-Z0-9_\-.]+\b", "[REDACTED_RUN]", sanitized)
-    sanitized = re.sub(r"\bchampion\b", "base_document", sanitized, flags=re.IGNORECASE)
-    sanitized = re.sub(r"\bchallenger\b", "candidate_document", sanitized, flags=re.IGNORECASE)
-    sanitized = re.sub(r"\b(Candidate|Challenger)\s+[A-Z]\b", "Document", sanitized)
-
+    # Remove equivalent plain-text metadata, emails, ORCID identifiers and
+    # hyperref's PDF author field.
+    sanitized = re.sub(
+        r"(?im)^\s*%?\s*(?:authors?|affiliations?|institutes?|addresses?|emails?|orcids?)\s*:\s*.*$",
+        "[IDENTITY_REDACTED]",
+        sanitized,
+    )
+    sanitized = re.sub(r"(?i)pdfauthor\s*=\s*\{[^{}]*\}", "pdfauthor={[IDENTITY_REDACTED]}", sanitized)
+    sanitized = re.sub(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", "[EMAIL_REDACTED]", sanitized)
+    sanitized = re.sub(r"\b(?:https?://orcid\.org/)?\d{4}-\d{4}-\d{4}-[\dX]{4}\b", "[ORCID_REDACTED]", sanitized, flags=re.IGNORECASE)
+    # Remove internal path references first
+    sanitized = re.sub(r"\b(workspaces|versions|artifacts)/[^\s,;\"'>)]+", "[PATH]", sanitized)
+    # Remove author role tags (M00, S10-S50, W11-W53)
+    sanitized = re.sub(r"\b(M00|S[1-5]0|W[1-5][1-3])\b", "[ROLE]", sanitized)
+    # Remove version indicators (v0000, v0001, etc.)
+    sanitized = re.sub(r"\bv\d{4,}\b", "[VERSION]", sanitized)
+    # Remove candidate labels
+    sanitized = re.sub(r"\b(champion|challenger|pareto|rejected)\b", "[CANDIDATE]", sanitized, flags=re.IGNORECASE)
+    # Remove run identifiers
+    sanitized = re.sub(r"\brun-[a-zA-Z0-9_-]+\b", "[RUN]", sanitized)
+    # Remove cycle identifiers
+    sanitized = re.sub(r"\bcycle[_-]?\d+\b", "[CYCLE]", sanitized, flags=re.IGNORECASE)
     return sanitized
 
 
-def sanitize_candidate(candidate_dir: Path, output_dir: Path) -> Path:
-    """Create a completely blind copy of a candidate directory."""
-    if output_dir.exists():
-        for p in output_dir.rglob("*"):
-            if p.is_file() or p.is_symlink():
-                os.chmod(p, 0o600)
-                p.unlink()
-            elif p.is_dir():
-                os.chmod(p, 0o700)
-        shutil.rmtree(output_dir)
+class BlindComparisonBundle:
+    """Sanitized, content-addressed A/B presentation bundle for blind evaluation."""
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    for base, dirs, files in os.walk(candidate_dir, followlinks=False):
-        dirs.sort()
-        files.sort()
-        rel_base = Path(base).relative_to(candidate_dir)
-        target_base = output_dir / rel_base
-        target_base.mkdir(parents=True, exist_ok=True)
-
-        for f in files:
-            src_file = Path(base) / f
-            dst_file = target_base / f
-            if f == "manifest.json":
-                continue
-
-            info = src_file.lstat()
-            if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
-                raise EvaluationError(f"illegal file in candidate directory: {src_file}")
-
-            if src_file.suffix.lower() in {".tex", ".bib", ".txt", ".md"}:
-                text = src_file.read_text(encoding="utf-8", errors="replace")
-                sanitized_text = sanitize_text(text)
-                _write_synced_file(dst_file, sanitized_text.encode("utf-8"))
-            else:
-                shutil.copyfile(src_file, dst_file)
-                _fsync_dir(dst_file.parent)
-
-    for base, dirs, files in os.walk(output_dir, topdown=False, followlinks=False):
-        for f in files:
-            p = Path(base) / f
-            os.chmod(p, 0o444)
-        p = Path(base)
-        os.chmod(p, 0o555)
-
-    _fsync_tree_dirs(output_dir)
-    return output_dir
-
-
-class BlindEvaluator:
-    """Evaluates candidates using independent juror personas without knowledge of candidate lineage."""
-
-    def __init__(self, root: str | Path, rubric: Mapping[str, Any] | None = None):
-        self.root = Path(root).resolve()
-        self.rubric = rubric if rubric is not None else load_rubric(self.root)
-        self.output_schema = EVALUATION_SCHEMA
-        self.dimensions = DIMENSIONS
-
-    def _extract_tex_content(self, blind_dir: Path) -> str:
-        """Concatenate all LaTeX source files in the blinded directory."""
-        parts = []
-        for path in sorted(blind_dir.rglob("*.tex")):
-            if path.is_file():
-                parts.append(path.read_text(encoding="utf-8", errors="replace"))
-        return "\n".join(parts)
-
-    def evaluate_juror(
+    def __init__(
         self,
-        blind_dir: Path,
-        juror_id: str,
-        focal_dimension: str,
-        profile: str,
         *,
-        run_id: str,
-        cycle_id: int,
-        blind_eval_id: str,
-    ) -> dict[str, Any]:
-        """Perform deterministic heuristic evaluation representing an external juror."""
-        tex = self._extract_tex_content(blind_dir)
-        scores: dict[str, float] = {}
-        reasoning: dict[str, str] = {}
-        issues: list[dict[str, Any]] = []
+        comparison_id: str,
+        candidate_neutral_ids: Sequence[str],
+        content_hashes: Sequence[str],
+        rubric_version: str,
+        candidate_a_content: dict[str, Any],
+        candidate_b_content: dict[str, Any],
+        order_seed: int,
+    ):
+        self.comparison_id = comparison_id
+        self.candidate_neutral_ids = list(candidate_neutral_ids)
+        self.content_hashes = list(content_hashes)
+        self.rubric_version = rubric_version
+        self.candidate_a_content = candidate_a_content
+        self.candidate_b_content = candidate_b_content
+        self.order_seed = order_seed
 
-        math_blocks = len(re.findall(r"\\begin\{(?:equation|align|gather|multline)\*?\}|\\\[", tex))
-        has_theorems = bool(re.search(r"\\begin\{(?:theorem|lemma|proposition|corollary)\}", tex))
-        has_proofs = bool(re.search(r"\\begin\{proof\}", tex))
-        has_refs = bool(re.search(r"\\(?:ref|eqref)\{", tex))
-        has_cites = bool(re.search(r"\\cite", tex))
+    def presentation_for_order(self, order: Sequence[str]) -> dict[str, Any]:
+        """Return the presentation payload for order ('A', 'B') or ('B', 'A')."""
+        if list(order) == ["A", "B"]:
+            first_id, second_id = "A", "B"
+            first_hash, second_hash = self.content_hashes[0], self.content_hashes[1]
+            first_content, second_content = self.candidate_a_content, self.candidate_b_content
+        elif list(order) == ["B", "A"]:
+            first_id, second_id = "B", "A"
+            first_hash, second_hash = self.content_hashes[1], self.content_hashes[0]
+            first_content, second_content = self.candidate_b_content, self.candidate_a_content
+        else:
+            raise EvaluationError(f"invalid presentation order: {order}")
 
-        eq_labels = set(re.findall(r"\\label\{([^}]+)\}", tex))
-        eq_refs = set(re.findall(r"\\(?:ref|eqref)\{([^}]+)\}", tex))
-        dangling_refs = eq_refs - eq_labels
-
-        scores["correctness_math"] = 8.5 if (math_blocks > 0 and not dangling_refs) else (6.0 if dangling_refs else 7.0)
-        reasoning["correctness_math"] = "Mathematical formulations verified with consistent internal labeling." if not dangling_refs else f"Found {len(dangling_refs)} unresolved references."
-        if dangling_refs:
-            issues.append({
-                "dimension": "correctness_math",
-                "severity": "HIGH",
-                "claim_or_location": f"refs: {list(dangling_refs)[:3]}",
-                "description": f"Unresolved equation references found in LaTeX text: {list(dangling_refs)[:3]}",
-            })
-
-        scores["proof_completeness"] = 9.0 if (has_theorems and has_proofs) else (7.5 if has_theorems else 8.0)
-        reasoning["proof_completeness"] = "Explicit proofs accompany declared theoretical statements." if has_proofs else "Theoretical claims are stated clearly."
-
-        scores["logical_coherence"] = 8.0
-        reasoning["logical_coherence"] = "The narrative and derivations follow a sequential, logical progression."
-
-        scores["scientific_contribution"] = 8.0 if has_cites else 6.5
-        reasoning["scientific_contribution"] = "Novel technical approach contextualized within prior domain literature." if has_cites else "Limited contextual citation discovered."
-
-        scores["semantic_precision"] = 8.5
-        reasoning["semantic_precision"] = "Terminology and symbolic notation remain rigorous and unambiguous."
-
-        scores["clarity"] = 8.0 if len(tex) > 500 else 5.0
-        reasoning["clarity"] = "Clear exposition with structured sections and appropriate descriptive text."
-
-        scores["format_integrity"] = 9.0 if not dangling_refs else 7.0
-        reasoning["format_integrity"] = "Strict compliance with document markup and style standards."
-
-        scores["reproducibility"] = 8.0 if math_blocks > 2 else 7.0
-        reasoning["reproducibility"] = "Sufficient operational and formal detail provided for step-by-step reproduction."
-
-        if profile == "focal_math":
-            scores["correctness_math"] = min(10.0, scores["correctness_math"] + 0.5)
-        elif profile == "focal_contribution":
-            scores["scientific_contribution"] = min(10.0, scores["scientific_contribution"] + 0.5)
-        elif profile == "focal_clarity":
-            scores["clarity"] = min(10.0, scores["clarity"] + 0.5)
-
-        for dim in DIMENSIONS:
-            scores[dim] = round(max(0.0, min(10.0, scores[dim])), 2)
-
-        raw_verdict = {
-            "schema_version": SCHEMA_VERSION,
-            "blind_eval_id": blind_eval_id,
-            "run_id": run_id,
-            "cycle_id": cycle_id,
-            "juror_id": juror_id,
-            "juror_profile": profile,
-            "focal_dimension": focal_dimension,
-            "scores": scores,
-            "reasoning": reasoning,
-            "issues": issues,
-            "overall_score": round(sum(scores.values()) / len(scores), 2),
-            "recommendation": "accept" if scores["correctness_math"] >= 7.0 and not dangling_refs else "revise",
-            "evaluated_at": _now(),
+        return {
+            "comparison_id": self.comparison_id,
+            "presentation_order": list(order),
+            "order_seed": self.order_seed,
+            "rubric_version": self.rubric_version,
+            "candidate_neutral_ids": ["A", "B"],
+            "content_hashes": [self.content_hashes[0], self.content_hashes[1]],
+            "first_candidate": {
+                "neutral_id": first_id,
+                "content_hash": first_hash,
+                "content": first_content,
+            },
+            "second_candidate": {
+                "neutral_id": second_id,
+                "content_hash": second_hash,
+                "content": second_content,
+            },
         }
 
-        digest = _sha(_json(raw_verdict))
-        raw_verdict["verdict_hash"] = digest
-        raw_verdict["verdict_id"] = f"jv-{digest[:32]}"
-        _validate_schema(self.root, EVALUATION_SCHEMA, raw_verdict)
-        return raw_verdict
-
-
-class MetaReviewer:
-    """Aggregates multiple blind jury verdicts, checks consensus, and generates an evaluation report."""
-
-    def __init__(self, root: str | Path, rubric: Mapping[str, Any] | None = None):
-        self.root = Path(root).resolve()
-        self.rubric = rubric if rubric is not None else load_rubric(self.root)
-
-    def aggregate(
-        self,
-        verdicts: Sequence[Mapping[str, Any]],
+    @classmethod
+    def create(
+        cls,
+        root: Path,
         *,
-        run_id: str,
-        cycle_id: int,
-        blind_eval_id: str,
+        champion_dir: Path,
+        challenger_dir: Path,
+        order_seed: int = 413,
+    ) -> BlindComparisonBundle:
+        """Build and sanitize comparison bundle from champion and challenger directories."""
+        champ_manifest_path = champion_dir / "manifest.json"
+        chall_manifest_path = challenger_dir / "manifest.json"
+
+        champ_manifest, _ = _read_json(champ_manifest_path)
+        chall_manifest, _ = _read_json(chall_manifest_path)
+
+        _validate_schema(root, "candidate-manifest.schema.json", champ_manifest)
+        _validate_schema(root, "candidate-manifest.schema.json", chall_manifest)
+
+        champ_hash = _candidate_content_hash(champion_dir, champ_manifest)
+        chall_hash = _candidate_content_hash(challenger_dir, chall_manifest)
+
+        if champ_hash != champ_manifest.get("content_hash"):
+            raise EvaluationError("champion tree content hash mismatch")
+        if chall_hash != chall_manifest.get("content_hash"):
+            raise EvaluationError("challenger tree content hash mismatch")
+
+        # Neutral binding: A is champion, B is challenger
+        content_hashes = [champ_hash, chall_hash]
+
+        # Extract sanitized texts under deterministic names that cannot leak
+        # authorship, role, version, or source-tree structure.
+        def extract_content(candidate_dir: Path) -> dict[str, Any]:
+            tex_files: dict[str, str] = {}
+            file_idx = 0
+            for rel, path, sinfo in sorted(_walk(candidate_dir), key=lambda item: item[0]):
+                if stat.S_ISREG(sinfo.st_mode) and (rel.endswith(".tex") or rel.endswith(".txt") or rel.endswith(".bib")):
+                    try:
+                        raw = path.read_text(encoding="utf-8", errors="replace")
+                        suffix = Path(rel).suffix.lower()
+                        neutral_name = f"document_{file_idx:04d}{suffix}"
+                        tex_files[neutral_name] = sanitize_text(raw)
+                        file_idx += 1
+                    except OSError as exc:
+                        raise EvaluationError("candidate text cannot be read completely") from exc
+            return {"files": tex_files, "file_count": len(tex_files)}
+
+        content_a = extract_content(champion_dir)
+        content_b = extract_content(challenger_dir)
+
+        comp_bytes = _json({
+            "candidate_hashes": content_hashes,
+            "rubric_version": RUBRIC_VERSION,
+            "order_seed": order_seed,
+        })
+        comparison_id = f"cmp-{_sha(comp_bytes)}"
+
+        return cls(
+            comparison_id=comparison_id,
+            candidate_neutral_ids=["A", "B"],
+            content_hashes=content_hashes,
+            rubric_version=RUBRIC_VERSION,
+            candidate_a_content=content_a,
+            candidate_b_content=content_b,
+            order_seed=order_seed,
+        )
+
+
+def _validate_juror_verdict_response(
+    root: Path,
+    verdict: Mapping[str, Any],
+    *,
+    expected_juror_id: str,
+    expected_presentation_order: list[str],
+    bundle: BlindComparisonBundle,
+    seen_verdict_ids: set[str],
+) -> dict[str, Any]:
+    """Strictly validate juror verdict schema and semantic alignment with requested presentation."""
+    if verdict.get("comparison_id") != bundle.comparison_id:
+        raise EvaluationError("verdict comparison_id does not match presentation bundle")
+
+    if verdict.get("juror_id") != expected_juror_id:
+        raise EvaluationError(f"verdict juror_id '{verdict.get('juror_id')}' does not match expected '{expected_juror_id}'")
+
+    if verdict.get("candidate_neutral_ids") != ["A", "B"]:
+        raise EvaluationError("verdict candidate_neutral_ids must be exactly ['A', 'B']")
+
+    if verdict.get("presentation_order") != expected_presentation_order:
+        raise EvaluationError(
+            f"verdict presentation_order {verdict.get('presentation_order')} does not match requested {expected_presentation_order}"
+        )
+
+    _validate_schema(root, EVALUATION_SCHEMA, verdict)
+
+    v_id = verdict.get("verdict_id")
+    if not isinstance(v_id, str) or not v_id:
+        raise EvaluationError("verdict_id is missing or empty")
+    if v_id in seen_verdict_ids:
+        raise EvaluationError(f"duplicate verdict_id detected: {v_id}")
+
+    if verdict.get("order_seed") != bundle.order_seed:
+        raise EvaluationError("verdict order_seed does not match presentation bundle")
+
+    if verdict.get("rubric_version") != bundle.rubric_version:
+        raise EvaluationError("verdict rubric_version does not match presentation bundle")
+
+    if verdict.get("content_hashes") != bundle.content_hashes:
+        raise EvaluationError("verdict content_hashes does not match canonical neutral candidate hashes")
+
+    outcome = verdict.get("outcome")
+    winner = verdict.get("winner_neutral_id")
+    if outcome == "winner":
+        if winner not in ("A", "B"):
+            raise EvaluationError("verdict with outcome 'winner' must have winner_neutral_id 'A' or 'B'")
+    else:
+        if winner is not None:
+            raise EvaluationError("verdict with outcome tie/inconclusive must have null winner_neutral_id")
+
+    scores = verdict.get("dimension_scores")
+    if not isinstance(scores, list) or len(scores) != 2:
+        raise EvaluationError("verdict dimension_scores must contain exactly 2 candidates [A, B]")
+    for idx, cand_scores in enumerate(scores):
+        if not isinstance(cand_scores, dict):
+            raise EvaluationError(f"dimension_scores[{idx}] must be a dictionary")
+        for dim in DIMENSIONS:
+            val = cand_scores.get(dim)
+            if (
+                isinstance(val, bool)
+                or not isinstance(val, (int, float))
+                or not math.isfinite(float(val))
+                or val < 0
+                or val > 5
+            ):
+                raise EvaluationError(f"dimension_scores[{idx}][{dim}] must be a number between 0 and 5, got {val}")
+
+    math_pass = verdict.get("correctness_math_pass")
+    if not isinstance(math_pass, list) or len(math_pass) != 2 or any(not isinstance(m, bool) for m in math_pass):
+        raise EvaluationError("correctness_math_pass must be an array of exactly 2 booleans [math_A, math_B]")
+
+    locators = verdict.get("evidence_locators")
+    if not isinstance(locators, list) or len(locators) == 0:
+        raise EvaluationError("evidence_locators must be a non-empty array")
+    for loc in locators:
+        if not isinstance(loc, str) or not loc.strip():
+            raise EvaluationError("empty evidence locator")
+        if loc.startswith("/") or ".." in Path(loc).parts:
+            raise EvaluationError(f"unsafe evidence locator: {loc}")
+
+    seen_verdict_ids.add(v_id)
+    return dict(verdict)
+
+
+def _validate_meta_verdict_response(
+    root: Path,
+    meta: Mapping[str, Any],
+    *,
+    bundle: BlindComparisonBundle,
+    gate_report: Mapping[str, Any],
+    consistent_count: int,
+    divergence_count: int,
+) -> dict[str, Any]:
+    """Strictly validate meta-reviewer response schema and semantic alignment."""
+    _validate_schema(root, META_VERDICT_SCHEMA, meta)
+
+    if meta.get("comparison_id") != bundle.comparison_id:
+        raise EvaluationError("meta-verdict comparison_id does not match presentation bundle")
+
+    if meta.get("gate_report_id") != gate_report.get("report_id"):
+        raise EvaluationError("meta-verdict gate_report_id does not match verified GateReport")
+
+    if meta.get("consistent_verdict_count") != consistent_count:
+        raise EvaluationError("meta-verdict consistent_verdict_count does not match actual consistent jury count")
+
+    if meta.get("divergence_count") != divergence_count:
+        raise EvaluationError("meta-verdict divergence_count does not match actual divergent jury count")
+
+    confirmed = meta.get("confirmed")
+    vetoed = meta.get("vetoed")
+    if confirmed is True and vetoed is True:
+        raise EvaluationError("meta-verdict cannot be both confirmed and vetoed")
+
+    if vetoed is True and not meta.get("veto_reason"):
+        raise EvaluationError("meta-verdict vetoed is true but veto_reason is missing")
+
+    locators = meta.get("evidence_locators", [])
+    if isinstance(locators, list):
+        for loc in locators:
+            if not isinstance(loc, str) or loc.startswith("/") or ".." in Path(loc).parts:
+                raise EvaluationError(f"unsafe evidence locator in meta-verdict: {loc}")
+
+    return dict(meta)
+
+
+class FakeJurorAdapter:
+    """Test-only deterministic fake juror adapter."""
+    is_test_double: bool = True
+
+    def __init__(
+        self,
+        *,
+        juror_id: str,
+        specialty: str = "correctness_math",
+        model_family: str = "fake-eval-v1",
+        preferred_winner: str | None = None,
+        positional_bias: str | None = None,
+        math_pass: tuple[bool, bool] = (True, True),
+        base_scores: tuple[int, int] = (4, 4),
+        corrupt_schema: bool = False,
+        repeat_order: list[str] | None = None,
+        reused_verdict_id: str | None = None,
+    ):
+        self.juror_id = juror_id
+        self.specialty = specialty
+        self.model_family = model_family
+        self.preferred_winner = preferred_winner
+        self.positional_bias = positional_bias
+        self.math_pass = math_pass
+        self.base_scores = base_scores
+        self.corrupt_schema = corrupt_schema
+        self.repeat_order = repeat_order
+        self.reused_verdict_id = reused_verdict_id
+
+    def evaluate(self, presentation: dict[str, Any]) -> dict[str, Any]:
+        if self.corrupt_schema:
+            return {"invalid": "payload"}
+
+        order = self.repeat_order or presentation["presentation_order"]
+        comparison_id = presentation["comparison_id"]
+        order_seed = presentation["order_seed"]
+        content_hashes = presentation["content_hashes"]
+
+        if self.positional_bias == "first":
+            winner = order[0]
+            outcome = "winner"
+        elif self.positional_bias == "second":
+            winner = order[1]
+            outcome = "winner"
+        elif self.preferred_winner in ("A", "B"):
+            winner = self.preferred_winner
+            outcome = "winner"
+        elif self.preferred_winner == "tie":
+            winner = None
+            outcome = "tie"
+        elif self.preferred_winner == "inconclusive":
+            winner = None
+            outcome = "inconclusive"
+        else:
+            winner = None
+            outcome = "inconclusive"
+
+        score_a = {d: self.base_scores[0] for d in DIMENSIONS}
+        score_b = {d: self.base_scores[1] for d in DIMENSIONS}
+
+        dimension_scores = [score_a, score_b]
+        math_pass = list(self.math_pass)
+
+        if self.reused_verdict_id:
+            verdict_id = self.reused_verdict_id
+        else:
+            verdict_data = {
+                "comparison_id": comparison_id,
+                "juror_id": self.juror_id,
+                "presentation_order": list(order),
+                "order_seed": order_seed,
+            }
+            verdict_id = f"v-{_sha(_json(verdict_data))[:32]}"
+
+        evidence_locators = [
+            f"locators/{self.juror_id}/evidence-01.txt",
+            f"locators/{self.juror_id}/evidence-02.txt",
+        ]
+
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "verdict_id": verdict_id,
+            "comparison_id": comparison_id,
+            "juror_id": self.juror_id,
+            "candidate_neutral_ids": ["A", "B"],
+            "content_hashes": content_hashes,
+            "presentation_order": list(order),
+            "order_seed": order_seed,
+            "rubric_version": RUBRIC_VERSION,
+            "dimension_scores": dimension_scores,
+            "outcome": outcome,
+            "winner_neutral_id": winner,
+            "correctness_math_pass": math_pass,
+            "evidence_locators": evidence_locators,
+            "submitted_at": _now(),
+        }
+
+
+class FakeMetaReviewerAdapter:
+    """Test-only deterministic fake meta-reviewer adapter."""
+    is_test_double: bool = True
+
+    def __init__(
+        self,
+        *,
+        meta_id: str = "meta-reviewer",
+        should_confirm: bool = True,
+        should_veto: bool = False,
+        veto_reason: str | None = None,
+        corrupt_schema: bool = False,
+    ):
+        self.meta_id = meta_id
+        self.should_confirm = should_confirm
+        self.should_veto = should_veto
+        self.veto_reason = veto_reason
+        self.corrupt_schema = corrupt_schema
+
+    def review(
+        self,
+        *,
+        comparison_id: str,
+        consistent_verdicts: list[dict[str, Any]],
+        divergences: list[dict[str, Any]],
+        gate_report_summary: dict[str, Any],
     ) -> dict[str, Any]:
-        """Aggregate jury scores and calculate variance/consensus."""
-        if len(verdicts) != 3:
-            raise EvaluationError(f"M8 requires exactly 3 jury verdicts, got {len(verdicts)}")
+        if self.corrupt_schema:
+            return {"broken": "response"}
+
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "meta_verdict_id": f"meta-{comparison_id[:24]}",
+            "meta_reviewer_id": self.meta_id,
+            "comparison_id": comparison_id,
+            "gate_report_id": gate_report_summary["report_id"],
+            "confirmed": bool(self.should_confirm and not self.should_veto),
+            "vetoed": bool(self.should_veto),
+            "veto_reason": self.veto_reason if self.should_veto else None,
+            "consistent_verdict_count": len(consistent_verdicts),
+            "divergence_count": len(divergences),
+            "explanation": "Meta-review verification completed against GateReport and jury consistency.",
+            "evidence_locators": ["locators/meta/meta-review-01.txt"],
+            "reviewed_at": _now(),
+        }
+
+
+def check_inversion_consistency(
+    verdict_ab: dict[str, Any],
+    verdict_ba: dict[str, Any],
+    tolerance: float = 1.0,
+) -> tuple[bool, str | None, str | None, bool]:
+    """Check inversion consistency between A/B and B/A presentations.
+
+    Returns:
+        (is_consistent, inconsistency_reason, inferred_winner, candidate_b_math_pass)
+    """
+    # 1. Anti-replay and order distinction
+    if verdict_ab.get("verdict_id") == verdict_ba.get("verdict_id"):
+        return False, "duplicate_verdict_id_for_both_orders", None, False
+    if verdict_ab.get("presentation_order") != ["A", "B"] or verdict_ba.get("presentation_order") != ["B", "A"]:
+        return False, "presentation_order_mismatch", None, False
+
+    winner_ab = verdict_ab.get("winner_neutral_id")
+    winner_ba = verdict_ba.get("winner_neutral_id")
+    outcome_ab = verdict_ab.get("outcome")
+    outcome_ba = verdict_ba.get("outcome")
+
+    # Math correctness check for Candidate B (Challenger, index 1)
+    math_ab = verdict_ab.get("correctness_math_pass", [False, False])
+    math_ba = verdict_ba.get("correctness_math_pass", [False, False])
+
+    math_b_pass = bool(math_ab[1] and math_ba[1])
+
+    if math_ab != math_ba:
+        return False, "inconsistent_math_verification", None, False
+
+    if outcome_ab != outcome_ba:
+        return False, f"outcome_mismatch:{outcome_ab}_vs_{outcome_ba}", None, math_b_pass
+
+    scores_ab = verdict_ab.get("dimension_scores", [{}, {}])
+    scores_ba = verdict_ba.get("dimension_scores", [{}, {}])
+    for idx in (0, 1):
+        for dim in DIMENSIONS:
+            val_ab = scores_ab[idx].get(dim, 0)
+            val_ba = scores_ba[idx].get(dim, 0)
+            if abs(val_ab - val_ba) > tolerance:
+                return False, f"dimension_score_drift:{dim}", None, math_b_pass
+
+    if outcome_ab == "winner":
+        if winner_ab == winner_ba:
+            return True, None, winner_ab, math_b_pass
+        elif winner_ab == "A" and winner_ba == "B":
+            return False, "first_position_bias", None, math_b_pass
+        elif winner_ab == "B" and winner_ba == "A":
+            return False, "second_position_bias", None, math_b_pass
+        else:
+            return False, "winner_divergence", None, math_b_pass
+
+    elif outcome_ab == "tie":
+        return True, None, "tie", math_b_pass
+    else:
+        return False, "inconclusive_verdict", None, math_b_pass
+
+
+def _harden_read_only(tree: Path) -> None:
+    """Set files to 0444 and directories to 0555 before publishing."""
+    for rel, path, sinfo in _walk(tree):
+        if stat.S_ISDIR(sinfo.st_mode):
+            os.chmod(path, 0o555)
+        elif stat.S_ISREG(sinfo.st_mode):
+            os.chmod(path, 0o444)
+    os.chmod(tree, 0o555)
+
+
+def _cleanup_staging(staging_path: Path) -> None:
+    """Clean up staging directory, restoring permissions if hardened, without suppressing errors."""
+    if not staging_path.exists():
+        return
+
+    # First pass: restore write permissions recursively
+    for root_dir, dirs, files in os.walk(staging_path, topdown=False):
+        for fname in files:
+            fpath = Path(root_dir) / fname
+            try:
+                os.chmod(fpath, 0o600)
+            except OSError:
+                pass
+        for dname in dirs:
+            dpath = Path(root_dir) / dname
+            try:
+                os.chmod(dpath, 0o700)
+            except OSError:
+                pass
+    try:
+        os.chmod(staging_path, 0o700)
+    except OSError:
+        pass
+
+    def _onerror(func: Any, path: str, exc_info: Any) -> None:
+        try:
+            os.chmod(path, 0o700)
+            func(path)
+        except OSError:
+            pass
+
+    shutil.rmtree(staging_path, onerror=_onerror)
+    if staging_path.exists():
+        try:
+            os.chmod(staging_path, 0o700)
+        except OSError:
+            pass
+        shutil.rmtree(staging_path)
+
+
+def _revalidate_published_evaluation(
+    root: Path,
+    eval_dir: Path,
+    *,
+    expected_run_id: str,
+    expected_cycle_id: int,
+    expected_candidate_id: str,
+    expected_gate_report_locator: str,
+) -> tuple[dict[str, Any], list[str]]:
+    """Revalidate every cryptographic and semantic M8 publication binding."""
+    root = Path(root).resolve()
+    try:
+        relative_eval_dir = eval_dir.resolve().relative_to(root).as_posix()
+    except (OSError, ValueError) as exc:
+        raise EvaluationError("published evaluation directory escapes project root") from exc
+    canonical_dir = f"state/evaluations/{expected_run_id}/c{expected_cycle_id:04d}"
+    if relative_eval_dir != canonical_dir:
+        raise EvaluationError("published evaluation directory is not canonical")
+    _contained(root, canonical_dir, True)
+
+    manifest_path = eval_dir / "manifest.json"
+    eval_path = eval_dir / "evaluation.json"
+    meta_path = eval_dir / "meta-verdict.json"
+    verdicts_dir = eval_dir / "verdicts"
+
+    if not manifest_path.exists() or not eval_path.exists() or not meta_path.exists() or not verdicts_dir.is_dir():
+        raise EvaluationError("published evaluation directory is missing core artifacts")
+
+    manifest, raw_man = _read_json(manifest_path)
+    eval_report, raw_eval = _read_json(eval_path)
+    meta_verdict, raw_meta = _read_json(meta_path)
+
+    _validate_schema(root, EVALUATION_MANIFEST_SCHEMA, manifest)
+    _validate_schema(root, EVALUATION_REPORT_SCHEMA, eval_report)
+    _validate_schema(root, META_VERDICT_SCHEMA, meta_verdict)
+    _require_canonical_json(manifest, raw_man, "evaluation manifest")
+    _require_canonical_json(eval_report, raw_eval, "evaluation report")
+    _require_canonical_json(meta_verdict, raw_meta, "meta-verdict")
+
+    if (
+        manifest.get("run_id") != expected_run_id
+        or manifest.get("cycle_id") != expected_cycle_id
+        or manifest.get("candidate_id") != expected_candidate_id
+        or manifest.get("gate_report_locator") != expected_gate_report_locator
+    ):
+        raise EvaluationError("published evaluation manifest does not match expected run/cycle/candidate")
+
+    if (
+        eval_report.get("run_id") != expected_run_id
+        or eval_report.get("cycle_id") != expected_cycle_id
+        or eval_report.get("candidate_id") != expected_candidate_id
+        or eval_report.get("gate_report_locator") != expected_gate_report_locator
+    ):
+        raise EvaluationError("published evaluation report does not match expected run/cycle/candidate")
+
+    shared_fields = (
+        "evaluation_id",
+        "comparison_id",
+        "run_id",
+        "cycle_id",
+        "candidate_id",
+        "gate_report_locator",
+        "base_hash",
+        "candidate_content_hash",
+        "diversity_assurance",
+    )
+    if any(manifest.get(field) != eval_report.get(field) for field in shared_fields):
+        raise EvaluationError("published evaluation manifest/report identity differs")
+    if manifest.get("rubric_version") != RUBRIC_VERSION:
+        raise EvaluationError("published evaluation uses a non-canonical rubric version")
+    if eval_report.get("meta_verdict") != meta_verdict:
+        raise EvaluationError("embedded and published meta-verdict differ")
+    if (
+        meta_verdict.get("comparison_id") != eval_report.get("comparison_id")
+        or meta_verdict.get("gate_report_id") != eval_report.get("gate_report_id")
+    ):
+        raise EvaluationError("meta-verdict identity differs from evaluation report")
+    for locator in meta_verdict.get("evidence_locators", []):
+        if Path(locator).is_absolute() or ".." in Path(locator).parts:
+            raise EvaluationError("published meta-verdict contains unsafe evidence locator")
+
+    try:
+        gate_report = verify_gate_report(
+            root,
+            expected_gate_report_locator,
+            require_candidate_built=False,
+        )
+    except Exception as exc:
+        raise EvaluationError(f"published evaluation GateReport verification failed: {exc}") from exc
+    if (
+        gate_report.get("report_hash") != manifest.get("gate_report_hash")
+        or gate_report.get("report_id") != eval_report.get("gate_report_id")
+        or gate_report.get("run_id") != expected_run_id
+        or gate_report.get("cycle_id") != expected_cycle_id
+        or gate_report.get("candidate_id") != expected_candidate_id
+        or gate_report.get("candidate_content_hash") != eval_report.get("candidate_content_hash")
+    ):
+        raise EvaluationError("published evaluation GateReport binding differs")
+
+    challenger_dir = root / "versions" / "challengers" / expected_candidate_id
+    try:
+        challenger_relative = challenger_dir.resolve().relative_to(root).as_posix()
+    except (OSError, ValueError) as exc:
+        raise EvaluationError("challenger path escapes project root") from exc
+    if challenger_relative != f"versions/challengers/{expected_candidate_id}":
+        raise EvaluationError("challenger candidate_id is not a canonical direct child")
+    challenger_manifest, challenger_manifest_raw = _read_json(challenger_dir / "manifest.json")
+    _validate_schema(root, "candidate-manifest.schema.json", challenger_manifest)
+    _require_canonical_json(challenger_manifest, challenger_manifest_raw, "challenger manifest")
+    base_candidate_id = challenger_manifest.get("base_candidate_id")
+    if not isinstance(base_candidate_id, str) or not re.fullmatch(r"v\d{4,}", base_candidate_id):
+        raise EvaluationError("challenger base_candidate_id is not canonical")
+    champion_dir = root / "versions" / "champion" / base_candidate_id
+    champion_manifest, _ = _read_json(champion_dir / "manifest.json")
+    _validate_schema(root, "candidate-manifest.schema.json", champion_manifest)
+    champion_hash = _candidate_content_hash(champion_dir, champion_manifest)
+    challenger_hash = _candidate_content_hash(challenger_dir, challenger_manifest)
+    if (
+        champion_manifest.get("candidate_id") != base_candidate_id
+        or champion_hash != champion_manifest.get("content_hash")
+        or challenger_hash != challenger_manifest.get("content_hash")
+        or challenger_manifest.get("candidate_id") != expected_candidate_id
+        or challenger_manifest.get("base_hash") != champion_hash
+        or eval_report.get("base_hash") != champion_hash
+        or eval_report.get("candidate_content_hash") != challenger_hash
+    ):
+        raise EvaluationError("published evaluation candidate/base binding differs")
+
+    expected_comparison_id = f"cmp-{_sha(_json({
+        'candidate_hashes': [champion_hash, challenger_hash],
+        'rubric_version': RUBRIC_VERSION,
+        'order_seed': eval_report['order_seed'],
+    }))}"
+    expected_evaluation_id = f"eval-{_sha(_json({
+        'comparison_id': expected_comparison_id,
+        'candidate_id': expected_candidate_id,
+    }))[:32]}"
+    if (
+        eval_report.get("comparison_id") != expected_comparison_id
+        or eval_report.get("evaluation_id") != expected_evaluation_id
+    ):
+        raise EvaluationError("published evaluation identity is not content-addressed to its comparison")
+
+    # Verify verdict files
+    verdict_files = sorted(verdicts_dir.glob("*.json"))
+    if len(verdict_files) != 6:
+        raise EvaluationError(f"published evaluation must have exactly 6 verdicts, found {len(verdict_files)}")
+
+    computed_verdict_hashes: dict[str, str] = {}
+    verdicts: list[dict[str, Any]] = []
+    for vf in verdict_files:
+        v_data, v_raw = _read_json(vf)
+        _validate_schema(root, EVALUATION_SCHEMA, v_data)
+        _require_canonical_json(v_data, v_raw, "jury verdict")
+        v_id = v_data["verdict_id"]
+        if vf.name != f"{v_id}.json":
+            raise EvaluationError("verdict filename does not match verdict_id")
+        if v_id in computed_verdict_hashes:
+            raise EvaluationError("published evaluation contains duplicate verdict_id")
+        if (
+            v_data.get("comparison_id") != eval_report.get("comparison_id")
+            or v_data.get("candidate_neutral_ids") != ["A", "B"]
+            or v_data.get("content_hashes") != [champion_hash, challenger_hash]
+            or v_data.get("order_seed") != eval_report.get("order_seed")
+            or v_data.get("rubric_version") != manifest.get("rubric_version")
+        ):
+            raise EvaluationError("published verdict presentation binding differs")
+        for candidate_scores in v_data.get("dimension_scores", []):
+            if any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                or value < 0
+                or value > 5
+                for value in candidate_scores.values()
+            ):
+                raise EvaluationError("published verdict contains a non-finite or out-of-range score")
+        for locator in v_data.get("evidence_locators", []):
+            if Path(locator).is_absolute() or ".." in Path(locator).parts:
+                raise EvaluationError("published verdict contains unsafe evidence locator")
+        v_hash = _sha(v_raw)
+        computed_verdict_hashes[v_id] = v_hash
+        verdicts.append(v_data)
+
+    if manifest.get("verdict_hashes") != computed_verdict_hashes:
+        raise EvaluationError("published manifest verdict_hashes mismatch")
+
+    if manifest.get("meta_verdict_hash") != _sha(raw_meta):
+        raise EvaluationError("published manifest meta_verdict_hash mismatch")
+
+    if manifest.get("evaluation_report_hash") != _sha(raw_eval):
+        raise EvaluationError("published manifest evaluation_report_hash mismatch")
+
+    report_verdict_ids = eval_report.get("verdict_ids", [])
+    if len(report_verdict_ids) != len(set(report_verdict_ids)) or set(report_verdict_ids) != set(computed_verdict_hashes):
+        raise EvaluationError("evaluation report verdict_ids differ from published verdicts")
+
+    expected_jurors = {juror_id for juror_id, _, _ in JUROR_SPECIALTIES}
+    grouped: dict[str, dict[tuple[str, str], dict[str, Any]]] = {}
+    for verdict in verdicts:
+        juror_id = verdict.get("juror_id")
+        if juror_id not in expected_jurors:
+            raise EvaluationError("published verdict has non-canonical juror_id")
+        order = tuple(verdict["presentation_order"])
+        if order in grouped.setdefault(juror_id, {}):
+            raise EvaluationError("published jury contains duplicate presentation order")
+        grouped[juror_id][order] = verdict
+    if set(grouped) != expected_jurors or any(set(items) != {("A", "B"), ("B", "A")} for items in grouped.values()):
+        raise EvaluationError("published jury is not three complete inversion pairs")
+
+    report_jurors = eval_report.get("juror_evaluations", [])
+    by_juror = {item.get("juror_id"): item for item in report_jurors}
+    if len(by_juror) != 3 or set(by_juror) != expected_jurors:
+        raise EvaluationError("evaluation report juror_evaluations are not canonical")
+
+    recomputed: list[dict[str, Any]] = []
+    for juror_id, specialty, _ in JUROR_SPECIALTIES:
+        verdict_ab = grouped[juror_id][("A", "B")]
+        verdict_ba = grouped[juror_id][("B", "A")]
+        consistent, reason, winner, math_pass = check_inversion_consistency(verdict_ab, verdict_ba)
+        reported = by_juror[juror_id]
+        expected_values = {
+            "specialty": specialty,
+            "consistent": consistent,
+            "inconsistency_reason": reason,
+            "inferred_winner": winner,
+            "candidate_b_math_pass": math_pass,
+            "verdict_ab_id": verdict_ab["verdict_id"],
+            "verdict_ba_id": verdict_ba["verdict_id"],
+        }
+        if any(reported.get(key) != value for key, value in expected_values.items()):
+            raise EvaluationError("evaluation report jury aggregation differs from verdicts")
+        recomputed.append(reported)
+
+    consistent_results = [item for item in recomputed if item["consistent"]]
+    challenger_wins = sum(item["inferred_winner"] == "B" for item in consistent_results)
+    champion_wins = sum(item["inferred_winner"] == "A" for item in consistent_results)
+    ties = sum(item["inferred_winner"] == "tie" for item in consistent_results)
+    divergent_count = len(recomputed) - len(consistent_results)
+    all_math_pass = bool(consistent_results) and all(item["candidate_b_math_pass"] for item in consistent_results)
+    meta_confirmed = bool(meta_verdict.get("confirmed") and not meta_verdict.get("vetoed"))
+    if challenger_wins >= 2 and meta_confirmed and all_math_pass and gate_report["overall_pass"] and gate_report["correctness_math_pass"]:
+        expected_outcome, expected_eligible = "challenger_favored", True
+    elif champion_wins >= 2:
+        expected_outcome, expected_eligible = "champion_favored", False
+    elif ties >= 2:
+        expected_outcome, expected_eligible = "tie", False
+    else:
+        expected_outcome, expected_eligible = "inconclusive", False
+    expected_aggregates = {
+        "total_jurors": 3,
+        "consistent_jurors": len(consistent_results),
+        "divergent_jurors": divergent_count,
+        "challenger_wins": challenger_wins,
+        "champion_wins": champion_wins,
+        "ties": ties,
+        "meta_confirmed": meta_confirmed,
+        "overall_outcome": expected_outcome,
+        "challenger_eligible": expected_eligible,
+        "correctness_math_pass": all_math_pass,
+    }
+    if any(eval_report.get(key) != value for key, value in expected_aggregates.items()):
+        raise EvaluationError("evaluation report aggregate differs from canonical jury result")
+    if (
+        meta_verdict.get("consistent_verdict_count") != len(consistent_results)
+        or meta_verdict.get("divergence_count") != divergent_count
+    ):
+        raise EvaluationError("meta-verdict counts differ from canonical jury result")
+    family_count = len({item["model_family"] for item in recomputed})
+    expected_diversity = "full_diversity" if family_count == 3 else "reduced_diversity_assurance"
+    if eval_report.get("diversity_assurance") != expected_diversity:
+        raise EvaluationError("evaluation diversity assurance differs from model families")
+
+    walked_entries = _walk(eval_dir)
+    expected_entries = {
+        "evaluation.json",
+        "manifest.json",
+        "meta-verdict.json",
+        "verdicts",
+        *(f"verdicts/{verdict_id}.json" for verdict_id in computed_verdict_hashes),
+    }
+    actual_entries = {relative for relative, _, _ in walked_entries}
+    if actual_entries != expected_entries:
+        raise EvaluationError("published evaluation directory contains unexpected artifacts")
+    if stat.S_IMODE(eval_dir.lstat().st_mode) != 0o555 or any(
+        stat.S_IMODE(info.st_mode) != (0o555 if stat.S_ISDIR(info.st_mode) else 0o444)
+        for _, _, info in walked_entries
+    ):
+        raise EvaluationError("published evaluation permissions are not immutable")
+
+    current_tree_hash = tree_hash(eval_dir, exclude={"manifest.json"})
+    if manifest.get("tree_content_hash") != current_tree_hash:
+        raise EvaluationError("published evaluation tree content hash mismatch")
+
+    recovered_artifact_hashes = sorted([
+        _sha(raw_eval),
+        _sha(raw_meta),
+        _sha(raw_man),
+        *computed_verdict_hashes.values(),
+    ])
+
+    return eval_report, recovered_artifact_hashes
+
+
+def evaluate_candidate(
+    root: Path | str,
+    run_id: str,
+    *,
+    cycle_id: int | None = None,
+    candidate_id: str | None = None,
+    gate_report_locator: str | None = None,
+    order_seed: int = 413,
+    juror_adapters: Mapping[str, Any] | None = None,
+    meta_adapter: Any | None = None,
+    model_families: Mapping[str, str] | None = None,
+    allow_test_doubles: bool = False,
+    store: DurableStore | None = None,
+    fault: Callable[[str], None] | None = None,
+) -> dict[str, Any]:
+    """Execute the canonical blind evaluation and meta-review pipeline for M8.
+
+    Preconditions:
+      - Active state in DurableStore must be State.GATES_PASSED
+      - Active GATES_PASSED event contains candidate_hash matching GateReport candidate_hash
+      - GateReport is verified with canonical verify_gate_report() and bound to event
+      - cycle_id, candidate_id, and gate_report_locator match active GATES_PASSED event
+      - Operational juror and meta-reviewer adapters are explicitly configured
+      - Test doubles are rejected unless allow_test_doubles=True
+      - Champion and Challenger trees match content hashes
+    Postconditions:
+      - All 6 verdicts validated, locked in immutable write-once storage
+      - Inversion consistency checked for 3 juror pairs
+      - Meta-review executed and persisted
+      - State transitioned to State.EVALUATED in DurableStore
+      - Challenger and champion tree hashes verified unchanged
+    """
+    if not isinstance(run_id, str) or not run_id:
+        raise EvaluationError("run_id must be a non-empty string")
+    if cycle_id is not None and (
+        isinstance(cycle_id, bool) or not isinstance(cycle_id, int) or cycle_id < 0
+    ):
+        raise EvaluationError("cycle_id must be a non-negative integer")
+    if candidate_id is not None and (not isinstance(candidate_id, str) or not candidate_id):
+        raise EvaluationError("candidate_id must be a non-empty string")
+    if gate_report_locator is not None and (
+        not isinstance(gate_report_locator, str) or not gate_report_locator
+    ):
+        raise EvaluationError("gate_report_locator must be a non-empty string")
+    if not isinstance(allow_test_doubles, bool):
+        raise EvaluationError(f"allow_test_doubles must be a boolean, got {type(allow_test_doubles).__name__}")
+    if isinstance(order_seed, bool) or not isinstance(order_seed, int) or order_seed < 0:
+        raise EvaluationError("order_seed must be a non-negative integer")
+    if juror_adapters is not None and not isinstance(juror_adapters, Mapping):
+        raise EvaluationError("juror_adapters must be an object mapping canonical juror IDs to adapters")
+    if model_families is not None and not isinstance(model_families, Mapping):
+        raise EvaluationError("model_families must be an object mapping canonical juror IDs to identifiers")
+    root = Path(root).resolve()
+    store = store or DurableStore(root)
+
+    def _trigger_fault(stage: str) -> None:
+        if fault:
+            fault(stage)
+
+    # 1. Verify state and event log binding
+    events = store.read_events(run_id)
+    if not events:
+        raise EvaluationError("run has no events")
+
+    last_event = events[-1]
+    current_state = State(last_event["state_to"])
+    effective_cycle_id = last_event["cycle_id"]
+    event_payload = last_event.get("payload", {})
+    event_candidate_id = event_payload.get("candidate_id")
+
+    # A completed delivery is a read-only replay: revalidate the immutable
+    # publication and its exact EVALUATED event rather than requiring adapters
+    # or attempting another jury run.
+    if current_state == State.EVALUATED and last_event.get("event_type") == "EVALUATED":
+        if cycle_id is not None and cycle_id != effective_cycle_id:
+            raise EvaluationError(
+                f"cycle_id {cycle_id} diverges from active EVALUATED event cycle {effective_cycle_id}"
+            )
+        if candidate_id is not None and candidate_id != event_candidate_id:
+            raise EvaluationError(
+                f"candidate_id '{candidate_id}' diverges from active EVALUATED event candidate '{event_candidate_id}'"
+            )
+        if not isinstance(event_candidate_id, str) or not event_candidate_id:
+            raise EvaluationError("active EVALUATED event is missing candidate_id")
+        canonical_locator = f"state/evaluations/{run_id}/c{effective_cycle_id:04d}/evaluation.json"
+        eval_dir = root / "state" / "evaluations" / run_id / f"c{effective_cycle_id:04d}"
+        manifest, _ = _read_json(eval_dir / "manifest.json")
+        published_gate_locator = manifest.get("gate_report_locator")
+        if not isinstance(published_gate_locator, str) or not published_gate_locator:
+            raise EvaluationError("published evaluation manifest is missing gate_report_locator")
+        if gate_report_locator is not None and gate_report_locator != published_gate_locator:
+            raise EvaluationError("gate_report_locator diverges from published evaluation")
+        existing_report, recovered_hashes = _revalidate_published_evaluation(
+            root,
+            eval_dir,
+            expected_run_id=run_id,
+            expected_cycle_id=effective_cycle_id,
+            expected_candidate_id=event_candidate_id,
+            expected_gate_report_locator=published_gate_locator,
+        )
+        try:
+            published_gate = verify_gate_report(
+                root,
+                published_gate_locator,
+                require_candidate_built=False,
+            )
+        except Exception as exc:
+            raise EvaluationError("published evaluation GateReport verification failed") from exc
+        if existing_report.get("order_seed") != order_seed:
+            raise EvaluationError("order_seed diverges from published evaluation")
+        if model_families is not None:
+            reported_families = {
+                item["juror_id"]: item["model_family"]
+                for item in existing_report["juror_evaluations"]
+            }
+            if dict(model_families) != reported_families:
+                raise EvaluationError("model_families diverges from published evaluation")
+        if (
+            event_payload.get("candidate_content_hash") != existing_report.get("candidate_content_hash")
+            or event_payload.get("candidate_hash") != published_gate.get("candidate_hash")
+            or event_payload.get("base_hash") != existing_report.get("base_hash")
+            or event_payload.get("evaluation_id") != existing_report.get("evaluation_id")
+            or event_payload.get("comparison_id") != existing_report.get("comparison_id")
+            or event_payload.get("overall_outcome") != existing_report.get("overall_outcome")
+            or event_payload.get("challenger_eligible") != existing_report.get("challenger_eligible")
+            or event_payload.get("verdict_ids") != existing_report.get("verdict_ids")
+            or event_payload.get("evaluation_locator") != canonical_locator
+            or last_event.get("artifact_hashes") != recovered_hashes
+        ):
+            raise EvaluationError("EVALUATED event binding differs from published evaluation")
+        return existing_report
+
+    if current_state != State.GATES_PASSED:
+        raise EvaluationError(f"evaluation requires state GATES_PASSED, found: {current_state}")
+
+    event_report_locator = event_payload.get("report_locator")
+    event_candidate_hash = event_payload.get("candidate_hash")
+
+    if not event_candidate_id or not event_report_locator:
+        raise EvaluationError("active GATES_PASSED event is missing candidate_id or report_locator in payload")
+
+    if not event_candidate_hash or not isinstance(event_candidate_hash, str) or len(event_candidate_hash) != 64:
+        raise EvaluationError("active GATES_PASSED event is missing candidate_hash in payload")
+
+    # Strict parameter consistency checks
+    if cycle_id is not None:
+        if cycle_id != effective_cycle_id:
+            raise EvaluationError(f"cycle_id {cycle_id} diverges from active GATES_PASSED event cycle {effective_cycle_id}")
+
+    if candidate_id is not None:
+        if candidate_id != event_candidate_id:
+            raise EvaluationError(f"candidate_id '{candidate_id}' diverges from active GATES_PASSED event candidate '{event_candidate_id}'")
+
+    if gate_report_locator is not None:
+        if gate_report_locator != event_report_locator:
+            raise EvaluationError("gate_report_locator diverges from active GATES_PASSED event report locator")
+
+    # 2. Canonical verification of GateReport
+    try:
+        gate_report = verify_gate_report(root, event_report_locator, store=store, require_candidate_built=False)
+    except Exception as exc:
+        raise EvaluationError(f"gate report verification failed: {exc}") from exc
+
+    if gate_report["run_id"] != run_id or gate_report["cycle_id"] != effective_cycle_id:
+        raise EvaluationError("gate report run/cycle identity differs from active event")
+    if gate_report["candidate_id"] != event_candidate_id:
+        raise EvaluationError("gate report candidate_id differs from active event")
+    if gate_report.get("candidate_hash") != event_candidate_hash:
+        raise EvaluationError(
+            f"active GATES_PASSED event candidate_hash '{event_candidate_hash}' does not match GateReport candidate_hash '{gate_report.get('candidate_hash')}'"
+        )
+    if not gate_report.get("overall_pass"):
+        raise EvaluationError("GateReport overall_pass is false; candidate cannot proceed to jury")
+    if not gate_report.get("correctness_math_pass"):
+        raise EvaluationError("GateReport correctness_math_pass is false; candidate cannot proceed to jury")
+
+    # 3. Locate and verify the Challenger and its explicitly bound Champion.
+    challenger_dir = root / "versions/challengers" / event_candidate_id
+    try:
+        challenger_relative = challenger_dir.resolve().relative_to(root).as_posix()
+    except (OSError, ValueError) as exc:
+        raise EvaluationError("challenger path escapes project root") from exc
+    if challenger_relative != f"versions/challengers/{event_candidate_id}" or not challenger_dir.is_dir():
+        raise EvaluationError(f"challenger directory missing: {event_candidate_id}")
+
+    chall_manifest, chall_manifest_raw = _read_json(challenger_dir / "manifest.json")
+    _validate_schema(root, "candidate-manifest.schema.json", chall_manifest)
+    _require_canonical_json(chall_manifest, chall_manifest_raw, "challenger manifest")
+    if chall_manifest.get("candidate_id") != event_candidate_id:
+        raise EvaluationError("challenger manifest candidate_id differs from active event")
+    base_candidate_id = chall_manifest.get("base_candidate_id")
+    if not isinstance(base_candidate_id, str) or not re.fullmatch(r"v\d{4,}", base_candidate_id):
+        raise EvaluationError("challenger base_candidate_id is not canonical")
+    champion_dir = root / "versions" / "champion" / base_candidate_id
+    if not champion_dir.is_dir() or champion_dir.resolve().parent != (root / "versions/champion").resolve():
+        raise EvaluationError(f"bound champion directory missing: {base_candidate_id}")
+    champ_manifest, _ = _read_json(champion_dir / "manifest.json")
+    _validate_schema(root, "candidate-manifest.schema.json", champ_manifest)
+    if champ_manifest.get("candidate_id") != base_candidate_id:
+        raise EvaluationError("champion manifest candidate_id differs from challenger base_candidate_id")
+
+    champ_hash_before = _candidate_content_hash(champion_dir, champ_manifest)
+    chall_hash_before = _candidate_content_hash(challenger_dir, chall_manifest)
+
+    if champ_hash_before != champ_manifest.get("content_hash"):
+        raise EvaluationError("champion content hash mismatch")
+    if chall_hash_before != chall_manifest.get("content_hash"):
+        raise EvaluationError("challenger content hash mismatch")
+    if chall_hash_before != gate_report["candidate_content_hash"]:
+        raise EvaluationError("challenger content hash mismatch with GateReport")
+    if chall_manifest.get("base_hash") != champ_hash_before:
+        raise EvaluationError("challenger base_hash mismatch with bound champion")
+
+    eval_dir = root / f"state/evaluations/{run_id}/c{effective_cycle_id:04d}"
+    _managed_directory(root, f"state/evaluations/{run_id}", create=False)
+
+    # 4. Fail-closed Operational Boundary Check.  A crash recovery consumes
+    # only the already-published immutable evidence and therefore must not
+    # depend on the continued availability of external adapters.
+    if not eval_dir.exists():
+        if juror_adapters is None:
+            raise EvaluationError("no operational juror adapter configured; operational evaluations require explicit juror adapters")
+        if meta_adapter is None:
+            raise EvaluationError("no operational meta-reviewer adapter configured; operational evaluations require an explicit meta-reviewer adapter")
+
+        if not allow_test_doubles:
+            for jid, adapter in juror_adapters.items():
+                if getattr(adapter, "is_test_double", False):
+                    raise EvaluationError(
+                        f"test double detected for juror adapter '{jid}'; test doubles require allow_test_doubles=True"
+                    )
+            if getattr(meta_adapter, "is_test_double", False):
+                raise EvaluationError(
+                    "test double detected for meta-reviewer adapter; test doubles require allow_test_doubles=True"
+                )
+
+        _trigger_fault("after_preconditions_verified")
+
+    # 5. Check for already published evaluation (Idempotent Recovery & Crash Safety)
+    if eval_dir.exists():
+        existing_report, recovered_hashes = _revalidate_published_evaluation(
+            root,
+            eval_dir,
+            expected_run_id=run_id,
+            expected_cycle_id=effective_cycle_id,
+            expected_candidate_id=event_candidate_id,
+            expected_gate_report_locator=event_report_locator,
+        )
+        if existing_report.get("order_seed") != order_seed:
+            raise EvaluationError("order_seed diverges from published evaluation")
+        if model_families is not None:
+            reported_families = {
+                item["juror_id"]: item["model_family"]
+                for item in existing_report["juror_evaluations"]
+            }
+            if dict(model_families) != reported_families:
+                raise EvaluationError("model_families diverges from published evaluation")
+        # Commit EVALUATED event if crash happened between publish and event
+        event_id = f"evt-evaluated-c{effective_cycle_id:04d}-{event_candidate_id}"
+        idempotency_key = f"evaluated:{run_id}:c{effective_cycle_id:04d}:{event_candidate_id}"
+        store.record(
+            run_id=run_id,
+            target=State.EVALUATED,
+            event_id=event_id,
+            idempotency_key=idempotency_key,
+            actor_id="M00",
+            event_type="EVALUATED",
+            payload={
+                "candidate_id": event_candidate_id,
+                "candidate_content_hash": chall_hash_before,
+                "candidate_hash": event_candidate_hash,
+                "base_hash": champ_hash_before,
+                "evaluation_id": existing_report["evaluation_id"],
+                "comparison_id": existing_report["comparison_id"],
+                "overall_outcome": existing_report["overall_outcome"],
+                "challenger_eligible": existing_report["challenger_eligible"],
+                "verdict_ids": existing_report["verdict_ids"],
+                "evaluation_locator": f"state/evaluations/{run_id}/c{effective_cycle_id:04d}/evaluation.json",
+            },
+            artifact_hashes=recovered_hashes,
+        )
+        return existing_report
+
+    # 6. Build sanitized BlindComparisonBundle
+    bundle = BlindComparisonBundle.create(
+        root,
+        champion_dir=champion_dir,
+        challenger_dir=challenger_dir,
+        order_seed=order_seed,
+    )
+
+    load_rubric(root)
+
+    adapters = dict(juror_adapters)
+    expected_jurors = {juror_id for juror_id, _, _ in JUROR_SPECIALTIES}
+    if set(adapters) != expected_jurors:
+        raise EvaluationError("juror adapters must contain exactly the three canonical juror IDs")
+    families = dict({
+        "juror-math": "eval-math-family",
+        "juror-contrib": "eval-contrib-family",
+        "juror-clarity": "eval-clarity-family",
+    } if model_families is None else model_families)
+    if set(families) != expected_jurors or any(not isinstance(value, str) or not value.strip() for value in families.values()):
+        raise EvaluationError("model_families must map exactly the canonical jurors to non-empty identifiers")
+
+    unique_families = {families.get(jid) for jid, _, _ in JUROR_SPECIALTIES}
+    diversity_assurance = "full_diversity" if len(unique_families) >= 3 else "reduced_diversity_assurance"
+
+    verdicts: list[dict[str, Any]] = []
+    verdict_hashes: dict[str, str] = {}
+    juror_results: list[dict[str, Any]] = []
+    consistent_verdicts: list[dict[str, Any]] = []
+    divergences: list[dict[str, Any]] = []
+    seen_verdict_ids: set[str] = set()
+
+    # 7. Execute A/B and B/A presentations for all 3 jurors
+    for juror_id, specialty, _ in JUROR_SPECIALTIES:
+        adapter = adapters.get(juror_id)
+        if not adapter:
+            raise EvaluationError(f"missing adapter for juror: {juror_id}")
+
+        # Presentation 1: A/B
+        pres_ab = bundle.presentation_for_order(["A", "B"])
+        try:
+            raw_v_ab = adapter.evaluate(pres_ab)
+        except Exception as exc:
+            raise EvaluationError(f"juror adapter '{juror_id}' failed for A/B presentation") from exc
+        if not isinstance(raw_v_ab, Mapping):
+            raise EvaluationError(f"juror adapter '{juror_id}' returned a non-object verdict")
+        val_v_ab = _validate_juror_verdict_response(
+            root,
+            raw_v_ab,
+            expected_juror_id=juror_id,
+            expected_presentation_order=["A", "B"],
+            bundle=bundle,
+            seen_verdict_ids=seen_verdict_ids,
+        )
+
+        # Presentation 2: B/A
+        pres_ba = bundle.presentation_for_order(["B", "A"])
+        try:
+            raw_v_ba = adapter.evaluate(pres_ba)
+        except Exception as exc:
+            raise EvaluationError(f"juror adapter '{juror_id}' failed for B/A presentation") from exc
+        if not isinstance(raw_v_ba, Mapping):
+            raise EvaluationError(f"juror adapter '{juror_id}' returned a non-object verdict")
+        val_v_ba = _validate_juror_verdict_response(
+            root,
+            raw_v_ba,
+            expected_juror_id=juror_id,
+            expected_presentation_order=["B", "A"],
+            bundle=bundle,
+            seen_verdict_ids=seen_verdict_ids,
+        )
+
+        for v in (val_v_ab, val_v_ba):
+            v_bytes = _json(v)
+            verdict_hashes[v["verdict_id"]] = _sha(v_bytes)
+            verdicts.append(v)
+
+        _trigger_fault(f"after_verdicts_evaluated_{juror_id}")
+
+        # Check inversion consistency
+        is_consistent, reason, inferred_winner, math_pass = check_inversion_consistency(val_v_ab, val_v_ba)
+
+        juror_eval = {
+            "juror_id": juror_id,
+            "specialty": specialty,
+            "model_family": families.get(juror_id, "unknown"),
+            "consistent": is_consistent,
+            "inconsistency_reason": reason,
+            "inferred_winner": inferred_winner,
+            "candidate_b_math_pass": math_pass,
+            "verdict_ab_id": val_v_ab["verdict_id"],
+            "verdict_ba_id": val_v_ba["verdict_id"],
+        }
+        juror_results.append(juror_eval)
+
+        if is_consistent:
+            consistent_verdicts.append(juror_eval)
+        else:
+            divergences.append(juror_eval)
+
+    # 8. Execute Meta-Review
+    gate_summary = {
+        "report_id": gate_report["report_id"],
+        "overall_pass": gate_report["overall_pass"],
+        "correctness_math_pass": gate_report["correctness_math_pass"],
+    }
+
+    try:
+        raw_meta = meta_adapter.review(
+            comparison_id=bundle.comparison_id,
+            consistent_verdicts=consistent_verdicts,
+            divergences=divergences,
+            gate_report_summary=gate_summary,
+        )
+    except Exception as exc:
+        raise EvaluationError("meta-reviewer adapter failed") from exc
+    if not isinstance(raw_meta, Mapping):
+        raise EvaluationError("meta-reviewer adapter returned a non-object verdict")
+
+    meta_result = _validate_meta_verdict_response(
+        root,
+        raw_meta,
+        bundle=bundle,
+        gate_report=gate_report,
+        consistent_count=len(consistent_verdicts),
+        divergence_count=len(divergences),
+    )
+
+    _trigger_fault("after_meta_review_evaluated")
+
+    # 9. Aggregation Logic
+    challenger_wins = sum(1 for j in consistent_verdicts if j["inferred_winner"] == "B")
+    champion_wins = sum(1 for j in consistent_verdicts if j["inferred_winner"] == "A")
+    ties = sum(1 for j in consistent_verdicts if j["inferred_winner"] == "tie")
+
+    all_consistent_math_pass = all(j["candidate_b_math_pass"] for j in consistent_verdicts) if consistent_verdicts else False
+    meta_confirmed = bool(meta_result.get("confirmed") and not meta_result.get("vetoed"))
+
+    if (
+        challenger_wins >= 2
+        and meta_confirmed
+        and all_consistent_math_pass
+        and gate_report["overall_pass"]
+        and gate_report["correctness_math_pass"]
+    ):
+        overall_outcome = "challenger_favored"
+        challenger_eligible = True
+    elif champion_wins >= 2:
+        overall_outcome = "champion_favored"
+        challenger_eligible = False
+    elif ties >= 2:
+        overall_outcome = "tie"
+        challenger_eligible = False
+    else:
+        overall_outcome = "inconclusive"
+        challenger_eligible = False
+
+    eval_id = f"eval-{_sha(_json({'comparison_id': bundle.comparison_id, 'candidate_id': event_candidate_id}))[:32]}"
+    report = {
+        "schema_version": SCHEMA_VERSION,
+        "evaluation_id": eval_id,
+        "run_id": run_id,
+        "cycle_id": effective_cycle_id,
+        "comparison_id": bundle.comparison_id,
+        "candidate_id": event_candidate_id,
+        "base_hash": bundle.content_hashes[0],
+        "candidate_content_hash": bundle.content_hashes[1],
+        "gate_report_id": gate_report["report_id"],
+        "gate_report_locator": event_report_locator,
+        "order_seed": order_seed,
+        "diversity_assurance": diversity_assurance,
+        "total_jurors": len(JUROR_SPECIALTIES),
+        "consistent_jurors": len(consistent_verdicts),
+        "divergent_jurors": len(divergences),
+        "challenger_wins": challenger_wins,
+        "champion_wins": champion_wins,
+        "ties": ties,
+        "meta_confirmed": meta_confirmed,
+        "overall_outcome": overall_outcome,
+        "challenger_eligible": challenger_eligible,
+        "correctness_math_pass": all_consistent_math_pass,
+        "juror_evaluations": juror_results,
+        "meta_verdict": meta_result,
+        "verdict_ids": [v["verdict_id"] for v in verdicts],
+        "evaluated_at": _now(),
+    }
+    _validate_schema(root, EVALUATION_REPORT_SCHEMA, report)
+
+    # 10. Write-Once Staging and Transactional Publishing
+    _managed_directory(root, f"state/evaluations/{run_id}", create=True)
+    staging = tempfile.mkdtemp(prefix=f".staging_c{effective_cycle_id:04d}_", dir=eval_dir.parent)
+    staging_path = Path(staging)
+
+    try:
+        staging_verdicts = staging_path / "verdicts"
+        staging_verdicts.mkdir(parents=True, exist_ok=True)
 
         for v in verdicts:
-            _validate_schema(self.root, EVALUATION_SCHEMA, v)
-            if v.get("blind_eval_id") != blind_eval_id or v.get("run_id") != run_id or v.get("cycle_id") != cycle_id:
-                raise EvaluationError("juror verdict identity does not match evaluation session")
+            v_path = staging_verdicts / f"{v['verdict_id']}.json"
+            _write_synced_file(v_path, _json(v))
 
-        juror_ids = {v["juror_id"] for v in verdicts}
-        if len(juror_ids) != 3 or juror_ids != {"juror-math", "juror-contrib", "juror-clarity"}:
-            raise EvaluationError("verdicts must come from the three designated jurors")
+        meta_path = staging_path / "meta-verdict.json"
+        meta_bytes = _json(meta_result)
+        _write_synced_file(meta_path, meta_bytes)
+        meta_hash = _sha(meta_bytes)
 
-        consensus_scores: dict[str, float] = {}
-        dimension_variance: dict[str, float] = {}
-        disagreements: list[dict[str, Any]] = []
+        report_path = staging_path / "evaluation.json"
+        report_bytes = _json(report)
+        _write_synced_file(report_path, report_bytes)
+        report_hash = _sha(report_bytes)
 
-        for dim in DIMENSIONS:
-            vals = [float(v["scores"][dim]) for v in verdicts]
-            mean = sum(vals) / len(vals)
-            var = sum((x - mean) ** 2 for x in vals) / len(vals)
-            consensus_scores[dim] = round(mean, 2)
-            dimension_variance[dim] = round(var, 3)
+        # Compute content hash of evaluation directory before manifest
+        staging_tree_content_hash = tree_hash(staging_path, exclude={"manifest.json"})
 
-            if var > 2.0:
-                disagreements.append({
-                    "dimension": dim,
-                    "variance": round(var, 3),
-                    "juror_scores": {v["juror_id"]: float(v["scores"][dim]) for v in verdicts},
-                    "reason": "High score variance across external jury panel.",
-                })
-
-        overall_score = round(sum(consensus_scores.values()) / len(consensus_scores), 2)
-        all_issues = [issue for v in verdicts for issue in v.get("issues", [])]
-
-        critical_count = sum(1 for iss in all_issues if str(iss.get("severity")).upper() == "CRITICAL")
-        recommendations = [v.get("recommendation") for v in verdicts]
-        accept_votes = sum(1 for r in recommendations if r == "accept")
-
-        meta_recommendation = "reject" if critical_count > 0 else ("accept" if accept_votes >= 2 else "revise")
-        pareto_vector = [consensus_scores[dim] for dim in DIMENSIONS]
-
-        verdict_hashes = [v["verdict_hash"] for v in verdicts]
-        raw_meta = {
+        manifest_data = {
             "schema_version": SCHEMA_VERSION,
-            "blind_eval_id": blind_eval_id,
+            "evaluation_id": eval_id,
+            "comparison_id": bundle.comparison_id,
             "run_id": run_id,
-            "cycle_id": cycle_id,
+            "cycle_id": effective_cycle_id,
+            "candidate_id": event_candidate_id,
+            "gate_report_locator": event_report_locator,
+            "gate_report_hash": gate_report["report_hash"],
+            "base_hash": bundle.content_hashes[0],
+            "candidate_content_hash": bundle.content_hashes[1],
+            "rubric_version": RUBRIC_VERSION,
+            "diversity_assurance": diversity_assurance,
             "verdict_hashes": verdict_hashes,
-            "consensus_scores": consensus_scores,
-            "dimension_variance": dimension_variance,
-            "overall_score": overall_score,
-            "pareto_vector": pareto_vector,
-            "disagreements": disagreements,
-            "critical_issue_count": critical_count,
-            "meta_recommendation": meta_recommendation,
-            "consolidated_issues": all_issues,
+            "meta_verdict_hash": meta_hash,
+            "evaluation_report_hash": report_hash,
+            "tree_content_hash": staging_tree_content_hash,
             "created_at": _now(),
         }
+        _validate_schema(root, EVALUATION_MANIFEST_SCHEMA, manifest_data)
+        manifest_bytes = _json(manifest_data)
+        manifest_hash = _sha(manifest_bytes)
+        _write_synced_file(staging_path / "manifest.json", manifest_bytes)
 
-        meta_hash = _sha(_json(raw_meta))
-        raw_meta["meta_verdict_hash"] = meta_hash
-        raw_meta["meta_verdict_id"] = f"mv-{meta_hash[:32]}"
-        _validate_schema(self.root, META_VERDICT_SCHEMA, raw_meta)
-        return raw_meta
+        # Sync staging directory tree before permission changes
+        _fsync_tree_dirs(staging_path)
 
+        # Harden permissions in staging (files 0444, dirs 0555)
+        _harden_read_only(staging_path)
 
-class EvaluationPipeline:
-    """Orchestrates end-to-end M8 blind evaluation, verification, and durability."""
+        # Sync staging directory tree after permission changes to persist directory inode changes
+        _fsync_tree_dirs(staging_path)
 
-    def __init__(self, root: str | Path, *, fault: Callable[[str], None] | None = None):
-        self.root = Path(root).resolve()
-        self.fault = fault
-        self.rubric = load_rubric(self.root)
-        self.evaluator = BlindEvaluator(self.root, self.rubric)
-        self.meta_reviewer = MetaReviewer(self.root, self.rubric)
+        _trigger_fault("before_publish_rename")
 
-        for rel in ("state/evaluation", "state/meta_review", "reports/evaluations", "workspaces/eval"):
-            _managed_directory(self.root, rel, create=True)
+        # Atomic publish
+        if eval_dir.exists():
+            raise EvaluationError(f"evaluation directory already exists: {eval_dir}")
+        os.replace(staging_path, eval_dir)
+        _fsync_dir(eval_dir.parent)
 
-    def _hit(self, name: str) -> None:
-        if self.fault:
-            self.fault(name)
+    finally:
+        if staging_path.exists():
+            _cleanup_staging(staging_path)
 
-    def evaluate_candidate(
-        self,
-        candidate_dir: str | Path,
-        *,
-        run_id: str,
-        cycle_id: int,
-    ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
-        """Perform pure blind evaluation without touching durable state or state transitions."""
-        cand_path = Path(candidate_dir).resolve()
-        if not cand_path.is_dir():
-            raise EvaluationError("candidate path must be an existing directory")
+    _trigger_fault("after_publish_rename")
 
-        cand_manifest_file = cand_path / "manifest.json"
-        manifest, _ = _read_json(cand_manifest_file)
-        cand_id = manifest.get("candidate_id")
-        cand_content_hash = manifest.get("content_hash")
-
-        calc_hash = _candidate_content_hash(cand_path, manifest)
-        if calc_hash != cand_content_hash:
-            raise EvaluationError("candidate manifest content hash diverges from actual tree content")
-
-        blind_eval_seed = f"{run_id}:{cycle_id}:{cand_id}:{cand_content_hash}"
-        blind_eval_id = "be-" + _sha(blind_eval_seed.encode("utf-8"))[:24]
-
-        staging_dir = Path(tempfile.mkdtemp(prefix=".eval-stage-", dir=self.root / "workspaces/eval"))
-        try:
-            blind_workspace = staging_dir / "blind"
-            sanitize_candidate(cand_path, blind_workspace)
-
-            verdicts: list[dict[str, Any]] = []
-            for jid, fdim, prof in JUROR_SPECIALTIES:
-                verdict = self.evaluator.evaluate_juror(
-                    blind_workspace,
-                    jid,
-                    fdim,
-                    prof,
-                    run_id=run_id,
-                    cycle_id=cycle_id,
-                    blind_eval_id=blind_eval_id,
-                )
-                verdicts.append(verdict)
-
-            meta_verdict = self.meta_reviewer.aggregate(
-                verdicts,
-                run_id=run_id,
-                cycle_id=cycle_id,
-                blind_eval_id=blind_eval_id,
-            )
-
-            raw_report = {
-                "schema_version": SCHEMA_VERSION,
-                "report_version": "1.0.0",
-                "run_id": run_id,
-                "cycle_id": cycle_id,
-                "candidate_id": cand_id,
-                "candidate_content_hash": cand_content_hash,
-                "blind_eval_id": blind_eval_id,
-                "meta_verdict": meta_verdict,
-                "juror_verdicts": verdicts,
-                "pareto_vector": meta_verdict["pareto_vector"],
-                "overall_score": meta_verdict["overall_score"],
-                "recommendation": meta_verdict["meta_recommendation"],
-                "generated_at": _now(),
-            }
-
-            rep_hash = _sha(_json(raw_report))
-            raw_report["report_hash"] = rep_hash
-            raw_report["report_id"] = f"evr-{rep_hash[:32]}"
-            raw_report["report_locator"] = f"reports/evaluations/{cand_id}/{rep_hash}.json"
-
-            _validate_schema(self.root, EVALUATION_REPORT_SCHEMA, raw_report)
-            return raw_report, meta_verdict, verdicts
-        finally:
-            if staging_dir.exists():
-                for p in staging_dir.rglob("*"):
-                    if p.is_file() or p.is_symlink():
-                        os.chmod(p, 0o600)
-                        p.unlink()
-                    elif p.is_dir():
-                        os.chmod(p, 0o700)
-                shutil.rmtree(staging_dir)
-
-    def publish_evaluation(
-        self,
-        report: Mapping[str, Any],
-        meta_verdict: Mapping[str, Any],
-        verdicts: Sequence[Mapping[str, Any]],
-    ) -> Path:
-        """Persist evaluation artifacts atomically and immutably into state directories."""
-        cand_id = report["candidate_id"]
-        eval_state_dir = _managed_directory(self.root, f"state/evaluation/{cand_id}", create=True)
-        meta_state_dir = _managed_directory(self.root, f"state/meta_review/{cand_id}", create=True)
-        rep_dir = _managed_directory(self.root, f"reports/evaluations/{cand_id}", create=True)
-
-        for v in verdicts:
-            v_hash = v["verdict_hash"]
-            v_file = eval_state_dir / f"{v_hash}.json"
-            if not v_file.exists():
-                v_raw = _json(dict(v))
-                _write_synced_file(v_file, v_raw)
-                os.chmod(v_file, 0o444)
-
-        mv_hash = meta_verdict["meta_verdict_hash"]
-        mv_file = meta_state_dir / f"{mv_hash}.json"
-        if not mv_file.exists():
-            mv_raw = _json(dict(meta_verdict))
-            _write_synced_file(mv_file, mv_raw)
-            os.chmod(mv_file, 0o444)
-
-        rep_hash = report["report_hash"]
-        rep_file = rep_dir / f"{rep_hash}.json"
-        if not rep_file.exists():
-            rep_raw = _json(dict(report))
-            _write_synced_file(rep_file, rep_raw)
-            os.chmod(rep_file, 0o444)
-
-        manifest = {
-            "schema_version": SCHEMA_VERSION,
-            "run_id": report["run_id"],
-            "cycle_id": report["cycle_id"],
-            "candidate_id": cand_id,
-            "candidate_content_hash": report["candidate_content_hash"],
-            "blind_eval_id": report["blind_eval_id"],
-            "report_hash": rep_hash,
-            "meta_verdict_hash": mv_hash,
-            "verdict_hashes": [v["verdict_hash"] for v in verdicts],
-            "published_at": _now(),
-        }
-        _validate_schema(self.root, EVALUATION_MANIFEST_SCHEMA, manifest)
-        man_raw = _json(manifest)
-        man_hash = _sha(man_raw)
-        man_file = rep_dir / f"eval-manifest-{man_hash[:16]}.json"
-        if not man_file.exists():
-            _write_synced_file(man_file, man_raw)
-            os.chmod(man_file, 0o444)
-
-        _fsync_dir(eval_state_dir)
-        _fsync_dir(meta_state_dir)
-        _fsync_dir(rep_dir)
-        return rep_file
-
-    def record_evaluation(
-        self,
-        store: DurableStore,
-        report_locator: str | Path,
-        *,
-        gate_report_locator: str | Path | None = None,
-    ) -> dict[str, Any]:
-        """Verify published evaluation artifacts and advance state machine to EVALUATED."""
-        root = self.root
-        verified = verify_evaluation_report(
-            root,
-            report_locator,
-            store=store,
-            require_gates_passed=True,
-            gate_report_locator=gate_report_locator,
-        )
-
-        run_id = verified["run_id"]
-        rep_hash = verified["report_hash"]
-        cand_id = verified["candidate_id"]
-        cand_hash = verified["candidate_content_hash"]
-
-        key = f"m8:{run_id}:{State.EVALUATED.value}:{rep_hash}"
-        self._hit("before_record_evaluated")
-        event = store.record(
-            run_id,
-            State.EVALUATED,
-            event_id=key,
-            idempotency_key=key,
-            actor_id="M8",
-            event_type="M8_EVALUATION_REPORT",
-            payload={
-                "candidate_id": cand_id,
-                "candidate_hash": cand_hash,
-                "report_hash": rep_hash,
-                "report_locator": verified["report_locator"],
-                "overall_score": verified["overall_score"],
-                "pareto_vector": verified["pareto_vector"],
-                "recommendation": verified["recommendation"],
-            },
-            artifact_hashes=[rep_hash],
-        )
-        self._hit("after_record_evaluated")
-        return event
-
-    def run_and_record(
-        self,
-        store: DurableStore,
-        candidate_dir: str | Path,
-        *,
-        run_id: str,
-        cycle_id: int,
-        gate_report_locator: str | Path | None = None,
-    ) -> dict[str, Any]:
-        """Full automated helper: evaluate candidate, publish artifacts, and record event."""
-        report, meta, verdicts = self.evaluate_candidate(candidate_dir, run_id=run_id, cycle_id=cycle_id)
-        pub_path = self.publish_evaluation(report, meta, verdicts)
-        locator = pub_path.relative_to(self.root).as_posix()
-        self.record_evaluation(store, locator, gate_report_locator=gate_report_locator)
-        return report
-
-
-def verify_evaluation_report(
-    root: str | Path,
-    report_locator: str | Path,
-    *,
-    store: DurableStore | None = None,
-    require_gates_passed: bool = False,
-    gate_report_locator: str | Path | None = None,
-) -> dict[str, Any]:
-    """Independent validator rebuilding the entire M8 chain."""
-    root_path = Path(root).resolve()
-    loc_str = Path(report_locator).as_posix()
-    report_path = _contained(root_path, loc_str, exists=True)
-
-    report, raw = _read_json(report_path)
-    _validate_schema(root_path, EVALUATION_REPORT_SCHEMA, report)
-    _require_canonical_json(report, raw, "evaluation report")
-
-    calc_rep_body = dict(report)
-    for field in ("report_hash", "report_id", "report_locator"):
-        calc_rep_body.pop(field, None)
-    calc_rep_hash = _sha(_json(calc_rep_body))
-
-    if (
-        report.get("report_hash") != calc_rep_hash
-        or report.get("report_id") != f"evr-{calc_rep_hash[:32]}"
-        or report.get("report_locator") != loc_str
-        or report_path != root_path / loc_str
-    ):
-        raise EvaluationError("evaluation report identity/hash/locator mismatch")
-
-    cand_id = report["candidate_id"]
-    if cand_id == "v0000":
-        cand_path = root_path / "versions/champion" / cand_id
-    else:
-        cand_path = root_path / "versions/challengers" / cand_id
-
-    if not cand_path.is_dir():
-        raise EvaluationError(f"referenced candidate directory does not exist: {cand_path}")
-
-    cand_manifest, _ = _read_json(cand_path / "manifest.json")
-    if (
-        cand_manifest.get("candidate_id") != cand_id
-        or cand_manifest.get("content_hash") != report["candidate_content_hash"]
-    ):
-        raise EvaluationError("candidate manifest does not match evaluation report")
-
-    actual_cand_hash = _candidate_content_hash(cand_path, cand_manifest)
-    if actual_cand_hash != report["candidate_content_hash"]:
-        raise EvaluationError("candidate tree content hash does not match evaluation report")
-
-    meta = report["meta_verdict"]
-    _validate_schema(root_path, META_VERDICT_SCHEMA, meta)
-
-    mv_body = dict(meta)
-    for field in ("meta_verdict_hash", "meta_verdict_id"):
-        mv_body.pop(field, None)
-    mv_hash = _sha(_json(mv_body))
-
-    if meta.get("meta_verdict_hash") != mv_hash or meta.get("meta_verdict_id") != f"mv-{mv_hash[:32]}":
-        raise EvaluationError("meta-verdict hash or ID mismatch")
-
-    meta_file = root_path / "state/meta_review" / cand_id / f"{mv_hash}.json"
-    if not meta_file.is_file():
-        raise EvaluationError("persisted meta-review artifact missing in state/meta_review")
-    persisted_meta, meta_raw = _read_json(meta_file)
-    _require_canonical_json(persisted_meta, meta_raw, "meta-verdict")
-    if persisted_meta != meta:
-        raise EvaluationError("persisted meta-review differs from report payload")
-
-    verdicts = report["juror_verdicts"]
-    if len(verdicts) != 3:
-        raise EvaluationError("evaluation report must contain exactly 3 juror verdicts")
-
-    v_hashes = []
-    for v in verdicts:
-        _validate_schema(root_path, EVALUATION_SCHEMA, v)
-        v_body = dict(v)
-        for field in ("verdict_hash", "verdict_id"):
-            v_body.pop(field, None)
-        v_hash = _sha(_json(v_body))
-        if v.get("verdict_hash") != v_hash or v.get("verdict_id") != f"jv-{v_hash[:32]}":
-            raise EvaluationError("juror verdict hash or ID mismatch")
-        v_hashes.append(v_hash)
-
-        v_file = root_path / "state/evaluation" / cand_id / f"{v_hash}.json"
-        if not v_file.is_file():
-            raise EvaluationError(f"persisted juror verdict missing in state/evaluation: {v_hash}")
-        persisted_v, v_raw = _read_json(v_file)
-        _require_canonical_json(persisted_v, v_raw, "juror verdict")
-        if persisted_v != v:
-            raise EvaluationError("persisted juror verdict differs from report payload")
-
-    if meta["verdict_hashes"] != v_hashes:
-        raise EvaluationError("meta-verdict referenced verdict hashes mismatch juror verdicts")
-
-    calc_meta = MetaReviewer(root_path).aggregate(
-        verdicts,
-        run_id=report["run_id"],
-        cycle_id=report["cycle_id"],
-        blind_eval_id=report["blind_eval_id"],
+    # 11. Re-verify Published Directory and Content Immutability
+    _revalidate_published_evaluation(
+        root,
+        eval_dir,
+        expected_run_id=run_id,
+        expected_cycle_id=effective_cycle_id,
+        expected_candidate_id=event_candidate_id,
+        expected_gate_report_locator=event_report_locator,
     )
-    if calc_meta["meta_verdict_hash"] != meta["meta_verdict_hash"]:
-        raise EvaluationError("recomputed meta-verdict differs from report meta-verdict")
 
-    if report["pareto_vector"] != meta["pareto_vector"]:
-        raise EvaluationError("report pareto_vector does not match meta-verdict")
-    if report["overall_score"] != meta["overall_score"]:
-        raise EvaluationError("report overall_score does not match meta-verdict")
-    if report["recommendation"] != meta["meta_recommendation"]:
-        raise EvaluationError("report recommendation does not match meta-verdict")
+    champ_hash_after = _candidate_content_hash(champion_dir, champ_manifest)
+    chall_hash_after = _candidate_content_hash(challenger_dir, chall_manifest)
+    if champ_hash_after != champ_hash_before:
+        raise EvaluationError("champion tree mutated during evaluation")
+    if chall_hash_after != chall_hash_before:
+        raise EvaluationError("challenger tree mutated during evaluation")
 
-    if require_gates_passed:
-        active_store = store or DurableStore(root_path)
-        run_id = str(report["run_id"])
-        snapshot = active_store.snapshot(run_id)
-        events = active_store.read_events(run_id)
+    _trigger_fault("before_evaluated_event")
 
-        if snapshot.get("state") != State.GATES_PASSED.value:
-            raise EvaluationError(f"run {run_id} is in state {snapshot.get('state')}, expected GATES_PASSED")
+    # 12. Record EVALUATED event in DurableStore
+    event_id = f"evt-evaluated-c{effective_cycle_id:04d}-{event_candidate_id}"
+    idempotency_key = f"evaluated:{run_id}:c{effective_cycle_id:04d}:{event_candidate_id}"
+    store.record(
+        run_id=run_id,
+        target=State.EVALUATED,
+        event_id=event_id,
+        idempotency_key=idempotency_key,
+        actor_id="M00",
+        event_type="EVALUATED",
+        payload={
+            "candidate_id": event_candidate_id,
+            "candidate_content_hash": bundle.content_hashes[1],
+            "candidate_hash": event_candidate_hash,
+            "base_hash": bundle.content_hashes[0],
+            "evaluation_id": eval_id,
+            "comparison_id": bundle.comparison_id,
+            "overall_outcome": overall_outcome,
+            "challenger_eligible": challenger_eligible,
+            "verdict_ids": [v["verdict_id"] for v in verdicts],
+            "evaluation_locator": f"state/evaluations/{run_id}/c{effective_cycle_id:04d}/evaluation.json",
+        },
+        artifact_hashes=sorted([report_hash, meta_hash, manifest_hash, *verdict_hashes.values()]),
+    )
 
-        if not events or events[-1].get("state_to") != State.GATES_PASSED.value:
-            raise EvaluationError("last durable store event is not GATES_PASSED")
-
-        last_event = events[-1]
-        gate_rep_locator = (
-            gate_report_locator
-            or last_event.get("payload", {}).get("report_locator")
-        )
-        if not gate_rep_locator:
-            raise EvaluationError("cannot determine gate report locator to verify gate binding")
-
-        gate_rep = verify_gate_report(root_path, gate_rep_locator, store=active_store)
-        if (
-            gate_rep.get("candidate_id") != cand_id
-            or gate_rep.get("candidate_content_hash") != report["candidate_content_hash"]
-        ):
-            raise EvaluationError("GATES_PASSED report does not bind to the evaluated candidate")
-
+    _trigger_fault("after_evaluated_event")
     return report
