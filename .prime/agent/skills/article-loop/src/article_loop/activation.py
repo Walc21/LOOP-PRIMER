@@ -80,9 +80,14 @@ class ActivationPlanner:
         mandatory: set[str] = set()
         if finalization_requested:
             mandatory.update(("S50", "W51", "W53")); targets.update(mandatory)
+        # S20 also owns notation and equations.  Only an impact that already
+        # reaches the proof verifier is evidence that a theorem/proof check is
+        # required; do not infer it merely from S20 being active.
         if "W22" in targets:
             mandatory.update(("S20", "W22")); targets.update(mandatory)
         if cycle_id == 0:
+            # Preserve impact and mandatory coverage.  Add a single default
+            # focal only where the department has no worker already targeted.
             targets.update(DEPARTMENTS)
             for department, children in CHILDREN.items():
                 if not targets.intersection(children):
@@ -132,6 +137,9 @@ class ActivationPlanner:
     @staticmethod
     def _mode(role: str, active: bool, impact: Impact, history: Mapping[str, Mapping[str, Any]], plateau: bool, oscillation: bool, diagnostic: bool, *, first_cycle: bool) -> ActivationMode:
         if not active: return ActivationMode.FREEZE
+        # These roles verify an already-defined mathematical or finalization
+        # obligation, including in the first cycle.  A global exploration
+        # signal cannot replace that check.
         if role in {"W22", "W53"}: return ActivationMode.CHECK
         if first_cycle: return ActivationMode.RUN
         item = history.get(role, {})

@@ -146,6 +146,7 @@ def _freeze(source: Path, destination: Path, *, fault: Callable[[str], None] | N
                 digest.update(block); size += len(block); output.write(block)
             output.flush(); os.fsync(output.fileno())
     finally:
+        # fd is already closed by fdopen on normal and exceptional paths.
         pass
     after = source.stat(follow_symlinks=False)
     if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):

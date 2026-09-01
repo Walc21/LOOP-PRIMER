@@ -76,11 +76,13 @@ class PrimeRLMAdapter:
         return [self._handle(x) for x in result]
 
     async def send_parent(self, message: str) -> None:
+        # The installed documented subset has no ``mode`` argument.
         await self.agent_message.send(message, receiver_role="parent")
 
     async def delete_subagent(self, child_id: str) -> None:
         child = next((x for x in await self.list_subagents() if x.child_id == child_id), None)
         if child is None: raise ValueError("Prime child is not a direct child of this actor")
+        # The installed API documents deletion by the direct child identity.
         await self.rlm_api.delete_subagent(child.child_id)
 
 
