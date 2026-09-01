@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "math-verification.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "verification_id", "verification_hash", "verification_locator", "run_id", "cycle_id", "base_hash", "candidate_id", "candidate_content_hash", "claim_id", "proposal_id", "request_receipt_locator", "request_receipt_sha256", "evidence_locator", "evidence_hash", "verdict", "verifier_id", "verifier_version", "issued_at"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"}, "verification_id": {"type": "string", "pattern": "^mv-[a-f0-9]{32}$"},
+    "verification_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "verification_locator": {"type": "string", "pattern": "^state/math-verifications/[^/]+/[a-f0-9]{64}\\.json$"},
+    "run_id": {"type": "string", "minLength": 1}, "cycle_id": {"type": "integer", "minimum": 0},
+    "base_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "candidate_id": {"type": "string", "minLength": 1},
+    "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "claim_id": {"type": "string", "minLength": 1},
+    "proposal_id": {"type": "string", "minLength": 1}, "request_receipt_locator": {"type": "string", "minLength": 1},
+    "request_receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "evidence_locator": {"type": "string", "pattern": "^state/math-evidence/[^/]+/[a-f0-9]{64}\\.json$"},
+    "evidence_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "verdict": {"const": "approved"},
+    "verifier_id": {"type": "string", "minLength": 1}, "verifier_version": {"type": "string", "minLength": 1},
+    "issued_at": {"type": "string", "format": "date-time"}
+  }
+}

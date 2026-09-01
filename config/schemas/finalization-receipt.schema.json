@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finalization-receipt.schema.json",
+  "title": "FinalizationReceipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "receipt_id", "run_id", "cycle_id", "decision_id", "candidate_id", "action", "applied_at", "state_before", "state_after", "content_hash_before", "content_hash_after", "hash_revalidated", "atomic", "content_modified", "destination"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "receipt_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0},
+    "decision_id": {"type": "string", "minLength": 1},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "action": {"enum": ["PROMOTE", "ARCHIVE_PARETO", "REJECT", "REFOCUS_AND_CONTINUE", "CONTINUE_UNCHANGED", "REQUEST_EXTRA_JUDGMENT", "PAUSE", "FINALIZE", "ABORT_TECHNICAL"]},
+    "applied_at": {"type": "string", "format": "date-time"},
+    "state_before": {"const": "COMMITTING"},
+    "state_after": {"enum": ["CYCLE_COMPLETE", "PAUSED", "FINALIZED", "TECHNICAL_FAILURE"]},
+    "content_hash_before": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "content_hash_after": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "hash_revalidated": {"const": true},
+    "atomic": {"const": true},
+    "content_modified": {"const": false},
+    "destination": {"type": ["string", "null"]}
+  }
+}

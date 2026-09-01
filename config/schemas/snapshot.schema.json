@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "snapshot.schema.json",
+  "title": "Snapshot",
+  "description": "Snapshot estrutural inicial ou posterior; transições pertencem ao M2.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "snapshot_id", "run_id", "cycle_id", "event_sequence", "created_at", "state", "last_event_id", "last_event_hash", "data", "data_hash", "snapshot_hash"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0},
+    "event_sequence": {"type": "integer", "minimum": -1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "state": {"enum": ["NEW", "INGESTED", "SOURCE_READY", "CYCLE_PLANNED", "DEPARTMENTS_RUNNING", "SYNTHESIS_READY", "CANDIDATE_BUILT", "GATES_PASSED", "EVALUATED", "DIAGNOSED", "DECIDED", "COMMITTING", "CYCLE_COMPLETE", "PAUSED", "FINALIZED", "TECHNICAL_FAILURE"]},
+    "last_event_id": {"type": ["string", "null"], "minLength": 1},
+    "last_event_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "data": {"type": "object"},
+    "data_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "snapshot_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"event_sequence": {"const": -1}}, "required": ["event_sequence"]},
+      "then": {"properties": {"last_event_id": {"const": null}, "last_event_hash": {"const": null}, "state": {"const": "NEW"}}},
+      "else": {"properties": {"last_event_id": {"type": "string", "minLength": 1}, "last_event_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}}
+    }
+  ]
+}

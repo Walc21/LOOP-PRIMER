@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gate-report.schema.json",
+  "title": "GateReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "report_id", "report_hash", "report_locator", "run_id", "cycle_id", "candidate_id", "candidate_content_hash", "candidate_hash", "generated_at", "overall_pass", "correctness_math_pass", "gates"],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "report_id": {"type": "string", "pattern": "^g-[a-f0-9]{32}$"},
+    "report_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "report_locator": {"type": "string", "pattern": "^state/gates/[^/]+/[a-f0-9]{64}\\.json$"},
+    "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "candidate_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "overall_pass": {"type": "boolean"},
+    "correctness_math_pass": {"type": "boolean"},
+    "gates": {
+      "type": "array", "minItems": 13, "maxItems": 13,
+      "prefixItems": [
+        {"properties": {"gate_id": {"const": "contracts_state"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "source_provenance"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "latex_compile_safe"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "render"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "pdf_valid"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "references_labels"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "asset_inventory"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "claim_dependencies"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "math_critical_issues"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "forbidden_metatext"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "local_budget"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "manifest_integrity"}}, "required": ["gate_id"]},
+        {"properties": {"gate_id": {"const": "correctness_math"}}, "required": ["gate_id"]}
+      ],
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["gate_id", "command", "verifier_version", "input_hash", "input_hash_after", "exit_code", "passed", "classification", "timeout_seconds", "duration_ms", "output", "evidence_locators"],
+        "properties": {
+          "gate_id": {"enum": ["contracts_state", "source_provenance", "latex_compile_safe", "render", "pdf_valid", "references_labels", "asset_inventory", "claim_dependencies", "math_critical_issues", "forbidden_metatext", "local_budget", "manifest_integrity", "correctness_math"]},
+          "command": {"type": "string", "minLength": 1},
+          "verifier_version": {"type": "string", "minLength": 1},
+          "input_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "input_hash_after": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "exit_code": {"type": "integer"},
+          "passed": {"type": "boolean"},
+          "classification": {"enum": ["scientific", "technical", "inconclusive"]},
+          "timeout_seconds": {"type": "integer", "minimum": 1},
+          "duration_ms": {"type": "integer", "minimum": 0},
+          "output": {"type": "string", "maxLength": 4096},
+          "evidence_locators": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        },
+        "allOf": [{"if": {"properties": {"passed": {"const": true}}, "required": ["passed"]}, "then": {"properties": {"exit_code": {"const": 0}, "classification": {"enum": ["scientific", "technical"]}}}}]
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"overall_pass": {"const": true}}, "required": ["overall_pass"]},
+      "then": {"properties": {"correctness_math_pass": {"const": true}, "gates": {"items": {"properties": {"passed": {"const": true}}}}}}
+    },
+    {
+      "if": {"properties": {"overall_pass": {"const": false}}, "required": ["overall_pass"]},
+      "then": {"properties": {"gates": {"contains": {"properties": {"passed": {"const": false}}, "required": ["passed"]}, "minContains": 1}}}
+    },
+    {
+      "if": {"properties": {"correctness_math_pass": {"const": true}}, "required": ["correctness_math_pass"]},
+      "then": {"properties": {"gates": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"properties": {"passed": {"const": true}}, "required": ["passed"]}]}}}
+    },
+    {
+      "if": {"properties": {"correctness_math_pass": {"const": false}}, "required": ["correctness_math_pass"]},
+      "then": {"properties": {"gates": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"properties": {"passed": {"const": false}}, "required": ["passed"]}]}}}
+    }
+  ]
+}

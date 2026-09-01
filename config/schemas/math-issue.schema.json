@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "math-issue.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["record_id", "issue_type", "run_id", "cycle_id", "base_hash", "candidate_id", "claim_id", "severity", "status", "summary", "evidence_locators"],
+  "properties": {
+    "record_id": {"type": "string", "minLength": 1}, "issue_type": {"const": "math"},
+    "run_id": {"type": "string", "minLength": 1}, "cycle_id": {"type": "integer", "minimum": 0},
+    "base_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "candidate_id": {"type": "string", "minLength": 1},
+    "claim_id": {"type": "string", "minLength": 1}, "severity": {"enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+    "status": {"enum": ["open", "resolved"]}, "summary": {"type": "string", "minLength": 1},
+    "evidence_locators": {"type": "array", "items": {"type": "string", "minLength": 1}}
+  }
+}
