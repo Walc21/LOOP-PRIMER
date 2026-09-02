@@ -25,10 +25,10 @@
       "sha256": "42ee22ace252ae0d24e011b09507b877f0238d6fd0eb1bab8790b48728ba7957"
     },
     ".github/workflows/ci.yml": {
-      "bytes": 1174,
+      "bytes": 1194,
       "kind": "text",
       "lines": 40,
-      "sha256": "ab1a06f9a6af1e7eb47cdc4655afd2231471d08624ff79a377331ca10d3e9bb0"
+      "sha256": "fe0474481ca7a00cc4dc8abaff36742dd72f92a3044a399b406b8545c32dca1f"
     },
     ".gitignore": {
       "bytes": 983,
@@ -91,10 +91,10 @@
       "sha256": "17a74d7bfd39910c46a83842bfa2c156b770a767314b22a87242120bcb633f30"
     },
     ".prime/agent/skills/article-loop/src/article_loop/evaluation.py": {
-      "bytes": 71624,
+      "bytes": 71748,
       "kind": "text",
-      "lines": 1608,
-      "sha256": "023e6a921488e8ac53ca6a4df635e70e5ac667890568057fc93827756857edc2"
+      "lines": 1610,
+      "sha256": "8babd430c3b629abf9c37e4551743c9997526c3e56d827ad4822a3c1c333bda5"
     },
     ".prime/agent/skills/article-loop/src/article_loop/gates.py": {
       "bytes": 36015,
@@ -961,14 +961,17 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf",
+  "fingerprint": "b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a",
   "git": {
     "available": true,
     "branch": "main",
-    "head": "fc295e4363c4c87cff5d78bbc249049c912ef37e",
-    "status": []
+    "head": "35e2f80bea39408570d21e7b8253f407dbfd71b7",
+    "status": [
+      " M .github/workflows/ci.yml",
+      " M .prime/agent/skills/article-loop/src/article_loop/evaluation.py"
+    ]
   },
-  "recorded_at": "2026-09-02T17:23:25Z",
+  "recorded_at": "2026-09-02T17:30:21Z",
   "schema_version": "1.0.0",
-  "session_id": "session-github-publish-20260902"
+  "session_id": "session-github-ci-repair-20260902"
 }

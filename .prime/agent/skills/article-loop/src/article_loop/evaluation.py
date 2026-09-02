@@ -840,15 +840,17 @@ def _revalidate_published_evaluation(
     ):
         raise EvaluationError("published evaluation candidate/base binding differs")
 
-    expected_comparison_id = f"cmp-{_sha(_json({
+    expected_comparison_payload = {
         'candidate_hashes': [champion_hash, challenger_hash],
         'rubric_version': RUBRIC_VERSION,
         'order_seed': eval_report['order_seed'],
-    }))}"
-    expected_evaluation_id = f"eval-{_sha(_json({
+    }
+    expected_comparison_id = f"cmp-{_sha(_json(expected_comparison_payload))}"
+    expected_evaluation_payload = {
         'comparison_id': expected_comparison_id,
         'candidate_id': expected_candidate_id,
-    }))[:32]}"
+    }
+    expected_evaluation_id = f"eval-{_sha(_json(expected_evaluation_payload))[:32]}"
     if (
         eval_report.get("comparison_id") != expected_comparison_id
         or eval_report.get("evaluation_id") != expected_evaluation_id

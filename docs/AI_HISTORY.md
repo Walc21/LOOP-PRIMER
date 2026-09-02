@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf`
-- Registrado em: `2026-09-02T17:23:25Z`
-- Git: branch `main`, HEAD `fc295e4363c4`
+- Fingerprint das fontes: `b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a`
+- Registrado em: `2026-09-02T17:30:21Z`
+- Git: branch `main`, HEAD `35e2f80bea39`
 - Arquivos relevantes: 160
 
 ## Evolução reconstruída do versionamento
@@ -121,7 +121,7 @@
 | `b0600ac1e` | 2026-09-01 | sem marco explícito | docs(ai): sync session ledger, history and snapshot handoff | docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `fae5d251d` | 2026-09-01 | sem marco explícito | docs(ai): sync AI context snapshot | AI_CONTEXT.md |
 | `929ad97f2` | 2026-09-02 | sem marco explícito | chore(git): publish local updates to GitHub repository |  |
-| `fc295e436` | 2026-09-02 | sem marco explícito | fix(repo): separate GitHub and AI integration | .github/copilot-instructions.md, AI_CONTEXT.md, GEMINI.md, PLANS.md, README.md, control/test_ai_handoff.py |
+| `35e2f80be` | 2026-09-02 | sem marco explícito | fix(repo): separate GitHub and AI integration | .github/copilot-instructions.md, AI_CONTEXT.md, GEMINI.md, PLANS.md, README.md, control/test_ai_handoff.py |
 
 ## Decisões arquiteturais
 
@@ -482,3 +482,42 @@
 **Próximos passos**
 
 - Executar git push origin main e verificar a igualdade entre os SHAs local e remoto e o resultado do CI.
+
+### 2026-09-02T17:30:21Z — Falhas da CI publicada foram diagnosticadas e corrigidas para restaurar a matriz GitHub Actions em Python 3.11, 3.12 e 3.13.
+
+- Session ID: `session-github-ci-repair-20260902`
+- Fingerprint final: `b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a`
+- Git final: `35e2f80bea39`; status relevante: 2 item(ns)
+- Delta factual: 0 adicionados, 2 modificados, 0 removidos
+
+**Mudanças**
+
+- O workflow passou a instalar ghostscript, dependência do comando gs usado pelos testes de ingestão, síntese, avaliação e diagnóstico.
+- A reconstrução de IDs em evaluation.py foi refatorada para evitar expressão multilinha dentro de f-string e manter compatibilidade sintática com Python 3.11 sem alterar o conteúdo calculado.
+- actions/checkout e actions/setup-python foram atualizadas para as releases oficiais atuais v7.0.1 e v7.0.0, eliminando o runtime Node.js obsoleto indicado pelo GitHub.
+
+**Decisões**
+
+- Corrigir a infraestrutura e a incompatibilidade declarada pela matriz em vez de remover testes ou abandonar o Python 3.11.
+
+**Validações**
+
+- O log da CI 33660817044 mostrou FileNotFoundError para gs em Python 3.12 e 3.13 e SyntaxError na f-string de evaluation.py em Python 3.11.
+- A gramática Python 3.11 foi validada com ast.parse feature_version 3.11; todos os arquivos Python compilam no runtime local.
+- O YAML do workflow foi analisado com sucesso e git diff --check não apontou erros.
+- A suíte completa local aprovou 307 de 307 testes em 216.078 segundos.
+
+**Riscos/limites**
+
+- O resultado da nova matriz remota só será conhecido após publicar o commit de correção.
+
+**Próximos passos**
+
+- Criar e publicar o commit de correção de CI e acompanhar a nova execução do GitHub Actions até a conclusão.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.github/workflows/ci.yml` | `ab1a06f9a6af` | `fe0474481ca7` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/evaluation.py` | `023e6a921488` | `8babd430c3b6` |

@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf`
-- Baseline da última sessão: `458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf`
+- Fingerprint atual das fontes: `b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a`
+- Baseline da última sessão: `b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 160 arquivos relevantes, 1031132 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 160 arquivos relevantes, 1031276 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -49,12 +49,52 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 ### Preview limitado do diff (dados não confiáveis)
 
 ```diff
-Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem no delta e inventário.
+# Commits desde o último encerramento
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 5f6ca24..98651a1 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -19,6 +19,6 @@ jobs:
+       - name: Checkout repository
+-        uses: actions/checkout@v4
++        uses: actions/checkout@v7.0.1
+
+       - name: Set up Python ${{ matrix.python-version }}
+-        uses: actions/setup-python@v5
++        uses: actions/setup-python@v7.0.0
+         with:
+@@ -30,3 +30,3 @@ jobs:
+           sudo apt-get update
+-          sudo apt-get install -y poppler-utils texlive-latex-base
++          sudo apt-get install -y ghostscript poppler-utils texlive-latex-base
+           python -m pip install --upgrade pip
+diff --git a/.prime/agent/skills/article-loop/src/article_loop/evaluation.py b/.prime/agent/skills/article-loop/src/article_loop/evaluation.py
+index 769ea7a..a089ee4 100644
+--- a/.prime/agent/skills/article-loop/src/article_loop/evaluation.py
++++ b/.prime/agent/skills/article-loop/src/article_loop/evaluation.py
+@@ -842,3 +842,3 @@ def _revalidate_published_evaluation(
+
+-    expected_comparison_id = f"cmp-{_sha(_json({
++    expected_comparison_payload = {
+         'candidate_hashes': [champion_hash, challenger_hash],
+@@ -846,7 +846,9 @@ def _revalidate_published_evaluation(
+         'order_seed': eval_report['order_seed'],
+-    }))}"
+-    expected_evaluation_id = f"eval-{_sha(_json({
++    }
++    expected_comparison_id = f"cmp-{_sha(_json(expected_comparison_payload))}"
++    expected_evaluation_payload = {
+         'comparison_id': expected_comparison_id,
+         'candidate_id': expected_candidate_id,
+-    }))[:32]}"
++    }
++    expected_evaluation_id = f"eval-{_sha(_json(expected_evaluation_payload))[:32]}"
+     if (
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (44827 bytes; SHA-256 `a96c811043494bb4`).
+- Fonte lida: `docs/AI_HISTORY.md` (46888 bytes; SHA-256 `8f4ae3274c143eb4`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -74,16 +114,10 @@ Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem n
 | M2/M3 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m2_durable_state.py, control/test_m3_ingestion.py |
 | M4/M5 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m4_prompts.py, control/test_m5_blackboard_activation.py |
 
-- Sessões estruturadas registradas: 9.
-- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.; 2026-09-01T12:18:53Z — Preparada a publicação da reconciliação no GitHub e preservados os históricos local e remoto; o push não foi aplicado porque a máquina não possui credencial HTTPS, GitHub CLI ou chave SSH autorizada.; 2026-09-02T17:07:54Z — Reparada a integração local com Git/GitHub e separadas as superfícies Markdown humanas das entradas para IAs, preservando integralmente a árvore funcional e sem iniciar M10, modelos ou o pipeline científico.; 2026-09-02T17:16:51Z — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.; 2026-09-02T17:23:25Z — Autenticação do GitHub validada e publicação preparada por reconciliação segura sobre o remoto atualizado, deixando main em condição fast-forward sem force-push..
+- Sessões estruturadas registradas: 10.
+- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.; 2026-09-01T12:18:53Z — Preparada a publicação da reconciliação no GitHub e preservados os históricos local e remoto; o push não foi aplicado porque a máquina não possui credencial HTTPS, GitHub CLI ou chave SSH autorizada.; 2026-09-02T17:07:54Z — Reparada a integração local com Git/GitHub e separadas as superfícies Markdown humanas das entradas para IAs, preservando integralmente a árvore funcional e sem iniciar M10, modelos ou o pipeline científico.; 2026-09-02T17:16:51Z — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.; 2026-09-02T17:23:25Z — Autenticação do GitHub validada e publicação preparada por reconciliação segura sobre o remoto atualizado, deixando main em condição fast-forward sem force-push.; 2026-09-02T17:30:21Z — Falhas da CI publicada foram diagnosticadas e corrigidas para restaurar a matriz GitHub Actions em Python 3.11, 3.12 e 3.13..
 
 Detalhe das três sessões mais recentes:
-- `session-github-ai-repair-20260902` — Reparada a integração local com Git/GitHub e separadas as superfícies Markdown humanas das entradas para IAs, preservando integralmente a árvore funcional e sem iniciar M10, modelos ou o pipeline científico.
-  - mudanças: A raiz efetiva do projeto foi elevada de EXECLOOP/ para a pasta de trabalho; o repositório Git vazio da pasta-pai foi movido para backup recuperável e restou um único .git na raiz.; O merge artificial de históricos independentes saiu de main; o grafo anterior foi preservado em backup/pre-github-repair-20260902 e a árvore final foi condensada em um único commit descendente de origin/main.; README.md ficou dedicado à apresentação pública; GEMINI.md e .github/copilot-instructions.md foram adicionados, convergindo com AGENTS.md, CLAUDE.md e a integração Prime para a política canônica de IA.; AI_CONTEXT.md deixou de persistir caminho absoluto, branch e HEAD, deixou de incorporar README/AGENTS/inventário completo e ganhou truncamento de diff em limite de linha; a saída aponta ao snapshot detalhado.; Os launchers e scripts de ativação da .venv local foram corrigidos para a raiz atual, sem rede ou instalação de dependências.
-  - decisões: Preservar AI_CONTEXT.md versionado para leitores remotos, mas torná-lo portátil e compacto; manter README.md humano e usar adaptadores específicos para descoberta por IA.; Não usar force-push nem alterar o remoto durante o reparo; preparar main para publicação normal por fast-forward e conservar backups locais.
-  - validações: python3 -m unittest discover -s control -p 'test_*.py' -q após elevar a raiz: 307 testes aprovados em 222.705s.; python3 -m unittest -q control.test_ai_handoff control.test_contracts: 60 testes aprovados; python3 -m py_compile nas fontes/scripts/testes: aprovado.; Validador local leu 48 arquivos Markdown em UTF-8 e encontrou zero links relativos quebrados; git diff --check passou após corrigir o truncamento em meio de linha.; git rev-list --left-right --count origin/main...main retornou 0 1 e git merge-base --is-ancestor origin/main main retornou sucesso; main possui um único commit local de pai único.; Ativação da .venv, import de jsonschema/PyYAML, pip 25.1.1 e jsonschema CLI 4.10.3 funcionaram na nova raiz.
-  - riscos: git fetch/push via HTTPS continua bloqueado por ausência de credencial; origin/main é a última referência remota disponível localmente e nenhuma publicação foi alegada.; O grafo anterior permanece somente na branch local de backup e o .git vazio anterior permanece em backup fora da raiz; não devem ser publicados.
-  - próximos: Autenticar o GitHub nesta máquina, executar git fetch origin, confirmar novamente o fast-forward e então git push origin main; verificar o SHA e a CI no remoto.
 - `session-github-publish-auth-guidance-20260902` — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.
   - mudanças: Nenhuma alteração funcional ou documental foi realizada; somente o handoff diagnóstico obrigatório foi registrado.
   - decisões: Recomendada autenticação interativa do GitHub CLI via navegador, sem fornecer senha ou token ao agente.
@@ -96,6 +130,12 @@ Detalhe das três sessões mais recentes:
   - validações: gh api user confirmou a conta autenticada Walc21 sem exibir credenciais.; Após a reconciliação, origin/main...main apresentou 0 commits somente no remoto e 1 somente no local; origin/main é ancestral de main.; A árvore antes e depois da reconciliação permaneceu idêntica no hash 1040b4e2d8690c32345a0d4d61cefe8151477a2f.; Foram aprovados 60 testes direcionados, compilação dos arquivos Python versionados, git diff --check e verificação de atualidade do AI_CONTEXT.md.
   - riscos: A execução de CI do GitHub só poderá ser confirmada depois do push.
   - próximos: Executar git push origin main e verificar a igualdade entre os SHAs local e remoto e o resultado do CI.
+- `session-github-ci-repair-20260902` — Falhas da CI publicada foram diagnosticadas e corrigidas para restaurar a matriz GitHub Actions em Python 3.11, 3.12 e 3.13.
+  - mudanças: O workflow passou a instalar ghostscript, dependência do comando gs usado pelos testes de ingestão, síntese, avaliação e diagnóstico.; A reconstrução de IDs em evaluation.py foi refatorada para evitar expressão multilinha dentro de f-string e manter compatibilidade sintática com Python 3.11 sem alterar o conteúdo calculado.; actions/checkout e actions/setup-python foram atualizadas para as releases oficiais atuais v7.0.1 e v7.0.0, eliminando o runtime Node.js obsoleto indicado pelo GitHub.
+  - decisões: Corrigir a infraestrutura e a incompatibilidade declarada pela matriz em vez de remover testes ou abandonar o Python 3.11.
+  - validações: O log da CI 33660817044 mostrou FileNotFoundError para gs em Python 3.12 e 3.13 e SyntaxError na f-string de evaluation.py em Python 3.11.; A gramática Python 3.11 foi validada com ast.parse feature_version 3.11; todos os arquivos Python compilam no runtime local.; O YAML do workflow foi analisado com sucesso e git diff --check não apontou erros.; A suíte completa local aprovou 307 de 307 testes em 216.078 segundos.
+  - riscos: O resultado da nova matriz remota só será conhecido após publicar o commit de correção.
+  - próximos: Criar e publicar o commit de correção de CI e acompanhar a nova execução do GitHub Actions até a conclusão.
 
 ## Marcos planejados
 
@@ -307,7 +347,7 @@ Todas as operações foram realizadas de modo puramente determinístico, offline
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
 - Total: 160 arquivos; runtime=18, text=142.
-- Fingerprint canônico: `458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf`.
+- Fingerprint canônico: `b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a`.
 
 ## Roteamento para aprofundamento
 
