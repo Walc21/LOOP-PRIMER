@@ -276,6 +276,10 @@ emitem ações canônicas e não possuem autoridade sobre PDF, champion,
 challengers, gates, júri ou finalização.
 
 O primeiro publica `AI_CONTEXT.md` a partir do inventário atual e do histórico.
+O documento é portável entre clones: não persiste caminho absoluto, branch ou
+commit do checkout. Ele resume o inventário e referencia
+`docs/ai_snapshot.json` para o detalhe content-addressed, sem incorporar o
+README público nem duplicar integralmente `AGENTS.md`.
 O segundo mantém `docs/AI_HISTORY.md`, apoiado pelo ledger
 `docs/ai_sessions.jsonl` e pelo snapshot `docs/ai_snapshot.json`. Esses
 artefatos ficam deliberadamente fora do fingerprint de fontes para impedir

@@ -12,7 +12,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
-- Atualizado em 2026-09-01.
+- Atualizado em 2026-09-02.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
 - M2 — máquina de estados, event log e recuperação: concluído após correção contratual final.
@@ -36,6 +36,10 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   contexto compacto e um registrador local de histórico de sessões. Elas não
   alteram a máquina de estados, candidatos, gates ou a autoridade dos scripts
   científicos M0--M13.
+- Reparo de integração Git/GitHub e separação de audiências documentais
+  concluído: a árvore validada foi preservada, o merge artificial entre
+  históricos independentes saiu de `main`, a branch ficou como descendente
+  linear de `origin/main` e o protocolo de IA saiu do `README.md` público.
 
 ## Contratos já decididos
 
@@ -133,6 +137,15 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
 ## Registro de progresso
+
+- 2026-09-02 — Concluído reparo estritamente infraestrutural da integração
+  Git/GitHub e das superfícies Markdown. Foram diagnosticados dois diretórios
+  `.git` aninhados, um merge `ours` entre históricos sem ancestral comum e um
+  `AI_CONTEXT.md` que incorporava caminho absoluto/HEAD do checkout. A mudança
+  preservou um backup local, manteve a árvore funcional, tornou `main`
+  publicável por fast-forward e separou o `README.md` humano dos gatilhos
+  auto-descobertos em `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, instruções do
+  GitHub Copilot e integração Prime. Nenhum marco M10+ será iniciado.
 
 - 2026-09-01 — Reconciliação da camada de handoff com a publicação no GitHub
   concluída. Os sete arquivos comunitários foram preservados; o README mantém a

@@ -12,6 +12,12 @@
       "lines": 22,
       "sha256": "bf3b8ec7c4977a72de1e0fee9d524aa5db065089adcc11c98cb5070dee1a2c71"
     },
+    ".github/copilot-instructions.md": {
+      "bytes": 413,
+      "kind": "text",
+      "lines": 12,
+      "sha256": "c72d16e8330e765dca0376039f6a35805e4caee2cea568956a1f80eee50030dd"
+    },
     ".github/pull_request_template.md": {
       "bytes": 871,
       "kind": "text",
@@ -204,6 +210,12 @@
       "lines": 63,
       "sha256": "88dd6a0e2eb029acecf00f6b3d30046425027832782a5a903fa21f9c26bab224"
     },
+    "GEMINI.md": {
+      "bytes": 364,
+      "kind": "text",
+      "lines": 13,
+      "sha256": "e2cbfe965d397c1029fa0688f6aebbeb601511821e6a19c81d6229e1a4d97cf1"
+    },
     "LICENSE": {
       "bytes": 1092,
       "kind": "text",
@@ -211,16 +223,16 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 34268,
+      "bytes": 35188,
       "kind": "text",
-      "lines": 476,
-      "sha256": "e5fdc5c8c8d11f6d6fb5cfbec39d68d9bf3527508a24a485854a6e2ad732c998"
+      "lines": 489,
+      "sha256": "3a87aa4bac8dd26cb55194c3f5a71ca4b6e17d2c00ba2e4acd9062660befbcf1"
     },
     "README.md": {
-      "bytes": 15020,
+      "bytes": 15182,
       "kind": "text",
-      "lines": 288,
-      "sha256": "c4b17d42beac8adcdf65ed4ecd9428c54db33aca3c7bf8b7ff26d04cb9a2a526"
+      "lines": 289,
+      "sha256": "5602c8f20915cdf30cbf809c9c48bd58941733aa98cb2b3877e5866cc752e1d4"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -571,10 +583,10 @@
       "sha256": "2920d4de74ba09ee140954da8d5aab8d59caba768b1dddeb510b046732cda31b"
     },
     "control/test_ai_handoff.py": {
-      "bytes": 8710,
+      "bytes": 9922,
       "kind": "text",
-      "lines": 172,
-      "sha256": "9de410fac395847a87f9356f4f47d0ff994392e32825ae433210f1a649250fa1"
+      "lines": 192,
+      "sha256": "8a96f1d415b2fa49d6cd2be923a46c07ed6342ea52ee9fbabcfd08e17e6c15ee"
     },
     "control/test_contracts.py": {
       "bytes": 35500,
@@ -631,10 +643,10 @@
       "sha256": "0de4b64409e0ed7d0345a965c2aedb841ce7c8be4135128dc0ae6adee4b12e0f"
     },
     "docs/architecture.md": {
-      "bytes": 14892,
+      "bytes": 15162,
       "kind": "text",
-      "lines": 335,
-      "sha256": "15c0171b2569090c6abaa223bb91df176c3f532085de304625c1468548b6f5f8"
+      "lines": 339,
+      "sha256": "45f6cf230dd107696d2fb806cae83315a334c6f7bbba907cad825e4bc8685ab2"
     },
     "docs/compatibility.md": {
       "bytes": 9921,
@@ -643,10 +655,10 @@
       "sha256": "03174c609124f510d4af8a6ab0e276057d48cde229e8f3dfd5c6ced15b6b74e8"
     },
     "docs/decisions.md": {
-      "bytes": 51300,
+      "bytes": 54373,
       "kind": "text",
-      "lines": 851,
-      "sha256": "276e9d1c0e9e1458900dbda3c020ecf222e6ce3f349429c54c792d85df83b489"
+      "lines": 909,
+      "sha256": "452734f3f32903c4431b715e92cd7e681f46a7d8331923c6357a1f169819c19c"
     },
     "input/inbox/.gitkeep": {
       "bytes": 1,
@@ -859,10 +871,10 @@
       "sha256": "9446896eae0bb05452d3beb3aa2a4783baed725481512c90b74bbc8835d94a8a"
     },
     "scripts/ai_context.py": {
-      "bytes": 22442,
+      "bytes": 22547,
       "kind": "text",
-      "lines": 424,
-      "sha256": "43b8ac9858f546e77b73553bd6cbf6f73ed89cebc07d51fec22c71616504fa48"
+      "lines": 433,
+      "sha256": "26aa077994ccfb4ff888a61d4b9ab4069a18de4740aa92eb6c38836384661f5b"
     },
     "scripts/ai_handoff_common.py": {
       "bytes": 13786,
@@ -949,14 +961,14 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "6f2971f08a5feaa6c15b713cedfa0dc50a255fd5378145820f6c83a17f5bd51c",
+  "fingerprint": "458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf",
   "git": {
     "available": true,
     "branch": "main",
-    "head": "f6bb6259a874696d9dfd1d3c9f53a55c34aa74a1",
+    "head": "fc295e4363c4c87cff5d78bbc249049c912ef37e",
     "status": []
   },
-  "recorded_at": "2026-09-01T12:18:53Z",
+  "recorded_at": "2026-09-02T17:23:25Z",
   "schema_version": "1.0.0",
-  "session_id": "session-af3c5e022c055dd4c430"
+  "session_id": "session-github-publish-20260902"
 }

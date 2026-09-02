@@ -1,8 +1,3 @@
-> **Entrada obrigatória para IAs:** execute `python3 scripts/ai_context.py` e
-> leia `AI_CONTEXT.md` integralmente antes de trabalhar. No encerramento, use
-> `scripts/ai_history.py` conforme o protocolo no topo de `AGENTS.md` e regere o
-> contexto. Este README é introdutório e não substitui o snapshot atual.
-
 <div align="center">
 
 # 🔬 LOOP-PRIMER
@@ -235,6 +230,7 @@ LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
 LOOP-PRIMER/
 ├── .github/                      # GitHub Actions CI & community templates
 │   ├── workflows/ci.yml          # Multi-Python version test suite
+│   ├── copilot-instructions.md   # GitHub Copilot entrypoint
 │   ├── pull_request_template.md  # PR checklist and verification template
 │   └── ISSUE_TEMPLATE/           # Bug report & feature request schemas
 ├── .prime/                       # Prime Agent integration layer & skills
@@ -247,7 +243,7 @@ LOOP-PRIMER/
 ├── control/                      # Contract and milestone test suites (M1 through M9)
 ├── docs/                         # Architecture, ADRs, compatibility, and AI history
 │   ├── architecture.md           # Canonical system architecture
-│   ├── decisions.md              # 26 Architectural Decision Records (ADRs)
+│   ├── decisions.md              # 27 Architectural Decision Records (ADRs)
 │   └── AI_HISTORY.md             # Chronological ledger of system evolution
 ├── prompts/                      # Immutable system prompts and role overlays
 ├── scripts/                      # Independent, deterministically tested CLI modules
@@ -255,6 +251,10 @@ LOOP-PRIMER/
 ├── state/                        # Append-only durable event logs & locks (gitignored)
 ├── versions/                     # Champion, challenger, Pareto & rejected versions
 ├── requirements-dev.txt          # Pinned development dependencies
+├── AGENTS.md                     # Canonical policy for AI coding agents
+├── CLAUDE.md                     # Claude adapter to AGENTS.md
+├── GEMINI.md                     # Gemini adapter to AGENTS.md
+├── AI_CONTEXT.md                 # Portable generated context for AI sessions
 ├── LICENSE                       # MIT License
 ├── CONTRIBUTING.md               # Contribution guidelines & commit convention
 └── SECURITY.md                   # Security and sandboxing policy
@@ -276,6 +276,7 @@ All core design choices are formally recorded in [`docs/decisions.md`](docs/deci
 | **ADR-021** | Double-Blind Jury & Randomized Presentation | `Accepted` | Evaluation |
 | **ADR-024** | Plateau & Oscillation Diagnostic Engine | `Accepted` | Adaptability |
 | **ADR-026** | Content-Addressed AI Handoff & Session Ledger | `Accepted` | AI Protocol |
+| **ADR-027** | Audience Separation & Publishable Git History | `Accepted` | Repository Integration |
 
 ---
 

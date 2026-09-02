@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `6f2971f08a5feaa6c15b713cedfa0dc50a255fd5378145820f6c83a17f5bd51c`
-- Registrado em: `2026-09-01T12:18:53Z`
-- Git: branch `main`, HEAD `f6bb6259a874`
-- Arquivos relevantes: 158
+- Fingerprint das fontes: `458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf`
+- Registrado em: `2026-09-02T17:23:25Z`
+- Git: branch `main`, HEAD `fc295e4363c4`
+- Arquivos relevantes: 160
 
 ## Evolução reconstruída do versionamento
 
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
-| sem marco explícito | 2026-08-13..2026-09-01 | 25 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/pull_request_template.md, .github/workflows/ci.yml, .gitignore, .prime/agent/APPEND_SYSTEM… |
+| sem marco explícito | 2026-08-13..2026-09-02 | 43 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -104,6 +104,24 @@
 | `af1b3d264` | 2026-09-01 | sem marco explícito | docs(ai): add consolidated AI_CONTEXT snapshot | AI_CONTEXT.md |
 | `bb04d9803` | 2026-09-01 | sem marco explícito | fix(ai): reconcile tracked context with GitHub publication | .github/workflows/ci.yml, AI_CONTEXT.md, PLANS.md, README.md, control/test_ai_handoff.py, docs/AI_HISTORY.md |
 | `f6bb6259a` | 2026-09-01 | sem marco explícito | chore(git): reconcile local and GitHub histories |  |
+| `ff09de79c` | 2026-09-01 | sem marco explícito | docs(ai): record GitHub publication handoff | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `42ac80fa9` | 2026-09-01 | sem marco explícito | chore: sync CI workflows, schemas, requirements, and runtime sentinels | .github/workflows/ci.yml, .prime/agent/prompts/.gitkeep, bin/preflight.sh, config/schemas/decision.schema.json, requirements-dev.txt |
+| `18773d774` | 2026-09-01 | sem marco explícito | feat(scripts): sync deterministic AI context and history handoff utilities | scripts/ai_context.py, scripts/ai_handoff_common.py, scripts/ai_history.py |
+| `dd70d1179` | 2026-09-01 | sem marco explícito | feat(core): sync ingestion, activation, and adapters modules | .prime/agent/skills/article-loop/src/article_loop/activation.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/i… |
+| `998f5c41f` | 2026-09-01 | sem marco explícito | feat(core): sync synthesis, gates, and refocus modules | .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/refocus.py, .prime/agent/skills/article-loop/src/article_loop/synthes… |
+| `00dbd9ad0` | 2026-09-01 | sem marco explícito | feat(core): sync hierarchical RLM orchestrator | .prime/agent/skills/article-loop/src/article_loop/orchestrator.py |
+| `586ddcad9` | 2026-09-01 | sem marco explícito | feat(core): sync blind evaluation and meta-review engine | .prime/agent/skills/article-loop/src/article_loop/evaluation.py |
+| `fd23224d1` | 2026-09-01 | sem marco explícito | feat(core): sync stagnation diagnosis engine | .prime/agent/skills/article-loop/src/article_loop/diagnosis.py |
+| `f2bbcf3aa` | 2026-09-01 | sem marco explícito | test(control): sync tests for handoff, durable state, ingestion, prompts | control/test_ai_handoff.py, control/test_m2_durable_state.py, control/test_m3_ingestion.py, control/test_m4_prompts.py |
+| `e3df0df8c` | 2026-09-01 | sem marco explícito | test(control): sync tests for activation, orchestration, synthesis/gates | control/test_m5_blackboard_activation.py, control/test_m6_orchestration.py, control/test_m7_synthesis_gates.py |
+| `74ff710f6` | 2026-09-01 | sem marco explícito | test(control): sync test suite for blind evaluation | control/test_m8_evaluation.py |
+| `e8eecce95` | 2026-09-01 | sem marco explícito | test(control): sync test suite for stagnation diagnosis | control/test_m9_diagnosis.py |
+| `80ae9c8fd` | 2026-09-01 | sem marco explícito | docs(spec): sync AGENTS, CLAUDE, PLANS, and README | AGENTS.md, CLAUDE.md, PLANS.md, README.md |
+| `7a6312210` | 2026-09-01 | sem marco explícito | docs(arch): sync architecture overview, compatibility, and ADRs | docs/architecture.md, docs/compatibility.md, docs/decisions.md |
+| `b0600ac1e` | 2026-09-01 | sem marco explícito | docs(ai): sync session ledger, history and snapshot handoff | docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `fae5d251d` | 2026-09-01 | sem marco explícito | docs(ai): sync AI context snapshot | AI_CONTEXT.md |
+| `929ad97f2` | 2026-09-02 | sem marco explícito | chore(git): publish local updates to GitHub repository |  |
+| `fc295e436` | 2026-09-02 | sem marco explícito | fix(repo): separate GitHub and AI integration | .github/copilot-instructions.md, AI_CONTEXT.md, GEMINI.md, PLANS.md, README.md, control/test_ai_handoff.py |
 
 ## Decisões arquiteturais
 
@@ -133,6 +151,7 @@
 - ADR-024 — M8: Júri Externo Cego, Inversão Consistente e Meta-Review
 - ADR-025 — M9: Detecção Determinística de Estagnação, Diagnóstico Canônico e Refoco Reversível
 - ADR-026 — Handoff compacto e histórico de sessões para agentes de IA
+- ADR-027 — Separação de audiências e histórico Git publicável
 
 ## Atualizações de sessão
 
@@ -356,3 +375,110 @@
 **Próximos passos**
 
 - Após autenticação do GitHub nesta máquina, repetir git push --set-upstream origin main e verificar o SHA remoto.
+
+### 2026-09-02T17:07:54Z — Reparada a integração local com Git/GitHub e separadas as superfícies Markdown humanas das entradas para IAs, preservando integralmente a árvore funcional e sem iniciar M10, modelos ou o pipeline científico.
+
+- Session ID: `session-github-ai-repair-20260902`
+- Fingerprint final: `458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf`
+- Git final: `8f6f59e95746`; status relevante: 3 item(ns)
+- Delta factual: 2 adicionados, 6 modificados, 0 removidos
+
+**Mudanças**
+
+- A raiz efetiva do projeto foi elevada de EXECLOOP/ para a pasta de trabalho; o repositório Git vazio da pasta-pai foi movido para backup recuperável e restou um único .git na raiz.
+- O merge artificial de históricos independentes saiu de main; o grafo anterior foi preservado em backup/pre-github-repair-20260902 e a árvore final foi condensada em um único commit descendente de origin/main.
+- README.md ficou dedicado à apresentação pública; GEMINI.md e .github/copilot-instructions.md foram adicionados, convergindo com AGENTS.md, CLAUDE.md e a integração Prime para a política canônica de IA.
+- AI_CONTEXT.md deixou de persistir caminho absoluto, branch e HEAD, deixou de incorporar README/AGENTS/inventário completo e ganhou truncamento de diff em limite de linha; a saída aponta ao snapshot detalhado.
+- Os launchers e scripts de ativação da .venv local foram corrigidos para a raiz atual, sem rede ou instalação de dependências.
+
+**Decisões**
+
+- Preservar AI_CONTEXT.md versionado para leitores remotos, mas torná-lo portátil e compacto; manter README.md humano e usar adaptadores específicos para descoberta por IA.
+- Não usar force-push nem alterar o remoto durante o reparo; preparar main para publicação normal por fast-forward e conservar backups locais.
+
+**Validações**
+
+- python3 -m unittest discover -s control -p 'test_*.py' -q após elevar a raiz: 307 testes aprovados em 222.705s.
+- python3 -m unittest -q control.test_ai_handoff control.test_contracts: 60 testes aprovados; python3 -m py_compile nas fontes/scripts/testes: aprovado.
+- Validador local leu 48 arquivos Markdown em UTF-8 e encontrou zero links relativos quebrados; git diff --check passou após corrigir o truncamento em meio de linha.
+- git rev-list --left-right --count origin/main...main retornou 0 1 e git merge-base --is-ancestor origin/main main retornou sucesso; main possui um único commit local de pai único.
+- Ativação da .venv, import de jsonschema/PyYAML, pip 25.1.1 e jsonschema CLI 4.10.3 funcionaram na nova raiz.
+
+**Riscos/limites**
+
+- git fetch/push via HTTPS continua bloqueado por ausência de credencial; origin/main é a última referência remota disponível localmente e nenhuma publicação foi alegada.
+- O grafo anterior permanece somente na branch local de backup e o .git vazio anterior permanece em backup fora da raiz; não devem ser publicados.
+
+**Próximos passos**
+
+- Autenticar o GitHub nesta máquina, executar git fetch origin, confirmar novamente o fast-forward e então git push origin main; verificar o SHA e a CI no remoto.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.github/copilot-instructions.md` | `-` | `c72d16e8330e` |
+| added | `GEMINI.md` | `-` | `e2cbfe965d39` |
+| modified | `PLANS.md` | `e5fdc5c8c8d1` | `3a87aa4bac8d` |
+| modified | `README.md` | `c4b17d42beac` | `5602c8f20915` |
+| modified | `control/test_ai_handoff.py` | `9de410fac395` | `8a96f1d415b2` |
+| modified | `docs/architecture.md` | `15c0171b2569` | `45f6cf230dd1` |
+| modified | `docs/decisions.md` | `276e9d1c0e9e` | `452734f3f329` |
+| modified | `scripts/ai_context.py` | `43b8ac9858f5` | `26aa077994cc` |
+
+### 2026-09-02T17:16:51Z — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.
+
+- Session ID: `session-github-publish-auth-guidance-20260902`
+- Fingerprint final: `458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf`
+- Git final: `f831dece33fb`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Nenhuma alteração funcional ou documental foi realizada; somente o handoff diagnóstico obrigatório foi registrado.
+
+**Decisões**
+
+- Recomendada autenticação interativa do GitHub CLI via navegador, sem fornecer senha ou token ao agente.
+
+**Validações**
+
+- Inspeção local confirmou origin HTTPS, branch main um commit à frente, GitHub CLI ausente e nenhum credential.helper configurado.
+
+**Riscos/limites**
+
+- A publicação continua indisponível até o usuário concluir pessoalmente a autenticação do GitHub nesta máquina.
+
+**Próximos passos**
+
+- Instalar o GitHub CLI, concluir gh auth login via navegador, executar gh auth setup-git e então autorizar explicitamente o push.
+
+### 2026-09-02T17:23:25Z — Autenticação do GitHub validada e publicação preparada por reconciliação segura sobre o remoto atualizado, deixando main em condição fast-forward sem force-push.
+
+- Session ID: `session-github-publish-20260902`
+- Fingerprint final: `458c1f41f6f40316728d43cafff1963444cb4dd292577c91fea20e12280db1bf`
+- Git final: `fc295e4363c4`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Após o fetch revelar 55 commits no remoto, o commit local corrigido foi preservado em backup/pre-publish-rebase-20260902 e reaplicado sobre origin/main mantendo exatamente a mesma árvore de conteúdo.
+
+**Decisões**
+
+- Preservar integralmente o histórico remoto e recusar push divergente; publicar somente por fast-forward, sem force-push.
+
+**Validações**
+
+- gh api user confirmou a conta autenticada Walc21 sem exibir credenciais.
+- Após a reconciliação, origin/main...main apresentou 0 commits somente no remoto e 1 somente no local; origin/main é ancestral de main.
+- A árvore antes e depois da reconciliação permaneceu idêntica no hash 1040b4e2d8690c32345a0d4d61cefe8151477a2f.
+- Foram aprovados 60 testes direcionados, compilação dos arquivos Python versionados, git diff --check e verificação de atualidade do AI_CONTEXT.md.
+
+**Riscos/limites**
+
+- A execução de CI do GitHub só poderá ser confirmada depois do push.
+
+**Próximos passos**
+
+- Executar git push origin main e verificar a igualdade entre os SHAs local e remoto e o resultado do CI.

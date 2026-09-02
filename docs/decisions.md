@@ -849,3 +849,61 @@ O workflow público deve executar a mesma descoberta integral de testes usada
 localmente, com as dependências determinísticas de PDF/LaTeX disponíveis.
 - Esta camada não modifica os cinco scripts científicos canônicos, não inicia
   Prime Agent, não cria agentes e não altera M10 ou marcos posteriores.
+
+## ADR-027 — Separação de audiências e histórico Git publicável
+
+**Data:** 2026-09-02
+**Status:** Aceito
+
+### Contexto
+
+A publicação anterior misturou duas responsabilidades. O `README.md`, que o
+GitHub renderiza como apresentação humana do projeto, passou a conter um
+protocolo obrigatório de sessão para IAs. Ao mesmo tempo, o contexto gerado para
+agentes incorporava caminho absoluto, branch e HEAD do checkout, portanto uma
+cópia idêntica do repositório podia ficar modificada apenas por executar o
+gerador exigido. O documento ainda duplicava integralmente `AGENTS.md`, um
+trecho extenso do README e todo o inventário, elevando desnecessariamente o
+custo de contexto para clientes de IA.
+
+No Git, a pasta de trabalho continha um repositório vazio na raiz e outro
+repositório funcional em `EXECLOOP/`. A branch funcional havia sido unida a
+`origin/main` por um merge com estratégia `ours` entre históricos sem ancestral
+comum, deixando dezenas de commits locais artificiais para uma futura
+publicação.
+
+### Decisão
+
+1. `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, templates e workflow serão
+   superfícies humanas/públicas do GitHub. O README não imporá protocolo de
+   agente nem será incorporado ao contexto operacional de IA.
+2. `AGENTS.md` será a entrada canônica para agentes genéricos/Codex.
+   `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md` e
+   `.prime/agent/APPEND_SYSTEM.md` serão adaptadores curtos que encaminham ao
+   contrato canônico, sem duplicar a política inteira.
+3. `AI_CONTEXT.md` continuará versionado para consumidores que leem o
+   repositório sem executar ferramentas, mas sua renderização será portável:
+   sem caminho absoluto, nome de branch, commit ou status volátil do checkout.
+   Ele manterá fingerprint, delta, resumo operacional, handoff e roteamento,
+   mas apontará para `AGENTS.md`, `README.md` e `docs/ai_snapshot.json` em vez
+   de copiá-los integralmente.
+4. A árvore validada será preservada e reaplicada como um único commit
+   descendente de `origin/main`, com uma branch de backup para o grafo anterior.
+   Isso permite publicação normal por fast-forward e proíbe force-push como
+   parte deste reparo.
+5. Haverá um único repositório Git na raiz efetiva do projeto. O `.git` vazio
+   da pasta-pai será movido para um backup recuperável antes de elevar o
+   conteúdo de `EXECLOOP/` para essa raiz.
+
+### Consequências e limites
+
+- Visitantes do GitHub recebem uma apresentação do produto sem instruções de
+  controle de agente no topo da página.
+- Codex, Claude, Gemini, GitHub Copilot e Prime Agent recebem pontos de entrada
+  próprios que convergem para a mesma política.
+- Clonar, copiar ou commitar o projeto não altera `AI_CONTEXT.md` somente por
+  mudar caminho, branch ou SHA do checkout.
+- A autenticação do GitHub continua sendo uma fronteira externa: o reparo
+  prepara um fast-forward local, mas não inventa nem armazena credenciais.
+- Esta decisão não modifica o pipeline científico nem inicia M10 ou execução
+  de modelos.

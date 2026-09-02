@@ -13,7 +13,7 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from ai_context import _bounded_excerpt, _normalize_diff_preview, render_context
+from ai_context import _bounded_excerpt, _normalize_diff_preview, _truncate_diff_preview, render_context
 from ai_handoff_common import build_inventory, inventory_delta, inventory_fingerprint
 from ai_history import infer_milestone, load_entries, update_history
 
@@ -29,7 +29,12 @@ class AIHandoffTests(unittest.TestCase):
         self.assertIn("fixture truncado em 20 caracteres", excerpt)
         self.assertNotIn("x" * 100, excerpt)
 
-    def test_tracked_generated_context_remains_idempotent(self) -> None:
+        truncated_diff = _truncate_diff_preview("header\n+linha com espaços internos\n+final", limit=22)
+        self.assertFalse(any(line.endswith((" ", "\t")) for line in truncated_diff.splitlines()))
+        self.assertNotIn("+linha com ", truncated_diff)
+        self.assertIn("diff truncado", truncated_diff)
+
+    def test_tracked_generated_context_is_portable_and_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "README.md").write_text("# Demo\n", encoding="utf-8")
@@ -48,6 +53,8 @@ class AIHandoffTests(unittest.TestCase):
 
             self.assertEqual(first, second)
             self.assertNotIn("diff --git a/AI_CONTEXT.md", second)
+            self.assertNotIn(str(root), second)
+            self.assertNotRegex(second, r"HEAD `[0-9a-f]{7,40}`")
 
     def test_repository_trigger_surfaces_preserve_start_and_end_protocol(self) -> None:
         required = {
@@ -58,7 +65,8 @@ class AIHandoffTests(unittest.TestCase):
                 "scripts/ai_history.py",
                 "AI_CONTEXT.md",
             ),
-            "README.md": ("Entrada obrigatória para IAs", "scripts/ai_context.py", "scripts/ai_history.py"),
+            "GEMINI.md": ("AGENTS.md", "python3 scripts/ai_context.py", "AI_CONTEXT.md"),
+            ".github/copilot-instructions.md": ("AGENTS.md", "python3 scripts/ai_context.py", "AI_CONTEXT.md"),
         }
         for relative, markers in required.items():
             with self.subTest(path=relative):
@@ -67,9 +75,21 @@ class AIHandoffTests(unittest.TestCase):
                     self.assertIn(marker, text)
 
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertLess(readme.index("Entrada obrigatória para IAs"), readme.index("# "))
+        self.assertNotIn("Entrada obrigatória para IAs", readme)
+        self.assertNotIn("leia `AI_CONTEXT.md` integralmente", readme)
         self.assertIn("M10", readme)
         self.assertIn("reserved stubs", readme)
+
+    def test_context_points_to_ai_sources_without_embedding_human_docs_or_full_inventory(self) -> None:
+        context = render_context(ROOT, diff_limit=0)
+
+        self.assertIn("## Autoridade e separação de audiências", context)
+        self.assertIn("`AGENTS.md` é a política autoritativa", context)
+        self.assertIn("`README.md`, `CONTRIBUTING.md` e `SECURITY.md`", context)
+        self.assertNotIn("<agents_md>", context)
+        self.assertNotIn("<readme>", context)
+        self.assertNotIn("| Caminho | Tipo | Bytes |", context)
+        self.assertLess(len(context.encode("utf-8")), 45_000)
 
     def test_inventory_is_content_addressed_and_excludes_generated_and_caches(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
