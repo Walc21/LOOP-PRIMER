@@ -1127,3 +1127,13 @@ mensagens ou receipts M6. Routing não cria estado científico, papel, ação ou
 profundidade. Operação local real continua opt-in e exige configuração e
 autorização de run; smoke tests com modelo ou API paga permanecem fora desta
 decisão e exigem autorização separada.
+
+### Refinamento de portabilidade da CI — conexão fechada
+
+Nos runners Python 3.11–3.13, uma conexão HTTP fechada antes da linha de status
+pode emergir diretamente como `http.client.RemoteDisconnected`, sem envelope
+`urllib.error.URLError`. Como a requisição já pode ter sido enviada, o backend
+deve convertê-la em `InferenceBackendError(BACKEND_FAILURE, sent=True)`. O
+runtime conserva a reserva como `UNCERTAIN`; não há retry nem reembolso
+automático. Um teste socketless cobre a forma direta da exceção, além do
+fixture loopback existente.

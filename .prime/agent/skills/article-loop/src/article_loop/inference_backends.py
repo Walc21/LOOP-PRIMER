@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import http.client
 import json
 import math
 import os
@@ -112,6 +113,8 @@ class LocalOpenAICompatibleBackend:
             raise InferenceBackendError("BACKEND_FAILURE", f"local backend returned HTTP {error.code}", sent=True) from error
         except (TimeoutError, socket.timeout) as error:
             raise InferenceBackendError("TIMEOUT", "local backend timed out", sent=True) from error
+        except (http.client.RemoteDisconnected, ConnectionResetError, BrokenPipeError) as error:
+            raise InferenceBackendError("BACKEND_FAILURE", "local backend closed the connection", sent=True) from error
         except urllib.error.URLError as error:
             if isinstance(error.reason, (TimeoutError, socket.timeout)):
                 raise InferenceBackendError("TIMEOUT", "local backend timed out", sent=True) from error

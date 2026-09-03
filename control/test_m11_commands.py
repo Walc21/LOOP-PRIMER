@@ -60,7 +60,8 @@ class M11CommandBridgeTests(unittest.TestCase):
         return code, stdout.getvalue(), stderr.getvalue()
 
     def test_check_reports_safe_local_defaults(self):
-        code, stdout, stderr = self.invoke(["check", "--root", str(ROOT)])
+        with patch.object(command.shutil, "which", return_value=None):
+            code, stdout, stderr = self.invoke(["check", "--root", str(ROOT)])
         self.assertEqual(code, 0, stderr)
         value = json.loads(stdout)
         self.assertEqual(value["status"], "success")
@@ -68,6 +69,15 @@ class M11CommandBridgeTests(unittest.TestCase):
         self.assertFalse(value["result"]["prime_agent_discovered"])
         self.assertEqual(value["result"]["m12"]["unit"], "tokens")
         self.assertEqual(value["result"]["m12"]["profiles"], {"calibration": False, "overnight": False})
+
+    def test_check_reports_discovered_prime_without_enabling_execution(self):
+        with patch.object(command.shutil, "which", return_value="/opt/prime/bin/prime-agent"):
+            code, stdout, stderr = self.invoke(["check", "--root", str(ROOT)])
+        self.assertEqual(code, 0, stderr)
+        value = json.loads(stdout)["result"]
+        self.assertTrue(value["prime_agent_discovered"])
+        self.assertFalse(value["execution"]["model_execution_enabled"])
+        self.assertFalse(value["execution"]["live_ready"])
 
     def test_require_live_rejects_current_fail_closed_configuration(self):
         code, stdout, stderr = self.invoke(["check", "--root", str(ROOT), "--require-live"])

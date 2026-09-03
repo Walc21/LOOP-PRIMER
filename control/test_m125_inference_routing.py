@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import http.client
 import json
 from pathlib import Path
 import shutil
@@ -642,6 +643,7 @@ class M125BackendUnitTests(M125Base):
             (self.Response(b"not-json"), None, "BACKEND_FAILURE"),
             (self.Response(b"x" * 2048), None, "BACKEND_FAILURE"),
             (None, TimeoutError(), "TIMEOUT"),
+            (None, http.client.RemoteDisconnected("closed without response"), "BACKEND_FAILURE"),
             (None, urllib.error.URLError(ConnectionResetError("closed")), "BACKEND_FAILURE"),
             (None, urllib.error.HTTPError("http://127.0.0.1/", 302, "redirect", {}, None), "BACKEND_FAILURE"),
         ]

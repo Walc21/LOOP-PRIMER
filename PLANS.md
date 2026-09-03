@@ -158,6 +158,27 @@ renumera nem substitui nenhum dos Prompts canônicos 01--13.
 
 ## Registro de progresso
 
+- 2026-09-03 — Correção local da CI M12.5 concluída. O backend passou a
+  normalizar `RemoteDisconnected`, `ConnectionResetError` e `BrokenPipeError`
+  diretos como `BACKEND_FAILURE` pós-envio; o runtime continua marcando a
+  reserva `UNCERTAIN`. O teste socketless reproduz exatamente a exceção dos
+  runners, e o check M11 agora testa deterministicamente Prime presente e
+  ausente sem depender do host. A suíte completa executou 396 testes com
+  sucesso e 1 skip local do fixture loopback; as suítes M12.5/M12/M11/
+  contratos executaram 117 testes com sucesso e 1 skip. A revalidação na
+  matriz GitHub Python 3.11–3.13 permanece obrigatória antes de encerrar.
+
+- 2026-09-03 — Correção CI M12.5 iniciada após os runs GitHub Actions
+  `33802406129`, `33802521340` e `33802584988` falharem igualmente em Python
+  3.11, 3.12 e 3.13. A causa observada é
+  `http.client.RemoteDisconnected` escapar do backend local no caso de conexão
+  fechada sem resposta. A menor correção deve normalizar essa falha pós-envio
+  como `BACKEND_FAILURE`, adicionar reprodução socketless e preservar
+  `UNCERTAIN`, sem ampliar rede, targets, custo, M13 ou contrato M6.
+  A validação local também encontrou `prime-agent 0.9.1` no PATH; o teste M11
+  será isolado do estado do host e verificará presença/ausência simuladas sem
+  iniciar sessão ou adotar APIs novas.
+
 - 2026-09-03 — A implementação M12.5 foi commitada como `dbf411c`
   (`feat(m12.5): add deterministic inference routing`) e publicada por
   fast-forward em `origin/main` (`e5eb78f..dbf411c`). O status técnico não foi

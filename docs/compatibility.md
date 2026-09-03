@@ -73,6 +73,17 @@ usa configuração de `main` como substituto de evidência local. Seu routing
 backend-aware vale somente para a nova fronteira de inferência explícita; não
 altera a topologia, profundidade ou lifecycle dos filhos M6.
 
+### Reobservação durante a correção CI M12.5 — 2026-09-03
+
+Durante a reprodução da CI, `command -v prime-agent` passou a encontrar
+`/home/victor/.local/share/prime-agent-node/current/bin/prime-agent`, e
+`prime-agent --version` informou `0.9.1`. Somente a versão foi consultada:
+nenhuma sessão, modelo, child, help de superfície, configuração ou credencial
+foi aberto. A evidência anterior continua histórica, e esta descoberta não
+autoriza inferir seleção de modelo por filho. O check deve reportar a presença
+real do binário, enquanto os testes simulam deterministicamente tanto presença
+quanto ausência e confirmam que descoberta não habilita execução live.
+
 ## Documentação oficial consultada
 
 O repositório oficial é
