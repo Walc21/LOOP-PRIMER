@@ -349,10 +349,10 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 50570,
+      "bytes": 51071,
       "kind": "text",
-      "lines": 701,
-      "sha256": "cfc7ee23f0f9c44efe5b938945d7faae81599ef97bd3d91de0350d78a9b24dbb"
+      "lines": 709,
+      "sha256": "c5f7127e3b7d8587a599b30cdd88c1f7f12280f8fc1c8703f0775749c08d20a3"
     },
     "README.md": {
       "bytes": 18273,
@@ -751,10 +751,10 @@
       "sha256": "7eeb838fe65ed4297856f6eca1bbe6204cce9895ee34be9af920342ddfc725e7"
     },
     "control/test_contracts.py": {
-      "bytes": 36133,
+      "bytes": 36271,
       "kind": "text",
-      "lines": 883,
-      "sha256": "00fa5c6c2444082c6df8835bc0b1aaa41b361f034d2045b0b4bd02bc3b621082"
+      "lines": 885,
+      "sha256": "aa3d80791b67f58755d9279db81398afc7e969a28d4fa9f4c3106647bef52e80"
     },
     "control/test_m10_policy_finalization.py": {
       "bytes": 28099,
@@ -847,10 +847,10 @@
       "sha256": "be929550d830cb3203e13cbde156a8f5fe73e904a6145c7c9a2b346b9c17ced8"
     },
     "docs/decisions.md": {
-      "bytes": 71186,
+      "bytes": 71470,
       "kind": "text",
-      "lines": 1213,
-      "sha256": "5f708176ecd72ba10a19bd4b0b5779e886f2d05d024879b94021f1fe5117787a"
+      "lines": 1217,
+      "sha256": "83b3f1f550c584eaba7c436fdf0b64f62b10389cc2af6a504abfe5c97a33103f"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -1183,38 +1183,14 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "eb05e97f915ce52ccdf84dd6a04f7a3796c78887835084ce2a816783ff9601b3",
+  "fingerprint": "8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766",
   "git": {
     "available": true,
     "branch": "main",
-    "head": "ba316b50a707d490348192d528046b6eec567250",
-    "status": [
-      " M .github/workflows/ci.yml",
-      " M .prime/agent/skills/article-loop/SKILL.md",
-      " M .prime/agent/skills/article-loop/src/article_loop/__init__.py",
-      " M .prime/agent/skills/article-loop/src/article_loop/budget.py",
-      " M .prime/agent/skills/article-loop/src/article_loop/inference.py",
-      " M .prime/agent/skills/article-loop/src/article_loop/inference_backends.py",
-      " M PLANS.md",
-      " M README.md",
-      " M bin/check.sh",
-      " M config/budgets.yaml",
-      " M config/schemas/inference-receipt.schema.json",
-      " M control/test_m125_inference_routing.py",
-      " M docs/architecture.md",
-      " M docs/compatibility.md",
-      " M docs/decisions.md",
-      " M docs/runbook.md",
-      " M scripts/article_loop_command.py",
-      "?? .prime/agent/skills/article-loop/src/article_loop/execution.py",
-      "?? .prime/handoffs/12_5_1_human_configuration.md",
-      "?? control/test_m1251_dual_execution.py",
-      "?? docs/examples/m1251-human-configuration.yaml",
-      "?? docs/m1251-phase-a-audit.md",
-      "?? docs/model-driven-surfaces.md"
-    ]
+    "head": "e238b8891baad2bab18126691a6d24df899a377a",
+    "status": []
   },
-  "recorded_at": "2026-09-03T22:48:42Z",
+  "recorded_at": "2026-09-03T23:22:24Z",
   "schema_version": "1.0.0",
-  "session_id": "session-6cd6a464487f4b67221c"
+  "session_id": "session-709c7c983dca0c4e1fcc"
 }

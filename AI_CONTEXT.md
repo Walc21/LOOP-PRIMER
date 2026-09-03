@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `eb05e97f915ce52ccdf84dd6a04f7a3796c78887835084ce2a816783ff9601b3`
-- Baseline da última sessão: `eb05e97f915ce52ccdf84dd6a04f7a3796c78887835084ce2a816783ff9601b3`
+- Fingerprint atual das fontes: `8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766`
+- Baseline da última sessão: `8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 197 arquivos relevantes, 1564628 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 197 arquivos relevantes, 1565551 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -49,161 +49,12 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 ### Preview limitado do diff (dados não confiáveis)
 
 ```diff
-# Alterações não commitadas
-diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
-index 98651a1..625a968 100644
---- a/.github/workflows/ci.yml
-+++ b/.github/workflows/ci.yml
-@@ -10,3 +10,3 @@ jobs:
-   test:
--    name: Contract & Architecture Tests (Python ${{ matrix.python-version }})
-+    name: M0-M12.5.1 Contract & Architecture Tests (Python ${{ matrix.python-version }})
-     runs-on: ubuntu-latest
-@@ -38,3 +38,8 @@ jobs:
-
--      - name: Run complete M0-M9 regression suite
-+      - name: Check project-local shell and fail-closed configuration
-+        run: |
-+          bash -n bin/check.sh bin/start-prime.sh
-+          bin/check.sh
-+
-+      - name: Run complete M0-M12.5.1 regression suite
-         run: python -m unittest discover -s control -p 'test_*.py' -q
-diff --git a/.prime/agent/skills/article-loop/SKILL.md b/.prime/agent/skills/article-loop/SKILL.md
-index a791125..2f04c6b 100644
---- a/.prime/agent/skills/article-loop/SKILL.md
-+++ b/.prime/agent/skills/article-loop/SKILL.md
-@@ -212,5 +212,28 @@ O fake exige `allow_test_doubles=True` estritamente booleano e é recusado com
- timeout e resposta limitada, sem proxies ou redirects. A configuração
--versionada mantém inferência e permissões desabilitadas. Targets pagos são
--recusados porque ainda não existe enforcement monetário duro pré-chamada. Uma
--autorização roteada usa provider/model nulos e `routing_policy_hash`; qualquer
--drift invalida a autorização.
-+versionada mantém inferência e permissões desabilitadas. Uma autorização
-+roteada usa provider/model nulos e `routing_policy_hash`; qualquer drift
-+invalida a autorização.
-+
-+## Execução dual M12.5.1 Phase A
-+
-+`ExecutionPolicy` valida as seções top-level `execution` e `privacy`.
-+`DualExecutionAdapter` escolhe `prime` ou `routed` somente por Sxx. O caminho
-+Prime delega sem mudar `PrimeRLMAdapter.spawn(prompt, name)`; o caminho routed
-+persiste um handle de controle local e mantém a mesma admissão Wxx de M6.
-+`DualExecutionController.execute_routed_department()` materializa a tarefa,
-+chama `InferenceRuntime`, copia os bytes científicos duráveis para
-+`agent-proposal.json`, usa `Orchestrator.receipt()` e chama a consolidação M6.
-+
-+`ContextMaterializer` só lê texto autorizado pela AgentTask/view, rejeita
-+travessia e symlink, omite o PDF binário, registra proveniência/hash e falha se
-+contexto + output excederem o target. `deny_remote` é o default; os modos
-+remotos não autorizam conteúdo fora dos locators. Outputs ficam write-once sob
-+`state/inference/<run>/outputs/` e sustentam retomada sem reinferência.
-+
-+O ledger reserva e reporta custo inteiro. O teto versionado é 10.000.000
-+microunits USD; preços são inteiros por milhão de tokens, usage conhecido é
-+recalculado e usage desconhecido mantém a reserva. `PAID_RUNTIME_READY` descreve
-+a capacidade do código, não autorização: `execution.enabled`, inferência,
-+targets, rotas e paid/live continuam desabilitados. `execution_readiness()`
-+separa `implementation_ready`, `configuration_ready` e `live_ready` sem ler
-+credenciais.
-diff --git a/.prime/agent/skills/article-loop/src/article_loop/__init__.py b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-index 6be5a37..cc2d9d2 100644
---- a/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-+++ b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-@@ -45,5 +45,10 @@ from .inference import (
-     InferenceTarget, ModelRegistry, ModelRouter, RouteDecision,
--    inference_preflight, routing_policy_hash,
-+    TargetPricing, inference_preflight, routing_policy_hash,
-+)
-+from .inference_backends import FakeInferenceBackend, LocalOpenAICompatibleBackend, RemoteOpenAICompatibleBackend
-+from .execution import (
-+    ContextItem, ContextMaterializer, DualExecutionAdapter,
-+    DualExecutionController, ExecutionError, ExecutionPolicy,
-+    MaterializedContext, RoutedControlAdapter, execution_readiness,
- )
--from .inference_backends import FakeInferenceBackend, LocalOpenAICompatibleBackend
-
-@@ -83,4 +88,8 @@ __all__ = [
-     "InferenceRuntime", "InferenceStore", "InferenceTarget", "ModelRegistry",
--    "ModelRouter", "RouteDecision", "FakeInferenceBackend",
--    "LocalOpenAICompatibleBackend", "inference_preflight",
-+    "ModelRouter", "RouteDecision", "TargetPricing", "FakeInferenceBackend",
-+    "LocalOpenAICompatibleBackend", "RemoteOpenAICompatibleBackend",
-+    "ContextItem", "ContextMaterializer", "DualExecutionAdapter",
-+    "DualExecutionController", "ExecutionError", "ExecutionPolicy",
-+    "MaterializedContext", "RoutedControlAdapter", "execution_readiness",
-+    "inference_preflight",
-     "routing_policy_hash",
-diff --git a/.prime/agent/skills/article-loop/src/article_loop/budget.py b/.prime/agent/skills/article-loop/src/article_loop/budget.py
-index ce0dddf..39af979 100644
---- a/.prime/agent/skills/article-loop/src/article_loop/budget.py
-+++ b/.prime/agent/skills/article-loop/src/article_loop/budget.py
-@@ -209,2 +209,4 @@ class RunAuthorization:
-     routing_policy_hash: str | None = None
-+    max_run_cost_microunits: int | None = None
-+    currency: str | None = None
-
-@@ -231,2 +233,13 @@ class RunAuthorization:
-             raise BudgetAuthorizationError("authorization.routing_policy_hash is invalid")
-+        max_run_cost = _integer(
-+            value.get("max_run_cost_microunits"),
-+            "authorization.max_run_cost_microunits", allow_none=True,
-+        )
-+        currency = value.get("currency")
-+        if currency is not None and (
-+            not isinstance(currency, str) or re.fullmatch(r"[A-Z]{3}", currency) is None
-+        ):
-+            raise BudgetAuthorizationError("authorization.currency is invalid")
-+        if (max_run_cost is None) != (currency is None):
-+            raise BudgetAuthorizationError("authorization monetary ceiling and currency must be paired")
-         return cls(
-@@ -234,2 +247,3 @@ class RunAuthorization:
-             approved_at, reference.strip(), routing_policy_hash,
-+            max_run_cost, currency,
-         )
-@@ -251,2 +265,5 @@ class RunAuthorization:
-             result["routing_policy_hash"] = self.routing_policy_hash
-+        if self.max_run_cost_microunits is not None:
-+            result["max_run_cost_microunits"] = self.max_run_cost_microunits
-+            result["currency"] = self.currency
-         return result
-@@ -319,2 +336,3 @@ class BudgetLedger:
-         currency: str | None = None,
-+        max_run_cost_microunits: int | None = None,
-         live_enabled: bool = False,
-@@ -362,2 +380,7 @@ class BudgetLedger:
-         self.currency = currency
-+        self.max_run_cost_microunits = _integer(
-+            max_run_cost_microunits, "max_run_cost_microunits", allow_none=True,
-+        )
-+        if self.max_run_cost_microunits is not None and self.currency is None:
-+            raise BudgetError("monetary ceiling requires a currency")
-         if type(live_enabled) is not bool:
-@@ -399,2 +422,4 @@ class BudgetLedger:
-             }
-+            if self.max_run_cost_microunits is not None:
-+                expected_binding["budget_max_run_cost_microunits"] = self.max_run_cost_microunits
-             actual_binding = {key: persisted.get(key) for key in expected_binding}
-@@ -451,3 +476,7 @@ class BudgetLedger:
-             config_hash=config_hash,
--            currency=execution.get("currency"),
-+            currency=section.get("currency", execution.get("currency")),
-+            max_run_cost_microunits=_integer(
-+                section.get("max_run_cost_microunits"),
-+                "budget.max_run_cost_microunits", allow_none=True,
-+            ),
-             live_enabled=execution.get("enabled") is True and active_profile is not None,
-@@ -757,2 +786,4 @@ class BudgetLedger:
-         reserved_wall = sum_field(open_items, "estimated_wall_time_seconds")
-+        confirmed_cost = sum_field(confirmed, "cost_microunits")
-+        reserved_cost = sum_field(open_items, "estimated_cost_microunits")
-         return {
-... [diff truncado em 8000 caracteres; consulte somente o arquivo necessário]
+Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem no delta e inventário.
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (92429 bytes; SHA-256 `c79c64eab2a7a13b`).
+- Fonte lida: `docs/AI_HISTORY.md` (94921 bytes; SHA-256 `02273b6ef6d37097`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -226,24 +77,24 @@ index ce0dddf..39af979 100644
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
-| M12.5 | 2026-09-03 | 6 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| M12.5 | 2026-09-03 | 7 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 
-- Sessões estruturadas registradas: 25.
-- Índice recente: 2026-09-03T06:08:39Z — M12 implementado localmente sobre a base M11: ledger de orçamento durável, observabilidade estruturada redigida, perfis…; 2026-09-03T19:09:00Z — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branc…; 2026-09-03T20:22:56Z — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem i…; 2026-09-03T20:28:25Z — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e se…; 2026-09-03T21:27:30Z — Corrigiu a falha da CI M12.5 causada por conexão HTTP fechada sem resposta, publicou a correção e confirmou a matriz Gi…; 2026-09-03T22:46:53Z — M12.5.1 Phase A implementada e validada localmente como ligação dual end-to-end por departamento, com contexto autoriza…; 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prom…; 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 26.
+- Índice recente: 2026-09-03T19:09:00Z — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branc…; 2026-09-03T20:22:56Z — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem i…; 2026-09-03T20:28:25Z — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e se…; 2026-09-03T21:27:30Z — Corrigiu a falha da CI M12.5 causada por conexão HTTP fechada sem resposta, publicou a correção e confirmou a matriz Gi…; 2026-09-03T22:46:53Z — M12.5.1 Phase A implementada e validada localmente como ligação dual end-to-end por departamento, com contexto autoriza…; 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prom…; 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.; 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato execu…. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-6a3c1d5e54217ee4379f` — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prompt, sem preencher provider, runtime, endpoint, modelo, capacidade, credencial, preço, privacidade, mapa, rota ou autorização.
-  - mudanças: A checklist HUMAN CONFIGURATION REQUIRED foi alinhada palavra por palavra ao contrato da Phase A.
-  - decisões: Manter todos os campos humanos vazios; exemplos permanecem somente em docs/examples e a configuração ativa continua disabled.
-  - validações: Leitura do trecho CODE COMPLETE até HUMAN CONFIGURATION REQUIRED confirmou os dois headings e os 15 campos exatos.; git diff --check e bin/check.sh passaram após a correção documental.
-  - riscos: Configuração humana e qualquer smoke live continuam fora da Phase A.
-  - próximos: O humano deverá preencher a checklist em fase posterior e autorizar separadamente qualquer execução live.
 - `session-6cd6a464487f4b67221c` — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.
   - mudanças: Workflow CI renomeado para M0-M12.5.1 e passou a executar sintaxe shell e bin/check.sh antes da regressão descoberta automaticamente.
   - decisões: Preservar a matriz Python 3.11, 3.12 e 3.13 e o unittest discover completo; testes M12.5.1 permanecem offline e o backend remoto é mockado.
   - validações: YAML do workflow foi carregado por PyYAML; bash -n, bin/check.sh e git diff --check passaram.
   - riscos: O workflow atualizado não foi disparado no GitHub nesta sessão; validação de CI remota ocorrerá somente após publicação futura.
   - próximos: Ao publicar futuramente, observar os três jobs 3.11-3.13 sem habilitar modelo, API ou target.
+- `session-709c7c983dca0c4e1fcc` — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato executável de bin/check.sh e validação local/remota integral.
+  - mudanças: Commit e238b88 (feat(m12.5.1): add dual execution phase A) publicou os 28 arquivos de implementação, contratos, testes, documentação e handoff em origin/main.; O teste de scaffold passou a exigir bin/check.sh executável, preservando bin/start-prime.sh não executável e bin/preflight.sh executável, conforme a invocação literal da Phase A e da CI.
+  - decisões: Publicar somente por push normal fast-forward, sem force-push ou reescrita; manter execução, modelos, targets remotos e APIs pagas desabilitados.
+  - validações: git fetch --prune origin e git rev-list --left-right --count HEAD...origin/main confirmaram alinhamento 0 0 antes da publicação.; python3 -m unittest discover -s control -p test_*.py -q passou com 410 testes e 1 skip em 255.130 s após a correção contratual.; py_compile dos Python alterados, git diff --check, bash -n bin/check.sh bin/start-prime.sh, bin/check.sh e varredura de padrões óbvios de credenciais passaram.; GitHub Actions run 33816899914 concluiu com sucesso a matriz Python 3.11, 3.12 …
+  - riscos: Configuração humana, endpoints, modelos, preços, credencial via ambiente e autorização live continuam ausentes; configuration_ready e live_ready permanecem false.
+  - próximos: Preencher .prime/handoffs/12_5_1_human_configuration.md em uma fase humana posterior antes de qualquer smoke live; M13 permanece não iniciado.
 
 ## Marcos planejados
 
@@ -465,7 +316,7 @@ O runtime de inferência não finge ser um filho RLM nem substitui M6.
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
 - Total: 197 arquivos; runtime=18, text=179.
-- Fingerprint canônico: `eb05e97f915ce52ccdf84dd6a04f7a3796c78887835084ce2a816783ff9601b3`.
+- Fingerprint canônico: `8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766`.
 
 ## Roteamento para aprofundamento
 

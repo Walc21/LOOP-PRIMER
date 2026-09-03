@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `eb05e97f915ce52ccdf84dd6a04f7a3796c78887835084ce2a816783ff9601b3`
-- Registrado em: `2026-09-03T22:48:42Z`
-- Git: branch `main`, HEAD `ba316b50a707`
+- Fingerprint das fontes: `8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766`
+- Registrado em: `2026-09-03T23:22:24Z`
+- Git: branch `main`, HEAD `e238b8891baa`
 - Arquivos relevantes: 197
 
 ## Evolução reconstruída do versionamento
@@ -33,7 +33,7 @@
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
-| M12.5 | 2026-09-03 | 6 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| M12.5 | 2026-09-03 | 7 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 
 ### Commits exatos
 
@@ -140,6 +140,7 @@
 | `49fad01ca` | 2026-09-03 | M12.5 | fix(m12.5): normalize closed backend connections | .prime/agent/skills/article-loop/src/article_loop/inference_backends.py, .prime/handoffs/12_5_para_13.md, PLANS.md, control/test_m11_commands.py, control/test_m125_inference_routi… |
 | `90c1e27b7` | 2026-09-03 | M12.5 | docs(m12.5): record green CI validation | .prime/handoffs/12_5_para_13.md, AI_CONTEXT.md, PLANS.md, README.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl |
 | `ba316b50a` | 2026-09-03 | M12.5 | chore(context): refresh M12.5 CI snapshot | AI_CONTEXT.md |
+| `e238b8891` | 2026-09-03 | M12.5 | feat(m12.5.1): add dual execution phase A | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 
 ## Decisões arquiteturais
 
@@ -1205,3 +1206,42 @@
 | Tipo | Caminho | SHA anterior | SHA final |
 |---|---|---|---|
 | modified | `.github/workflows/ci.yml` | `fe0474481ca7` | `61350e140d71` |
+
+### 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato executável de bin/check.sh e validação local/remota integral.
+
+- Session ID: `session-709c7c983dca0c4e1fcc`
+- Fingerprint final: `8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766`
+- Git final: `e238b8891baa`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 3 modificados, 0 removidos
+
+**Mudanças**
+
+- Commit e238b88 (feat(m12.5.1): add dual execution phase A) publicou os 28 arquivos de implementação, contratos, testes, documentação e handoff em origin/main.
+- O teste de scaffold passou a exigir bin/check.sh executável, preservando bin/start-prime.sh não executável e bin/preflight.sh executável, conforme a invocação literal da Phase A e da CI.
+
+**Decisões**
+
+- Publicar somente por push normal fast-forward, sem force-push ou reescrita; manter execução, modelos, targets remotos e APIs pagas desabilitados.
+
+**Validações**
+
+- git fetch --prune origin e git rev-list --left-right --count HEAD...origin/main confirmaram alinhamento 0 0 antes da publicação.
+- python3 -m unittest discover -s control -p test_*.py -q passou com 410 testes e 1 skip em 255.130 s após a correção contratual.
+- py_compile dos Python alterados, git diff --check, bash -n bin/check.sh bin/start-prime.sh, bin/check.sh e varredura de padrões óbvios de credenciais passaram.
+- GitHub Actions run 33816899914 concluiu com sucesso a matriz Python 3.11, 3.12 e 3.13 para o commit e238b88.
+
+**Riscos/limites**
+
+- Configuração humana, endpoints, modelos, preços, credencial via ambiente e autorização live continuam ausentes; configuration_ready e live_ready permanecem false.
+
+**Próximos passos**
+
+- Preencher .prime/handoffs/12_5_1_human_configuration.md em uma fase humana posterior antes de qualquer smoke live; M13 permanece não iniciado.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `PLANS.md` | `cfc7ee23f0f9` | `c5f7127e3b7d` |
+| modified | `control/test_contracts.py` | `00fa5c6c2444` | `aa3d80791b67` |
+| modified | `docs/decisions.md` | `5f708176ecd7` | `83b3f1f550c5` |
