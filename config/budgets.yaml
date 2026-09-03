@@ -28,3 +28,50 @@ authorization:
   required_for_model_calls: true
   required_for_paid_apis: true
   approval_reference: null
+
+# M12 operational accounting. Profiles are ceilings for planning only and are
+# disabled until a versioned configuration and a new run explicitly opt in.
+budget:
+  schema_version: "1.0.0"
+  unit: tokens
+  max_integer: 9223372036854775807
+  default_profile: null
+  limits:
+    total_tokens: 0
+    per_cycle_tokens: 0
+    per_department_tokens: 0
+    per_role_tokens: 0
+    per_model_tokens: 0
+    max_calls: 0
+    max_concurrent_children: 0
+    max_retries: 0
+    max_wall_time_seconds: 0
+    max_cycles: 0
+    max_cycles_without_improvement: 0
+    max_extra_judgments: 0
+  profiles:
+    calibration:
+      enabled: false
+      limits:
+        total_tokens: 250000
+        max_cycles: 1
+        max_concurrent_children: 5
+        max_wall_time_seconds: 5400
+        max_retries: 0
+        max_extra_judgments: 0
+    overnight:
+      enabled: false
+      limits:
+        total_tokens: 1500000
+        max_cycles: 6
+        max_wall_time_seconds: 28800
+        max_cycles_without_improvement: 2
+        max_extra_judgments: 1
+        max_retries: 0
+
+observability:
+  schema_version: "1.0.0"
+  max_log_bytes: 65536
+  orphan_after_seconds: 900
+  alert_thresholds: [50, 80, 95, 100]
+  redaction: allowlist

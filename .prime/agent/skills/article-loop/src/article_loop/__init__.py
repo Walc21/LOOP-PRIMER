@@ -32,6 +32,12 @@ from .refocus import (
 )
 from .policy import PolicyError, choose_action, decide, load_policy, load_published_decision, pareto_relation
 from .finalization import FinalizationError, TransactionalFinalizer, finalize_decision
+from .budget import (
+    BudgetAuthorizationError, BudgetError, BudgetExceeded, BudgetIdempotencyError,
+    BudgetIntegrityError, BudgetLedger, BudgetLimits, BudgetStateError,
+    LimitedSupervisor, ManualClock, RunAuthorization, load_budget_config,
+)
+from .observability import ObservabilityError, StructuredLogger, redact_payload
 
 __version__ = "0.6.0"
 
@@ -58,6 +64,11 @@ __all__ = [
     "RefocusError", "SourceReadyError", "State", "StopRequested", "StoreError",
     "PolicyError", "FinalizationError", "TransactionalFinalizer",
     "SynthesisError", "TransitionError", "bootstrap", "checkpoint",
+    "BudgetAuthorizationError", "BudgetError", "BudgetExceeded",
+    "BudgetIdempotencyError", "BudgetIntegrityError", "BudgetLedger",
+    "BudgetLimits", "BudgetStateError", "LimitedSupervisor", "ManualClock",
+    "RunAuthorization", "load_budget_config", "ObservabilityError",
+    "StructuredLogger", "redact_payload",
     "check_inversion_consistency", "classify_cycle_progress", "compare",
     "choose_action", "compile_manager_prompt", "compile_prompt", "decide", "diagnose_cycle",
     "evaluate_candidate", "expected_prompt_version", "finalize", "finalize_decision",

@@ -39,6 +39,7 @@ from article_loop import (  # noqa: E402
     stop,
 )
 from article_loop.finalization import finalize_decision  # noqa: E402
+from article_loop.budget import BudgetError, BudgetLedger  # noqa: E402
 from article_loop.orchestrator import Orchestrator  # noqa: E402
 
 
@@ -146,7 +147,7 @@ def _merge_parameters(command: str, args: argparse.Namespace) -> dict[str, Any]:
         "bootstrap": {"root", "pdf"},
         "preflight": {"root"},
         "run": {"root", "run_id", "cycle_id", "dry_run"},
-        "status": {"root", "run_id"},
+        "status": {"root", "run_id", "cycle_id"},
         "checkpoint": {"root", "run_id"},
         "pause": {"root", "run_id"},
         "resume": {"root", "run_id"},
@@ -279,6 +280,70 @@ def _validate_fail_closed_budget(config: Mapping[str, Any], *, require_live: boo
     }
 
 
+def _validate_m12_budget(config: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate M12 declarations without enabling any consumer."""
+    section = config.get("budget")
+    if not isinstance(section, Mapping) or section.get("schema_version") != "1.0.0":
+        raise ProjectCheckError("config/budgets.yaml lacks the M12 budget section")
+    if section.get("unit") != "tokens":
+        raise ProjectCheckError("M12 budget unit must be tokens")
+    if section.get("default_profile") is not None:
+        raise ProjectCheckError("M12 default_profile must remain disabled")
+    maximum = section.get("max_integer")
+    if type(maximum) is not int or maximum < 1 or maximum > 2**63 - 1:
+        raise ProjectCheckError("M12 budget max_integer is invalid")
+    limits = section.get("limits")
+    if not isinstance(limits, Mapping):
+        raise ProjectCheckError("M12 budget limits are invalid")
+    required_limits = {
+        "total_tokens", "per_cycle_tokens", "per_department_tokens", "per_role_tokens",
+        "per_model_tokens", "max_calls", "max_concurrent_children", "max_retries",
+        "max_wall_time_seconds", "max_cycles", "max_cycles_without_improvement",
+        "max_extra_judgments",
+    }
+    if set(limits) != required_limits:
+        raise ProjectCheckError("M12 budget limits are not the canonical set")
+    for name, value in limits.items():
+        if type(value) is not int or value < 0 or value > maximum:
+            raise ProjectCheckError(f"invalid M12 budget limit: {name}")
+    profiles = section.get("profiles")
+    if not isinstance(profiles, Mapping) or set(profiles) != {"calibration", "overnight"}:
+        raise ProjectCheckError("M12 budget profiles are invalid")
+    expected_profiles = {
+        "calibration": {
+            "total_tokens": 250000, "max_cycles": 1,
+            "max_concurrent_children": 5, "max_wall_time_seconds": 5400,
+            "max_retries": 0, "max_extra_judgments": 0,
+        },
+        "overnight": {
+            "total_tokens": 1500000, "max_cycles": 6,
+            "max_wall_time_seconds": 28800,
+            "max_cycles_without_improvement": 2, "max_extra_judgments": 1,
+            "max_retries": 0,
+        },
+    }
+    for name, profile in profiles.items():
+        if not isinstance(profile, Mapping) or type(profile.get("enabled")) is not bool or profile.get("enabled") is not False:
+            raise ProjectCheckError(f"M12 profile is invalid: {name}")
+        profile_limits = profile.get("limits")
+        if not isinstance(profile_limits, Mapping) or dict(profile_limits) != expected_profiles[name]:
+            raise ProjectCheckError(f"M12 profile limits are invalid: {name}")
+        for key, value in profile_limits.items():
+            if type(value) is not int or value < 0 or value > maximum:
+                raise ProjectCheckError(f"invalid M12 profile limit: {name}.{key}")
+    observability = config.get("observability")
+    if not isinstance(observability, Mapping) or observability.get("schema_version") != "1.0.0":
+        raise ProjectCheckError("M12 observability configuration is invalid")
+    if type(observability.get("max_log_bytes")) is not int or observability["max_log_bytes"] < 1024:
+        raise ProjectCheckError("M12 log size limit is invalid")
+    if observability.get("redaction") != "allowlist":
+        raise ProjectCheckError("M12 log redaction must use an allowlist")
+    thresholds = observability.get("alert_thresholds")
+    if thresholds != [50, 80, 95, 100]:
+        raise ProjectCheckError("M12 alert thresholds are invalid")
+    return {"unit": "tokens", "profiles": {name: profile["enabled"] for name, profile in profiles.items()}, "max_log_bytes": observability["max_log_bytes"]}
+
+
 def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, Any]:
     """Validate only local M11 surfaces and fail closed on unsafe drift."""
     project = _safe_root(str(root))
@@ -324,6 +389,7 @@ def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, 
 
     budgets = _load_yaml(project / "config/budgets.yaml")
     execution = _validate_fail_closed_budget(budgets, require_live=require_live)
+    m12 = _validate_m12_budget(budgets)
     system = _load_yaml(project / "config/system.yaml")
     project_config = system.get("project")
     if not isinstance(project_config, Mapping) or project_config.get("rlm_max_depth") != 2:
@@ -336,6 +402,7 @@ def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, 
         "settings": "omitted_unconfirmed",
         "prime_agent_discovered": prime_path is not None,
         "execution": execution,
+        "m12": m12,
         "stop_present": False,
     }
 
@@ -359,7 +426,12 @@ def _run_command(command: str, params: Mapping[str, Any]) -> Any:
     if command == "status":
         if run_id is None:
             return asyncio.run(status(root=root))
-        return asyncio.run(Orchestrator(root).status(run_id))
+        result = asyncio.run(Orchestrator(root).status(run_id))
+        try:
+            result = {**result, "budget": BudgetLedger.from_project(root, run_id).status(current_cycle=cycle_id)}
+        except BudgetError as error:
+            raise RuntimeError("budget status is unavailable") from error
+        return result
     if command == "checkpoint":
         if run_id is None:
             return asyncio.run(checkpoint(root=root))

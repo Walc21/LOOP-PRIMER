@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://article-loop.local/schemas/observability-event.schema.json",
+  "title": "ObservabilityEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "event_id", "sequence", "run_id", "occurred_at",
+    "level", "event_type", "payload", "previous_event_hash", "event_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "sequence": {"type": "integer", "minimum": 0},
+    "run_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "level": {"enum": ["INFO", "WARNING", "ERROR"]},
+    "event_type": {"enum": ["budget_reserved", "budget_admitted", "budget_reconciled", "budget_released", "budget_uncertain", "budget_authorized", "budget_progress", "budget_alert", "budget_paused", "budget_resumed", "budget_stopped", "supervisor_step"]},
+    "payload": {"type": "object"},
+    "previous_event_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "event_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

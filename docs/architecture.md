@@ -313,6 +313,33 @@ fail-closed, o launcher não inicia Prime Agent nem modelo. Nenhum
 `.prime/agent/settings.json` é criado sem confirmação direta do formato da
 versão instalada.
 
+### Orçamento e observabilidade M12
+
+M12 adiciona `BudgetLedger`, um ledger local por execução em
+`state/budgets/<run_id>.jsonl`. Reservas, admissões, receipts, reconciliações,
+incertezas, progresso, alertas e controles são eventos append-only com hash
+SHA-256, sequência, idempotência e lock por run. Antes de qualquer fronteira
+consumidora, o ledger compromete a estimativa; saldo confirmado e todas as
+reservas abertas participam do mesmo check atômico. Resultado desconhecido
+permanece reservado como `UNCERTAIN`, e excesso reconciliado bloqueia novas
+admissões.
+
+Os limites são expressos em tokens inteiros não negativos e também cobrem ciclo,
+departamento, papel, modelo, chamadas, filhos concorrentes, retries, wall time,
+ciclos e julgamentos extras. O status JSON/humano expõe uso confirmado,
+reservado e comprometido, saldo por limite, reservas, filhos, última melhoria,
+diagnóstico, próxima ação, alertas e nível de assurance. Deadlines e duração
+monotônica são retomados a partir dos eventos duráveis; `STOP` bloqueia novas
+reservas e `PAUSE` conserva as existentes.
+
+`StructuredLogger` grava somente campos operacionais de uma allowlist, com
+hash-chain, rotação por tamanho, fsync e rejeição de payload não allowlisted.
+Credenciais, cookies, auth, prompts completos, artigo integral e mensagens
+privadas ficam fora do log. Os tetos `calibration` e `overnight` permanecem
+desabilitados na configuração versionada; perfil e autorização live não são
+herdados entre runs. M12 não altera a máquina de estados, critérios
+científicos, gates, conteúdo, Prime Agent ou defaults fail-closed de M11.
+
 ### Ferramentas auxiliares de handoff para IA
 
 `scripts/ai_context.py`, `scripts/ai_history.py` e o módulo compartilhado

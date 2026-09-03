@@ -1,6 +1,6 @@
 # Runbook local do article-loop
 
-Este runbook descreve somente a camada operacional M11. O estado durável do
+Este runbook descreve as camadas operacionais M11 e M12. O estado durável do
 produto continua no repositório; a sessão Prime Agent é apenas um executor
 externo. O PDF de entrada e versões publicadas são imutáveis.
 
@@ -14,7 +14,8 @@ python3 scripts/article_loop_command.py preflight --root .
 ```
 
 `check.sh` é local e determinístico: valida os templates planos, os arquivos
-canônicos, a profundidade 2 e os defaults de orçamento. `article-preflight` é
+canônicos, a profundidade 2, os defaults fail-closed e os contratos M12 de
+orçamento/observabilidade. `article-preflight` é
 read-only quando executado fora de uma sessão Prime e informa que não há
 `PrimeRLMAdapter` explícito; isso não é aprovação para execução live.
 
@@ -140,9 +141,50 @@ snapshots e locks. Não apague temporários, não reescreva eventos e não use
 - `control/STOP blocks new operations`: preserve o sentinel e investigue o
   estado antes de qualquer retomada.
 - `live execution is not explicitly enabled and authorized`: comportamento
-  esperado com `config/budgets.yaml` fail-closed; M11 não altera esse arquivo.
+  esperado com `config/budgets.yaml` fail-closed; M11/M12 não habilitam
+  execução.
 - `prime-agent is not available in PATH`: a instalação externa não foi
   confirmada; não instale nem substitua o binário dentro deste projeto.
 - `live execution requires an explicit PrimeRLMAdapter`: a chamada foi feita
   fora de uma sessão Prime com o adaptador injetado; use dry-run ou uma sessão
   futura explicitamente autorizada.
+
+## M12: orçamento e observabilidade
+
+`BudgetLedger` registra uma execução por `run_id` em
+`state/budgets/<run_id>.jsonl`. Cada reserva é feita sob lock antes da fronteira
+consumidora e inclui ciclo, departamento, papel, chamada, tentativa, provider e
+modelo identificadores. O ledger usa tokens inteiros não negativos; reservas
+abertas continuam comprometidas até reconciliação, receipt/handle ou prova de
+não admissão. Um resultado desconhecido fica `UNCERTAIN`, e uma reconciliação
+acima da estimativa bloqueia novas reservas.
+
+O status JSON pode ser consultado junto ao estado existente com um `run_id`:
+
+```sh
+python3 scripts/article_loop_command.py status --root . --run-id RUN_ID --cycle-id N
+```
+
+Ele expõe `usage_by_limit` e `balance` para total, ciclo, departamento, papel,
+modelo, chamadas, concorrência, retries, wall time, ciclos e julgamentos,
+além de reservas, alertas, última melhoria, diagnóstico, próxima ação e
+`assurance`. `human_status()` fornece a versão curta para operadores.
+
+Os perfis `calibration` e `overnight` são tetos de planejamento e permanecem
+desabilitados no arquivo versionado. O perfil só pode ser escolhido
+explicitamente em uma configuração futura; isso não autoriza modelo, Prime
+Agent, rede ou custo. A execução live também exige autorização registrada no
+ledger, vinculada ao run, perfil, hash da configuração, provider/modelo e teto.
+
+Os eventos do ledger e os logs em `logs/<run_id>.jsonl` são hash-bound,
+sincronizados com `fsync`, e os logs rotacionam por tamanho sem apagar os
+arquivos anteriores. A superfície de log usa allowlist: credenciais, cookies,
+auth, prompts completos, artigo integral e mensagens privadas não são
+persistidos. Alertas de 50%, 80%, 95% e 100% são idempotentes por limite/run,
+assim como deadline, falta de progresso e reserva órfã.
+
+Após crash, execute `check.sh`, consulte o status, preserve reservas
+`UNCERTAIN` e reconcilie por receipt/handle. Não devolva saldo manualmente nem
+edite o JSONL. `control/STOP` impede novas reservas; `pause()` conserva ledger
+e reservas, e `stop()` não promete reembolso de trabalho incerto. Nenhum
+supervisor prolongado usa loop textual infinito.

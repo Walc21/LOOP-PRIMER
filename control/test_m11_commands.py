@@ -66,6 +66,8 @@ class M11CommandBridgeTests(unittest.TestCase):
         self.assertEqual(value["status"], "success")
         self.assertFalse(value["result"]["execution"]["model_execution_enabled"])
         self.assertFalse(value["result"]["prime_agent_discovered"])
+        self.assertEqual(value["result"]["m12"]["unit"], "tokens")
+        self.assertEqual(value["result"]["m12"]["profiles"], {"calibration": False, "overnight": False})
 
     def test_require_live_rejects_current_fail_closed_configuration(self):
         code, stdout, stderr = self.invoke(["check", "--root", str(ROOT), "--require-live"])

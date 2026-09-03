@@ -1024,3 +1024,51 @@ A ponte, os templates, os scripts, o runbook e os testes M11 foram adicionados
 sem modificar as APIs científicas M0--M10. A regressão final de 346 testes
 passou; a disponibilidade do binário Prime Agent e a operação live continuam
 explicitamente não verificadas.
+
+## ADR-031 — M12: orçamento durável e observabilidade fail-closed
+
+**Data:** 2026-09-03
+
+**Status:** Aceito
+
+### Contexto
+
+M11 fornece a entrada operacional local, mas ainda não existe um ledger
+durável que reserve capacidade antes de uma chamada, reconcilie seu resultado
+ou conserve saldo em caso de crash. O status atual também não apresenta, em
+uma visão única, reservas, uso, saldo, deadlines, alertas e nível de
+assurance. A configuração versionada continua deliberadamente sem modelo,
+API paga, rede e limites de execução ativos.
+
+### Decisão
+
+1. M12 usará tokens como unidade canônica de orçamento, sempre como inteiros
+   não negativos limitados por um teto inteiro explícito. O custo monetário é
+   opcional e só será registrado com moeda/provider calculáveis e consistentes.
+2. `BudgetLedger` será append-only, hash-bound e particionado por execução,
+   ciclo, departamento, papel, chamada e tentativa. Reserva, admissão,
+   reconciliação, liberação comprovadamente não admitida, incerteza, progresso
+   e alertas terão eventos idempotentes sob lock; resultado incerto nunca
+   devolve saldo otimista.
+3. Os limites serão aplicados simultaneamente nos níveis total, ciclo,
+   departamento, papel, modelo, chamadas, filhos concorrentes, retries e
+   wall time. Durante um run eles só podem diminuir; alteração exige nova
+   configuração e autorização vinculadas a outro run.
+4. Perfis `calibration` e `overnight` serão apenas opt-in e não alterarão os
+   defaults fail-closed. A execução live exigirá autorização explícita
+   vinculada ao run, hash de configuração/perfil, provider/modelo, teto,
+   timestamp e referência de aprovação; não haverá arquivo oculto de
+   consentimento.
+5. Logs estruturados usarão allowlist de campos, redaction, tamanho máximo,
+   rotação sem apagar evidência e fsync. O status humano/JSON exporá somente
+   metadados operacionais seguros; prompts completos, artigo, mensagens
+   privadas, credenciais, cookies e auth nunca serão persistidos.
+
+### Consequências e limites
+
+O controle de orçamento torna a admissão e a retomada auditáveis sem mudar
+critérios científicos, estados canônicos, gates, decisão ou conteúdo. O
+supervisor prolongado será limitado por contagem/deadline e não fará loop
+textual infinito. A ausência do binário Prime Agent e a configuração live
+desabilitada continuam sendo bloqueios para qualquer smoke test real, mas não
+impedem a implementação e os testes locais do M12.

@@ -98,7 +98,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M10 | política de compensação e finalizador | concluído localmente | política pura emite uma `Decision` fechada; finalizador revalida hashes e aplica a disposição atômica sem modificar o challenger avaliado |
 | M10.1 | endurecimento de cobertura e gate final de M10 | concluído localmente | pacote final hash-bound, rederivação de decisão, recuperação por fase, concorrência e Pareto verificados sem iniciar M11 |
 | M11 | comandos e configuração do Prime Agent | concluído localmente | ponte CLI, templates planos, guardrails aditivos, runbook e launcher fail-closed; `settings.json` omitido sem schema instalado confirmado |
-| M12 | orçamento, observabilidade e execução prolongada | pendente | limites, custos e recuperação são observáveis sem alterar globais |
+| M12 | orçamento, observabilidade e execução prolongada | concluído localmente | ledger hash-bound, reservas atômicas, reconciliação conservadora, perfis opt-in, status/logs/alertas e retomada fail-closed; sem modelo, rede ou execução real |
 | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
 
 ## Sequência canônica dos Prompts 01–13
@@ -178,6 +178,23 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   `.prime/agent/settings.json` continua deliberadamente não inventado; smoke
   test live permanece pendente até uma instalação compatível e autorização
   separada.
+
+- 2026-09-03 — M12 iniciado sobre a base M11 validada. O escopo é somente
+  orçamento durável, observabilidade e operação prolongada limitada, com
+  `BudgetLedger` append-only/content-addressed, reservas atômicas,
+  reconciliação conservadora, perfis opt-in e status/logs/alertas redigidos.
+  Os defaults de modelo, API paga, rede e execução live permanecem
+  desabilitados; não haverá M13, Prime Agent ou modelo nesta sessão.
+
+- 2026-09-03 — M12 concluído localmente. `BudgetLedger` e
+  `StructuredLogger` passaram a cobrir reserva sob lock, reconciliação
+  idempotente, `UNCERTAIN`, limites hierárquicos, binding de configuração,
+  deadlines/duração retomáveis, status por limite, alertas idempotentes e
+  redaction/rotação com fsync. Foram adicionados os schemas M12, testes
+  adversariais e o handoff `12_para_13.md`. A suíte dedicada M12/M11/contratos
+  aprovou 87 testes; a regressão integral aprovou 366 testes em 246.975s, com
+  apenas o warning esperado do fixture negativo de ZIP. A configuração live e
+  os perfis continuam desabilitados; não houve commit, publicação ou M13.
 
 - 2026-09-03 — M10.1 concluído localmente. Foram adicionados os schemas de
   relatório de gate final e relatório final; `FINALIZE` agora exige as

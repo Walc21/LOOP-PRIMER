@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `769f42631f2e59ed03609f618d6a2a3713c2f4e640d109ce57d98ed945e37dde`
-- Registrado em: `2026-09-03T05:04:53Z`
-- Git: branch `main`, HEAD `87c26ae37330`
-- Arquivos relevantes: 180
+- Fingerprint das fontes: `7580bfaf8dc057fa94fbb59c0b688b1f799b4c873a6647eacd838bb83ec692d2`
+- Registrado em: `2026-09-03T06:08:39Z`
+- Git: branch `main`, HEAD `af08c798df37`
+- Arquivos relevantes: 186
 
 ## Evolução reconstruída do versionamento
 
@@ -31,7 +31,7 @@
 | M4/M5 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m4_prompts.py, control/test_m5_blackboard_activation.py |
 | M10 | 2026-09-02..2026-09-03 | 2 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
-| M11 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
+| M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 
 ### Commits exatos
 
@@ -130,6 +130,7 @@
 | `9c598ba8a` | 2026-09-03 | M10 | feat(m10): harden finalization evidence and recovery | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/finalization.py, .prime/agent/skills/article-loop/src/article_loop/policy.py, AI_CONTE… |
 | `1fec40893` | 2026-09-03 | M10.1 | chore(history): record M10.1 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `87c26ae37` | 2026-09-03 | M11 | feat(m11): add local Prime Agent command integration | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
+| `af08c798d` | 2026-09-03 | M11 | chore(history): record M11 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 
 ## Decisões arquiteturais
 
@@ -163,6 +164,7 @@
 - ADR-028 — M10: política pura e finalização transacional por referência
 - ADR-029 — M10.1: pacote final canônico e recuperação coberta por fase
 - ADR-030 — M11: comandos locais e integração Prime Agent fail-closed
+- ADR-031 — M12: orçamento durável e observabilidade fail-closed
 
 ## Atualizações de sessão
 
@@ -801,3 +803,84 @@
 **Próximos passos**
 
 - M12 permanece como próximo marco, sem ação adicional nesta sessão.
+
+### 2026-09-03T05:18:47Z — Avaliada a prontidão para iniciar M12 após a publicação da M11; nenhum código, configuração, execução live, modelo, Prime Agent ou rede foi iniciado nesta sessão. O M12 permanece pendente e seu escopo foi separado das instruções de execução real.
+
+- Session ID: `session-m12-readiness-20260903`
+- Fingerprint final: `769f42631f2e59ed03609f618d6a2a3713c2f4e640d109ce57d98ed945e37dde`
+- Git final: `af08c798df37`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Nenhum arquivo de produto ou contrato M0--M11 foi alterado; somente o registro obrigatório desta sessão diagnóstica foi acrescentado.
+
+**Decisões**
+
+- Para iniciar M12, preservar defaults fail-closed e executar apenas implementação offline de orçamento durável, observabilidade e operação prolongada limitada; perfis e execução live continuam opt-in por run.
+
+**Validações**
+
+- Estado observado: main limpa e alinhada com origin/main antes do diagnóstico; M11 publicado em af08c79, com implementação em 87c26ae; a evidência da regressão M11 de 346 testes permanece no handoff 11_para_12.md.
+
+**Riscos/limites**
+
+- O binário Prime Agent não está disponível nesta sessão e a operação live real continua bloqueada; nenhum custo, modelo, credencial ou rede deve ser introduzido para começar o código M12.
+
+**Próximos passos**
+
+- Sob autorização explícita para implementar somente M12, repetir o precheck com suíte completa, inventariar fronteiras consumidoras e definir os contratos do BudgetLedger/observabilidade antes de editar.
+
+### 2026-09-03T06:08:39Z — M12 implementado localmente sobre a base M11: ledger de orçamento durável, observabilidade estruturada redigida, perfis opt-in e status operacional; execução real permanece desabilitada e M13 não foi iniciado.
+
+- Session ID: `session-8285cd8003cfdf5a27bb`
+- Fingerprint final: `7580bfaf8dc057fa94fbb59c0b688b1f799b4c873a6647eacd838bb83ec692d2`
+- Git final: `af08c798df37`; status relevante: 18 item(ns)
+- Delta factual: 6 adicionados, 12 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionados BudgetLedger e StructuredLogger com eventos append-only/content-addressed, lock, reservas atômicas, reconciliação idempotente, UNCERTAIN, deadlines retomáveis, binding monotônico de configuração e status humano/JSON por limite.
+- Adicionados schemas M12, configuração fail-closed, integração de status na ponte local e handoff .prime/handoffs/12_para_13.md; documentação e testes atualizados.
+
+**Decisões**
+
+- Preservar model_execution, APIs pagas, rede, perfis e dry-run desabilitados; live exige autorização explícita vinculada a run, perfil, hash, provider/modelo, teto e timestamp.
+- Não alterar orchestrator, state machine, critérios científicos, gates ou conteúdo; não fazer commit/publicação nesta sessão.
+
+**Validações**
+
+- python3 -m unittest control.test_m12_budget_observability control.test_m11_commands control.test_contracts -q: 87 testes aprovados.
+- python3 -m unittest discover -s control -q: 366 testes aprovados em 246.975s; somente warning esperado Duplicate name: a.tex no fixture negativo de ZIP.
+- python3 -m py_compile nos módulos M12 e scripts/article_loop_command.py: OK; bash bin/check.sh: OK, prime_agent_discovered=false, model_execution_enabled=false, perfis desabilitados.
+
+**Riscos/limites**
+
+- Prime Agent não está disponível nesta máquina; nenhum smoke test live, modelo, rede ou operação prolongada real foi executado. Commit e publicação GitHub permanecem pendentes de autorização explícita.
+
+**Próximos passos**
+
+- Antes de M13, validar a árvore/histórico M12 e decidir explicitamente se deve haver commit; qualquer operação live exige nova configuração versionada e autorização específica por run.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/src/article_loop/budget.py` | `-` | `79e089767cc0` |
+| added | `.prime/agent/skills/article-loop/src/article_loop/observability.py` | `-` | `843fb7b0eca7` |
+| added | `.prime/handoffs/12_para_13.md` | `-` | `6b6381b53320` |
+| added | `config/schemas/budget-event.schema.json` | `-` | `50a2c40ab3ad` |
+| added | `config/schemas/observability-event.schema.json` | `-` | `e4d1ac474059` |
+| added | `control/test_m12_budget_observability.py` | `-` | `4c18cab99ae3` |
+| modified | `.prime/agent/skills/article-loop/SKILL.md` | `030bc8b30701` | `e2400db7b022` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `7687ae22a123` | `14d02ad12848` |
+| modified | `PLANS.md` | `8ffcb5c9ec6c` | `3e2b5a9540fa` |
+| modified | `README.md` | `9319ca1f60dd` | `e3177b62485f` |
+| modified | `bin/check.sh` | `53cf8c2e4765` | `7da00cfe872e` |
+| modified | `config/budgets.yaml` | `3c70f903c84d` | `6000c58d4ea4` |
+| modified | `control/test_contracts.py` | `e14816e0f348` | `feb03d159a19` |
+| modified | `control/test_m11_commands.py` | `041e9cc2ebf9` | `344693b92f05` |
+| modified | `docs/architecture.md` | `5cdd7fde951e` | `756dc8e755cb` |
+| modified | `docs/decisions.md` | `bc0718acbe4e` | `aa038a86a30e` |
+| modified | `docs/runbook.md` | `081ced68a389` | `f067531f3d3d` |
+| modified | `scripts/article_loop_command.py` | `626e29247e77` | `09b6ae4eafc7` |

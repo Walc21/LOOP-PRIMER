@@ -162,3 +162,31 @@ diretos pelo nome determinístico. Todo receipt é copiado por SHA-256 para áre
 imutável antes de consumo; mudança no arquivo original rejeita consolidação.
 S30/S40 técnicos precisam de review S20 canônico do mesmo ciclo/base/proposta.
 M6 permanece offline e não inicia M7.
+
+## Operação limitada M12
+
+`BudgetLedger` e `StructuredLogger` são as superfícies locais de orçamento e
+observabilidade. O ledger é por `run_id`, append-only, content-addressed e
+protegido por lock; `reserve()` deve preceder qualquer operação consumidora,
+`admit()` registra a fronteira atômica, `reconcile()` registra tokens
+input/output/cache e `mark_uncertain()` conserva saldo quando o resultado não
+é conhecido. `release_unadmitted()` exige prova explícita de não admissão.
+
+Limites usam tokens inteiros não negativos e podem ser hierárquicos por ciclo,
+departamento, papel e modelo, além de chamadas, filhos concorrentes, retries,
+wall time, ciclos e julgamentos extras. Excesso reconciliado bloqueia novas
+reservas. `status()` e `human_status()` expõem uso confirmado/reservado,
+comprometido e saldo por limite, reservas, última melhoria, diagnóstico,
+próxima ação, alertas e `assurance`.
+
+Os perfis `calibration` e `overnight` são tetos opt-in, mas permanecem
+desabilitados em `config/budgets.yaml`; M12 não liga modelo, Prime Agent, rede,
+APIs pagas ou execução prolongada. `live=True` exige autorização explícita no
+mesmo run, hash de configuração/perfil, provider/modelo, teto e timestamp.
+`STOP` bloqueia novas reservas e `PAUSE` preserva o ledger e reservas abertas.
+
+Logs estruturados aceitam apenas campos de allowlist, rotacionam sem apagar
+evidência e sincronizam writes com fsync. Não registrar credenciais, cookies,
+auth, prompts completos, artigo integral ou mensagens privadas. Depois de
+crash, reabrir o ledger, verificar a cadeia e reconciliar receipts/handles;
+nunca devolver saldo por suposição nem usar loop textual infinito.

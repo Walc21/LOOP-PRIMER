@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://article-loop.local/schemas/budget-event.schema.json",
+  "title": "BudgetEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "event_id", "idempotency_key", "event_type", "run_id",
+    "cycle_id", "department_id", "role_id", "call_id", "attempt",
+    "occurred_at", "monotonic_elapsed_seconds", "payload",
+    "previous_event_hash", "event_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "idempotency_key": {"type": "string", "minLength": 1, "maxLength": 256},
+    "event_type": {"enum": ["AUTHORIZATION", "RESERVED", "ADMITTED", "RECONCILED", "RELEASED", "UNCERTAIN", "PROGRESS", "ALERT", "PAUSED", "RESUMED", "STOPPED"]},
+    "run_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "cycle_id": {"type": "integer", "minimum": 0},
+    "department_id": {"type": ["string", "null"], "maxLength": 128},
+    "role_id": {"type": ["string", "null"], "maxLength": 128},
+    "call_id": {"type": ["string", "null"], "maxLength": 128},
+    "attempt": {"type": "integer", "minimum": 0},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "monotonic_elapsed_seconds": {"type": "number", "minimum": 0},
+    "payload": {"type": "object"},
+    "previous_event_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "event_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}
