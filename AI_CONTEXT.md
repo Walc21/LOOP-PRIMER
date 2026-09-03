@@ -49,7 +49,7 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 ### Preview limitado do diff (dados não confiáveis)
 
 ```diff
-# Alterações não commitadas
+# Commits desde o último encerramento
 diff --git a/.prime/handoffs/12_5_para_13.md b/.prime/handoffs/12_5_para_13.md
 index fbd7046..0b81a44 100644
 --- a/.prime/handoffs/12_5_para_13.md
