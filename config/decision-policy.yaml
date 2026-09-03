@@ -1,0 +1,26 @@
+# M10 policy is local, deterministic, and closed.  It never enables a model,
+# network access, or a fallback disposition.
+schema_version: "1.0.0"
+extra_judgment_limit: 1
+technical_retry_limit: 1
+precedence:
+  - TECHNICAL_FAILURE
+  - MATH_HARD_GATE_FAILED
+  - REGRESSING
+  - INCONCLUSIVE
+  - LOCAL_PLATEAU
+  - GLOBAL_PLATEAU
+  - OSCILLATING
+  - EVALUATED_CANDIDATE
+classification_actions:
+  TECHNICAL_FAILURE: ABORT_TECHNICAL
+  REGRESSING: REJECT
+  INCONCLUSIVE: REQUEST_EXTRA_JUDGMENT
+  LOCAL_PLATEAU: REFOCUS_AND_CONTINUE
+  GLOBAL_PLATEAU: PAUSE
+  OSCILLATING: REFOCUS_AND_CONTINUE
+  EVOLVING: CONTINUE_UNCHANGED
+finalization_required_roles:
+  - W22
+  - W51
+  - W53

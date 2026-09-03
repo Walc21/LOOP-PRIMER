@@ -804,8 +804,15 @@ def verify_published_diagnosis(
     cycle_id: int,
     *,
     store: DurableStore | None = None,
+    allow_m10_successor: bool = False,
 ) -> tuple[dict[str, Any], list[str]]:
-    """Verify the canonical M9 artifact and its durable DIAGNOSED event."""
+    """Verify the canonical M9 artifact and its durable DIAGNOSED event.
+
+    ``allow_m10_successor`` is a narrow revalidation mode for the M10
+    finalizer: it accepts only the same cycle after the recorded `DECIDED` or
+    recoverable `COMMITTING` transition, while still binding every field to the
+    earlier immutable DIAGNOSED event.
+    """
     if not isinstance(run_id, str) or not run_id:
         raise DiagnosisError("run_id must be a non-empty string")
     if isinstance(cycle_id, bool) or not isinstance(cycle_id, int) or cycle_id < 0:
@@ -816,7 +823,19 @@ def verify_published_diagnosis(
     if not events:
         raise DiagnosisError("run has no events")
     event = events[-1]
-    if (
+    diagnosis_index = len(events) - 1
+    if allow_m10_successor:
+        if event.get("state_to") not in {State.DECIDED.value, State.COMMITTING.value} or event.get("cycle_id") != cycle_id:
+            raise DiagnosisError("M10 revalidation requires active DECIDED or COMMITTING for this cycle")
+        for index in range(len(events) - 1, -1, -1):
+            candidate = events[index]
+            if candidate.get("event_type") == "DIAGNOSED" and candidate.get("cycle_id") == cycle_id:
+                event = candidate
+                diagnosis_index = index
+                break
+        else:
+            raise DiagnosisError("M10 revalidation cannot find the canonical DIAGNOSED event")
+    elif (
         event.get("state_to") != State.DIAGNOSED.value
         or event.get("event_type") != "DIAGNOSED"
         or event.get("cycle_id") != cycle_id
@@ -859,7 +878,7 @@ def verify_published_diagnosis(
     ]
     evaluated_event = next(
         (
-            item for item in reversed(events[:-1])
+            item for item in reversed(events[:diagnosis_index])
             if item.get("event_type") == "EVALUATED" and item.get("cycle_id") == cycle_id
         ),
         None,

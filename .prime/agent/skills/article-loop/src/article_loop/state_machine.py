@@ -38,6 +38,8 @@ _FORWARD = {
     State.EVALUATED: State.DIAGNOSED,
     State.DIAGNOSED: State.DECIDED,
     State.DECIDED: State.COMMITTING,
+    # M10 may complete a normal disposition, or directly freeze a fully
+    # revalidated final version.  Both paths are explicit and replayable.
     State.COMMITTING: State.CYCLE_COMPLETE,
 }
 _TERMINAL = {State.FINALIZED, State.TECHNICAL_FAILURE}
@@ -59,6 +61,8 @@ def is_valid_transition(
     if current is State.PAUSED:
         return resume_to is not None and target is resume_to
     if target is State.PAUSED:
+        return True
+    if current is State.COMMITTING and target is State.FINALIZED:
         return True
     if current is State.CYCLE_COMPLETE:
         return target in {State.CYCLE_PLANNED, State.FINALIZED}

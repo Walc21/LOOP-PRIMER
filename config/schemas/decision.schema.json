@@ -4,7 +4,7 @@
   "title": "Decision",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "decision_id", "run_id", "cycle_id", "candidate_id", "candidate_content_hash", "decided_at", "action", "gate_report_id", "verdict_ids", "diagnosis_id", "basis_locators", "reason_code", "inconclusive_evaluation_id", "final_gate_report_ids", "content_modification_allowed", "authorized_by"],
+  "required": ["schema_version", "decision_id", "run_id", "cycle_id", "candidate_id", "candidate_content_hash", "decided_at", "action", "gate_report_id", "verdict_ids", "diagnosis_id", "basis_locators", "reason_code", "inconclusive_evaluation_id", "final_gate_report_ids", "content_modification_allowed", "authorized_by", "policy_config_hash", "pareto_relation", "technical_checkpoint"],
   "properties": {
     "schema_version": {"const": "1.1.0"},
     "decision_id": {"type": "string", "minLength": 1},
@@ -22,7 +22,38 @@
     "inconclusive_evaluation_id": {"type": ["string", "null"], "minLength": 1},
     "final_gate_report_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
     "content_modification_allowed": {"const": false},
-    "authorized_by": {"const": "M00"}
+    "authorized_by": {"const": "M00"},
+    "policy_config_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "pareto_relation": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["dominated_by", "dominates"],
+          "properties": {
+            "dominated_by": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "dominates": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+          }
+        }
+      ]
+    },
+    "technical_checkpoint": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["attempt", "limit", "retry_allowed", "backoff_seconds"],
+          "properties": {
+            "attempt": {"type": "integer", "minimum": 1},
+            "limit": {"type": "integer", "minimum": 0},
+            "retry_allowed": {"type": "boolean"},
+            "backoff_seconds": {"const": 0}
+          }
+        }
+      ]
+    }
   },
   "oneOf": [
     {
@@ -34,7 +65,9 @@
         "verdict_ids": {"minItems": 1},
         "reason_code": {"const": null},
         "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
+        "final_gate_report_ids": {"maxItems": 0},
+        "pareto_relation": {"const": null},
+        "technical_checkpoint": {"const": null}
       }
     },
     {
@@ -46,7 +79,9 @@
         "verdict_ids": {"minItems": 1},
         "reason_code": {"const": null},
         "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
+        "final_gate_report_ids": {"maxItems": 0},
+        "pareto_relation": {"type": "object"},
+        "technical_checkpoint": {"const": null}
       }
     },
     {
@@ -58,8 +93,9 @@
         "final_gate_report_ids": {"maxItems": 0}
       },
       "oneOf": [
-        {"properties": {"reason_code": {"const": "GATE_FAILED"}, "gate_report_id": {"type": "string", "minLength": 1}, "verdict_ids": {"maxItems": 0}}},
-        {"properties": {"reason_code": {"const": "JURY_UNFAVORABLE"}, "gate_report_id": {"type": "string", "minLength": 1}, "verdict_ids": {"minItems": 1}}}
+        {"properties": {"reason_code": {"const": "GATE_FAILED"}, "gate_report_id": {"type": "string", "minLength": 1}, "verdict_ids": {"maxItems": 0}, "pareto_relation": {"const": null}, "technical_checkpoint": {"const": null}}},
+        {"properties": {"reason_code": {"const": "JURY_UNFAVORABLE"}, "gate_report_id": {"type": "string", "minLength": 1}, "verdict_ids": {"minItems": 1}, "pareto_relation": {"const": null}, "technical_checkpoint": {"const": null}}},
+        {"properties": {"reason_code": {"const": "PARETO_DOMINATED"}, "gate_report_id": {"type": "string", "minLength": 1}, "verdict_ids": {"minItems": 1}, "pareto_relation": {"type": "object"}, "technical_checkpoint": {"const": null}}}
       ]
     },
     {
@@ -70,7 +106,9 @@
         "diagnosis_id": {"type": "string", "minLength": 1},
         "reason_code": {"enum": ["LOCAL_PLATEAU", "GLOBAL_PLATEAU", "OSCILLATING", "REGRESSING"]},
         "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
+        "final_gate_report_ids": {"maxItems": 0},
+        "pareto_relation": {"const": null},
+        "technical_checkpoint": {"const": null}
       }
     },
     {
@@ -81,7 +119,9 @@
         "diagnosis_id": {"type": "string", "minLength": 1},
         "reason_code": {"enum": ["EVOLVING", "NO_MATERIAL_CHANGE"]},
         "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
+        "final_gate_report_ids": {"maxItems": 0},
+        "pareto_relation": {"const": null},
+        "technical_checkpoint": {"const": null}
       }
     },
     {
@@ -93,15 +133,19 @@
         "verdict_ids": {"minItems": 1},
         "reason_code": {"const": "INCONCLUSIVE_EVALUATION"},
         "inconclusive_evaluation_id": {"type": "string", "minLength": 1},
-        "final_gate_report_ids": {"maxItems": 0}
+        "final_gate_report_ids": {"maxItems": 0},
+        "pareto_relation": {"const": null},
+        "technical_checkpoint": {"const": null}
       }
     },
     {
       "properties": {
         "action": {"const": "PAUSE"},
-        "reason_code": {"enum": ["BUDGET_EXHAUSTED", "USER_REQUESTED", "TECHNICAL_BLOCK"]},
+        "reason_code": {"enum": ["BUDGET_EXHAUSTED", "USER_REQUESTED", "TECHNICAL_BLOCK", "INCONCLUSIVE_LIMIT_REACHED"]},
         "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
+        "final_gate_report_ids": {"maxItems": 0},
+        "pareto_relation": {"const": null},
+        "technical_checkpoint": {"const": null}
       }
     },
     {
@@ -113,7 +157,9 @@
         "verdict_ids": {"minItems": 1},
         "reason_code": {"const": "POLICY_SATISFIED"},
         "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"minItems": 1}
+        "final_gate_report_ids": {"minItems": 1},
+        "pareto_relation": {"const": null},
+        "technical_checkpoint": {"const": null}
       }
     },
     {
@@ -122,7 +168,9 @@
         "verdict_ids": {"maxItems": 0},
         "reason_code": {"enum": ["TECHNICAL_FAILURE", "INVALID_STATE", "COMPATIBILITY_FAILURE"]},
         "inconclusive_evaluation_id": {"const": null},
-        "final_gate_report_ids": {"maxItems": 0}
+        "final_gate_report_ids": {"maxItems": 0},
+        "pareto_relation": {"const": null},
+        "technical_checkpoint": {"type": "object"}
       }
     }
   ]

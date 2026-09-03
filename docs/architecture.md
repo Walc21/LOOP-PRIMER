@@ -7,7 +7,9 @@ reproduzível, preservando o PDF original e mantendo histórico de decisões,
 candidatos e avaliação cega. Este documento fixa para os Prompts 01–13 o
 catálogo de papéis, caminhos, estados, ações, dimensões de avaliação e scripts
 externos. M1 materializou configuração e schemas dentro desses contratos sem
-inventar ou renomear papéis, estados, ações ou paths.
+inventar ou renomear papéis, estados, ações ou paths. M10 materializou a
+política fechada de disposição e o finalizador transacional sem mudar os
+artefatos M0--M9.
 
 Os caminhos canônicos foram fixados nos Marcos 0.5 e 0.6 e o scaffold foi
 materializado no Marco 1. Diretórios de runtime contêm somente sentinelas
@@ -193,6 +195,12 @@ transição, causa, artefatos, versão de entrada e actor responsável. `PAUSED`
 `FINALIZED` e `TECHNICAL_FAILURE` suspendem ou encerram progressão até ação
 permitida.
 
+M10 executa somente a sequência `DIAGNOSED -> DECIDED -> COMMITTING`. A ação
+autorizada fecha em `CYCLE_COMPLETE`, `PAUSED`, `FINALIZED` ou
+`TECHNICAL_FAILURE`. Durante a revalidação M10, o `DIAGNOSED` anterior continua
+vinculado por hash; o sucessor só pode ser `DECIDED` ou `COMMITTING` para o
+mesmo ciclo.
+
 ## Ações canônicas de decisão
 
 As únicas ações de decisão são exatamente as nove abaixo:
@@ -245,12 +253,14 @@ O champion é o candidato aprovado vigente; challengers são candidatos imutáve
 construídos pelo merge em workspace isolado; rejeitados e não dominados continuam
 rastreáveis. Merge é o único escritor do challenger e ocorre antes de gates e
 do júri. A decisão opera exclusivamente sobre um challenger já construído e
-avaliado. O arquivo Pareto conserva alternativas não dominadas; remoção exige
-relação de dominância explícita.
+avaliado. Antes de `ARCHIVE_PARETO`, M10 compara todas as oito dimensões sob
+`correctness_math=true` com cada referência Pareto publicada. A `Decision`
+registra quais referências dominam ou são dominadas pelo candidato, e o
+finalizador revalida a mesma relação sob lock; evidência histórica não é apagada.
 
 ## Scripts externos canônicos
 
-Os cinco scripts externos são parte fixa da arquitetura futura:
+Os cinco scripts externos são parte fixa da arquitetura:
 
 ```text
 scripts/01_external_evaluator.py
@@ -260,12 +270,18 @@ scripts/04_compensation_policy.py
 scripts/05_transactional_finalizer.py
 ```
 
-Os cinco paths existem desde M1 como módulos inertes, sem lógica operacional.
-M8–M10 definirão sua implementação sem trocar nomes nem criar scripts
+M8--M10 implementaram esses paths sem trocar nomes nem criar scripts
 concorrentes com a mesma autoridade de decisão. Em especial,
 `scripts/05_transactional_finalizer.py` não poderá reconstruir nem modificar o
 challenger: apenas revalidará hashes e aplicará atomicamente `PROMOTE`,
 `ARCHIVE_PARETO`, `REJECT`, `FINALIZE` ou outra ação autorizada.
+
+`scripts/04_compensation_policy.py` recebe JSON limitado ou argumentos locais,
+revalida M7--M9 e publica uma única `Decision` canônica contendo o hash da
+política, relação Pareto quando aplicável e checkpoint técnico limitado quando
+aplicável. `scripts/05_transactional_finalizer.py` é o único escritor de
+disposição: usa lock por execução, journal sincronizado, `fsync`, `os.replace`
+e CAS de `versions/champion/current.json` antes de publicar o receipt.
 
 ### Ferramentas auxiliares de handoff para IA
 
@@ -312,9 +328,10 @@ detalhado em arquivo canônico; `rlm(...)` nunca devolve resposta.
 O merge é o único escritor que constrói o challenger em workspace isolado. Ele
 ocorre antes dos gates determinísticos e do júri cego. A decisão canônica só
 opera sobre um challenger já construído e avaliado. O finalizador transacional
-não reconstrói o challenger: revalida seus hashes e aplica atomicamente a ação
-autorizada. Nenhum conteúdo pode ser modificado entre júri e finalização sem
-nova avaliação.
+não reconstrói o challenger: revalida seus hashes, a `Decision`, diagnóstico,
+fronteira Pareto e gates finais quando aplicáveis, e só então aplica atomicamente
+a ação autorizada. Nenhum conteúdo pode ser modificado entre júri e finalização
+sem nova avaliação.
 
 ## Segurança e limites desta etapa
 

@@ -907,3 +907,37 @@ publicação.
   prepara um fast-forward local, mas não inventa nem armazena credenciais.
 - Esta decisão não modifica o pipeline científico nem inicia M10 ou execução
   de modelos.
+
+## ADR-028 — M10: política pura e finalização transacional por referência
+
+**Data:** 2026-09-02
+
+**Decisão:** M10 separa a escolha da disposição de sua aplicação. A política
+revalida somente evidência publicada de M7--M9, consulta uma tabela fechada e
+versionada e publica uma `Decision` content-addressed sem escrever em
+`versions/`. A tabela dá precedência a falha técnica, gate matemático duro,
+diagnóstico e limites persistidos; nenhuma linha desconhecida ou ambígua pode
+promover um challenger.
+
+O finalizador é o único escritor de disposições. Sob lock por execução, ele
+revalida a `Decision`, os hashes do candidato, GateReport, avaliação e
+diagnóstico antes de registrar `COMMITTING`. Um journal idempotente registra
+preparo, revalidação, staging, CAS de pointer, evento, checkpoint e limpeza.
+Promoção copia somente os bytes de conteúdo já avaliados para uma nova versão
+histórica de champion e publica um pointer CAS; Pareto e rejected preservam
+referências imutáveis ao challenger. Nenhuma operação sobrescreve ou remove
+versões históricas, e `content_modified` permanece sempre falso.
+
+**Complemento de revisão pré-publicação:** `ARCHIVE_PARETO` só é autorizado
+depois de comparar o vetor completo das oito dimensões, sob gate matemático
+duro, com as referências Pareto já publicadas. A relação (dominado, trade-off
+ou quais referências são dominadas) integra a `Decision` e é revalidada sob o
+lock pelo finalizador; uma fronteira alterada entre decisão e efeito falha
+fechado. Referências históricas dominadas não são apagadas. Falhas técnicas
+geram checkpoint imutável com contador e limite da política, sem retry
+automático, e a fachada pública `finalize()` delega exclusivamente ao
+finalizador M10.
+
+**Motivo:** separar a avaliação de qualidade do efeito de filesystem impede que
+um retry, concorrência ou crash promova bytes não avaliados, crie dois champions
+atuais ou apague evidência necessária para auditoria.

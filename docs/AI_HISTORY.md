@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a`
-- Registrado em: `2026-09-02T17:30:21Z`
-- Git: branch `main`, HEAD `35e2f80bea39`
-- Arquivos relevantes: 160
+- Fingerprint das fontes: `921c248a2e2a15ed25f7429f73926349014d146386d22ad2e188e94e321b364c`
+- Registrado em: `2026-09-03T02:00:55Z`
+- Git: branch `main`, HEAD `051f969db75b`
+- Arquivos relevantes: 165
 
 ## Evolução reconstruída do versionamento
 
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
-| sem marco explícito | 2026-08-13..2026-09-02 | 43 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
+| sem marco explícito | 2026-08-13..2026-09-02 | 44 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -122,6 +122,7 @@
 | `fae5d251d` | 2026-09-01 | sem marco explícito | docs(ai): sync AI context snapshot | AI_CONTEXT.md |
 | `929ad97f2` | 2026-09-02 | sem marco explícito | chore(git): publish local updates to GitHub repository |  |
 | `35e2f80be` | 2026-09-02 | sem marco explícito | fix(repo): separate GitHub and AI integration | .github/copilot-instructions.md, AI_CONTEXT.md, GEMINI.md, PLANS.md, README.md, control/test_ai_handoff.py |
+| `051f969db` | 2026-09-02 | sem marco explícito | fix(ci): restore GitHub Actions matrix | .github/workflows/ci.yml, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 
 ## Decisões arquiteturais
 
@@ -152,6 +153,7 @@
 - ADR-025 — M9: Detecção Determinística de Estagnação, Diagnóstico Canônico e Refoco Reversível
 - ADR-026 — Handoff compacto e histórico de sessões para agentes de IA
 - ADR-027 — Separação de audiências e histórico Git publicável
+- ADR-028 — M10: política pura e finalização transacional por referência
 
 ## Atualizações de sessão
 
@@ -521,3 +523,106 @@
 |---|---|---|---|
 | modified | `.github/workflows/ci.yml` | `ab1a06f9a6af` | `fe0474481ca7` |
 | modified | `.prime/agent/skills/article-loop/src/article_loop/evaluation.py` | `023e6a921488` | `8babd430c3b6` |
+
+### 2026-09-03T01:37:13Z — Implementado M10 localmente: política de decisão determinística, Decision content-addressed e finalizador transacional sem alterar bytes do challenger avaliado.
+
+- Session ID: `session-m10-local-20260902`
+- Fingerprint final: `16226d96eedb3e09ea014422a6ea373666ea247a741fe1851601cd07e963f861`
+- Git final: `051f969db75b`; status relevante: 14 item(ns)
+- Delta factual: 5 adicionados, 9 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionados policy.py e finalization.py, a tabela fechada config/decision-policy.yaml, as CLIs 04/05 e a suíte control/test_m10_policy_finalization.py.
+- A promoção cria versão histórica de champion com os mesmos bytes avaliados; Pareto e rejected recebem referências imutáveis; journal, fsync, rename e CAS protegem recuperação.
+- Decision passou a exigir policy_config_hash; COMMITTING pode alcançar FINALIZED após revalidação; PLANS, ADR-028 e handoff 10_para_11 foram atualizados.
+
+**Decisões**
+
+- Nenhuma conexão, atualização ou commit no GitHub foi realizada; M11--M13, Prime Agent, modelos, rede e artigo real ficaram fora do escopo.
+- A política usa a precedência fechada técnica, hard gate matemático, diagnóstico, julgamento inconclusivo e candidato avaliado; ambiguidade falha fechada.
+
+**Validações**
+
+- python3 -m unittest discover -s control -q: 316 testes aprovados em 214.956s; aviso Duplicate name a.tex pertence à fixture negativa M3.
+- python3 -m unittest -q control.test_m10_policy_finalization control.test_contracts control.test_m2_durable_state: 91 testes aprovados em 11.927s.
+- python3 -m py_compile dos módulos, CLIs e teste M10; git diff --check: aprovados.
+
+**Riscos/limites**
+
+- FINALIZE permanece fail-closed até reports finais locais aprovados para W22, W51 e W53; uma operação real continua requerendo autorização futura.
+
+**Próximos passos**
+
+- M11, se autorizado, deve começar com árvore limpa, AGENTS.md, docs/compatibility.md e .prime/handoffs/10_para_11.md, sem iniciar sessão Prime sem autorização específica.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/src/article_loop/finalization.py` | `-` | `7c7378019bd2` |
+| added | `.prime/agent/skills/article-loop/src/article_loop/policy.py` | `-` | `051c4c6b8824` |
+| added | `.prime/handoffs/10_para_11.md` | `-` | `490423c2a9dd` |
+| added | `config/decision-policy.yaml` | `-` | `461def203733` |
+| added | `control/test_m10_policy_finalization.py` | `-` | `53ba08cd6f50` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `da6ca10075ff` | `fafdc5caf46a` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/state_machine.py` | `22268554a056` | `7f8ee90f7496` |
+| modified | `PLANS.md` | `3a87aa4bac8d` | `71404a465d0f` |
+| modified | `config/schemas/decision.schema.json` | `563503d4f74d` | `bbe604ff6464` |
+| modified | `control/test_contracts.py` | `3c538170db94` | `6f5d25abde8c` |
+| modified | `control/test_m2_durable_state.py` | `4b328ee7fc6a` | `ec7af622272b` |
+| modified | `docs/decisions.md` | `452734f3f329` | `a869cadf7e11` |
+| modified | `scripts/04_compensation_policy.py` | `7330a3953b54` | `7215917a1b87` |
+| modified | `scripts/05_transactional_finalizer.py` | `9446896eae0b` | `6d379c3173b9` |
+
+### 2026-09-03T02:00:55Z — Revisão e integração pré-publicação do M10 concluídas: política/finalizador reforçados, superfícies públicas sincronizadas e regressão integral aprovada.
+
+- Session ID: `session-m10-prepublish-20260902`
+- Fingerprint final: `921c248a2e2a15ed25f7429f73926349014d146386d22ad2e188e94e321b364c`
+- Git final: `051f969db75b`; status relevante: 20 item(ns)
+- Delta factual: 0 adicionados, 15 modificados, 0 removidos
+
+**Mudanças**
+
+- Acrescentada revalidação Pareto nas oito dimensões, registrada na Decision e conferida pelo finalizador sob lock.
+- Acrescentado checkpoint técnico imutável com contador e limite; a fachada finalize() passou a delegar ao finalizador M10.
+- README, arquitetura, skill, handoff, contexto e testes de integração foram atualizados para M10 operacional.
+
+**Decisões**
+
+- Referências Pareto dominadas são preservadas como evidência histórica; fronteira divergente após a Decision falha fechada.
+- A revalidação M9 aceita somente os sucessores M10 DECIDED ou COMMITTING do mesmo ciclo, mantendo a vinculação ao evento DIAGNOSED original.
+
+**Validações**
+
+- python3 -m unittest discover -s control -q: 319 testes aprovados em 217.578s; aviso de ZIP duplicado a.tex é fixture negativa esperada.
+- python3 -m unittest -v control.test_m10_policy_finalization control.test_contracts control.test_m2_durable_state: 94 testes aprovados.
+- py_compile, json.tool no schema Decision, git diff --check e git fetch --prune origin aprovados; origin/main e HEAD permanecem alinhados antes do commit.
+
+**Riscos/limites**
+
+- Nenhum artigo real, Prime Agent, modelo ou API paga foi executado; o checkpoint técnico é manual e não inicia retry automático.
+
+**Próximos passos**
+
+- Criar o commit M10 e publicar o fast-forward em origin/main conforme autorização do usuário.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/agent/skills/article-loop/SKILL.md` | `31e949e57dc8` | `a008817e7381` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `fafdc5caf46a` | `7687ae22a123` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/diagnosis.py` | `17a74d7bfd39` | `5c60264a38c7` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/finalization.py` | `7c7378019bd2` | `5ee4a6f5f90e` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/policy.py` | `051c4c6b8824` | `086d71ecf13b` |
+| modified | `.prime/handoffs/10_para_11.md` | `490423c2a9dd` | `780be8a5c4d1` |
+| modified | `PLANS.md` | `71404a465d0f` | `d92a85224cd5` |
+| modified | `README.md` | `5602c8f20915` | `355f4a13d8af` |
+| modified | `config/schemas/decision.schema.json` | `bbe604ff6464` | `285c0e47f450` |
+| modified | `control/test_ai_handoff.py` | `8a96f1d415b2` | `7eeb838fe65e` |
+| modified | `control/test_contracts.py` | `6f5d25abde8c` | `273fe28e215e` |
+| modified | `control/test_m10_policy_finalization.py` | `53ba08cd6f50` | `6bd8ac5a32e6` |
+| modified | `docs/architecture.md` | `45f6cf230dd1` | `d6942938ab13` |
+| modified | `docs/decisions.md` | `a869cadf7e11` | `38c2a4b299e0` |
+| modified | `scripts/ai_context.py` | `26aa077994cc` | `3f7517e51d98` |

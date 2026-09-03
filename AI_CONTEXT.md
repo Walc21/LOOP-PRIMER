@@ -6,15 +6,15 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a`
-- Baseline da última sessão: `b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a`
+- Fingerprint atual das fontes: `921c248a2e2a15ed25f7429f73926349014d146386d22ad2e188e94e321b364c`
+- Baseline da última sessão: `921c248a2e2a15ed25f7429f73926349014d146386d22ad2e188e94e321b364c`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 160 arquivos relevantes, 1031276 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 165 arquivos relevantes, 1119682 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
-O `article-loop` é uma integração local, auditável e fail-closed para revisão iterativa de artigos matemáticos. Separa PDF original, baseline/champion, propostas de 21 papéis, challenger imutável, gates locais, júri cego, diagnóstico e futura decisão/finalização.
-O marco implementado mais recente é **M9** (detecção de progresso e refoco). O próximo marco é **M10** (política de compensação e finalizador).
+O `article-loop` é uma integração local, auditável e fail-closed para revisão iterativa de artigos matemáticos. Separa PDF original, baseline/champion, propostas de 21 papéis, challenger imutável, gates locais, júri cego, diagnóstico, Decision M10 e finalização transacional.
+O marco implementado mais recente é **M10** (política de compensação e finalizador). O próximo marco é **M11** (comandos e configuração do Prime Agent).
 
 Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (introdutório e não normativo).
 
@@ -29,10 +29,10 @@ config + schemas + prompts
   -> M7 synthesis/gates (challenger imutável -> GATES_PASSED)
   -> M8 evaluation (júri cego -> EVALUATED)
   -> M9 diagnosis/refocus (-> DIAGNOSED; overlays somente em plateau/oscilação)
-  -> M10 PENDENTE: decisão, compensação e finalizador transacional
+  -> M10 decisão/política (-> DECIDED) e finalizador transacional (-> COMMITTING -> destino autorizado)
 ```
 
-Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve champion. `correctness_math` é gate duro. O finalizador futuro deve revalidar os mesmos bytes avaliados, nunca reconstruí-los.
+Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve champion. `correctness_math` é gate duro. O finalizador M10 revalida os mesmos bytes avaliados, nunca os reconstrói.
 
 ### Contratos canônicos compactos
 
@@ -50,51 +50,189 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 
 ```diff
 # Commits desde o último encerramento
-diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
-index 5f6ca24..98651a1 100644
---- a/.github/workflows/ci.yml
-+++ b/.github/workflows/ci.yml
-@@ -19,6 +19,6 @@ jobs:
-       - name: Checkout repository
--        uses: actions/checkout@v4
-+        uses: actions/checkout@v7.0.1
+diff --git a/.prime/agent/skills/article-loop/SKILL.md b/.prime/agent/skills/article-loop/SKILL.md
+index fb960e0..e0432ef 100644
+--- a/.prime/agent/skills/article-loop/SKILL.md
++++ b/.prime/agent/skills/article-loop/SKILL.md
+@@ -60,3 +60,3 @@ entradas inseguras ou baseline insuficiente.
 
-       - name: Set up Python ${{ matrix.python-version }}
--        uses: actions/setup-python@v5
-+        uses: actions/setup-python@v7.0.0
-         with:
-@@ -30,3 +30,3 @@ jobs:
-           sudo apt-get update
--          sudo apt-get install -y poppler-utils texlive-latex-base
-+          sudo apt-get install -y ghostscript poppler-utils texlive-latex-base
-           python -m pip install --upgrade pip
-diff --git a/.prime/agent/skills/article-loop/src/article_loop/evaluation.py b/.prime/agent/skills/article-loop/src/article_loop/evaluation.py
-index 769ea7a..a089ee4 100644
---- a/.prime/agent/skills/article-loop/src/article_loop/evaluation.py
-+++ b/.prime/agent/skills/article-loop/src/article_loop/evaluation.py
-@@ -842,3 +842,3 @@ def _revalidate_published_evaluation(
+-## API pública M6
++## API pública M6--M10
 
--    expected_comparison_id = f"cmp-{_sha(_json({
-+    expected_comparison_payload = {
-         'candidate_hashes': [champion_hash, challenger_hash],
-@@ -846,7 +846,9 @@ def _revalidate_published_evaluation(
-         'order_seed': eval_report['order_seed'],
--    }))}"
--    expected_evaluation_id = f"eval-{_sha(_json({
-+    }
-+    expected_comparison_id = f"cmp-{_sha(_json(expected_comparison_payload))}"
-+    expected_evaluation_payload = {
-         'comparison_id': expected_comparison_id,
-         'candidate_id': expected_candidate_id,
--    }))[:32]}"
-+    }
-+    expected_evaluation_id = f"eval-{_sha(_json(expected_evaluation_payload))[:32]}"
-     if (
+@@ -68,2 +68,9 @@ dry_run=False)`, `await status(root=".")`, `await checkpoint(root=".")`,
+
++M10 também expõe `decide(root, run_id, cycle_id=...)`,
++`finalize_decision(root, run_id, cycle_id=...)`, `pareto_relation(...)` e
++`TransactionalFinalizer`. `finalize()` não usa mais o atalho histórico de M6:
++ele exige uma `Decision` M10 ativa e delega ao finalizador que revalida hashes,
++diagnóstico e precondições antes de qualquer efeito. A política é local e não
++inicia Prime Agent, modelos ou um artigo real.
++
+ `PrimeRLMAdapter` encapsula somente a API instalada: admissão por
+diff --git a/.prime/agent/skills/article-loop/src/article_loop/__init__.py b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
+index ed33b1c..a0d21c7 100644
+--- a/.prime/agent/skills/article-loop/src/article_loop/__init__.py
++++ b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
+@@ -32,4 +32,6 @@ from .refocus import (
+ )
++from .policy import PolicyError, choose_action, decide, load_policy, load_published_decision, pareto_relation
++from .finalization import FinalizationError, TransactionalFinalizer, finalize_decision
+
+-__version__ = "0.5.0"
++__version__ = "0.6.0"
+
+@@ -43,3 +45,3 @@ async def resume(root="."): return await Orchestrator(root).resume(Orchestrator(
+ async def stop(root="."): return await Orchestrator(root).stop(Orchestrator(root)._only_run())
+-async def finalize(root="."): return await Orchestrator(root).finalize(Orchestrator(root)._only_run())
++async def finalize(root="."): return finalize_decision(root, Orchestrator(root)._only_run())
+ async def run(*args, **kwargs): return await run_cycle(*args, **kwargs)
+@@ -56,7 +58,8 @@ __all__ = [
+     "RefocusError", "SourceReadyError", "State", "StopRequested", "StoreError",
++    "PolicyError", "FinalizationError", "TransactionalFinalizer",
+     "SynthesisError", "TransitionError", "bootstrap", "checkpoint",
+     "check_inversion_consistency", "classify_cycle_progress", "compare",
+-    "compile_manager_prompt", "compile_prompt", "diagnose_cycle",
+-    "evaluate_candidate", "expected_prompt_version", "finalize",
+-    "generate_refocus_plan", "ingest", "load_history_series", "load_rubric",
++    "choose_action", "compile_manager_prompt", "compile_prompt", "decide", "diagnose_cycle",
++    "evaluate_candidate", "expected_prompt_version", "finalize", "finalize_decision",
++    "generate_refocus_plan", "ingest", "load_history_series", "load_policy", "load_published_decision", "load_rubric", "pareto_relation",
+     "manager_view", "pause", "preflight", "register_overlay_cas", "resume",
+diff --git a/.prime/agent/skills/article-loop/src/article_loop/diagnosis.py b/.prime/agent/skills/article-loop/src/article_loop/diagnosis.py
+index 60ae106..5a865c8 100644
+--- a/.prime/agent/skills/article-loop/src/article_loop/diagnosis.py
++++ b/.prime/agent/skills/article-loop/src/article_loop/diagnosis.py
+@@ -806,4 +806,11 @@ def verify_published_diagnosis(
+     store: DurableStore | None = None,
++    allow_m10_successor: bool = False,
+ ) -> tuple[dict[str, Any], list[str]]:
+-    """Verify the canonical M9 artifact and its durable DIAGNOSED event."""
++    """Verify the canonical M9 artifact and its durable DIAGNOSED event.
++
++    ``allow_m10_successor`` is a narrow revalidation mode for the M10
++    finalizer: it accepts only the same cycle after the recorded `DECIDED` or
++    recoverable `COMMITTING` transition, while still binding every field to the
++    earlier immutable DIAGNOSED event.
++    """
+     if not isinstance(run_id, str) or not run_id:
+@@ -818,3 +825,15 @@ def verify_published_diagnosis(
+     event = events[-1]
+-    if (
++    diagnosis_index = len(events) - 1
++    if allow_m10_successor:
++        if event.get("state_to") not in {State.DECIDED.value, State.COMMITTING.value} or event.get("cycle_id") != cycle_id:
++            raise DiagnosisError("M10 revalidation requires active DECIDED or COMMITTING for this cycle")
++        for index in range(len(events) - 1, -1, -1):
++            candidate = events[index]
++            if candidate.get("event_type") == "DIAGNOSED" and candidate.get("cycle_id") == cycle_id:
++                event = candidate
++                diagnosis_index = index
++                break
++        else:
++            raise DiagnosisError("M10 revalidation cannot find the canonical DIAGNOSED event")
++    elif (
+         event.get("state_to") != State.DIAGNOSED.value
+@@ -861,3 +880,3 @@ def verify_published_diagnosis(
+         (
+-            item for item in reversed(events[:-1])
++            item for item in reversed(events[:diagnosis_index])
+             if item.get("event_type") == "EVALUATED" and item.get("cycle_id") == cycle_id
+diff --git a/.prime/agent/skills/article-loop/src/article_loop/finalization.py b/.prime/agent/skills/article-loop/src/article_loop/finalization.py
+new file mode 100644
+index 0000000..85e370b
+--- /dev/null
++++ b/.prime/agent/skills/article-loop/src/article_loop/finalization.py
+@@ -0,0 +1,540 @@
++"""M10 crash-safe disposition finalizer.
++
++This module never rebuilds or edits a challenger.  It only revalidates the
++already evaluated content hash and either copies those exact content bytes into
++a new immutable champion envelope or publishes immutable references to it.
++"""
++
++from __future__ import annotations
++
++import fcntl
++import hashlib
++import json
++import os
++import re
++import shutil
++import stat
++import tempfile
++from contextlib import contextmanager
++from datetime import datetime, timezone
++from pathlib import Path
++from typing import Any, Callable, Mapping
++
++import jsonschema
++
++from .diagnosis import load_history_series, verify_published_diagnosis
++from .policy import PolicyError, _candidate, _canonical, _contained, _read_canonical_json, _validate_schema, load_policy, pareto_relation
++from .state_machine import State
++from .store import DurableStore, StoreError
++from .synthesis import _fsync, _fsync_tree_dirs, _inventory, _json, _sha, _walk, tree_hash
++
++
++RECEIPT_SCHEMA = "finalization-receipt.schema.json"
++DECISION_SCHEMA = "decision.schema.json"
++
++
++class FinalizationError(RuntimeError):
++    """A decision could not be applied exactly once and without mutation."""
++
++
++def _utc_now() -> str:
++    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
++
++
++def _sha256_bytes(value: bytes) -> str:
++    return hashlib.sha256(value).hexdigest()
++
++
++def _receipt_id(value: Mapping[str, Any]) -> str:
++    body = dict(value)
++    body.pop("receipt_id", None)
++    return f"fin-{_sha(_canonical(body))[:32]}"
++
++
++class TransactionalFinalizer:
++    """Apply one already-published Decision through an idempotent journal."""
++
++    def __init__(
++        self,
++        root: str | Path,
++        *,
++        fault: Callable[[str], None] | None = None,
++        clock: Callable[[], str] = _utc_now,
++    ):
++        self.root = Path(root).resolve()
++        self.store = DurableStore(self.root)
++        self.fault = fault
++        self.clock = clock
++        for relative in ("state/decisions", "state/locks", "versions/champion", "versions/pareto", "versions/rejected"):
++            (self.root / relative).mkdir(parents=True, exist_ok=True)
++
++    def _hit(self, stage: str) -> None:
++        if self.fault:
++            self.fault(stage)
++
++    @contextmanager
++    def _lock(self, run_id: str):
++        path = _contained(self.root, f"state/locks/{run_id}.finalization.lock")
++        with path.open("a+") as stream:
++            fcntl.flock(stream, fcntl.LOCK_EX)
++            try:
++                yield
++            finally:
++                fcntl.flock(stream, fcntl.LOCK_UN)
++
+... [diff truncado em 8000 caracteres; consulte somente o arquivo necessário]
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (46888 bytes; SHA-256 `8f4ae3274c143eb4`).
+- Fonte lida: `docs/AI_HISTORY.md` (53795 bytes; SHA-256 `5f7dfdab91f1681f`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -114,28 +252,28 @@ index 769ea7a..a089ee4 100644
 | M2/M3 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m2_durable_state.py, control/test_m3_ingestion.py |
 | M4/M5 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m4_prompts.py, control/test_m5_blackboard_activation.py |
 
-- Sessões estruturadas registradas: 10.
-- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.; 2026-09-01T12:18:53Z — Preparada a publicação da reconciliação no GitHub e preservados os históricos local e remoto; o push não foi aplicado porque a máquina não possui credencial HTTPS, GitHub CLI ou chave SSH autorizada.; 2026-09-02T17:07:54Z — Reparada a integração local com Git/GitHub e separadas as superfícies Markdown humanas das entradas para IAs, preservando integralmente a árvore funcional e sem iniciar M10, modelos ou o pipeline científico.; 2026-09-02T17:16:51Z — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.; 2026-09-02T17:23:25Z — Autenticação do GitHub validada e publicação preparada por reconciliação segura sobre o remoto atualizado, deixando main em condição fast-forward sem force-push.; 2026-09-02T17:30:21Z — Falhas da CI publicada foram diagnosticadas e corrigidas para restaurar a matriz GitHub Actions em Python 3.11, 3.12 e 3.13..
+- Sessões estruturadas registradas: 12.
+- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.; 2026-09-01T12:18:53Z — Preparada a publicação da reconciliação no GitHub e preservados os históricos local e remoto; o push não foi aplicado porque a máquina não possui credencial HTTPS, GitHub CLI ou chave SSH autorizada.; 2026-09-02T17:07:54Z — Reparada a integração local com Git/GitHub e separadas as superfícies Markdown humanas das entradas para IAs, preservando integralmente a árvore funcional e sem iniciar M10, modelos ou o pipeline científico.; 2026-09-02T17:16:51Z — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.; 2026-09-02T17:23:25Z — Autenticação do GitHub validada e publicação preparada por reconciliação segura sobre o remoto atualizado, deixando main em condição fast-forward sem force-push.; 2026-09-02T17:30:21Z — Falhas da CI publicada foram diagnosticadas e corrigidas para restaurar a matriz GitHub Actions em Python 3.11, 3.12 e 3.13.; 2026-09-03T01:37:13Z — Implementado M10 localmente: política de decisão determinística, Decision content-addressed e finalizador transacional sem alterar bytes do challenger avaliado.; 2026-09-03T02:00:55Z — Revisão e integração pré-publicação do M10 concluídas: política/finalizador reforçados, superfícies públicas sincronizadas e regressão integral aprovada..
 
 Detalhe das três sessões mais recentes:
-- `session-github-publish-auth-guidance-20260902` — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.
-  - mudanças: Nenhuma alteração funcional ou documental foi realizada; somente o handoff diagnóstico obrigatório foi registrado.
-  - decisões: Recomendada autenticação interativa do GitHub CLI via navegador, sem fornecer senha ou token ao agente.
-  - validações: Inspeção local confirmou origin HTTPS, branch main um commit à frente, GitHub CLI ausente e nenhum credential.helper configurado.
-  - riscos: A publicação continua indisponível até o usuário concluir pessoalmente a autenticação do GitHub nesta máquina.
-  - próximos: Instalar o GitHub CLI, concluir gh auth login via navegador, executar gh auth setup-git e então autorizar explicitamente o push.
-- `session-github-publish-20260902` — Autenticação do GitHub validada e publicação preparada por reconciliação segura sobre o remoto atualizado, deixando main em condição fast-forward sem force-push.
-  - mudanças: Após o fetch revelar 55 commits no remoto, o commit local corrigido foi preservado em backup/pre-publish-rebase-20260902 e reaplicado sobre origin/main mantendo exatamente a mesma árvore de conteúdo.
-  - decisões: Preservar integralmente o histórico remoto e recusar push divergente; publicar somente por fast-forward, sem force-push.
-  - validações: gh api user confirmou a conta autenticada Walc21 sem exibir credenciais.; Após a reconciliação, origin/main...main apresentou 0 commits somente no remoto e 1 somente no local; origin/main é ancestral de main.; A árvore antes e depois da reconciliação permaneceu idêntica no hash 1040b4e2d8690c32345a0d4d61cefe8151477a2f.; Foram aprovados 60 testes direcionados, compilação dos arquivos Python versionados, git diff --check e verificação de atualidade do AI_CONTEXT.md.
-  - riscos: A execução de CI do GitHub só poderá ser confirmada depois do push.
-  - próximos: Executar git push origin main e verificar a igualdade entre os SHAs local e remoto e o resultado do CI.
 - `session-github-ci-repair-20260902` — Falhas da CI publicada foram diagnosticadas e corrigidas para restaurar a matriz GitHub Actions em Python 3.11, 3.12 e 3.13.
   - mudanças: O workflow passou a instalar ghostscript, dependência do comando gs usado pelos testes de ingestão, síntese, avaliação e diagnóstico.; A reconstrução de IDs em evaluation.py foi refatorada para evitar expressão multilinha dentro de f-string e manter compatibilidade sintática com Python 3.11 sem alterar o conteúdo calculado.; actions/checkout e actions/setup-python foram atualizadas para as releases oficiais atuais v7.0.1 e v7.0.0, eliminando o runtime Node.js obsoleto indicado pelo GitHub.
   - decisões: Corrigir a infraestrutura e a incompatibilidade declarada pela matriz em vez de remover testes ou abandonar o Python 3.11.
   - validações: O log da CI 33660817044 mostrou FileNotFoundError para gs em Python 3.12 e 3.13 e SyntaxError na f-string de evaluation.py em Python 3.11.; A gramática Python 3.11 foi validada com ast.parse feature_version 3.11; todos os arquivos Python compilam no runtime local.; O YAML do workflow foi analisado com sucesso e git diff --check não apontou erros.; A suíte completa local aprovou 307 de 307 testes em 216.078 segundos.
   - riscos: O resultado da nova matriz remota só será conhecido após publicar o commit de correção.
   - próximos: Criar e publicar o commit de correção de CI e acompanhar a nova execução do GitHub Actions até a conclusão.
+- `session-m10-local-20260902` — Implementado M10 localmente: política de decisão determinística, Decision content-addressed e finalizador transacional sem alterar bytes do challenger avaliado.
+  - mudanças: Adicionados policy.py e finalization.py, a tabela fechada config/decision-policy.yaml, as CLIs 04/05 e a suíte control/test_m10_policy_finalization.py.; A promoção cria versão histórica de champion com os mesmos bytes avaliados; Pareto e rejected recebem referências imutáveis; journal, fsync, rename e CAS protegem recuperação.; Decision passou a exigir policy_config_hash; COMMITTING pode alcançar FINALIZED após revalidação; PLANS, ADR-028 e handoff 10_para_11 foram atualizados.
+  - decisões: Nenhuma conexão, atualização ou commit no GitHub foi realizada; M11--M13, Prime Agent, modelos, rede e artigo real ficaram fora do escopo.; A política usa a precedência fechada técnica, hard gate matemático, diagnóstico, julgamento inconclusivo e candidato avaliado; ambiguidade falha fechada.
+  - validações: python3 -m unittest discover -s control -q: 316 testes aprovados em 214.956s; aviso Duplicate name a.tex pertence à fixture negativa M3.; python3 -m unittest -q control.test_m10_policy_finalization control.test_contracts control.test_m2_durable_state: 91 testes aprovados em 11.927s.; python3 -m py_compile dos módulos, CLIs e teste M10; git diff --check: aprovados.
+  - riscos: FINALIZE permanece fail-closed até reports finais locais aprovados para W22, W51 e W53; uma operação real continua requerendo autorização futura.
+  - próximos: M11, se autorizado, deve começar com árvore limpa, AGENTS.md, docs/compatibility.md e .prime/handoffs/10_para_11.md, sem iniciar sessão Prime sem autorização específica.
+- `session-m10-prepublish-20260902` — Revisão e integração pré-publicação do M10 concluídas: política/finalizador reforçados, superfícies públicas sincronizadas e regressão integral aprovada.
+  - mudanças: Acrescentada revalidação Pareto nas oito dimensões, registrada na Decision e conferida pelo finalizador sob lock.; Acrescentado checkpoint técnico imutável com contador e limite; a fachada finalize() passou a delegar ao finalizador M10.; README, arquitetura, skill, handoff, contexto e testes de integração foram atualizados para M10 operacional.
+  - decisões: Referências Pareto dominadas são preservadas como evidência histórica; fronteira divergente após a Decision falha fechada.; A revalidação M9 aceita somente os sucessores M10 DECIDED ou COMMITTING do mesmo ciclo, mantendo a vinculação ao evento DIAGNOSED original.
+  - validações: python3 -m unittest discover -s control -q: 319 testes aprovados em 217.578s; aviso de ZIP duplicado a.tex é fixture negativa esperada.; python3 -m unittest -v control.test_m10_policy_finalization control.test_contracts control.test_m2_durable_state: 94 testes aprovados.; py_compile, json.tool no schema Decision, git diff --check e git fetch --prune origin aprovados; origin/main e HEAD permanecem alinhados antes do commit.
+  - riscos: Nenhum artigo real, Prime Agent, modelo ou API paga foi executado; o checkpoint técnico é manual e não inicia retry automático.
+  - próximos: Criar o commit M10 e publicar o fast-forward em origin/main conforme autorização do usuário.
 
 ## Marcos planejados
 
@@ -153,7 +291,7 @@ Detalhe das três sessões mais recentes:
 | M7 | síntese, merge, gates e arquivos de versões | concluído após correção final restrita |
 | M8 | avaliador externo cego em júri | concluído |
 | M9 | detecção de progresso e refoco | concluído |
-| M10 | política de compensação e finalizador | pendente; não iniciado |
+| M10 | política de compensação e finalizador | concluído localmente |
 | M11 | comandos e configuração do Prime Agent | pendente |
 | M12 | orçamento, observabilidade e execução prolongada | pendente |
 | M13 | testes de sistema e entrega | pendente |
@@ -192,9 +330,11 @@ Detalhe das três sessões mais recentes:
 - `.prime/agent/skills/article-loop/src/article_loop/blackboard.py` — ledgers append-only de claims/issues e grafo conservador de impacto. API/símbolos: class BlackboardError; stable_claim_id(); class Impact; class Blackboard [append, read, claims, impact]; class ImpactGraph [affected]
 - `.prime/agent/skills/article-loop/src/article_loop/diagnosis.py` — série histórica validada, 7 classificações e publicação M9. API/símbolos: class DiagnosisError; class CycleRecord; load_history_series(); classify_cycle_progress(); verify_published_diagnosis(); diagnose_cycle()
 - `.prime/agent/skills/article-loop/src/article_loop/evaluation.py` — comparação A/B cega, júri, meta-review e publicação M8. API/símbolos: class EvaluationError; load_rubric(); sanitize_text(); class BlindComparisonBundle [presentation_for_order, create]; class FakeJurorAdapter [evaluate]; class FakeMetaReviewerAdapter [review]; check_inversion_consistency(); evaluate_candidate()
+- `.prime/agent/skills/article-loop/src/article_loop/finalization.py` — finalizador M10 com lock, journal, fsync, CAS e receipt imutável. API/símbolos: class FinalizationError; class TransactionalFinalizer [finalize]; finalize_decision()
 - `.prime/agent/skills/article-loop/src/article_loop/gates.py` — 13 verificadores locais, evidência matemática e GateReport canônico. API/símbolos: record_math_verification(); verify_gate_report(); run_gates(); compare()
 - `.prime/agent/skills/article-loop/src/article_loop/ingestion.py` — congelamento de PDF/ZIP, derivados e publicação do baseline v0000. API/símbolos: class IngestionError; class SourceReadyError; ingest()
 - `.prime/agent/skills/article-loop/src/article_loop/orchestrator.py` — árvore M00→Sxx→Wxx reentrante, journal e receipts M6. API/símbolos: class OrchestrationError; class Orchestrator [bootstrap, preflight, run_cycle, advance_department, receipt, mark_failed, cancel, consolidate_department, pause, resume, stop, finalize, checkpoint, status]
+- `.prime/agent/skills/article-loop/src/article_loop/policy.py` — política M10 fechada, Decision content-addressed, Pareto e checkpoints técnicos. API/símbolos: class PolicyError; load_policy(); pareto_relation(); choose_action(); decide(); load_published_decision()
 - `.prime/agent/skills/article-loop/src/article_loop/prompts.py` — registro content-addressed, overlays, composição e validação de prompts. API/símbolos: class PromptIntegrityError; class PromptContractError; class CompiledPrompt; class PromptRegistry [immutable, overlay]; expected_prompt_version(); validate_output(); compile_prompt(); compile_manager_prompt()
 - `.prime/agent/skills/article-loop/src/article_loop/refocus.py` — planos/overlays reversíveis sob CAS para plateau/oscilação. API/símbolos: class RefocusError; register_overlay_cas(); generate_refocus_plan()
 - `.prime/agent/skills/article-loop/src/article_loop/state_machine.py` — grafo fechado dos 16 estados e validação de transições. API/símbolos: class State; class TransitionError; is_valid_transition(); require_transition()
@@ -210,8 +350,8 @@ Detalhe das três sessões mais recentes:
 - `scripts/01_external_evaluator.py` — API: main()
 - `scripts/02_stagnation_detector.py` — API: main()
 - `scripts/03_refocus_generator.py` — API: main()
-- `scripts/04_compensation_policy.py` — módulo Python interno
-- `scripts/05_transactional_finalizer.py` — módulo Python interno
+- `scripts/04_compensation_policy.py` — API: main()
+- `scripts/05_transactional_finalizer.py` — API: main()
 - `scripts/ai_context.py` — API: render_context(), parser(), main()
 - `scripts/ai_handoff_common.py` — API: HandoffError, canonical_json(), sha256_bytes(), sha256_file(), is_sensitive_path(), run_local(), git_root(), list_relevant_paths(), summarize_text(), file_record(), build_inventory(), inventory_fingerprint(), snapshot_files(), inventory_delta()
 - `scripts/ai_history.py` — API: load_entries(), infer_milestone(), render_history(), update_history(), parser(), main()
@@ -223,7 +363,7 @@ Detalhe das três sessões mais recentes:
 | `agent-proposal.schema.json` | AgentProposal | 14 | schema_version, proposal_id, role_id, cycle_id, base_hash, scope, evidence_locators, patch_or_operations, affected_claims, dependencies, risk, confidence, requested_validations, prompt_version |
 | `agent-task.schema.json` | AgentTask | 13 | schema_version, task_id, run_id, cycle_id, role_id, activation_mode, created_at, base_hash, scope, input_locators, requested_output_schema, prompt_version, constraints |
 | `candidate-manifest.schema.json` | CandidateManifest | 12 | schema_version, candidate_id, candidate_kind, run_id, cycle_id, base_candidate_id, built_at, workspace_hash, content_hash, source_proposal_ids, merge_receipt_locator, immutable, inventory, merge_receipt, base_hash, synthesis_hash, proposal… |
-| `decision.schema.json` | Decision | 17 | schema_version, decision_id, run_id, cycle_id, candidate_id, candidate_content_hash, decided_at, action, gate_report_id, verdict_ids, diagnosis_id, basis_locators, reason_code, inconclusive_evaluation_id, final_gate_report_ids, content_mod… |
+| `decision.schema.json` | Decision | 20 | schema_version, decision_id, run_id, cycle_id, candidate_id, candidate_content_hash, decided_at, action, gate_report_id, verdict_ids, diagnosis_id, basis_locators, reason_code, inconclusive_evaluation_id, final_gate_report_ids, content_mod… |
 | `department-packet.schema.json` | DepartmentPacket | 13 | schema_version, packet_id, run_id, cycle_id, department_id, base_hash, proposal_ids, specialist_task_ids, dependency_reviews, status, no_change_justification, evidence_locators, created_at |
 | `diagnosis-manifest.schema.json` | DiagnosisManifest | 11 | schema_version, diagnosis_id, run_id, cycle_id, candidate_id, classification, diagnosis_hash, gate_report_hash, evaluation_report_hash, tree_content_hash, created_at |
 | `diagnosis.schema.json` | Diagnosis | 20 | schema_version, diagnosis_id, run_id, cycle_id, candidate_id, candidate_content_hash, base_hash, created_at, gate_report_id, gate_report_hash, evaluation_report_hash, history_hash, verdict_ids, window_size, mde, classification, signals, re… |
@@ -243,12 +383,13 @@ Detalhe das três sessões mais recentes:
 
 ## Cobertura estrutural de testes
 
-Total detectado por AST: **307 testes**.
+Total detectado por AST: **319 testes**.
 
 | Arquivo | Testes | Amostra de fronteiras cobertas |
 |---|---:|---|
 | `test_ai_handoff.py` | 8 | embedded previews are bounded and have no trailing whitespace; tracked generated context is portable and idempotent; repository trigger surfaces preserve start and end protocol; context points to ai sources without embedding human docs or … |
 | `test_contracts.py` | 52 | all yaml is parseable; canonical states and actions; eight evaluation dimensions; exact ids without duplicates; one plus five plus fifteen; parent child topology; exact schema catalog and meta validation; agent proposal required fields and… |
+| `test_m10_policy_finalization.py` | 12 | all policy rows and actions are closed; hard math gate and extra judgment limit have precedence; global plateau can finalize only with final gate evidence; pareto dominated candidate is rejected by the closed table; full eight dimension do… |
 | `test_m2_durable_state.py` | 30 | all valid transitions; all invalid transitions; full event log replay and snapshot reconstruction; duplicate event id and idempotency conflict; partially written file and truncated jsonl are rejected; corrupted jsonl is rejected; crash bef… |
 | `test_m3_ingestion.py` | 22 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash divergence and publish failure are safe; valid source zip is p… |
 | `test_m4_prompts.py` | 13 | all 21 compiled prompts match snapshots; prompt contract sections and required dependencies; structured output fixtures validate; immutable overwrite and unknown version block execution; invalid overlay and unknown rollback block execution… |
@@ -266,88 +407,106 @@ Total detectado por AST: **307 testes**.
 
 ## Handoff técnico mais recente
 
-Fonte: `.prime/handoffs/09_para_10.md`.
+Fonte: `.prime/handoffs/10_para_11.md`.
 
 <latest_handoff>
-# Handoff: Milestone 09 (M9) -> Milestone 10 (M10)
+# Handoff canônico M10 → M11
 
-**Data:** 2026-08-28
-**Status do Marco M9:** CONCLUÍDO E APROVADO
-**Próximo Marco:** M10 (Política de Compensação, Decisão Canônica e Finalizador)
+## Limite alcançado
 
----
+M10 foi concluído exclusivamente com lógica local e determinística. Ele
+implementa `DIAGNOSED -> DECIDED -> COMMITTING` e, conforme a ação, encerra em
+`CYCLE_COMPLETE`, `PAUSED`, `FINALIZED` ou `TECHNICAL_FAILURE`. Não iniciou M11
+e não executou o artigo real, Prime Agent, modelos ou rede.
 
-## 1. Resumo Executivo da Entrega M9
+## Política de decisão
 
-O Milestone 09 (M9) implementou a detecção determinística de estagnação, diagnóstico canônico estruturado e geração controlada e reversível de planos de refoco e overlays de prompt. O módulo opera estritamente na transição de estados `EVALUATED -> DIAGNOSED`.
+`article_loop.policy` consome somente a evidência M7--M9 revalidada: árvore e
+manifest do challenger, GateReport, avaliação cega, diagnóstico e event log.
+`config/decision-policy.yaml` fixa em bytes versionados a precedência de falha
+técnica, gate matemático duro, diagnóstico, julgamento inconclusivo e candidato
+avaliado. Configuração, hash, estado ou identidade divergentes falham fechados;
+nenhuma condição desconhecida pode promover um candidato.
 
-Todas as operações foram realizadas de modo puramente determinístico, offline e sem chamadas a modelos reais, garantindo a preservação absoluta de todos os artefatos históricos, candidatos, vereditos e prompts imutáveis dos marcos M0–M8.
+`decide()` publica em
+`state/decisions/<run_id>/c<cycle>/decision.json` uma `Decision` canônica,
+imutável e content-addressed, vinculada ao hash da configuração. Em seguida
+registra exatamente o evento `DECIDED`. Retentativa no mesmo estado retorna os
+mesmos bytes sem evento duplicado. A política não escreve em `versions/`.
 
----
+Antes de `ARCHIVE_PARETO`, a política compara o vetor das oito dimensões com
+cada referência Pareto vigente sob `correctness_math=true`. A `Decision`
+registra a relação explícita `dominated_by`/`dominates`; um candidato dominado
+segue para `REJECT` com motivo fechado, sem apagar a referência histórica. Para
+`ABORT_TECHNICAL`, ela também registra contador, limite e checkpoint de retry
+manual; não existe retry automático ou sleep oculto.
 
-## 2. Componentes Entregues
+## Finalizador transacional
 
-### 2.1 Módulos Puros
-- `article_loop.diagnosis` (`.prime/agent/skills/article-loop/src/article_loop/diagnosis.py`):
-  - `load_history_series()`: Reconstituição rigorosa da série histórica $c_0 \dots c_N$ a partir de ciclos fechados e artefatos íntegros, com isolamento anti-lookahead e rejeição fail-closed de mistura de runs ou lacunas.
-  - `classify_cycle_progress()`: Motor determinístico em 7 estados; perda do hard gate matemático produz `REGRESSING` antes de qualquer conclusão de júri inconclusivo.
-  - A verificação de um diagnóstico publicado recompõe `classification`, `signals`, `recommended_mode` e `focus` a partir do histórico comprometido, `window_size` e `mde`; re-hash de um resultado semanticamente forjado não é aceito.
-  - Normalização de papéis em `FREEZE` via denominador extraído de `activation_map`.
-  - Prevalência intransponível do hard gate matemático (`correctness_math_pass == False`).
-  - `diagnose_cycle()`: Executa o diagnóstico, valida contra schema Draft 2020-12, publica transacionalmente em staging com permissões `0444`/`0555`, sincronização `fsync`, substituição atômica em `state/diagnosis/<run_id>/c<cycle:04d>/` e registra o evento `DIAGNOSED` no `DurableStore`.
+`TransactionalFinalizer` é o único escritor de disposições. Ele toma lock por
+execução, revalida novamente candidate, GateReport, avaliação, diagnóstico e
+Decision, e persiste as fases `PREPARED`, `HASHES_REVALIDATED`,
+`DESTINATION_STAGED`/`POINTER_SWAPPED`, `EVENT_COMMITTED`, `CHECKPOINTED` e
+`COMPLETE` em `transaction.json`.
 
-- `article_loop.refocus` (`.prime/agent/skills/article-loop/src/article_loop/refocus.py`):
-  - `generate_refocus_plan()`: Gera `RefocusPlan` exclusivamente para `LOCAL_PLATEAU`, `GLOBAL_PLATEAU` ou `OSCILLATING`. Recusa (`RefocusError`) execuções para `EVOLVING`, `REGRESSING`, `INCONCLUSIVE` e `TECHNICAL_FAILURE`.
-  - Em `GLOBAL_PLATEAU`, gera no máximo dois ramos distintos (`exploitation` e `exploration`), com orçamentos e critérios de falsificação objetivos.
-  - `register_overlay_cas()`: Cria novos arquivos YAML imutáveis em `prompts/overlays/<role_id>/<version>.yaml` e atualiza `prompts/registry.json` sob lock exclusivo de arquivo (`prompts/.registry.lock`), CAS, fsync e validação de grafo `PromptRegistry`. M00 nunca recebe overlay e os núcleos em `prompts/immutable/` nunca são modificados.
+- `PROMOTE` copia somente os bytes de conteúdo já avaliados para a próxima
+  versão histórica de champion, com manifest novo e pointer CAS em
+  `versions/champion/current.json`.
+- `ARCHIVE_PARETO` e `REJECT` preservam referência imutável à identidade do
+  challenger; não removem seu diretório. O finalizador recalcula a relação
+  Pareto sob lock e para se a fronteira mudou após a `Decision`.
+- `REFOCUS_AND_CONTINUE`, `CONTINUE_UNCHANGED` e `REQUEST_EXTRA_JUDGMENT`
+  publicam somente preparação/solicitação local, sem iniciar agentes.
+- `PAUSE`, `ABORT_TECHNICAL` e `FINALIZE` permanecem conservadores;
+  `ABORT_TECHNICAL` publica checkpoint imutável limitado e `FINALIZE` exige
+  reports finais locais aprovados contendo W22, W51 e W53.
 
-### 2.2 Utilitários CLI (JSON-in / JSON-out)
-- `scripts/02_stagnation_detector.py`: Wrapper CLI fino para diagnóstico determinístico.
-- `scripts/03_refocus_generator.py`: Wrapper CLI fino para geração de refoco e overlays.
+O receipt final é imutável e validado contra
+`finalization-receipt.schema.json`; afirma `hash_revalidated=true`,
+`atomic=true` e `content_modified=false`. Crash durante rename ou depois do
+pointer é retomado pelo mesmo destino determinístico, sem segundo champion ou
+remoção de histórico.
 
-### 2.3 Contratos e Schemas JSON (Draft 2020-12)
-- `config/schemas/diagnosis-manifest.schema.json`: Schema do manifesto de integridade da publicação do diagnóstico.
-- `config/schemas/refocus-plan.schema.json`: Schema do plano de refoco e ramificações.
-- Total de schemas formais no repositório: 20 schemas validados em `control/test_contracts.py`.
+## Contratos e superfícies
 
----
+- Adicionados: `article_loop.policy`, `article_loop.finalization`,
+  `config/decision-policy.yaml`, `control/test_m10_policy_finalization.py`.
+- Ativadas as CLIs JSON-in/JSON-out `scripts/04_compensation_policy.py` e
+  `scripts/05_transactional_finalizer.py`.
+- `Decision` agora exige `policy_config_hash`, `pareto_relation` e
+  `technical_checkpoint`; `PAUSE` aceita o motivo fechado
+  `INCONCLUSIVE_LIMIT_REACHED` após o único pedido de julgamento permitido.
+- A máquina de estados permite explicitamente `COMMITTING -> FINALIZED` para
+  uma finalização já revalidada.
+- A fachada assíncrona `finalize()` delega ao finalizador M10 e não ao atalho
+  histórico do `Orchestrator`.
 
-## 3. Verificação e Testes
+## Evidência executada
 
-- **Suíte de Testes M9 (`control/test_m9_diagnosis.py`):**
-  - 50 testes unitários e de integração cobrindo todas as 7 classificações, recomposição semântica contra ataques re-hashados, invariância de ordem, limiares exatos MDE, rejeição de melhorias falsas, isolamento anti-lookahead, papéis `FREEZE`, bloqueio de ampliação de privilégios de overlay, idempotência, recuperação de falhas com injeção de erros e imutabilidade byte a byte de campeão, challenger e vereditos.
-  - Resultado: **50/50 aprovados** em 148.650s.
+- `python3 -m unittest -v control.test_m10_policy_finalization
+  control.test_contracts control.test_m2_durable_state` — 94 testes aprovados:
+  tabela fechada, CLI adversarial, Pareto nas oito dimensões, fachada pública,
+  idempotência, mutação, promotion e crashes após rename/pointer.
+- `python3 -m unittest discover -s control -q` — 319 testes aprovados em
+  217.578s. O aviso de ZIP duplicado continua sendo a fixture negativa M3
+  esperada.
+- `python3 -m py_compile` dos módulos, CLIs e testes; `git diff --check`.
 
-- **Suíte Integral de Contratos (`control/test_contracts.py`):**
-  - 52 testes validando 20 schemas canônicos.
-  - Resultado: **52/52 aprovados**.
+## Condição para M11
 
-- **Suíte Completa de Regressão (M0–M9):**
-  - Execução: `python3 -m unittest discover -s control -q`
-  - Resultado: **299 testes aprovados** com 100% de sucesso em 566.531s.
-
----
-
-## 4. Fronteiras e Regras Estritas para o M10
-
-1. **Estado de Entrada do M10:**
-   - O M10 deve receber a execução no estado `DIAGNOSED`.
-   - O M10 é o único responsável pela transição para `DECIDED` e `FINALIZED`.
-2. **Imutabilidade e Preservação:**
-   - O M10 não deve modificar o conteúdo dos challengers gerados no M7 nem os vereditos do M8 nem o diagnóstico do M9.
-   - A promoção de challenger para campeão (`versions/champion/v<next>`) ou retenção/rollback deve ser atômica e estritamente auditada via `DurableStore`.
-3. **Overlays e Prompt Registry:**
-   - Se o plano de refoco gerou novos overlays e foi aprovado, o M10 pode acionar o próximo ciclo aplicando os ponteiros de overlay correspondentes ao ramo selecionado.
-4. **Sem Chamadas Reais de Modelo:**
-   - Manter a separação estrita de test doubles e a proibição de chamadas a provedores externos de LLM até a autorização de marcos específicos.
+M11 pode somente expor APIs locais já existentes como comandos compatíveis com
+a instalação do Prime Agent. Antes disso, deve exigir árvore limpa, reler
+`AGENTS.md`, este handoff e `docs/compatibility.md`. Nenhuma sessão Prime,
+modelo, rede, credencial, instalação global ou publicação foi autorizada ou
+executada em M10.
 </latest_handoff>
 
 ## Inventário content-addressed
 
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
-- Total: 160 arquivos; runtime=18, text=142.
-- Fingerprint canônico: `b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a`.
+- Total: 165 arquivos; runtime=18, text=147.
+- Fingerprint canônico: `921c248a2e2a15ed25f7429f73926349014d146386d22ad2e188e94e321b364c`.
 
 ## Roteamento para aprofundamento
 

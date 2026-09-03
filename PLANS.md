@@ -31,7 +31,11 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - M5 corrigido cirurgicamente: memória operacional append-only, grafo de impacto, views
   fechadas e planejador determinístico foram validados sem chamada a agentes ou
   modelos.
-- M9 concluído; M10 continua pendente e não iniciado.
+- M9 concluído; M10 concluído localmente com política determinística, decisão
+  canônica e finalizador transacional. A revisão de integração M10 também
+  exige que a fronteira Pareto seja revalidada na aplicação, que checkpoints
+  técnicos limitados sejam duráveis e que a fachada pública não contorne a
+  `Decision`. M11--M13 permanecem fora de escopo.
 - Ferramentas auxiliares de handoff para IA concluídas: um gerador local de
   contexto compacto e um registrador local de histórico de sessões. Elas não
   alteram a máquina de estados, candidatos, gates ou a autoridade dos scripts
@@ -85,7 +89,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M7 | síntese, merge, gates e arquivos de versões | concluído após correção final restrita | publica um único challenger integralmente read-only, verifica o `GateReport` canônico persistido antes de `GATES_PASSED` e executa os 13 gates locais de modo fail-closed; júri, decisão e M8 continuam fora do escopo |
 | M8 | avaliador externo cego em júri | concluído | avaliação cega externa por júri e meta-revisão com separação de test doubles e publicação transacional write-once |
 | M9 | detecção de progresso e refoco | concluído | diagnóstico determinístico em 7 classificações canônicas, transição EVALUATED -> DIAGNOSED e refoco reversível com overlays imutáveis sob CAS |
-| M10 | política de compensação e finalizador | pendente; não iniciado | finalizador revalida hashes e aplica ações atômicas sem modificar o challenger avaliado |
+| M10 | política de compensação e finalizador | concluído localmente | política pura emite uma `Decision` fechada; finalizador revalida hashes e aplica a disposição atômica sem modificar o challenger avaliado |
 | M11 | comandos e configuração do Prime Agent | pendente | recursos `.prime/agent/` seguem a compatibilidade instalada |
 | M12 | orçamento, observabilidade e execução prolongada | pendente | limites, custos e recuperação são observáveis sem alterar globais |
 | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
@@ -137,6 +141,34 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
 ## Registro de progresso
+
+- 2026-09-02 — M10 concluído localmente: `policy.py` revalida os artefatos
+  M7--M9 e deriva uma `Decision` content-addressed com tabela fechada em
+  `config/decision-policy.yaml`; `finalization.py` aplica a ação sob lock,
+  journal persistido, `fsync`, rename atômico e CAS do pointer de champion.
+  Promoção cria um novo envelope de champion para os mesmos bytes avaliados;
+  Pareto e rejected preservam referências imutáveis. Foram adicionadas as CLIs
+  JSON-in/JSON-out 04 e 05, testes de tabela, idempotência, mutação e crashes
+  antes/depois do pointer. A regressão completa aprovou 316 testes em 214.956s.
+  Não houve modelo, rede, execução do artigo, instalação, commit ou GitHub;
+  M11--M13 não foram iniciados.
+
+- 2026-09-02 — Revisão pré-publicação de M10 identificou três lacunas de
+  integração a corrigir antes do commit: a disposição Pareto deve comparar a
+  fronteira já publicada e tornar essa relação verificável pelo finalizador;
+  o limite técnico configurado precisa produzir checkpoint/contador durável;
+  e `article_loop.finalize()` deve delegar ao finalizador M10, não ao atalho
+  histórico do `Orchestrator`. A atualização também sincronizará README,
+  arquitetura, skill e snapshot de contexto. Nenhum runtime Prime, artigo ou
+  modelo será iniciado.
+
+- 2026-09-02 — M10 iniciado após contexto obrigatório atual, árvore Git limpa,
+  validação local do checkpoint M9 `fd23224` como ancestral de `HEAD` e suíte
+  integral M0--M9 aprovada (307 testes). O escopo autorizado é estritamente a
+  política de decisão determinística, publicação de `Decision`, journal de
+  finalização e disposições transacionais para champion, Pareto e rejected.
+  Não haverá execução do artigo, modelo, rede, instalação, commit ou acesso ao
+  GitHub; M11--M13 não seriam iniciados sem nova autorização.
 
 - 2026-09-02 — Concluído reparo estritamente infraestrutural da integração
   Git/GitHub e das superfícies Markdown. Foram diagnosticados dois diretórios

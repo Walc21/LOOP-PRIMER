@@ -219,7 +219,7 @@ class ScaffoldTests(unittest.TestCase):
             with self.subTest(directory=directory):
                 self.assertTrue((ROOT / directory).is_dir())
 
-    def test_future_stubs_are_present_and_inert(self):
+    def test_canonical_numbered_entrypoints_are_present(self):
         scripts = {
             "01_external_evaluator.py", "02_stagnation_detector.py",
             "03_refocus_generator.py", "04_compensation_policy.py",
@@ -467,8 +467,13 @@ class ConditionalContractTests(unittest.TestCase):
             "final_gate_report_ids": [],
             "content_modification_allowed": False,
             "authorized_by": "M00",
+            "policy_config_hash": self.HASH_B,
+            "pareto_relation": None,
+            "technical_checkpoint": None,
         }
-        if action == "REJECT":
+        if action == "ARCHIVE_PARETO":
+            instance["pareto_relation"] = {"dominated_by": [], "dominates": []}
+        elif action == "REJECT":
             instance.update(reason_code="GATE_FAILED", verdict_ids=[])
         elif action == "REFOCUS_AND_CONTINUE":
             instance["reason_code"] = "LOCAL_PLATEAU"
@@ -501,6 +506,12 @@ class ConditionalContractTests(unittest.TestCase):
                 verdict_ids=[],
                 diagnosis_id=None,
                 reason_code="TECHNICAL_FAILURE",
+                technical_checkpoint={
+                    "attempt": 1,
+                    "limit": 1,
+                    "retry_allowed": True,
+                    "backoff_seconds": 0,
+                },
             )
         return instance
 

@@ -58,13 +58,20 @@ reconstrução LaTeX escapa toda extração não confiável e é compilada em di
 isolado com `-no-shell-escape`. `IngestionError` e `SourceReadyError` explicam
 entradas inseguras ou baseline insuficiente.
 
-## API pública M6
+## API pública M6--M10
 
 Todas as funções abaixo são assíncronas: `await bootstrap(pdf_path, root=".")`,
 `await preflight(root=".")`, `await run_cycle(root=".", cycle_id=None,
 dry_run=False)`, `await status(root=".")`, `await checkpoint(root=".")`,
 `await pause(root=".")`, `await resume(root=".")`, `await stop(root=".")` e
 `await finalize(root=".")`. `run()` permanece um alias de `run_cycle()`.
+
+M10 também expõe `decide(root, run_id, cycle_id=...)`,
+`finalize_decision(root, run_id, cycle_id=...)`, `pareto_relation(...)` e
+`TransactionalFinalizer`. `finalize()` não usa mais o atalho histórico de M6:
+ele exige uma `Decision` M10 ativa e delega ao finalizador que revalida hashes,
+diagnóstico e precondições antes de qualquer efeito. A política é local e não
+inicia Prime Agent, modelos ou um artigo real.
 
 `PrimeRLMAdapter` encapsula somente a API instalada: admissão por
 `await rlm(prompt, name=...)`, mensagens sem `mode` e remoção pelo pai. Antes

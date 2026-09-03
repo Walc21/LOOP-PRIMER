@@ -78,7 +78,8 @@ class AIHandoffTests(unittest.TestCase):
         self.assertNotIn("Entrada obrigatória para IAs", readme)
         self.assertNotIn("leia `AI_CONTEXT.md` integralmente", readme)
         self.assertIn("M10", readme)
-        self.assertIn("reserved stubs", readme)
+        self.assertIn("canonical, content-addressed `Decision`", readme)
+        self.assertIn("M10 CLIs are operational", readme)
 
     def test_context_points_to_ai_sources_without_embedding_human_docs_or_full_inventory(self) -> None:
         context = render_context(ROOT, diff_limit=0)

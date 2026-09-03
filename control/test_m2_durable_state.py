@@ -98,12 +98,13 @@ class DurableStateTests(unittest.TestCase):
         self.assertTrue(is_valid_transition(State.PAUSED, State.TECHNICAL_FAILURE, resume_to=State.NEW))
         self.assertTrue(is_valid_transition(State.CYCLE_COMPLETE, State.CYCLE_PLANNED))
         self.assertTrue(is_valid_transition(State.CYCLE_COMPLETE, State.FINALIZED))
+        self.assertTrue(is_valid_transition(State.COMMITTING, State.FINALIZED))
 
     def test_all_invalid_transitions(self):
         allowed = {(current, target) for current, target in FORWARD.items()}
         allowed |= {(current, State.PAUSED) for current in State if current not in {State.PAUSED, State.FINALIZED, State.TECHNICAL_FAILURE}}
         allowed |= {(current, State.TECHNICAL_FAILURE) for current in State if current not in {State.FINALIZED, State.TECHNICAL_FAILURE}}
-        allowed |= {(State.CYCLE_COMPLETE, State.CYCLE_PLANNED), (State.CYCLE_COMPLETE, State.FINALIZED)}
+        allowed |= {(State.CYCLE_COMPLETE, State.CYCLE_PLANNED), (State.CYCLE_COMPLETE, State.FINALIZED), (State.COMMITTING, State.FINALIZED)}
         allowed.add((State.PAUSED, State.NEW))
         for current in State:
             for target in State:

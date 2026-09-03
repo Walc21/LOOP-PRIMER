@@ -16,11 +16,11 @@
 
 </div>
 
-> **Implementation status:** M0–M9 are implemented and locally validated. M10
-> (canonical decision and transactional finalizer) and M11–M13 remain pending;
-> `scripts/04_compensation_policy.py` and
-> `scripts/05_transactional_finalizer.py` are reserved stubs, not operational
-> CLIs. No real article or model is run by the commands documented below.
+> **Implementation status:** M0–M10 are implemented and locally validated. M10
+> publishes a canonical, content-addressed `Decision`, revalidates it under a
+> per-run lock, and applies its authorized disposition atomically. M11–M13
+> remain pending. The M10 CLIs are operational but do not run an article, a
+> model, or a paid API by themselves.
 
 ---
 
@@ -43,8 +43,9 @@
 
 **LOOP-PRIMER** is a contract-first, deterministic framework under incremental
 implementation for auditable analysis, critique, mathematical verification and
-iterative improvement of scientific papers. The implemented pipeline currently
-ends at M9 diagnosis/refocus; decision and finalization remain planned work.
+iterative improvement of scientific papers. The implemented pipeline reaches
+M10: diagnosis drives a closed decision policy, then a transactional finalizer
+applies exactly that decision while preserving all evaluated bytes and history.
 
 Unlike conventional LLM wrappers, LOOP-PRIMER operates under **strict mathematical and architectural constraints**:
 - **Air-gapped & Offline Verification**: No unauthenticated external network requests or speculative token generation during validation.
@@ -67,7 +68,8 @@ Unlike conventional LLM wrappers, LOOP-PRIMER operates under **strict mathematic
 |  4. 13 Deterministic Synthesis Gates (LaTeX Syntax, Theorem Proofs, BibTeX)      |
 |  5. Blind External Jury & Meta-Review (Double-Blind Candidate Evaluation)         |
 |  6. Stagnation Detection & Adaptive Refocusing (Plateau & Oscillation Analytics)  |
-|  7. Transactional State Machine & Append-Only Event Chaining                      |
+|  7. M10 Decision Policy, Pareto Evidence & Transactional Finalization             |
+|  8. Transactional State Machine & Append-Only Event Chaining                      |
 +-----------------------------------------------------------------------------------+
 ```
 
@@ -106,14 +108,13 @@ flowchart TD
     H -->|Fail| I["📦 Archive to versions/rejected/"]
     H -->|Pass| J["⚖️ M8: Blind External Jury Evaluation"]
     
-    J --> K{"🏆 Jury & Meta-Review Verdict"}
-    K -->|Champion Won| L["📈 M9: Stagnation & Oscillation Detector"]
-    K -->|Challenger Won| M["🧭 M10 planned: Decide disposition"]
-    K -->|Pareto Tradeoff| N["📊 Archive in Pareto Frontier"]
-    
-    L --> O["🔄 Refocus Plan & Budget Compensation"]
+    J --> L["📈 M9: Stagnation & Oscillation Detector"]
+    L --> M["🧭 M10: Canonical decision policy"]
+    M -->|PROMOTE| P["🏁 Transactional champion upgrade"]
+    M -->|ARCHIVE_PARETO / REJECT| N["📊 Immutable Pareto / rejected reference"]
+    M -->|REFOCUS / CONTINUE / extra judgment| O["🔄 Durable next-cycle preparation"]
     O --> E
-    M --> P["🏁 M10 planned: Transactional finalizer"]
+    M -->|PAUSE / FINALIZE / technical abort| Q["🔒 Checkpointed terminal or paused state"]
 ```
 
 ---
@@ -195,7 +196,7 @@ pip install -r requirements-dev.txt
 # Run AI context and handoff tests
 .venv/bin/python -m unittest control.test_ai_handoff
 
-# Run the complete M0-M9 regression suite
+# Run the complete M0-M10 regression suite
 .venv/bin/python -m unittest discover -s control -p 'test_*.py' -q
 ```
 
@@ -217,8 +218,12 @@ LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
 - **`scripts/01_external_evaluator.py`**: Double-blind jury evaluator CLI (Milestone 8).
 - **`scripts/02_stagnation_detector.py`**: Plateau, oscillation, and diagnostic detector (Milestone 9).
 - **`scripts/03_refocus_generator.py`**: Adaptive prompt and parameter refocusing generator (Milestone 9).
-- **`scripts/04_compensation_policy.py`**: Reserved, inert stub for Milestone 10.
-- **`scripts/05_transactional_finalizer.py`**: Reserved, inert stub for Milestone 10.
+- **`scripts/04_compensation_policy.py`**: Revalidates M7–M9 evidence and
+  publishes one immutable M10 `Decision`; accepts `--root`, `--run-id`,
+  `--cycle-id` or the equivalent bounded JSON input.
+- **`scripts/05_transactional_finalizer.py`**: Revalidates the published
+  `Decision`, candidate and evidence under a per-run lock, then records the
+  atomic disposition and immutable receipt.
 - **`scripts/ai_context.py`**: Deterministic content-addressed session context snapshot generator.
 - **`scripts/ai_history.py`**: Session ledger and ADR history updater.
 
@@ -234,13 +239,13 @@ LOOP-PRIMER/
 │   ├── pull_request_template.md  # PR checklist and verification template
 │   └── ISSUE_TEMPLATE/           # Bug report & feature request schemas
 ├── .prime/                       # Prime Agent integration layer & skills
-│   └── agent/skills/article-loop/src/article_loop/ # Core Python framework
+│   └── agent/skills/article-loop/src/article_loop/ # Core framework, including M10 policy/finalizer
 ├── bin/                          # Shell entrypoints (bootstrap, preflight, check)
-├── config/                       # Declarative budgets, gates, roles, and JSON schemas
+├── config/                       # Declarative budgets, gates, roles, policy, and JSON schemas
 │   ├── roles/                    # 21 YAML definitions for M00, S10-S50, W11-W53
 │   ├── rubrics/                  # Evaluation rubrics for blind jury
 │   └── schemas/                  # 20 JSON Schema definitions for strict validation
-├── control/                      # Contract and milestone test suites (M1 through M9)
+├── control/                      # Contract and milestone test suites (M1 through M10)
 ├── docs/                         # Architecture, ADRs, compatibility, and AI history
 │   ├── architecture.md           # Canonical system architecture
 │   ├── decisions.md              # 27 Architectural Decision Records (ADRs)
@@ -275,6 +280,7 @@ All core design choices are formally recorded in [`docs/decisions.md`](docs/deci
 | **ADR-013** | 13 Deterministic Synthesis Gates | `Accepted` | Verification |
 | **ADR-021** | Double-Blind Jury & Randomized Presentation | `Accepted` | Evaluation |
 | **ADR-024** | Plateau & Oscillation Diagnostic Engine | `Accepted` | Adaptability |
+| **ADR-028** | Pure Decision Policy & Transactional Finalization | `Accepted` | M10 disposition |
 | **ADR-026** | Content-Addressed AI Handoff & Session Ledger | `Accepted` | AI Protocol |
 | **ADR-027** | Audience Separation & Publishable Git History | `Accepted` | Repository Integration |
 

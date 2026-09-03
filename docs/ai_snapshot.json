@@ -49,10 +49,10 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     },
     ".prime/agent/skills/article-loop/SKILL.md": {
-      "bytes": 7846,
+      "bytes": 8274,
       "kind": "text",
-      "lines": 133,
-      "sha256": "31e949e57dc862f9d090eb55ecb1b21944900755591c71c8d1be32005bf72c48"
+      "lines": 140,
+      "sha256": "a008817e7381a24caee2b32c7e44f5f3b4c5e783cbad55710ac122f0a8659c48"
     },
     ".prime/agent/skills/article-loop/pyproject.toml": {
       "bytes": 304,
@@ -61,10 +61,10 @@
       "sha256": "3a6e28296b26a6724897df658b0eba77add92e9f10bc228644f48f1d89d12bf3"
     },
     ".prime/agent/skills/article-loop/src/article_loop/__init__.py": {
-      "bytes": 3583,
+      "bytes": 3945,
       "kind": "text",
-      "lines": 66,
-      "sha256": "da6ca10075ffeba955113951b341eaf0db61636c19df12f055cd93428412dd72"
+      "lines": 69,
+      "sha256": "7687ae22a1235b8924c39007576a1584d4e8aba5dfd6471b485245c3264aebbc"
     },
     ".prime/agent/skills/article-loop/src/article_loop/activation.py": {
       "bytes": 11504,
@@ -85,16 +85,22 @@
       "sha256": "764d6a1441a9f233f336310eec067147f4a824a293920b88aef19a75ae732df2"
     },
     ".prime/agent/skills/article-loop/src/article_loop/diagnosis.py": {
-      "bytes": 51542,
+      "bytes": 52562,
       "kind": "text",
-      "lines": 1158,
-      "sha256": "17a74d7bfd39910c46a83842bfa2c156b770a767314b22a87242120bcb633f30"
+      "lines": 1177,
+      "sha256": "5c60264a38c738371532a69831c81b1553c30e8d3cc30a8b96ce908dedead12f"
     },
     ".prime/agent/skills/article-loop/src/article_loop/evaluation.py": {
       "bytes": 71748,
       "kind": "text",
       "lines": 1610,
       "sha256": "8babd430c3b629abf9c37e4551743c9997526c3e56d827ad4822a3c1c333bda5"
+    },
+    ".prime/agent/skills/article-loop/src/article_loop/finalization.py": {
+      "bytes": 28387,
+      "kind": "text",
+      "lines": 540,
+      "sha256": "5ee4a6f5f90e3efeb30543540dcb9d9f691d9d35729ef4f275bc8ee1813e491d"
     },
     ".prime/agent/skills/article-loop/src/article_loop/gates.py": {
       "bytes": 36015,
@@ -114,6 +120,12 @@
       "lines": 793,
       "sha256": "88cb3a511c69de3a3b0a05f21e5db22fa6c59d8ab393285b4038b9d0d715ce22"
     },
+    ".prime/agent/skills/article-loop/src/article_loop/policy.py": {
+      "bytes": 24860,
+      "kind": "text",
+      "lines": 540,
+      "sha256": "086d71ecf13b65cd0b65a388fbef7798677fae0ea9e060b22451d4a6ae684f21"
+    },
     ".prime/agent/skills/article-loop/src/article_loop/prompts.py": {
       "bytes": 17405,
       "kind": "text",
@@ -127,10 +139,10 @@
       "sha256": "f346e70a2639bd089a2574a22f14d3c1467ca01cbe1f7871231b9aa42e075d98"
     },
     ".prime/agent/skills/article-loop/src/article_loop/state_machine.py": {
-      "bytes": 2355,
+      "bytes": 2587,
       "kind": "text",
-      "lines": 72,
-      "sha256": "22268554a0564cbe74c4669b4a349e1afe0256463bdebe4d81de84796676b9f2"
+      "lines": 76,
+      "sha256": "7f8ee90f749661330e6c43fc15a372f6e538664a2e8d96f07a49432f608e8647"
     },
     ".prime/agent/skills/article-loop/src/article_loop/store.py": {
       "bytes": 18646,
@@ -192,6 +204,12 @@
       "lines": 71,
       "sha256": "38b6da49f1209b815e418fd554d3cf3933d5e47521bf48c28ee30259182e047a"
     },
+    ".prime/handoffs/10_para_11.md": {
+      "bytes": 4688,
+      "kind": "text",
+      "lines": 89,
+      "sha256": "780be8a5c4d11eb59e458c25b45c33351b41de32f0017fd2125aa8c02ef4eabe"
+    },
     "AGENTS.md": {
       "bytes": 8116,
       "kind": "text",
@@ -223,16 +241,16 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 35188,
+      "bytes": 37428,
       "kind": "text",
-      "lines": 489,
-      "sha256": "3a87aa4bac8dd26cb55194c3f5a71ca4b6e17d2c00ba2e4acd9062660befbcf1"
+      "lines": 521,
+      "sha256": "d92a85224cd5cfb67f84ff953a1c24462d135c04c3b85666ac1aa8d8be2c14d5"
     },
     "README.md": {
-      "bytes": 15182,
+      "bytes": 15769,
       "kind": "text",
-      "lines": 289,
-      "sha256": "5602c8f20915cdf30cbf809c9c48bd58941733aa98cb2b3877e5866cc752e1d4"
+      "lines": 295,
+      "sha256": "355f4a13d8af30e5480d8785a0153e4d36e503243b22e3c3ac57fe6760706dc7"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -287,6 +305,12 @@
       "kind": "text",
       "lines": 30,
       "sha256": "3c70f903c84d6783f4282fe8ef979aab724a7203d31ebd7f789cfce328628150"
+    },
+    "config/decision-policy.yaml": {
+      "bytes": 667,
+      "kind": "text",
+      "lines": 26,
+      "sha256": "461def203733bd17c9c42db31d8a242c64ce69dc0a8e9f672949fef955d3a00c"
     },
     "config/gates.yaml": {
       "bytes": 3206,
@@ -445,10 +469,10 @@
       "sha256": "a96174c2d8fe3286ce1dcbeee5deead5079a9577844853c73cabb9671e9a1938"
     },
     "config/schemas/decision.schema.json": {
-      "bytes": 6050,
+      "bytes": 8350,
       "kind": "text",
-      "lines": 129,
-      "sha256": "563503d4f74de0d9cb9e0ebbcd8d2e412ced420d2b1eca4e2281eadb575e55d5"
+      "lines": 177,
+      "sha256": "285c0e47f4509b75db3f907bb7367de48ec70f52f562fdaa09aa96df75b11692"
     },
     "config/schemas/department-packet.schema.json": {
       "bytes": 2692,
@@ -583,22 +607,28 @@
       "sha256": "2920d4de74ba09ee140954da8d5aab8d59caba768b1dddeb510b046732cda31b"
     },
     "control/test_ai_handoff.py": {
-      "bytes": 9922,
+      "bytes": 10005,
       "kind": "text",
-      "lines": 192,
-      "sha256": "8a96f1d415b2fa49d6cd2be923a46c07ed6342ea52ee9fbabcfd08e17e6c15ee"
+      "lines": 193,
+      "sha256": "7eeb838fe65ed4297856f6eca1bbe6204cce9895ee34be9af920342ddfc725e7"
     },
     "control/test_contracts.py": {
-      "bytes": 35500,
+      "bytes": 35964,
       "kind": "text",
-      "lines": 869,
-      "sha256": "3c538170db94b0d94e622dd84d7e1b34c3fa94ff8ac67e812c271e0c8e28959e"
+      "lines": 880,
+      "sha256": "273fe28e215e1a9c48c733856b84071dd87e0d8e494c25e487f80f8fece9dc2c"
+    },
+    "control/test_m10_policy_finalization.py": {
+      "bytes": 13525,
+      "kind": "text",
+      "lines": 271,
+      "sha256": "6bd8ac5a32e6f4c1458454428b0cc3a0d2d4cc6b0e5b56a44e0ef80802a16af9"
     },
     "control/test_m2_durable_state.py": {
-      "bytes": 17320,
+      "bytes": 17437,
       "kind": "text",
-      "lines": 375,
-      "sha256": "4b328ee7fc6ad245b0f6de7905af22dbaa4be3648004b97921244b71f43725e8"
+      "lines": 376,
+      "sha256": "ec7af622272be2f15ec71a8f85d20fdded25e8eb7b777c099839b1b57f679432"
     },
     "control/test_m3_ingestion.py": {
       "bytes": 18536,
@@ -643,10 +673,10 @@
       "sha256": "0de4b64409e0ed7d0345a965c2aedb841ce7c8be4135128dc0ae6adee4b12e0f"
     },
     "docs/architecture.md": {
-      "bytes": 15162,
+      "bytes": 16259,
       "kind": "text",
-      "lines": 339,
-      "sha256": "45f6cf230dd107696d2fb806cae83315a334c6f7bbba907cad825e4bc8685ab2"
+      "lines": 356,
+      "sha256": "d6942938ab133f1b47808652fad4bdbce0c2d7a9b57027eeeb573247d7551176"
     },
     "docs/compatibility.md": {
       "bytes": 9921,
@@ -655,10 +685,10 @@
       "sha256": "03174c609124f510d4af8a6ab0e276057d48cde229e8f3dfd5c6ced15b6b74e8"
     },
     "docs/decisions.md": {
-      "bytes": 54373,
+      "bytes": 56378,
       "kind": "text",
-      "lines": 909,
-      "sha256": "452734f3f32903c4431b715e92cd7e681f46a7d8331923c6357a1f169819c19c"
+      "lines": 943,
+      "sha256": "38c2a4b299e03592811625a7167e902f8e6af07b8c5a2d819cbb63da86f56990"
     },
     "input/inbox/.gitkeep": {
       "bytes": 1,
@@ -859,22 +889,22 @@
       "sha256": "abe703c81ac1e19b27ce8a84bb8b8a37620f0ac1c705bdaba1acdbaf6eaaf0c9"
     },
     "scripts/04_compensation_policy.py": {
-      "bytes": 63,
+      "bytes": 2628,
       "kind": "text",
-      "lines": 1,
-      "sha256": "7330a3953b54a21bfcae14e602576b8cd52722527550e9fea4baf902a9bcef07"
+      "lines": 64,
+      "sha256": "7215917a1b878fdec0884a3f077a6293f48d4534701376ccebd53e50ef57cc92"
     },
     "scripts/05_transactional_finalizer.py": {
-      "bytes": 133,
+      "bytes": 2681,
       "kind": "text",
-      "lines": 4,
-      "sha256": "9446896eae0bb05452d3beb3aa2a4783baed725481512c90b74bbc8835d94a8a"
+      "lines": 64,
+      "sha256": "6d379c3173b9067f65ecfa6b68efb81d80fbd3f8b2de67b9786ff7944c204bbe"
     },
     "scripts/ai_context.py": {
-      "bytes": 22547,
+      "bytes": 22778,
       "kind": "text",
-      "lines": 433,
-      "sha256": "26aa077994ccfb4ff888a61d4b9ab4069a18de4740aa92eb6c38836384661f5b"
+      "lines": 435,
+      "sha256": "3f7517e51d9863b50a98743bb42a6e60140d5a26c840c8f6e384cfb058df104d"
     },
     "scripts/ai_handoff_common.py": {
       "bytes": 13786,
@@ -961,17 +991,35 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "b94ca8b644688f7fc7471700095cdfe3a55a8ec3baee9cd69af72dbdcd53501a",
+  "fingerprint": "921c248a2e2a15ed25f7429f73926349014d146386d22ad2e188e94e321b364c",
   "git": {
     "available": true,
     "branch": "main",
-    "head": "35e2f80bea39408570d21e7b8253f407dbfd71b7",
+    "head": "051f969db75b2ca00112f335b23e792aca907215",
     "status": [
-      " M .github/workflows/ci.yml",
-      " M .prime/agent/skills/article-loop/src/article_loop/evaluation.py"
+      " M .prime/agent/skills/article-loop/SKILL.md",
+      " M .prime/agent/skills/article-loop/src/article_loop/__init__.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/diagnosis.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/state_machine.py",
+      " M PLANS.md",
+      " M README.md",
+      " M config/schemas/decision.schema.json",
+      " M control/test_ai_handoff.py",
+      " M control/test_contracts.py",
+      " M control/test_m2_durable_state.py",
+      " M docs/architecture.md",
+      " M docs/decisions.md",
+      " M scripts/04_compensation_policy.py",
+      " M scripts/05_transactional_finalizer.py",
+      " M scripts/ai_context.py",
+      "?? .prime/agent/skills/article-loop/src/article_loop/finalization.py",
+      "?? .prime/agent/skills/article-loop/src/article_loop/policy.py",
+      "?? .prime/handoffs/10_para_11.md",
+      "?? config/decision-policy.yaml",
+      "?? control/test_m10_policy_finalization.py"
     ]
   },
-  "recorded_at": "2026-09-02T17:30:21Z",
+  "recorded_at": "2026-09-03T02:00:55Z",
   "schema_version": "1.0.0",
-  "session_id": "session-github-ci-repair-20260902"
+  "session_id": "session-m10-prepublish-20260902"
 }
