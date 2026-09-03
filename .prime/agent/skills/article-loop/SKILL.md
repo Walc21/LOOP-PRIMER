@@ -190,3 +190,27 @@ evidência e sincronizam writes com fsync. Não registrar credenciais, cookies,
 auth, prompts completos, artigo integral ou mensagens privadas. Depois de
 crash, reabrir o ledger, verificar a cadeia e reconciliar receipts/handles;
 nunca devolver saldo por suposição nem usar loop textual infinito.
+
+## Routing de inferência M12.5
+
+`ModelRegistry` carrega e valida a seção `inference` de
+`config/budgets.yaml`; `ModelRouter` é puro e escolhe targets por papel,
+capacidade, limite, fallback e independência. `InferenceRuntime` aceita somente
+um `AgentTask` já validado e executa a sequência fechada `route -> reserve ->
+admit -> backend -> receipt -> reconcile`. Ele não substitui o orchestrator M6,
+não cria filhos e não altera `PrimeRLMAdapter.spawn(prompt, name)`.
+
+Decisões ficam em `state/inference/<run>/routes/` e receipts operacionais em
+`state/inference/<run>/receipts/`, ambos write-once, hash-bound e sem prompt ou
+resposta integral. Repetir a mesma chamada depois de crash reconcilia o receipt
+existente sem reinferência; ausência de receipt após admissão fica `UNCERTAIN`.
+`FREEZE` não reserva nem chama backend. Escalation requer reason code fechado,
+tentativa limitada e nova decisão persistida; nunca faça retry silencioso.
+
+O fake exige `allow_test_doubles=True` estritamente booleano e é recusado com
+`live=True`. O backend OpenAI-compatible local aceita só loopback explícito,
+timeout e resposta limitada, sem proxies ou redirects. A configuração
+versionada mantém inferência e permissões desabilitadas. Targets pagos são
+recusados porque ainda não existe enforcement monetário duro pré-chamada. Uma
+autorização roteada usa provider/model nulos e `routing_policy_hash`; qualquer
+drift invalida a autorização.

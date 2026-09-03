@@ -41,6 +41,12 @@ from article_loop import (  # noqa: E402
 from article_loop.finalization import finalize_decision  # noqa: E402
 from article_loop.budget import BudgetError, BudgetLedger  # noqa: E402
 from article_loop.orchestrator import Orchestrator  # noqa: E402
+from article_loop.inference import (  # noqa: E402
+    InferenceConfigError,
+    InferenceRuntime,
+    ModelRegistry,
+    inference_preflight,
+)
 
 
 COMMANDS = (
@@ -344,6 +350,14 @@ def _validate_m12_budget(config: Mapping[str, Any]) -> dict[str, Any]:
     return {"unit": "tokens", "profiles": {name: profile["enabled"] for name, profile in profiles.items()}, "max_log_bytes": observability["max_log_bytes"]}
 
 
+def _validate_m125_inference(root: Path) -> dict[str, Any]:
+    """Validate routing declarations without starting a backend or model."""
+    try:
+        return inference_preflight(root)
+    except InferenceConfigError as error:
+        raise ProjectCheckError("M12.5 inference configuration is invalid") from error
+
+
 def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, Any]:
     """Validate only local M11 surfaces and fail closed on unsafe drift."""
     project = _safe_root(str(root))
@@ -353,6 +367,7 @@ def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, 
         ".prime/agent/APPEND_SYSTEM.md",
         ".prime/agent/skills/article-loop/SKILL.md",
         "config/budgets.yaml",
+        "config/schemas/inference-receipt.schema.json",
         "config/system.yaml",
         "scripts/article_loop_command.py",
         "bin/check.sh",
@@ -390,6 +405,7 @@ def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, 
     budgets = _load_yaml(project / "config/budgets.yaml")
     execution = _validate_fail_closed_budget(budgets, require_live=require_live)
     m12 = _validate_m12_budget(budgets)
+    m125 = _validate_m125_inference(project)
     system = _load_yaml(project / "config/system.yaml")
     project_config = system.get("project")
     if not isinstance(project_config, Mapping) or project_config.get("rlm_max_depth") != 2:
@@ -403,6 +419,7 @@ def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, 
         "prime_agent_discovered": prime_path is not None,
         "execution": execution,
         "m12": m12,
+        "m125": m125,
         "stop_present": False,
     }
 
@@ -414,7 +431,8 @@ def _run_command(command: str, params: Mapping[str, Any]) -> Any:
     if command == "bootstrap":
         return asyncio.run(bootstrap(params["pdf"], root=root))
     if command == "preflight":
-        return asyncio.run(preflight(root=root))
+        result = asyncio.run(preflight(root=root))
+        return {**dict(result), "inference": _validate_m125_inference(root)}
     if command == "run":
         return asyncio.run(
             run_cycle(
@@ -428,7 +446,13 @@ def _run_command(command: str, params: Mapping[str, Any]) -> Any:
             return asyncio.run(status(root=root))
         result = asyncio.run(Orchestrator(root).status(run_id))
         try:
-            result = {**result, "budget": BudgetLedger.from_project(root, run_id).status(current_cycle=cycle_id)}
+            ledger = BudgetLedger.from_project(root, run_id)
+            registry = ModelRegistry.from_project(root)
+            result = {
+                **result,
+                "budget": ledger.status(current_cycle=cycle_id),
+                "inference": InferenceRuntime(root, ledger, registry, {}).status(),
+            }
         except BudgetError as error:
             raise RuntimeError("budget status is unavailable") from error
         return result

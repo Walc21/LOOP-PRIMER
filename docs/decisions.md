@@ -1072,3 +1072,58 @@ supervisor prolongado será limitado por contagem/deadline e não fará loop
 textual infinito. A ausência do binário Prime Agent e a configuração live
 desabilitada continuam sendo bloqueios para qualquer smoke test real, mas não
 impedem a implementação e os testes locais do M12.
+
+## ADR-032 — M12.5: routing determinístico governado pelo ledger M12
+
+**Data:** 2026-09-03
+
+**Status:** Aceito para implementação local
+
+### Contexto
+
+M6 preserva a topologia e os receipts dos 21 papéis, enquanto M12 controla a
+admissão de recursos por uma autorização vinculada a um único provider/modelo.
+O projeto precisa permitir targets locais e evolução multi-provider sem fazer
+do modelo um novo papel, sem criar outra orquestração e sem confiar em uma API
+Prime não instalada. A auditoria estática desta sessão não encontrou o binário
+nem o pacote Prime anteriormente registrados; observar o modelo no handle não
+prova seleção por filho.
+
+### Decisão
+
+1. M12.5 adicionará `ModelRegistry`, `ModelRouter` e `InferenceRuntime`. O
+   router será determinístico e puro; somente o runtime poderá unir decisão de
+   rota, reserva/admissão M12, uma chamada de backend, receipt operacional e
+   reconciliação. Nenhum desses componentes escreve champion ou challenger.
+2. A política ficará na seção top-level `inference` de
+   `config/budgets.yaml`; seu hash SHA-256 canônico vinculará decisões de rota
+   e autorizações. `RunAuthorization` manterá a forma legacy byte-compatível
+   quando não houver `routing_policy_hash`, e aceitará modo routed apenas com
+   provider/model nulos e target habilitado pertencente à política vinculada.
+3. Route decisions e inference receipts serão write-once, JSON canônico,
+   hash-bound e publicados por staging, `fsync` e `os.replace` em
+   `state/inference/<run_id>/{routes,receipts}/`, sob
+   `state/locks/<run_id>.inference.lock`. Eles contêm somente metadados; prompt,
+   resposta integral, artigo e segredos não são persistidos.
+4. A primeira versão terá fake determinístico exclusivamente para testes e um
+   backend OpenAI-compatible limitado a loopback, sem redirects, descoberta de
+   LAN ou servidor iniciado pelo projeto. A abstração admite evolução remota,
+   mas targets pagos permanecem fail-closed porque M12 não aplica os tetos
+   monetários antes de cada chamada.
+5. `FREEZE` não roteia, reserva, admite nem chama backend. Júri pode exigir
+   `independence_group` diferente do produtor. Escalada usa somente códigos
+   fechados derivados de evidência externa ao modelo e nunca repete
+   automaticamente uma chamada `UNCERTAIN`.
+6. `PrimeRLMAdapter.spawn()` continuará exatamente em
+   `await rlm(prompt, name=name)`. O status distinguirá routing de backend da
+   seleção per-child do Prime e registrará esta última como
+   `unsupported_verified` até uma futura instalação local demonstrar uma
+   superfície segura.
+
+### Consequências e limites
+
+M12.5 não é executor direto improvisado de papéis e não substitui handles,
+mensagens ou receipts M6. Routing não cria estado científico, papel, ação ou
+profundidade. Operação local real continua opt-in e exige configuração e
+autorização de run; smoke tests com modelo ou API paga permanecem fora desta
+decisão e exigem autorização separada.

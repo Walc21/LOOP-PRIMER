@@ -38,8 +38,16 @@ from .budget import (
     LimitedSupervisor, ManualClock, RunAuthorization, load_budget_config,
 )
 from .observability import ObservabilityError, StructuredLogger, redact_payload
+from .inference import (
+    InferenceBackend, InferenceBackendError, InferenceConfigError, InferenceError,
+    InferenceIntegrityError, InferenceOutputError, InferenceReceipt,
+    InferenceRequest, InferenceResult, InferenceRuntime, InferenceStore,
+    InferenceTarget, ModelRegistry, ModelRouter, RouteDecision,
+    inference_preflight, routing_policy_hash,
+)
+from .inference_backends import FakeInferenceBackend, LocalOpenAICompatibleBackend
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 async def bootstrap(pdf_path, root="."): return await Orchestrator(root).bootstrap(pdf_path)
 async def preflight(root="."): return await Orchestrator(root).preflight()
@@ -69,6 +77,13 @@ __all__ = [
     "BudgetLimits", "BudgetStateError", "LimitedSupervisor", "ManualClock",
     "RunAuthorization", "load_budget_config", "ObservabilityError",
     "StructuredLogger", "redact_payload",
+    "InferenceBackend", "InferenceBackendError", "InferenceConfigError",
+    "InferenceError", "InferenceIntegrityError", "InferenceOutputError",
+    "InferenceReceipt", "InferenceRequest", "InferenceResult",
+    "InferenceRuntime", "InferenceStore", "InferenceTarget", "ModelRegistry",
+    "ModelRouter", "RouteDecision", "FakeInferenceBackend",
+    "LocalOpenAICompatibleBackend", "inference_preflight",
+    "routing_policy_hash",
     "check_inversion_consistency", "classify_cycle_progress", "compare",
     "choose_action", "compile_manager_prompt", "compile_prompt", "decide", "diagnose_cycle",
     "evaluate_candidate", "expected_prompt_version", "finalize", "finalize_decision",

@@ -27,6 +27,36 @@ try:
 except ImportError:  # pragma: no cover - project environments already use PyYAML
     yaml = None
 
+
+if yaml is not None:
+    class _UniqueSafeLoader(yaml.SafeLoader):
+        """Safe YAML loader which rejects duplicate mapping keys."""
+
+    def _construct_unique_mapping(loader, node, deep=False):  # noqa: ANN001, ANN202
+        loader.flatten_mapping(node)
+        mapping = {}
+        for key_node, value_node in node.value:
+            key = loader.construct_object(key_node, deep=deep)
+            try:
+                duplicate = key in mapping
+            except TypeError as error:
+                raise yaml.constructor.ConstructorError(
+                    "while constructing a mapping", node.start_mark,
+                    "found an unhashable mapping key", key_node.start_mark,
+                ) from error
+            if duplicate:
+                raise yaml.constructor.ConstructorError(
+                    "while constructing a mapping", node.start_mark,
+                    f"found duplicate key: {key!r}", key_node.start_mark,
+                )
+            mapping[key] = loader.construct_object(value_node, deep=deep)
+        return mapping
+
+    _UniqueSafeLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        _construct_unique_mapping,
+    )
+
 from .observability import StructuredLogger
 
 
@@ -176,6 +206,7 @@ class RunAuthorization:
     token_limit: int
     approved_at: str
     approval_reference: str
+    routing_policy_hash: str | None = None
 
     @classmethod
     def from_mapping(cls, value: Mapping[str, Any]) -> "RunAuthorization":
@@ -193,10 +224,18 @@ class RunAuthorization:
         reference = value.get("approval_reference")
         if not isinstance(reference, str) or not reference.strip() or len(reference) > 256:
             raise BudgetAuthorizationError("authorization.approval_reference is invalid")
-        return cls(run_id, profile, config_hash, provider, model, token_limit, approved_at, reference.strip())
+        routing_policy_hash = value.get("routing_policy_hash")
+        if routing_policy_hash is not None and (
+            not isinstance(routing_policy_hash, str) or _SHA.fullmatch(routing_policy_hash) is None
+        ):
+            raise BudgetAuthorizationError("authorization.routing_policy_hash is invalid")
+        return cls(
+            run_id, profile, config_hash, provider, model, token_limit,
+            approved_at, reference.strip(), routing_policy_hash,
+        )
 
     def public(self) -> dict[str, Any]:
-        return {
+        result = {
             "run_id": self.run_id,
             "profile": self.profile,
             "config_hash": self.config_hash,
@@ -206,6 +245,11 @@ class RunAuthorization:
             "approved_at": self.approved_at,
             "approval_reference": self.approval_reference,
         }
+        # Preserve the historical event bytes and fixtures for legacy
+        # single-target authorizations.
+        if self.routing_policy_hash is not None:
+            result["routing_policy_hash"] = self.routing_policy_hash
+        return result
 
 
 class ManualClock:
@@ -253,7 +297,7 @@ def load_budget_config(root: str | Path) -> Mapping[str, Any]:
     if path.is_symlink() or not path.is_file():
         raise BudgetError("config/budgets.yaml is missing or unsafe")
     try:
-        value = yaml.safe_load(path.read_text(encoding="utf-8"))
+        value = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueSafeLoader)
     except (OSError, UnicodeError, yaml.YAMLError) as error:
         raise BudgetError("config/budgets.yaml cannot be read") from error
     if not isinstance(value, Mapping):
@@ -279,6 +323,8 @@ class BudgetLedger:
         orphan_after_seconds: int = 900,
         clock: Any | None = None,
         logger: StructuredLogger | None = None,
+        inference_policy: Mapping[str, Any] | None = None,
+        routing_policy_hash: str | None = None,
     ):
         raw_root = Path(root)
         if raw_root.is_symlink() or not raw_root.is_dir():
@@ -299,6 +345,17 @@ class BudgetLedger:
         if not isinstance(config_hash, str) or _SHA.fullmatch(config_hash) is None:
             raise BudgetError("config_hash is invalid")
         self.config_hash = config_hash
+        self.inference_policy = dict(inference_policy) if isinstance(inference_policy, Mapping) else None
+        computed_routing_hash = (
+            _hash(_canonical(self.inference_policy)) if self.inference_policy is not None else None
+        )
+        if routing_policy_hash is not None and (
+            not isinstance(routing_policy_hash, str) or _SHA.fullmatch(routing_policy_hash) is None
+        ):
+            raise BudgetError("routing_policy_hash is invalid")
+        if routing_policy_hash is not None and routing_policy_hash != computed_routing_hash:
+            raise BudgetIntegrityError("routing policy hash differs from configured policy")
+        self.routing_policy_hash = routing_policy_hash or computed_routing_hash
         if currency is not None:
             if not isinstance(currency, str) or re.fullmatch(r"[A-Z]{3}", currency) is None:
                 raise BudgetError("currency must be an ISO-like uppercase code")
@@ -383,6 +440,9 @@ class BudgetLedger:
             max_bytes=_integer(observability.get("max_log_bytes", 65536), "max_log_bytes"),
             clock=clock,
         )
+        inference = config.get("inference")
+        if not isinstance(inference, Mapping):
+            raise BudgetError("inference configuration is invalid")
         return cls(
             root,
             run_id,
@@ -395,6 +455,8 @@ class BudgetLedger:
             orphan_after_seconds=_integer(observability.get("orphan_after_seconds", 900), "orphan_after_seconds"),
             clock=clock,
             logger=logger,
+            inference_policy=inference,
+            routing_policy_hash=_hash(_canonical(inference)),
         )
 
     def _ensure_dir(self, path: Path) -> None:
@@ -770,7 +832,46 @@ class BudgetLedger:
             if cycle_id - last_improvement > no_progress_limit:
                 raise BudgetExceeded("max_cycles_without_improvement exceeded")
 
-    def _authorization_valid(self, state: Mapping[str, Any], *, provider: str | None, model: str | None, estimate_tokens: int) -> None:
+    def _routed_target_authorized(
+        self, *, provider: str | None, model: str | None, role_id: str | None,
+    ) -> bool:
+        policy = self.inference_policy
+        if not isinstance(policy, Mapping) or policy.get("enabled") is not True:
+            return False
+        if provider is None or model is None or role_id is None:
+            return False
+        targets = policy.get("targets")
+        routes = policy.get("role_routes")
+        if not isinstance(targets, Mapping) or not isinstance(routes, Mapping):
+            return False
+        route = routes.get(role_id)
+        if not isinstance(route, Mapping) or not isinstance(route.get("targets"), list):
+            return False
+        permitted_ids = set(route["targets"])
+        for target_id, target in targets.items():
+            if target_id not in permitted_ids or not isinstance(target, Mapping):
+                continue
+            if target.get("provider") != provider or target.get("model") != model:
+                continue
+            if target.get("enabled") is not True:
+                continue
+            local = target.get("local") is True
+            paid = target.get("paid") is True
+            if local and policy.get("allow_local") is not True:
+                continue
+            if not local and policy.get("allow_remote") is not True:
+                continue
+            # M12 records monetary values but does not enforce a hard monetary
+            # ceiling before each call. Paid runtime therefore remains closed.
+            if paid:
+                continue
+            return True
+        return False
+
+    def _authorization_valid(
+        self, state: Mapping[str, Any], *, provider: str | None,
+        model: str | None, role_id: str | None, estimate_tokens: int,
+    ) -> None:
         if not self.live_enabled:
             raise BudgetAuthorizationError("live execution is disabled")
         raw = state.get("authorization")
@@ -782,8 +883,18 @@ class BudgetLedger:
             raise
         if auth.run_id != self.run_id or auth.config_hash != self.config_hash or auth.profile != self.profile:
             raise BudgetAuthorizationError("authorization is not bound to this run/config/profile")
-        if auth.provider != provider or auth.model != model or estimate_tokens > auth.token_limit:
-            raise BudgetAuthorizationError("authorization provider/model/teto differs")
+        if estimate_tokens > auth.token_limit:
+            raise BudgetAuthorizationError("authorization token ceiling differs")
+        if auth.routing_policy_hash is None:
+            if auth.provider != provider or auth.model != model:
+                raise BudgetAuthorizationError("authorization provider/model/teto differs")
+        else:
+            if auth.provider is not None or auth.model is not None:
+                raise BudgetAuthorizationError("routed authorization cannot pin provider/model")
+            if auth.routing_policy_hash != self.routing_policy_hash:
+                raise BudgetAuthorizationError("authorization routing policy hash differs")
+            if not self._routed_target_authorized(provider=provider, model=model, role_id=role_id):
+                raise BudgetAuthorizationError("provider/model is not an authorized routed target")
         now = _parse_datetime(self.clock.now_utc())
         approved = _parse_datetime(auth.approved_at)
         if approved > now:
@@ -799,6 +910,11 @@ class BudgetLedger:
             raise BudgetAuthorizationError("authorization token limit is invalid")
         if self.limits.total_tokens is not None and auth.token_limit > self.limits.total_tokens:
             raise BudgetAuthorizationError("authorization token limit exceeds configured ceiling")
+        if auth.routing_policy_hash is not None:
+            if auth.provider is not None or auth.model is not None:
+                raise BudgetAuthorizationError("routed authorization requires null provider/model")
+            if auth.routing_policy_hash != self.routing_policy_hash:
+                raise BudgetAuthorizationError("authorization routing policy hash differs")
         with self._lock():
             state = self._state_locked()
             previous = state.get("authorization")
@@ -864,7 +980,10 @@ class BudgetLedger:
                 deadline_at=deadline_at,
             )
             if live:
-                self._authorization_valid(state, provider=provider, model=model, estimate_tokens=estimate_tokens)
+                self._authorization_valid(
+                    state, provider=provider, model=model, role_id=role_id,
+                    estimate_tokens=estimate_tokens,
+                )
             payload = {
                 "reservation_id": reservation_id, "call_id": call_id,
                 "estimate_tokens": estimate_tokens, "cycle_id": cycle_id,

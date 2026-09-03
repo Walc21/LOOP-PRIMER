@@ -46,6 +46,8 @@ MODULE_PURPOSES = {
     "refocus.py": "planos/overlays reversíveis sob CAS para plateau/oscilação",
     "policy.py": "política M10 fechada, Decision content-addressed, Pareto e checkpoints técnicos",
     "finalization.py": "finalizador M10 com lock, journal, fsync, CAS e receipt imutável",
+    "inference.py": "registry/router M12.5, runtime transacional e rotas/receipts write-once",
+    "inference_backends.py": "backends fake explícito e OpenAI-compatible restrito a loopback",
     "__init__.py": "fachada pública assíncrona e exportações do pacote article_loop",
 }
 
@@ -161,6 +163,13 @@ def _tests(root: Path) -> list[dict[str, Any]]:
     return result
 
 
+def _handoff_order(path: Path) -> tuple[int, int, str]:
+    match = re.match(r"^(\d+)(?:_(\d+))?_para_", path.name)
+    if not match:
+        return (-1, -1, path.name)
+    return (int(match.group(1)), int(match.group(2) or 0), path.name)
+
+
 def _history_digest(root: Path, history_text: str) -> list[str]:
     lines = [f"- Fonte lida: `docs/AI_HISTORY.md` ({len(history_text.encode('utf-8'))} bytes; SHA-256 `{sha256_bytes(history_text.encode('utf-8'))[:16]}`)."]
     if not history_text:
@@ -174,14 +183,18 @@ def _history_digest(root: Path, history_text: str) -> list[str]:
     entries = load_entries(root / LEDGER_RELATIVE)
     lines.extend(["", f"- Sessões estruturadas registradas: {len(entries)}."])
     if entries:
-        lines.append("- Índice completo: " + "; ".join(f"{entry.get('recorded_at')} — {entry.get('summary')}" for entry in entries) + ".")
-        lines.extend(["", "Detalhe das três sessões mais recentes:"])
-        for entry in entries[-3:]:
+        recent = entries[-8:]
+        lines.append("- Índice recente: " + "; ".join(
+            f"{entry.get('recorded_at')} — {markdown_cell(entry.get('summary'), 120)}"
+            for entry in recent
+        ) + ". O ledger preserva o índice completo.")
+        lines.extend(["", "Detalhe das duas sessões mais recentes:"])
+        for entry in entries[-2:]:
             lines.append(f"- `{entry.get('session_id')}` — {entry.get('summary')}")
             for key, label in (("changes", "mudanças"), ("decisions", "decisões"), ("validations", "validações"), ("risks", "riscos"), ("next_steps", "próximos")):
                 values = entry.get(key, [])
                 if values:
-                    lines.append(f"  - {label}: " + "; ".join(values))
+                    lines.append(f"  - {label}: " + markdown_cell("; ".join(values), 500))
     return lines
 
 
@@ -254,7 +267,7 @@ def render_context(root: Path, *, diff_limit: int = 8_000) -> str:
     current = next((item for item in reversed(milestones) if "conclu" in item["status"].lower()), None)
     next_pending = next((item for item in milestones if "pendente" in item["status"].lower() or "não iniciado" in item["status"].lower()), None)
     source_dir = root / ".prime/agent/skills/article-loop/src/article_loop"
-    handoffs = sorted((root / ".prime/handoffs").glob("*.md")) if (root / ".prime/handoffs").is_dir() else []
+    handoffs = sorted((root / ".prime/handoffs").glob("*.md"), key=_handoff_order) if (root / ".prime/handoffs").is_dir() else []
     latest_handoff = handoffs[-1] if handoffs else None
 
     lines = [
@@ -320,14 +333,14 @@ def render_context(root: Path, *, diff_limit: int = 8_000) -> str:
 
     lines.extend(["", "## Topologia dos 21 papéis", "", "| ID | Tipo | Pai | Departamento | Responsabilidade |", "|---|---|---|---|---|"])
     for role in _roles(root):
-        lines.append(f"| {role.get('id')} | {role.get('kind')} | {role.get('parent_id') or '-'} | {markdown_cell(role.get('department'), 80)} | {markdown_cell(role.get('responsibility'), 180)} |")
+        lines.append(f"| {role.get('id')} | {role.get('kind')} | {role.get('parent_id') or '-'} | {markdown_cell(role.get('department'), 80)} | {markdown_cell(role.get('responsibility'), 140)} |")
 
     lines.extend(["", "## Componentes Python e APIs observáveis", ""])
     if source_dir.is_dir():
         for path in sorted(source_dir.glob("*.py")):
             purpose = MODULE_PURPOSES.get(path.name, "módulo ainda não classificado; examine antes de usar")
             api = _python_api(path)
-            lines.append(f"- `{path.relative_to(root).as_posix()}` — {purpose}. API/símbolos: {markdown_cell('; '.join(api), 900)}")
+            lines.append(f"- `{path.relative_to(root).as_posix()}` — {purpose}. API/símbolos: {markdown_cell('; '.join(api), 600)}")
 
     lines.extend(["", "### Entradas CLI", ""])
     for relative in sorted(path for path in inventory if path.startswith(("bin/", "scripts/")) and Path(path).suffix in {".py", ".sh"}):
@@ -335,12 +348,12 @@ def render_context(root: Path, *, diff_limit: int = 8_000) -> str:
 
     lines.extend(["", "## Contratos JSON Schema", "", "| Schema | Título | Obrigatórios | Propriedades |", "|---|---|---:|---|"])
     for schema in _schemas(root):
-        lines.append(f"| `{schema['name']}` | {markdown_cell(schema['title'], 100)} | {len(schema['required'])} | {markdown_cell(', '.join(schema['properties']), 240)} |")
+        lines.append(f"| `{schema['name']}` | {markdown_cell(schema['title'], 100)} | {len(schema['required'])} | {markdown_cell(', '.join(schema['properties']), 180)} |")
 
     tests = _tests(root)
     lines.extend(["", "## Cobertura estrutural de testes", "", f"Total detectado por AST: **{sum(item['count'] for item in tests)} testes**.", "", "| Arquivo | Testes | Amostra de fronteiras cobertas |", "|---|---:|---|"])
     for item in tests:
-        lines.append(f"| `{item['name']}` | {item['count']} | {markdown_cell('; '.join(item['topics']), 240)} |")
+        lines.append(f"| `{item['name']}` | {item['count']} | {markdown_cell('; '.join(item['topics']), 180)} |")
 
     agents_digest = sha256_bytes(agents.encode("utf-8"))[:16]
     lines.extend([
@@ -355,7 +368,8 @@ def render_context(root: Path, *, diff_limit: int = 8_000) -> str:
 
     if latest_handoff:
         handoff_text = latest_handoff.read_text("utf-8")
-        lines.extend(["## Handoff técnico mais recente", "", f"Fonte: `{latest_handoff.relative_to(root).as_posix()}`.", "", "<latest_handoff>", handoff_text.rstrip(), "</latest_handoff>", ""])
+        handoff_excerpt = _bounded_excerpt(handoff_text, limit=3_000, label="handoff")
+        lines.extend(["## Handoff técnico mais recente", "", f"Fonte: `{latest_handoff.relative_to(root).as_posix()}`.", "", "<latest_handoff>", handoff_excerpt, "</latest_handoff>", ""])
 
     kind_counts: dict[str, int] = {}
     for item in inventory.values():
@@ -377,7 +391,7 @@ def render_context(root: Path, *, diff_limit: int = 8_000) -> str:
         "- Mudança de política/escopo: `AGENTS.md`, `docs/decisions.md`, `PLANS.md`.",
         "- Contrato de dados: schema correspondente + `control/test_contracts.py`.",
         "- Estado/recuperação: `state_machine.py`, `store.py`, testes M2.",
-        "- Pipeline por marco: módulo Python correspondente + teste `control/test_mN_*.py` + handoff `N_para_N+1.md`.",
+        "- Pipeline por marco: módulo Python correspondente + teste `control/test_mN_*.py` + handoff `N_para_N+1.md`; M12.5 usa `inference.py`, `inference_backends.py` e `test_m125_inference_routing.py`.",
         "- Prime Agent real: primeiro `docs/compatibility.md`; execução/custo continuam proibidos sem autorização específica.",
         "- Ao terminar toda a sessão: execute `scripts/ai_history.py` com resumo, mudanças, decisões, validações, riscos e próximos passos; depois execute novamente este gerador.",
     ])

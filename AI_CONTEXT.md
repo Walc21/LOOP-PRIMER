@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `7580bfaf8dc057fa94fbb59c0b688b1f799b4c873a6647eacd838bb83ec692d2`
-- Baseline da última sessão: `7580bfaf8dc057fa94fbb59c0b688b1f799b4c873a6647eacd838bb83ec692d2`
+- Fingerprint atual das fontes: `42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba`
+- Baseline da última sessão: `42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 186 arquivos relevantes, 1330059 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 191 arquivos relevantes, 1452130 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -51,134 +51,166 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 ```diff
 # Alterações não commitadas
 diff --git a/.prime/agent/skills/article-loop/SKILL.md b/.prime/agent/skills/article-loop/SKILL.md
-index dc2926d..0ff55c7 100644
+index 0ff55c7..a791125 100644
 --- a/.prime/agent/skills/article-loop/SKILL.md
 +++ b/.prime/agent/skills/article-loop/SKILL.md
-@@ -164 +164,29 @@ S30/S40 técnicos precisam de review S20 canônico do mesmo ciclo/base/proposta.
- M6 permanece offline e não inicia M7.
+@@ -192 +192,25 @@ crash, reabrir o ledger, verificar a cadeia e reconciliar receipts/handles;
+ nunca devolver saldo por suposição nem usar loop textual infinito.
 +
-+## Operação limitada M12
++## Routing de inferência M12.5
 +
-+`BudgetLedger` e `StructuredLogger` são as superfícies locais de orçamento e
-+observabilidade. O ledger é por `run_id`, append-only, content-addressed e
-+protegido por lock; `reserve()` deve preceder qualquer operação consumidora,
-+`admit()` registra a fronteira atômica, `reconcile()` registra tokens
-+input/output/cache e `mark_uncertain()` conserva saldo quando o resultado não
-+é conhecido. `release_unadmitted()` exige prova explícita de não admissão.
++`ModelRegistry` carrega e valida a seção `inference` de
++`config/budgets.yaml`; `ModelRouter` é puro e escolhe targets por papel,
++capacidade, limite, fallback e independência. `InferenceRuntime` aceita somente
++um `AgentTask` já validado e executa a sequência fechada `route -> reserve ->
++admit -> backend -> receipt -> reconcile`. Ele não substitui o orchestrator M6,
++não cria filhos e não altera `PrimeRLMAdapter.spawn(prompt, name)`.
 +
-+Limites usam tokens inteiros não negativos e podem ser hierárquicos por ciclo,
-+departamento, papel e modelo, além de chamadas, filhos concorrentes, retries,
-+wall time, ciclos e julgamentos extras. Excesso reconciliado bloqueia novas
-+reservas. `status()` e `human_status()` expõem uso confirmado/reservado,
-+comprometido e saldo por limite, reservas, última melhoria, diagnóstico,
-+próxima ação, alertas e `assurance`.
++Decisões ficam em `state/inference/<run>/routes/` e receipts operacionais em
++`state/inference/<run>/receipts/`, ambos write-once, hash-bound e sem prompt ou
++resposta integral. Repetir a mesma chamada depois de crash reconcilia o receipt
++existente sem reinferência; ausência de receipt após admissão fica `UNCERTAIN`.
++`FREEZE` não reserva nem chama backend. Escalation requer reason code fechado,
++tentativa limitada e nova decisão persistida; nunca faça retry silencioso.
 +
-+Os perfis `calibration` e `overnight` são tetos opt-in, mas permanecem
-+desabilitados em `config/budgets.yaml`; M12 não liga modelo, Prime Agent, rede,
-+APIs pagas ou execução prolongada. `live=True` exige autorização explícita no
-+mesmo run, hash de configuração/perfil, provider/modelo, teto e timestamp.
-+`STOP` bloqueia novas reservas e `PAUSE` preserva o ledger e reservas abertas.
-+
-+Logs estruturados aceitam apenas campos de allowlist, rotacionam sem apagar
-+evidência e sincronizam writes com fsync. Não registrar credenciais, cookies,
-+auth, prompts completos, artigo integral ou mensagens privadas. Depois de
-+crash, reabrir o ledger, verificar a cadeia e reconciliar receipts/handles;
-+nunca devolver saldo por suposição nem usar loop textual infinito.
++O fake exige `allow_test_doubles=True` estritamente booleano e é recusado com
++`live=True`. O backend OpenAI-compatible local aceita só loopback explícito,
++timeout e resposta limitada, sem proxies ou redirects. A configuração
++versionada mantém inferência e permissões desabilitadas. Targets pagos são
++recusados porque ainda não existe enforcement monetário duro pré-chamada. Uma
++autorização roteada usa provider/model nulos e `routing_policy_hash`; qualquer
++drift invalida a autorização.
 diff --git a/.prime/agent/skills/article-loop/src/article_loop/__init__.py b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-index a0d21c7..77a5e55 100644
+index 77a5e55..6be5a37 100644
 --- a/.prime/agent/skills/article-loop/src/article_loop/__init__.py
 +++ b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-@@ -34,2 +34,8 @@ from .policy import PolicyError, choose_action, decide, load_policy, load_publis
- from .finalization import FinalizationError, TransactionalFinalizer, finalize_decision
-+from .budget import (
-+    BudgetAuthorizationError, BudgetError, BudgetExceeded, BudgetIdempotencyError,
-+    BudgetIntegrityError, BudgetLedger, BudgetLimits, BudgetStateError,
-+    LimitedSupervisor, ManualClock, RunAuthorization, load_budget_config,
+@@ -40,4 +40,12 @@ from .budget import (
+ from .observability import ObservabilityError, StructuredLogger, redact_payload
++from .inference import (
++    InferenceBackend, InferenceBackendError, InferenceConfigError, InferenceError,
++    InferenceIntegrityError, InferenceOutputError, InferenceReceipt,
++    InferenceRequest, InferenceResult, InferenceRuntime, InferenceStore,
++    InferenceTarget, ModelRegistry, ModelRouter, RouteDecision,
++    inference_preflight, routing_policy_hash,
 +)
-+from .observability import ObservabilityError, StructuredLogger, redact_payload
++from .inference_backends import FakeInferenceBackend, LocalOpenAICompatibleBackend
 
-@@ -60,2 +66,7 @@ __all__ = [
-     "SynthesisError", "TransitionError", "bootstrap", "checkpoint",
-+    "BudgetAuthorizationError", "BudgetError", "BudgetExceeded",
-+    "BudgetIdempotencyError", "BudgetIntegrityError", "BudgetLedger",
-+    "BudgetLimits", "BudgetStateError", "LimitedSupervisor", "ManualClock",
-+    "RunAuthorization", "load_budget_config", "ObservabilityError",
-+    "StructuredLogger", "redact_payload",
+-__version__ = "0.6.0"
++__version__ = "0.7.0"
+
+@@ -71,2 +79,9 @@ __all__ = [
+     "StructuredLogger", "redact_payload",
++    "InferenceBackend", "InferenceBackendError", "InferenceConfigError",
++    "InferenceError", "InferenceIntegrityError", "InferenceOutputError",
++    "InferenceReceipt", "InferenceRequest", "InferenceResult",
++    "InferenceRuntime", "InferenceStore", "InferenceTarget", "ModelRegistry",
++    "ModelRouter", "RouteDecision", "FakeInferenceBackend",
++    "LocalOpenAICompatibleBackend", "inference_preflight",
++    "routing_policy_hash",
      "check_inversion_consistency", "classify_cycle_progress", "compare",
-diff --git a/PLANS.md b/PLANS.md
-index 02fc449..ea1d10b 100644
---- a/PLANS.md
-+++ b/PLANS.md
-@@ -100,3 +100,3 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
- | M11 | comandos e configuração do Prime Agent | concluído localmente | ponte CLI, templates planos, guardrails aditivos, runbook e launcher fail-closed; `settings.json` omitido sem schema instalado confirmado |
--| M12 | orçamento, observabilidade e execução prolongada | pendente | limites, custos e recuperação são observáveis sem alterar globais |
-+| M12 | orçamento, observabilidade e execução prolongada | concluído localmente | ledger hash-bound, reservas atômicas, reconciliação conservadora, perfis opt-in, status/logs/alertas e retomada fail-closed; sem modelo, rede ou execução real |
- | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
-@@ -181,2 +181,19 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
+diff --git a/.prime/agent/skills/article-loop/src/article_loop/budget.py b/.prime/agent/skills/article-loop/src/article_loop/budget.py
+index bd623d0..ce0dddf 100644
+--- a/.prime/agent/skills/article-loop/src/article_loop/budget.py
++++ b/.prime/agent/skills/article-loop/src/article_loop/budget.py
+@@ -29,2 +29,32 @@ except ImportError:  # pragma: no cover - project environments already use PyYAM
 
-+- 2026-09-03 — M12 iniciado sobre a base M11 validada. O escopo é somente
-+  orçamento durável, observabilidade e operação prolongada limitada, com
-+  `BudgetLedger` append-only/content-addressed, reservas atômicas,
-+  reconciliação conservadora, perfis opt-in e status/logs/alertas redigidos.
-+  Os defaults de modelo, API paga, rede e execução live permanecem
-+  desabilitados; não haverá M13, Prime Agent ou modelo nesta sessão.
 +
-+- 2026-09-03 — M12 concluído localmente. `BudgetLedger` e
-+  `StructuredLogger` passaram a cobrir reserva sob lock, reconciliação
-+  idempotente, `UNCERTAIN`, limites hierárquicos, binding de configuração,
-+  deadlines/duração retomáveis, status por limite, alertas idempotentes e
-+  redaction/rotação com fsync. Foram adicionados os schemas M12, testes
-+  adversariais e o handoff `12_para_13.md`. A suíte dedicada M12/M11/contratos
-+  aprovou 87 testes; a regressão integral aprovou 366 testes em 246.975s, com
-+  apenas o warning esperado do fixture negativo de ZIP. A configuração live e
-+  os perfis continuam desabilitados; não houve commit, publicação ou M13.
++if yaml is not None:
++    class _UniqueSafeLoader(yaml.SafeLoader):
++        """Safe YAML loader which rejects duplicate mapping keys."""
 +
- - 2026-09-03 — M10.1 concluído localmente. Foram adicionados os schemas de
-diff --git a/README.md b/README.md
-index 2cecfa7..2bd3a0b 100644
---- a/README.md
-+++ b/README.md
-@@ -18,3 +18,3 @@
++    def _construct_unique_mapping(loader, node, deep=False):  # noqa: ANN001, ANN202
++        loader.flatten_mapping(node)
++        mapping = {}
++        for key_node, value_node in node.value:
++            key = loader.construct_object(key_node, deep=deep)
++            try:
++                duplicate = key in mapping
++            except TypeError as error:
++                raise yaml.constructor.ConstructorError(
++                    "while constructing a mapping", node.start_mark,
++                    "found an unhashable mapping key", key_node.start_mark,
++                ) from error
++            if duplicate:
++                raise yaml.constructor.ConstructorError(
++                    "while constructing a mapping", node.start_mark,
++                    f"found duplicate key: {key!r}", key_node.start_mark,
++                )
++            mapping[key] = loader.construct_object(value_node, deep=deep)
++        return mapping
++
++    _UniqueSafeLoader.add_constructor(
++        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
++        _construct_unique_mapping,
++    )
++
+ from .observability import StructuredLogger
+@@ -178,2 +208,3 @@ class RunAuthorization:
+     approval_reference: str
++    routing_policy_hash: str | None = None
 
--> **Implementation status:** M0–M11 are implemented and locally validated. M10
-+> **Implementation status:** M0–M12 are implemented and locally validated. M10
- > publishes a canonical, content-addressed `Decision`, revalidates it under a
-@@ -22,4 +22,6 @@
- > additionally requires immutable W22/W51/W53 attestations bound by SHA-256 to
--> the candidate manifest, rendered PDF, and final report. M12–M13 remain
--> pending. M10 CLIs are operational; M11 adds local commands and templates.
-+> the candidate manifest, rendered PDF, and final report. M12 adds a durable,
-+> hash-bound budget ledger, conservative reconciliation, operational status and
-+> redacted structured logs; M13 remains pending. M10 CLIs are operational; M11
-+> adds local commands and templates.
- > They do not run an article, a model, or a paid API by themselves; the Prime
-@@ -205,3 +207,3 @@ pip install -r requirements-dev.txt
+@@ -195,6 +226,14 @@ class RunAuthorization:
+             raise BudgetAuthorizationError("authorization.approval_reference is invalid")
+-        return cls(run_id, profile, config_hash, provider, model, token_limit, approved_at, reference.strip())
++        routing_policy_hash = value.get("routing_policy_hash")
++        if routing_policy_hash is not None and (
++            not isinstance(routing_policy_hash, str) or _SHA.fullmatch(routing_policy_hash) is None
++        ):
++            raise BudgetAuthorizationError("authorization.routing_policy_hash is invalid")
++        return cls(
++            run_id, profile, config_hash, provider, model, token_limit,
++            approved_at, reference.strip(), routing_policy_hash,
++        )
 
--# Run the complete M0-M11 regression suite
-+# Run the complete M0-M12 regression suite
- .venv/bin/python -m unittest discover -s control -p 'test_*.py' -q
-@@ -224,3 +226,3 @@ LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
- - **`bin/preflight.sh`**: Ingestion, validation, and `SOURCE_READY` gate verifier.
--- **`bin/check.sh`**: Fast local M11 surface and fail-closed configuration check.
-+- **`bin/check.sh`**: Fast local M11/M12 surface and fail-closed configuration check.
- - **`bin/start-prime.sh`**: Dry-run-by-default launcher; live mode requires
-@@ -261,4 +263,4 @@ LOOP-PRIMER/
- │   ├── rubrics/                  # Evaluation rubrics for blind jury
--│   └── schemas/                  # 20 JSON Schema definitions for strict validation
--├── control/                      # Contract and milestone test suites (M1 through M11)
-+│   └── schemas/                  # JSON Schema definitions for strict validation
-+├── control/                      # Contract and milestone test suites (M1 through M12)
- ├── docs/                         # Architecture, ADRs, compatibility, and AI history
-@@ -266,3 +268,3 @@ LOOP-PRIMER/
- │   ├── decisions.md              # Architectural Decision Records (ADRs)
--│   ├── runbook.md                # Local M11 operation and recovery guide
-+│   ├── runbook.md                # Local M11/M12 operation and recovery guide
+     def public(self) -> dict[str, Any]:
+-        return {
++        result = {
+             "run_id": self.run_id,
+@@ -208,2 +247,7 @@ class RunAuthorization:
+         }
++        # Preserve the historical event bytes and fixtures for legacy
++        # single-target authorizations.
++        if self.routing_policy_hash is not None:
++            result["routing_policy_hash"] = self.routing_policy_hash
++        return result
+
+@@ -255,3 +299,3 @@ def load_budget_config(root: str | Path) -> Mapping[str, Any]:
+     try:
+-        value = yaml.safe_load(path.read_text(encoding="utf-8"))
++        value = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueSafeLoader)
+     except (OSError, UnicodeError, yaml.YAMLError) as error:
+@@ -281,2 +325,4 @@ class BudgetLedger:
+         logger: StructuredLogger | None = None,
++        inference_policy: Mapping[str, Any] | None = None,
++        routing_policy_hash: str | None = None,
+     ):
+@@ -301,2 +347,13 @@ class BudgetLedger:
+         self.config_hash = config_hash
++        self.inference_policy = dict(inference_policy) if isinstance(inference_policy, Mapping) else None
++        computed_routing_hash = (
++            _hash(_canonical(self.inference_policy)) if self.inference_policy is not None else None
++        )
++        if routing_policy_hash is not None and (
++            not isinstance(routing_policy_hash, str) or _SHA.fullmatch(routing_policy_hash) is None
++        ):
++            raise BudgetError("routing_policy_hash is invalid")
++        if routing_policy_hash is not None and routing_policy_hash != computed_routing_hash:
++            raise BudgetIntegrityError("routing policy hash differs from configured policy")
++        self.routing_policy_hash = routing_policy_hash or computed_routing_hash
+         if currency is not None:
+@@ -385,2 +442,5 @@ class BudgetLedger:
+         )
++        inference = config.get("inference")
++        if not isinstance(inference, Mapping):
++            raise BudgetError("inference configuration is invalid")
+         return cls(
+@@ -397,2 +457,4 @@ class BudgetLedger:
 ... [diff truncado em 8000 caracteres; consulte somente o arquivo necessário]
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (71790 bytes; SHA-256 `0cd34642e8fdc39f`).
+- Fonte lida: `docs/AI_HISTORY.md` (78561 bytes; SHA-256 `3a8aff95ad30c7fc`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -200,29 +232,24 @@ index 2cecfa7..2bd3a0b 100644
 | M10 | 2026-09-02..2026-09-03 | 2 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
+| M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 
-- Sessões estruturadas registradas: 18.
-- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.; 2026-09-01T12:18:53Z — Preparada a publicação da reconciliação no GitHub e preservados os históricos local e remoto; o push não foi aplicado porque a máquina não possui credencial HTTPS, GitHub CLI ou chave SSH autorizada.; 2026-09-02T17:07:54Z — Reparada a integração local com Git/GitHub e separadas as superfícies Markdown humanas das entradas para IAs, preservando integralmente a árvore funcional e sem iniciar M10, modelos ou o pipeline científico.; 2026-09-02T17:16:51Z — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.; 2026-09-02T17:23:25Z — Autenticação do GitHub validada e publicação preparada por reconciliação segura sobre o remoto atualizado, deixando main em condição fast-forward sem force-push.; 2026-09-02T17:30:21Z — Falhas da CI publicada foram diagnosticadas e corrigidas para restaurar a matriz GitHub Actions em Python 3.11, 3.12 e 3.13.; 2026-09-03T01:37:13Z — Implementado M10 localmente: política de decisão determinística, Decision content-addressed e finalizador transacional sem alterar bytes do challenger avaliado.; 2026-09-03T02:00:55Z — Revisão e integração pré-publicação do M10 concluídas: política/finalizador reforçados, superfícies públicas sincronizadas e regressão integral aprovada.; 2026-09-03T04:11:47Z — Concluído o endurecimento M10.1 local: pacote final hash-bound, rederivação da Decision, recuperação pós-recibo e cobertura transacional ampliada, sem iniciar M11.; 2026-09-03T04:19:31Z — Publicado M10.1 no GitHub após commit e fast-forward normais em origin/main; nenhum código adicional foi alterado nesta sessão.; 2026-09-03T05:00:04Z — Implementação local do M11 concluída: a camada operacional agora expõe as APIs existentes por uma ponte JSON-in/JSON-out, nove templates planos, check local e launcher Prime fail-closed; documentação, runbook, compatibilidade e handoff foram sincronizados sem iniciar M12.; 2026-09-03T05:04:53Z — Commit e publicação da implementação local da M11 concluídos no repositório LOOP-PRIMER; a integração de comandos, templates, runbook, testes e guardrails foi enviada para origin/main sem iniciar execução científica, Prime Agent ou modelos.; 2026-09-03T05:18:47Z — Avaliada a prontidão para iniciar M12 após a publicação da M11; nenhum código, configuração, execução live, modelo, Prime Agent ou rede foi iniciado nesta sessão. O M12 permanece pendente e seu escopo foi separado das instruções de execução real.; 2026-09-03T06:08:39Z — M12 implementado localmente sobre a base M11: ledger de orçamento durável, observabilidade estruturada redigida, perfis opt-in e status operacional; execução real permanece desabilitada e M13 não foi iniciado..
+- Sessões estruturadas registradas: 20.
+- Índice recente: 2026-09-03T04:11:47Z — Concluído o endurecimento M10.1 local: pacote final hash-bound, rederivação da Decision, recuperação pós-recibo e cober…; 2026-09-03T04:19:31Z — Publicado M10.1 no GitHub após commit e fast-forward normais em origin/main; nenhum código adicional foi alterado nesta…; 2026-09-03T05:00:04Z — Implementação local do M11 concluída: a camada operacional agora expõe as APIs existentes por uma ponte JSON-in/JSON-ou…; 2026-09-03T05:04:53Z — Commit e publicação da implementação local da M11 concluídos no repositório LOOP-PRIMER; a integração de comandos, temp…; 2026-09-03T05:18:47Z — Avaliada a prontidão para iniciar M12 após a publicação da M11; nenhum código, configuração, execução live, modelo, Pri…; 2026-09-03T06:08:39Z — M12 implementado localmente sobre a base M11: ledger de orçamento durável, observabilidade estruturada redigida, perfis…; 2026-09-03T19:09:00Z — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branc…; 2026-09-03T20:22:56Z — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem i…. O ledger preserva o índice completo.
 
-Detalhe das três sessões mais recentes:
-- `session-m11-publish-20260903` — Commit e publicação da implementação local da M11 concluídos no repositório LOOP-PRIMER; a integração de comandos, templates, runbook, testes e guardrails foi enviada para origin/main sem iniciar execução científica, Prime Agent ou modelos.
-  - mudanças: Criado o commit 87c26ae (feat(m11): add local Prime Agent command integration) com os 26 arquivos preparados da M11.; Publicado main para https://github.com/Walc21/LOOP-PRIMER.git via git push origin main, sem force push.
-  - decisões: Manter o histórico de encerramento e o snapshot AI versionados junto do trabalho, conforme AGENTS.md, e registrar a publicação em uma sessão própria.
-  - validações: git fetch --prune origin concluído; git rev-list --left-right --count HEAD...origin/main retornou 0 0 após o push; HEAD e origin/main apontam para 87c26ae.; As validações locais da M11 permanecem registradas na sessão anterior: regressão completa 346 testes OK, testes dedicados 15/15 OK, py_compile, bash -n, git diff --check e smoke checks locais.
-  - riscos: A execução live permanece bloqueada por padrão e não foi iniciada; Prime Agent, modelos, APIs pagas e rede de execução científica não foram usados.
-  - próximos: M12 permanece como próximo marco, sem ação adicional nesta sessão.
-- `session-m12-readiness-20260903` — Avaliada a prontidão para iniciar M12 após a publicação da M11; nenhum código, configuração, execução live, modelo, Prime Agent ou rede foi iniciado nesta sessão. O M12 permanece pendente e seu escopo foi separado das instruções de execução real.
-  - mudanças: Nenhum arquivo de produto ou contrato M0--M11 foi alterado; somente o registro obrigatório desta sessão diagnóstica foi acrescentado.
-  - decisões: Para iniciar M12, preservar defaults fail-closed e executar apenas implementação offline de orçamento durável, observabilidade e operação prolongada limitada; perfis e execução live continuam opt-in por run.
-  - validações: Estado observado: main limpa e alinhada com origin/main antes do diagnóstico; M11 publicado em af08c79, com implementação em 87c26ae; a evidência da regressão M11 de 346 testes permanece no handoff 11_para_12.md.
-  - riscos: O binário Prime Agent não está disponível nesta sessão e a operação live real continua bloqueada; nenhum custo, modelo, credencial ou rede deve ser introduzido para começar o código M12.
-  - próximos: Sob autorização explícita para implementar somente M12, repetir o precheck com suíte completa, inventariar fronteiras consumidoras e definir os contratos do BudgetLedger/observabilidade antes de editar.
-- `session-8285cd8003cfdf5a27bb` — M12 implementado localmente sobre a base M11: ledger de orçamento durável, observabilidade estruturada redigida, perfis opt-in e status operacional; execução real permanece desabilitada e M13 não foi iniciado.
-  - mudanças: Adicionados BudgetLedger e StructuredLogger com eventos append-only/content-addressed, lock, reservas atômicas, reconciliação idempotente, UNCERTAIN, deadlines retomáveis, binding monotônico de configuração e status humano/JSON por limite.; Adicionados schemas M12, configuração fail-closed, integração de status na ponte local e handoff .prime/handoffs/12_para_13.md; documentação e testes atualizados.
-  - decisões: Preservar model_execution, APIs pagas, rede, perfis e dry-run desabilitados; live exige autorização explícita vinculada a run, perfil, hash, provider/modelo, teto e timestamp.; Não alterar orchestrator, state machine, critérios científicos, gates ou conteúdo; não fazer commit/publicação nesta sessão.
-  - validações: python3 -m unittest control.test_m12_budget_observability control.test_m11_commands control.test_contracts -q: 87 testes aprovados.; python3 -m unittest discover -s control -q: 366 testes aprovados em 246.975s; somente warning esperado Duplicate name: a.tex no fixture negativo de ZIP.; python3 -m py_compile nos módulos M12 e scripts/article_loop_command.py: OK; bash bin/check.sh: OK, prime_agent_discovered=false, model_execution_enabled=false, perfis desabilitados.
-  - riscos: Prime Agent não está disponível nesta máquina; nenhum smoke test live, modelo, rede ou operação prolongada real foi executado. Commit e publicação GitHub permanecem pendentes de autorização explícita.
-  - próximos: Antes de M13, validar a árvore/histórico M12 e decidir explicitamente se deve haver commit; qualquer operação live exige nova configuração versionada e autorização específica por run.
+Detalhe das duas sessões mais recentes:
+- `session-m12-evaluation-20260903` — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branch main alinhada ao origin/main, M13 ainda pendente e execução live corretamente bloqueada.
+  - mudanças: Nenhum arquivo de produto, contrato, configuração, código ou marco foi alterado; somente o registro obrigatório desta sessão diagnóstica e o contexto gerado foram atualizados.
+  - decisões: Considerar o M12 tecnicamente saudável para avançar ao planejamento do M13, preservando os defaults fail-closed e sem autorizar Prime Agent, modelos, rede ou APIs pagas.
+  - validações: bash bin/check.sh: status success; live_ready=false; model_execution_enabled=false; paid_apis_enabled=false; perfis calibration e overnight desabilitados; prime_agent_discovered=false.; python3 -m unittest discover -s control -q: 366 testes aprovados em 231.770s; único warning conhecido Duplicate name: a.tex no fixture adversarial de ZIP.; git rev-list --left-right --count HEAD...origin/main retornou 0 0; HEAD e origin/main apontam para e5eb78f feat(m12): add durable budget observability.
+  - riscos: O handoff 12_para_13.md ainda descreve corretamente a sessão de implementação pré-commit, mas sua frase de que não houve commit/publicação está desatualizada em relação ao estado atual e pode confundir o próximo operador.; M13 possui objetivo geral, mas ainda carece de um plano detalhado e critérios sistêmicos específicos antes da implementação.
+  - próximos: Se autorizado, planejar M13 em PLANS.md e docs/decisions.md, corrigir a superfície de handoff/publicação e então implementar testes sistêmicos e empacotamento sem executar o artigo real.
+- `session-2dffb2bba91ea37f3f05` — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem iniciar M13; aceitação integral permanece aberta somente pelo smoke HTTP loopback bloqueado pelo sandbox.
+  - mudanças: Adicionados registry, router, request/result/receipt, store write-once e runtime transacional em inference.py.; Adicionados fake determinístico e backend local OpenAI-compatible limitado a loopback em inference_backends.py, além do schema de receipt.; Estendidos autorização routed hash-bound, status, preflight/check, observabilidade, documentação, testes e handoff 12_5_para_13.
+  - decisões: PrimeRLMAdapter.spawn(prompt, name) permaneceu intacto; seleção de modelo por filho foi registrada como unsupported_verified porque o Prime Agent não está instalado neste host.; Targets pagos permanecem recusados porque M12 não possui enforcement monetário duro pré-chamada; defaults inference/local/remote/paid permanecem falsos.; M12.5 não é executor de papel RLM: opera apenas pedidos derivados de AgentTask sem substituir handles, receipts ou hierarquia M6.
+  - validações: python3 -m unittest discover -s control -q: 395 testes aprovados, 1 skip do fixture HTTP loopback.; Suítes M12.5, M12, M11 e contratos: 116 testes aprovados, 1 skip do fixture HTTP loopback.; py_compile dos Python alterados/criados, bash -n bin/check.sh, bin/check.sh, json.tool do schema e git diff --check: aprovados.; bin/check.sh confirmou inference desabilitada, zero targets, paid_runtime_ready false, Prime não descoberto e policy hash estável.
+  - riscos: O sandbox recusou socket loopback e a elevação foi negada; o critério J não foi provado e M12.5 não foi marcado como integralmente aceito.; shellcheck não está instalado; não houve instalação global.
+  - próximos: Antes de M13, executar control.test_m125_inference_routing.M125LoopbackBackendTests em ambiente que permita socket local e confirmar todos os cenários HTTP.; Manter Prime, modelos, rede remota e targets pagos desabilitados até nova autorização específica.
 
 ## Marcos planejados
 
@@ -244,6 +271,7 @@ Detalhe das três sessões mais recentes:
 | M10.1 | endurecimento de cobertura e gate final de M10 | concluído localmente |
 | M11 | comandos e configuração do Prime Agent | concluído localmente |
 | M12 | orçamento, observabilidade e execução prolongada | concluído localmente |
+| M12.5 | routing de inferência e integração de backends | implementado; aceitação loopback bloqueada pelo sandbox |
 | M13 | testes de sistema e entrega | pendente |
 
 ## Topologia dos 21 papéis
@@ -283,6 +311,8 @@ Detalhe das três sessões mais recentes:
 - `.prime/agent/skills/article-loop/src/article_loop/evaluation.py` — comparação A/B cega, júri, meta-review e publicação M8. API/símbolos: class EvaluationError; load_rubric(); sanitize_text(); class BlindComparisonBundle [presentation_for_order, create]; class FakeJurorAdapter [evaluate]; class FakeMetaReviewerAdapter [review]; check_inversion_consistency(); evaluate_candidate()
 - `.prime/agent/skills/article-loop/src/article_loop/finalization.py` — finalizador M10 com lock, journal, fsync, CAS e receipt imutável. API/símbolos: class FinalizationError; class TransactionalFinalizer [finalize]; finalize_decision()
 - `.prime/agent/skills/article-loop/src/article_loop/gates.py` — 13 verificadores locais, evidência matemática e GateReport canônico. API/símbolos: record_math_verification(); verify_gate_report(); run_gates(); compare()
+- `.prime/agent/skills/article-loop/src/article_loop/inference.py` — registry/router M12.5, runtime transacional e rotas/receipts write-once. API/símbolos: class InferenceError; class InferenceConfigError; class InferenceRoutingError; class InferenceIntegrityError; class InferenceBackendError; class InferenceOutputError; canonical_bytes(); sha256(); routing_policy_hash(); class InferenceTarget [public]; class ModelRegistry [from_project, validate_enabled_policy, target, status]; class InferenceRequest [from_agent_task, identity, request_hash, escalated]; class RouteDecision [identity, decision_hash]; class ModelRouter [route]; class InferenceResult; class InferenceBackend [preflight, complete]; class InferenceReceipt [public]; class InferenceSto…
+- `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` — backends fake explícito e OpenAI-compatible restrito a loopback. API/símbolos: class FakeInferenceBackend [preflight, complete]; class LocalOpenAICompatibleBackend [preflight, complete]
 - `.prime/agent/skills/article-loop/src/article_loop/ingestion.py` — congelamento de PDF/ZIP, derivados e publicação do baseline v0000. API/símbolos: class IngestionError; class SourceReadyError; ingest()
 - `.prime/agent/skills/article-loop/src/article_loop/observability.py` — módulo ainda não classificado; examine antes de usar. API/símbolos: class ObservabilityError; redact_payload(); class StructuredLogger [path, lock_path, read_events, emit, status]
 - `.prime/agent/skills/article-loop/src/article_loop/orchestrator.py` — árvore M00→Sxx→Wxx reentrante, journal e receipts M6. API/símbolos: class OrchestrationError; class Orchestrator [bootstrap, preflight, run_cycle, advance_department, receipt, mark_failed, cancel, consolidate_department, pause, resume, stop, finalize, checkpoint, status]
@@ -296,7 +326,7 @@ Detalhe das três sessões mais recentes:
 ### Entradas CLI
 
 - `bin/bootstrap-deps.sh` — Prepara requisitos locais da ingestão M3. Não instala nem inicia o Prime Agent.
-- `bin/check.sh` — Fast, local M11/M12 integrity check. It never starts Prime Agent or a model.
+- `bin/check.sh` — Fast, local M11/M12/M12.5 integrity check. It never starts Prime Agent or a model.
 - `bin/preflight.sh` — script shell
 - `bin/start-prime.sh` — Start only an explicitly authorized, project-local Prime Agent session.
 - `scripts/01_external_evaluator.py` — API: main()
@@ -313,26 +343,27 @@ Detalhe das três sessões mais recentes:
 
 | Schema | Título | Obrigatórios | Propriedades |
 |---|---|---:|---|
-| `agent-proposal.schema.json` | AgentProposal | 14 | schema_version, proposal_id, role_id, cycle_id, base_hash, scope, evidence_locators, patch_or_operations, affected_claims, dependencies, risk, confidence, requested_validations, prompt_version |
+| `agent-proposal.schema.json` | AgentProposal | 14 | schema_version, proposal_id, role_id, cycle_id, base_hash, scope, evidence_locators, patch_or_operations, affected_claims, dependencies, risk, confidence, requested_validations, p… |
 | `agent-task.schema.json` | AgentTask | 13 | schema_version, task_id, run_id, cycle_id, role_id, activation_mode, created_at, base_hash, scope, input_locators, requested_output_schema, prompt_version, constraints |
-| `budget-event.schema.json` | BudgetEvent | 15 | schema_version, event_id, idempotency_key, event_type, run_id, cycle_id, department_id, role_id, call_id, attempt, occurred_at, monotonic_elapsed_seconds, payload, previous_event_hash, event_hash |
-| `candidate-manifest.schema.json` | CandidateManifest | 12 | schema_version, candidate_id, candidate_kind, run_id, cycle_id, base_candidate_id, built_at, workspace_hash, content_hash, source_proposal_ids, merge_receipt_locator, immutable, inventory, merge_receipt, base_hash, synthesis_hash, proposal… |
-| `decision.schema.json` | Decision | 20 | schema_version, decision_id, run_id, cycle_id, candidate_id, candidate_content_hash, decided_at, action, gate_report_id, verdict_ids, diagnosis_id, basis_locators, reason_code, inconclusive_evaluation_id, final_gate_report_ids, content_mod… |
-| `department-packet.schema.json` | DepartmentPacket | 13 | schema_version, packet_id, run_id, cycle_id, department_id, base_hash, proposal_ids, specialist_task_ids, dependency_reviews, status, no_change_justification, evidence_locators, created_at |
+| `budget-event.schema.json` | BudgetEvent | 15 | schema_version, event_id, idempotency_key, event_type, run_id, cycle_id, department_id, role_id, call_id, attempt, occurred_at, monotonic_elapsed_seconds, payload, previous_event_… |
+| `candidate-manifest.schema.json` | CandidateManifest | 12 | schema_version, candidate_id, candidate_kind, run_id, cycle_id, base_candidate_id, built_at, workspace_hash, content_hash, source_proposal_ids, merge_receipt_locator, immutable, i… |
+| `decision.schema.json` | Decision | 20 | schema_version, decision_id, run_id, cycle_id, candidate_id, candidate_content_hash, decided_at, action, gate_report_id, verdict_ids, diagnosis_id, basis_locators, reason_code, in… |
+| `department-packet.schema.json` | DepartmentPacket | 13 | schema_version, packet_id, run_id, cycle_id, department_id, base_hash, proposal_ids, specialist_task_ids, dependency_reviews, status, no_change_justification, evidence_locators, c… |
 | `diagnosis-manifest.schema.json` | DiagnosisManifest | 11 | schema_version, diagnosis_id, run_id, cycle_id, candidate_id, classification, diagnosis_hash, gate_report_hash, evaluation_report_hash, tree_content_hash, created_at |
-| `diagnosis.schema.json` | Diagnosis | 20 | schema_version, diagnosis_id, run_id, cycle_id, candidate_id, candidate_content_hash, base_hash, created_at, gate_report_id, gate_report_hash, evaluation_report_hash, history_hash, verdict_ids, window_size, mde, classification, signals, re… |
-| `evaluation-manifest.schema.json` | EvaluationManifest | 17 | schema_version, evaluation_id, comparison_id, run_id, cycle_id, candidate_id, gate_report_locator, gate_report_hash, base_hash, candidate_content_hash, rubric_version, diversity_assurance, verdict_hashes, meta_verdict_hash, evaluation_repo… |
-| `evaluation-report.schema.json` | EvaluationReport | 26 | schema_version, evaluation_id, run_id, cycle_id, comparison_id, candidate_id, base_hash, candidate_content_hash, gate_report_id, gate_report_locator, order_seed, diversity_assurance, total_jurors, consistent_jurors, divergent_jurors, chall… |
-| `event.schema.json` | Event | 15 | schema_version, event_id, idempotency_key, run_id, cycle_id, sequence, occurred_at, event_type, state_from, state_to, actor_id, payload, artifact_hashes, previous_event_hash, event_hash |
+| `diagnosis.schema.json` | Diagnosis | 20 | schema_version, diagnosis_id, run_id, cycle_id, candidate_id, candidate_content_hash, base_hash, created_at, gate_report_id, gate_report_hash, evaluation_report_hash, history_hash… |
+| `evaluation-manifest.schema.json` | EvaluationManifest | 17 | schema_version, evaluation_id, comparison_id, run_id, cycle_id, candidate_id, gate_report_locator, gate_report_hash, base_hash, candidate_content_hash, rubric_version, diversity_a… |
+| `evaluation-report.schema.json` | EvaluationReport | 26 | schema_version, evaluation_id, run_id, cycle_id, comparison_id, candidate_id, base_hash, candidate_content_hash, gate_report_id, gate_report_locator, order_seed, diversity_assuran… |
+| `event.schema.json` | Event | 15 | schema_version, event_id, idempotency_key, run_id, cycle_id, sequence, occurred_at, event_type, state_from, state_to, actor_id, payload, artifact_hashes, previous_event_hash, even… |
 | `final-gate-report.schema.json` | FinalGateReport | 13 | schema_version, report_id, run_id, cycle_id, candidate_id, candidate_content_hash, gate_report_id, role_id, gate_id, overall_pass, candidate_manifest, rendered_pdf, final_report |
 | `final-report.schema.json` | FinalReport | 11 | schema_version, final_report_id, run_id, cycle_id, candidate_id, candidate_content_hash, gate_report_id, required_roles, candidate_manifest_hash, rendered_pdf_hash, overall_pass |
-| `finalization-receipt.schema.json` | FinalizationReceipt | 16 | schema_version, receipt_id, run_id, cycle_id, decision_id, candidate_id, action, applied_at, state_before, state_after, content_hash_before, content_hash_after, hash_revalidated, atomic, content_modified, destination |
-| `gate-report.schema.json` | GateReport | 13 | schema_version, report_id, report_hash, report_locator, run_id, cycle_id, candidate_id, candidate_content_hash, candidate_hash, generated_at, overall_pass, correctness_math_pass, gates |
-| `jury-verdict.schema.json` | JuryVerdict | 15 | schema_version, verdict_id, comparison_id, juror_id, candidate_neutral_ids, content_hashes, presentation_order, order_seed, rubric_version, dimension_scores, outcome, winner_neutral_id, correctness_math_pass, evidence_locators, submitted_at |
+| `finalization-receipt.schema.json` | FinalizationReceipt | 16 | schema_version, receipt_id, run_id, cycle_id, decision_id, candidate_id, action, applied_at, state_before, state_after, content_hash_before, content_hash_after, hash_revalidated, … |
+| `gate-report.schema.json` | GateReport | 13 | schema_version, report_id, report_hash, report_locator, run_id, cycle_id, candidate_id, candidate_content_hash, candidate_hash, generated_at, overall_pass, correctness_math_pass, … |
+| `inference-receipt.schema.json` | InferenceReceipt | 31 | schema_version, receipt_id, run_id, cycle_id, task_id, role_id, call_id, reservation_id, route_decision_hash, routing_policy_hash, provider, model, target_id, backend_type, indepe… |
+| `jury-verdict.schema.json` | JuryVerdict | 15 | schema_version, verdict_id, comparison_id, juror_id, candidate_neutral_ids, content_hashes, presentation_order, order_seed, rubric_version, dimension_scores, outcome, winner_neutr… |
 | `math-evidence.schema.json` | math-evidence.schema.json | 12 | schema_version, run_id, cycle_id, base_hash, candidate_id, candidate_content_hash, claim_id, proposal_id, request_receipt_sha256, method, conclusion, summary |
 | `math-issue.schema.json` | math-issue.schema.json | 11 | record_id, issue_type, run_id, cycle_id, base_hash, candidate_id, claim_id, severity, status, summary, evidence_locators |
-| `math-verification.schema.json` | math-verification.schema.json | 19 | schema_version, verification_id, verification_hash, verification_locator, run_id, cycle_id, base_hash, candidate_id, candidate_content_hash, claim_id, proposal_id, request_receipt_locator, request_receipt_sha256, evidence_locator, evidence… |
-| `meta-verdict.schema.json` | MetaVerdict | 13 | schema_version, meta_verdict_id, meta_reviewer_id, comparison_id, gate_report_id, confirmed, vetoed, veto_reason, consistent_verdict_count, divergence_count, explanation, evidence_locators, reviewed_at |
+| `math-verification.schema.json` | math-verification.schema.json | 19 | schema_version, verification_id, verification_hash, verification_locator, run_id, cycle_id, base_hash, candidate_id, candidate_content_hash, claim_id, proposal_id, request_receipt… |
+| `meta-verdict.schema.json` | MetaVerdict | 13 | schema_version, meta_verdict_id, meta_reviewer_id, comparison_id, gate_report_id, confirmed, vetoed, veto_reason, consistent_verdict_count, divergence_count, explanation, evidence… |
 | `observability-event.schema.json` | ObservabilityEvent | 10 | schema_version, event_id, sequence, run_id, occurred_at, level, event_type, payload, previous_event_hash, event_hash |
 | `refocus-plan.schema.json` | RefocusPlan | 11 | schema_version, plan_id, run_id, cycle_id, diagnosis_id, diagnosis_hash, classification, strategy, branches, created_at, evidence_locators |
 | `run-manifest.schema.json` | RunManifest | 9 | schema_version, run_id, created_at, state, cycle_id, input, config_hash, budget_config_hash, role_ids, current_candidate_id |
@@ -340,23 +371,24 @@ Detalhe das três sessões mais recentes:
 
 ## Cobertura estrutural de testes
 
-Total detectado por AST: **366 testes**.
+Total detectado por AST: **398 testes**.
 
 | Arquivo | Testes | Amostra de fronteiras cobertas |
 |---|---:|---|
-| `test_ai_handoff.py` | 8 | embedded previews are bounded and have no trailing whitespace; tracked generated context is portable and idempotent; repository trigger surfaces preserve start and end protocol; context points to ai sources without embedding human docs or … |
-| `test_contracts.py` | 52 | all yaml is parseable; canonical states and actions; eight evaluation dimensions; exact ids without duplicates; one plus five plus fifteen; parent child topology; exact schema catalog and meta validation; agent proposal required fields and… |
-| `test_m10_policy_finalization.py` | 24 | all policy rows and actions are closed; hard math gate and extra judgment limit have precedence; global plateau can finalize only with final gate evidence; pareto dominated candidate is rejected by the closed table; budget limit is safe at… |
-| `test_m11_commands.py` | 15 | exact flat template discovery and frontmatter; append system is additive and has m11 guardrails; project settings are not invented; check reports safe local defaults; require live rejects current fail closed configuration; unknown json fie… |
-| `test_m12_budget_observability.py` | 20 | reserve admit reconcile is hash bound and reported; two reservations race cannot spend last balance twice; usage absent becomes uncertain and keeps reservation; release requires proof and only unadmitted reservation; reconcile duplicate is… |
-| `test_m2_durable_state.py` | 30 | all valid transitions; all invalid transitions; full event log replay and snapshot reconstruction; duplicate event id and idempotency conflict; partially written file and truncated jsonl are rejected; corrupted jsonl is rejected; crash bef… |
-| `test_m3_ingestion.py` | 22 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash divergence and publish failure are safe; valid source zip is p… |
-| `test_m4_prompts.py` | 13 | all 21 compiled prompts match snapshots; prompt contract sections and required dependencies; structured output fixtures validate; immutable overwrite and unknown version block execution; invalid overlay and unknown rollback block execution… |
-| `test_m5_blackboard_activation.py` | 17 | claim is stable and all six ledgers are append only; localized and indirect dependency impact; structured changes preserve section equation reference and close dependencies; paths partial lines and concurrent writers are safe; run and ledg… |
-| `test_m6_orchestration.py` | 43 | sparse tree is reentrant; department admits only planned specialist; duplicate and bad hash receipts; out of order specialist receipts are durable; grandchild cannot message root; silent failed and restart are durable; consolidates only de… |
-| `test_m7_synthesis_gates.py` | 21 | real m6 receipts drive all m7 transitions and gates; receipt path hash and permission tampering fail closed; writable published root is rejected; semantically equivalent receipt with different bytes is rejected; missing or swapped worker r… |
-| `test_m8_evaluation.py` | 51 | sanitize text strips authors versions and roles; blind bundle reproducibility and bijective order; blind bundle sanitizes filenames and metadata; evaluation uses challenger bound champion not v0000; evaluation rejects invalid order seed an… |
-| `test_m9_diagnosis.py` | 50 | diagnosis transitions evaluated to diagnosed; diagnosis never reaches decided state; diagnosis rejects symlinked publication parent without writes; diagnosis fails closed if not evaluated state; classification evolving; classification regr… |
+| `test_ai_handoff.py` | 8 | embedded previews are bounded and have no trailing whitespace; tracked generated context is portable and idempotent; repository trigger surfaces preserve start and end protocol; c… |
+| `test_contracts.py` | 52 | all yaml is parseable; canonical states and actions; eight evaluation dimensions; exact ids without duplicates; one plus five plus fifteen; parent child topology; exact schema cat… |
+| `test_m10_policy_finalization.py` | 24 | all policy rows and actions are closed; hard math gate and extra judgment limit have precedence; global plateau can finalize only with final gate evidence; pareto dominated candid… |
+| `test_m11_commands.py` | 15 | exact flat template discovery and frontmatter; append system is additive and has m11 guardrails; project settings are not invented; check reports safe local defaults; require live… |
+| `test_m125_inference_routing.py` | 32 | project defaults are fail closed; disabled inference never calls backend; unknown target role duplicate and fallback cycle are rejected; duplicate target key in yaml is rejected b… |
+| `test_m12_budget_observability.py` | 20 | reserve admit reconcile is hash bound and reported; two reservations race cannot spend last balance twice; usage absent becomes uncertain and keeps reservation; release requires p… |
+| `test_m2_durable_state.py` | 30 | all valid transitions; all invalid transitions; full event log replay and snapshot reconstruction; duplicate event id and idempotency conflict; partially written file and truncate… |
+| `test_m3_ingestion.py` | 22 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash di… |
+| `test_m4_prompts.py` | 13 | all 21 compiled prompts match snapshots; prompt contract sections and required dependencies; structured output fixtures validate; immutable overwrite and unknown version block exe… |
+| `test_m5_blackboard_activation.py` | 17 | claim is stable and all six ledgers are append only; localized and indirect dependency impact; structured changes preserve section equation reference and close dependencies; paths… |
+| `test_m6_orchestration.py` | 43 | sparse tree is reentrant; department admits only planned specialist; duplicate and bad hash receipts; out of order specialist receipts are durable; grandchild cannot message root;… |
+| `test_m7_synthesis_gates.py` | 21 | real m6 receipts drive all m7 transitions and gates; receipt path hash and permission tampering fail closed; writable published root is rejected; semantically equivalent receipt w… |
+| `test_m8_evaluation.py` | 51 | sanitize text strips authors versions and roles; blind bundle reproducibility and bijective order; blind bundle sanitizes filenames and metadata; evaluation uses challenger bound … |
+| `test_m9_diagnosis.py` | 50 | diagnosis transitions evaluated to diagnosed; diagnosis never reaches decided state; diagnosis rejects symlinked publication parent without writes; diagnosis fails closed if not e… |
 
 ## Autoridade e separação de audiências
 
@@ -366,75 +398,88 @@ Total detectado por AST: **366 testes**.
 
 ## Handoff técnico mais recente
 
-Fonte: `.prime/handoffs/12_para_13.md`.
+Fonte: `.prime/handoffs/12_5_para_13.md`.
 
 <latest_handoff>
-# Handoff M12 → M13
+# Handoff M12.5 → M13
 
 ## Estado
 
-M12 foi implementado localmente sobre a base M11 publicada (`87c26ae`). Esta
-sessão não iniciou M13, Prime Agent, modelo, rede ou operação prolongada real.
-Os defaults de `config/budgets.yaml` continuam fail-closed: execução de modelo,
-APIs pagas e os dois perfis de planejamento permanecem desabilitados.
+M12.5 foi implementado sobre o checkpoint M12 `e5eb78f`, sem commit ou push.
+A camada é aditiva: não muda os 21 papéis, 16 estados, 9 ações, profundidade
+RLM, gates, júri, Decision, finalizador, champion ou autoridade de merge. M13
+não foi iniciado.
 
-## Entregas M12
+A aceitação integral de M12.5 continua aberta somente no critério J. O teste
+com `ThreadingHTTPServer` foi implementado, mas este sandbox recusou a abertura
+de socket loopback; uma tentativa de executar fora do sandbox foi negada. O
+teste fica como skip explícito, sem alegar smoke real.
 
-- `BudgetLedger` em `.prime/agent/skills/article-loop/src/article_loop/budget.py`:
-  ledger JSONL append-only por run, eventos hash-bound, reserva sob lock,
-  reconciliação idempotente, `UNCERTAIN`, prova de não admissão, limites
-  hierárquicos, retries, deadlines e retomada de duração monotônica.
-- `StructuredLogger` em `observability.py`: schema operacional, allowlist,
-  hash-chain, rotação sem apagar, limite de tamanho e fsync.
-- Schemas versionados `budget-event.schema.json` e
-  `observability-event.schema.json`.
-- `article_loop_command.py` valida a configuração M12 e agrega o status do
-  ledger ao comando `status --run-id`.
-- Perfis de teto: calibration (1 ciclo, 5 filhos simultâneos, 250000 tokens,
-  90 minutos) e overnight (6 ciclos, 1500000 tokens, 8 horas, 2 ciclos sem
-  melhoria, 1 julgamento extra), ambos desabilitados.
-- ADR-031, plano, runbook, arquitetura, README e testes offline atualizados.
+## Entregas
 
-## Validações executadas
+- `inference.py`: `InferenceTarget`, `InferenceRequest`, `RouteDecision`,
+  `InferenceResult`, `InferenceReceipt`, `ModelRegistry`, `ModelRouter`,
+  `InferenceStore` e `InferenceRuntime`.
+- `inference_backends.py`: fake determinístico explicitamente test-only e
+  backend OpenAI-compatible limitado a loopback, sem proxy ou redirect.
+- `config/budgets.yaml`: seção inference fail-closed e hash-bound.
+- `inference-receipt.schema.json`: receipt operacional sem prompt/resposta.
+- `BudgetLedger`: autorização routed vinculada ao policy hash, preservando a
+  forma e os bytes da autorização legacy.
+- status/check/preflight, logs allowlisted, documentação e testes M12.5.
 
-```text
-python3 -m unittest -v control.test_m12_budget_observability control.test_m11_commands control.test_contracts
-Ran 87 tests ... OK
+## Contratos e limites
 
-python3 -m py_compile .prime/agent/skills/article-loop/src/article_loop/budget.py .prime/agent/skills/article-loop/src/article_loop/observability.py scripts/article_loop_command.py
-OK
+O fluxo é `route -> reserve -> admit -> backend -> receipt -> reconcile`.
+Decisões e receipts são write-once em
+`state/inference/<run_id>/{routes,receipts}/`, com hash, lock, staging, fsync e
+rename atômico. Replay encontra receipt existente e não chama o backend de
+novo; erro após admission sem receipt fica `UNCERTAIN`. `FREEZE` não consome.
+Escalada requer reason code fechado e tentativa distinta. O júri pode exigir
+grupo independente do produtor.
 
-bash bin/check.sh
-OK; prime_agent_discovered=false; model_execution_enabled=false; profiles=false
-```
+Inferência real exige `live=True`, ledger live, autorização válida e target
+permitido. Fake exige `allow_test_doubles=True` booleano e é recusado em live.
+Targets pagos continuam recusados porque não existe enforcement monetário duro
+pré-chamada. Defaults versionados deixam inference/local/remote/paid falsos e
+nenhum target ativo.
 
-A suíte integral M0–M11 passou antes da implementação M12 com 346 testes; a
-regressão integral M0–M12 após as alterações finais aprovou 366 testes em
-246.975s, com somente o warning conhecido do fixture negativo de ZIP.
+A auditoria não encontrou binário ou pacote Prime Agent neste host. Observar o
+modelo no handle histórico não prova seleção: `prime_child_model_routing` é
+`unsupported_verified`; `PrimeRLMAdapter.spawn(prompt, name)` ficou intacto.
+O runtime de inferência não finge ser um filho RLM nem substitui M6.
 
-## Limites conhecidos para a próxima etapa
+## Validação
 
-O ledger não inicia nem autoriza consumidores reais por si só. Qualquer uso live
-futuro exige nova configuração versionada, autorização específica por run e
-validação das superfícies instaladas do Prime Agent. Não há publicação GitHub
-ou commit desta sessão; isso deve ser uma decisão explícita do operador.
+- `python3 -m unittest discover -s control -q`: 395 testes OK, 1 skip loopback.
+- M12.5 + M12 + M11 + contratos: 116 testes OK, 1 skip loopback.
+- `python3 -m py_compile ...`: OK.
+- `bash -n bin/check.sh`: OK.
+- `bin/check.sh`: OK; inference desabilitada, zero targets, paid false.
+- `git diff --check`: OK.
+- `shellcheck`: ausente; não instalado.
 
-M13 deve validar integração sistêmica e entrega sem redesenhar o ledger, alterar
-os defaults fail-closed ou executar o artigo real.
+## Próximo passo permitido
+
+Antes de iniciar M13, executar somente o fixture loopback em ambiente que
+autorize socket local e confirmar sucesso, erro HTTP, malformed, resposta
+grande, conexão fechada, timeout, redirect bloqueado e usage ausente. Não
+
+... [handoff truncado em 3000 caracteres; consulte o arquivo original]
 </latest_handoff>
 
 ## Inventário content-addressed
 
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
-- Total: 186 arquivos; runtime=18, text=168.
-- Fingerprint canônico: `7580bfaf8dc057fa94fbb59c0b688b1f799b4c873a6647eacd838bb83ec692d2`.
+- Total: 191 arquivos; runtime=18, text=173.
+- Fingerprint canônico: `42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba`.
 
 ## Roteamento para aprofundamento
 
 - Mudança de política/escopo: `AGENTS.md`, `docs/decisions.md`, `PLANS.md`.
 - Contrato de dados: schema correspondente + `control/test_contracts.py`.
 - Estado/recuperação: `state_machine.py`, `store.py`, testes M2.
-- Pipeline por marco: módulo Python correspondente + teste `control/test_mN_*.py` + handoff `N_para_N+1.md`.
+- Pipeline por marco: módulo Python correspondente + teste `control/test_mN_*.py` + handoff `N_para_N+1.md`; M12.5 usa `inference.py`, `inference_backends.py` e `test_m125_inference_routing.py`.
 - Prime Agent real: primeiro `docs/compatibility.md`; execução/custo continuam proibidos sem autorização específica.
 - Ao terminar toda a sessão: execute `scripts/ai_history.py` com resumo, mudanças, decisões, validações, riscos e próximos passos; depois execute novamente este gerador.

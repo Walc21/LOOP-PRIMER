@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `7580bfaf8dc057fa94fbb59c0b688b1f799b4c873a6647eacd838bb83ec692d2`
-- Registrado em: `2026-09-03T06:08:39Z`
-- Git: branch `main`, HEAD `af08c798df37`
-- Arquivos relevantes: 186
+- Fingerprint das fontes: `42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba`
+- Registrado em: `2026-09-03T20:22:56Z`
+- Git: branch `main`, HEAD `e5eb78fbce40`
+- Arquivos relevantes: 191
 
 ## Evolução reconstruída do versionamento
 
@@ -32,6 +32,7 @@
 | M10 | 2026-09-02..2026-09-03 | 2 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
+| M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 
 ### Commits exatos
 
@@ -131,6 +132,7 @@
 | `1fec40893` | 2026-09-03 | M10.1 | chore(history): record M10.1 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `87c26ae37` | 2026-09-03 | M11 | feat(m11): add local Prime Agent command integration | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | `af08c798d` | 2026-09-03 | M11 | chore(history): record M11 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `e5eb78fbc` | 2026-09-03 | M12 | feat(m12): add durable budget observability | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 
 ## Decisões arquiteturais
 
@@ -165,6 +167,7 @@
 - ADR-029 — M10.1: pacote final canônico e recuperação coberta por fase
 - ADR-030 — M11: comandos locais e integração Prime Agent fail-closed
 - ADR-031 — M12: orçamento durável e observabilidade fail-closed
+- ADR-032 — M12.5: routing determinístico governado pelo ledger M12
 
 ## Atualizações de sessão
 
@@ -884,3 +887,94 @@
 | modified | `docs/decisions.md` | `bc0718acbe4e` | `aa038a86a30e` |
 | modified | `docs/runbook.md` | `081ced68a389` | `f067531f3d3d` |
 | modified | `scripts/article_loop_command.py` | `626e29247e77` | `09b6ae4eafc7` |
+
+### 2026-09-03T19:09:00Z — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branch main alinhada ao origin/main, M13 ainda pendente e execução live corretamente bloqueada.
+
+- Session ID: `session-m12-evaluation-20260903`
+- Fingerprint final: `7580bfaf8dc057fa94fbb59c0b688b1f799b4c873a6647eacd838bb83ec692d2`
+- Git final: `e5eb78fbce40`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Nenhum arquivo de produto, contrato, configuração, código ou marco foi alterado; somente o registro obrigatório desta sessão diagnóstica e o contexto gerado foram atualizados.
+
+**Decisões**
+
+- Considerar o M12 tecnicamente saudável para avançar ao planejamento do M13, preservando os defaults fail-closed e sem autorizar Prime Agent, modelos, rede ou APIs pagas.
+
+**Validações**
+
+- bash bin/check.sh: status success; live_ready=false; model_execution_enabled=false; paid_apis_enabled=false; perfis calibration e overnight desabilitados; prime_agent_discovered=false.
+- python3 -m unittest discover -s control -q: 366 testes aprovados em 231.770s; único warning conhecido Duplicate name: a.tex no fixture adversarial de ZIP.
+- git rev-list --left-right --count HEAD...origin/main retornou 0 0; HEAD e origin/main apontam para e5eb78f feat(m12): add durable budget observability.
+
+**Riscos/limites**
+
+- O handoff 12_para_13.md ainda descreve corretamente a sessão de implementação pré-commit, mas sua frase de que não houve commit/publicação está desatualizada em relação ao estado atual e pode confundir o próximo operador.
+- M13 possui objetivo geral, mas ainda carece de um plano detalhado e critérios sistêmicos específicos antes da implementação.
+
+**Próximos passos**
+
+- Se autorizado, planejar M13 em PLANS.md e docs/decisions.md, corrigir a superfície de handoff/publicação e então implementar testes sistêmicos e empacotamento sem executar o artigo real.
+
+### 2026-09-03T20:22:56Z — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem iniciar M13; aceitação integral permanece aberta somente pelo smoke HTTP loopback bloqueado pelo sandbox.
+
+- Session ID: `session-2dffb2bba91ea37f3f05`
+- Fingerprint final: `42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba`
+- Git final: `e5eb78fbce40`; status relevante: 20 item(ns)
+- Delta factual: 5 adicionados, 15 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionados registry, router, request/result/receipt, store write-once e runtime transacional em inference.py.
+- Adicionados fake determinístico e backend local OpenAI-compatible limitado a loopback em inference_backends.py, além do schema de receipt.
+- Estendidos autorização routed hash-bound, status, preflight/check, observabilidade, documentação, testes e handoff 12_5_para_13.
+
+**Decisões**
+
+- PrimeRLMAdapter.spawn(prompt, name) permaneceu intacto; seleção de modelo por filho foi registrada como unsupported_verified porque o Prime Agent não está instalado neste host.
+- Targets pagos permanecem recusados porque M12 não possui enforcement monetário duro pré-chamada; defaults inference/local/remote/paid permanecem falsos.
+- M12.5 não é executor de papel RLM: opera apenas pedidos derivados de AgentTask sem substituir handles, receipts ou hierarquia M6.
+
+**Validações**
+
+- python3 -m unittest discover -s control -q: 395 testes aprovados, 1 skip do fixture HTTP loopback.
+- Suítes M12.5, M12, M11 e contratos: 116 testes aprovados, 1 skip do fixture HTTP loopback.
+- py_compile dos Python alterados/criados, bash -n bin/check.sh, bin/check.sh, json.tool do schema e git diff --check: aprovados.
+- bin/check.sh confirmou inference desabilitada, zero targets, paid_runtime_ready false, Prime não descoberto e policy hash estável.
+
+**Riscos/limites**
+
+- O sandbox recusou socket loopback e a elevação foi negada; o critério J não foi provado e M12.5 não foi marcado como integralmente aceito.
+- shellcheck não está instalado; não houve instalação global.
+
+**Próximos passos**
+
+- Antes de M13, executar control.test_m125_inference_routing.M125LoopbackBackendTests em ambiente que permita socket local e confirmar todos os cenários HTTP.
+- Manter Prime, modelos, rede remota e targets pagos desabilitados até nova autorização específica.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/src/article_loop/inference.py` | `-` | `2b6a50fad3ad` |
+| added | `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` | `-` | `7158723dfaa6` |
+| added | `.prime/handoffs/12_5_para_13.md` | `-` | `e73540e766e6` |
+| added | `config/schemas/inference-receipt.schema.json` | `-` | `21ae25d44751` |
+| added | `control/test_m125_inference_routing.py` | `-` | `a580527f775b` |
+| modified | `.prime/agent/skills/article-loop/SKILL.md` | `e2400db7b022` | `e222eb98ae1c` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `14d02ad12848` | `09902d2c1a1f` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/budget.py` | `79e089767cc0` | `b0f41c695b43` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/observability.py` | `843fb7b0eca7` | `bb380abefcb5` |
+| modified | `PLANS.md` | `3e2b5a9540fa` | `f29dacfae80c` |
+| modified | `README.md` | `e3177b62485f` | `99310c8e1ff7` |
+| modified | `bin/check.sh` | `7da00cfe872e` | `811b45294a81` |
+| modified | `config/budgets.yaml` | `6000c58d4ea4` | `bc9498cc9e79` |
+| modified | `control/test_contracts.py` | `feb03d159a19` | `00fa5c6c2444` |
+| modified | `docs/architecture.md` | `756dc8e755cb` | `5dd2e60cd660` |
+| modified | `docs/compatibility.md` | `545e2ce3590f` | `0d9cefb2b755` |
+| modified | `docs/decisions.md` | `aa038a86a30e` | `eb992674718f` |
+| modified | `docs/runbook.md` | `f067531f3d3d` | `77c793dce656` |
+| modified | `scripts/ai_context.py` | `3f7517e51d98` | `030ac491a33d` |
+| modified | `scripts/article_loop_command.py` | `09b6ae4eafc7` | `fdd07a8a61cd` |

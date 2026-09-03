@@ -121,6 +121,7 @@ article-loop/
 │   ├── claims/
 │   ├── issues/
 │   ├── decisions/
+│   ├── inference/<run_id>/{routes,receipts}/
 │   └── locks/
 ├── versions/
 │   ├── champion/
@@ -160,7 +161,7 @@ prompts para paths novos.
 `artifacts/extracted/`, `artifacts/rendered/`, `prompts/immutable/`,
 `prompts/overlays/`, `prompts/registry.json`, `state/events/`,
 `state/snapshots/`, `state/checkpoints/`, `state/claims/`, `state/issues/`,
-`state/decisions/`, `state/locks/`, `versions/champion/`,
+`state/decisions/`, `state/inference/`, `state/locks/`, `versions/champion/`,
 `versions/challengers/`, `versions/pareto/`, `versions/rejected/`,
 `workspaces/`, `reports/`, `logs/`, `control/`, `scripts/`, `bin/`,
 `bin/start-prime.sh`, `bin/preflight.sh`, `bin/check.sh` e `docs/`
@@ -339,6 +340,37 @@ privadas ficam fora do log. Os tetos `calibration` e `overnight` permanecem
 desabilitados na configuração versionada; perfil e autorização live não são
 herdados entre runs. M12 não altera a máquina de estados, critérios
 científicos, gates, conteúdo, Prime Agent ou defaults fail-closed de M11.
+
+### Routing de inferência M12.5
+
+M12.5 acrescenta uma camada aditiva entre um `AgentTask` já validado e a
+fronteira de consumo. `ModelRegistry` valida o inventário versionado em
+`config/budgets.yaml`; `ModelRouter` escolhe deterministicamente um target por
+papel, capacidades, limites, fallback e independência; `InferenceRuntime`
+coordena a operação. Papel lógico, provider e modelo são identidades distintas.
+M6 continua sendo o único dono da topologia RLM, da profundidade e da troca de
+mensagens; o adaptador Prime conserva `spawn(prompt, name)` porque seleção de
+modelo por filho não foi confirmada na instalação disponível.
+
+A ordem transacional é: decisão de rota write-once, reserva M12, admissão,
+chamada única ao backend, receipt operacional sem prompt/resposta integral e
+reconciliação. As decisões vivem em
+`state/inference/<run_id>/routes/<route_decision_hash>.json`; os receipts, em
+`state/inference/<run_id>/receipts/<call_id>.json`. Ambos são vinculados por
+hash e publicados atomicamente sob lock por execução. Receipt existente é a
+fonte de recuperação: uma retomada reconcilia sem repetir a chamada. Falha após
+admissão sem receipt permanece `UNCERTAIN` e não libera saldo automaticamente.
+
+Os defaults são fechados: `inference.enabled`, `allow_local`, `allow_remote` e
+`allow_paid` começam falsos e não há targets versionados ativos. Targets pagos
+são recusados mesmo com opt-in declarativo, pois M12 ainda não oferece um teto
+monetário duro pré-chamada. O backend local OpenAI-compatible aceita somente
+loopback explícito, timeout e resposta limitada, sem redirects ou proxies; o
+fake exige autorização booleana de teste e nunca pode executar em modo live.
+`FREEZE` não cria rota, reserva, receipt nem chamada. Júri pode exigir grupo de
+independência diferente do produtor, e escalation somente ocorre por reason
+code fechado, tentativa limitada e nova decisão persistida — nunca por retry
+silencioso.
 
 ### Ferramentas auxiliares de handoff para IA
 

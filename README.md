@@ -16,13 +16,17 @@
 
 </div>
 
-> **Implementation status:** M0–M12 are implemented and locally validated. M10
+> **Implementation status:** M0–M12 are implemented and locally validated;
+> M12.5 adds deterministic, fail-closed inference routing and is locally
+> implemented, with the real loopback HTTP smoke still pending in an
+> environment that permits sockets. M10
 > publishes a canonical, content-addressed `Decision`, revalidates it under a
 > per-run lock, and applies its authorized disposition atomically. `FINALIZE`
 > additionally requires immutable W22/W51/W53 attestations bound by SHA-256 to
 > the candidate manifest, rendered PDF, and final report. M12 adds a durable,
 > hash-bound budget ledger, conservative reconciliation, operational status and
-> redacted structured logs; M13 remains pending. M10 CLIs are operational; M11
+> redacted structured logs; M12.5 adds write-once route decisions and inference
+> receipts without changing M6 topology; M13 remains pending. M10 CLIs are operational; M11
 > adds local commands and templates.
 > They do not run an article, a model, or a paid API by themselves; the Prime
 > Agent binary was not available for an M11 live smoke test.
@@ -49,9 +53,9 @@
 
 **LOOP-PRIMER** is a contract-first, deterministic framework under incremental
 implementation for auditable analysis, critique, mathematical verification and
-iterative improvement of scientific papers. The implemented pipeline reaches
-M10: diagnosis drives a closed decision policy, then a transactional finalizer
-applies exactly that decision while preserving all evaluated bytes and history.
+iterative improvement of scientific papers. The scientific state machine is
+implemented through M10; M11, M12 and M12.5 add operational commands, durable
+budgets/observability and inference routing without changing its states.
 
 Unlike conventional LLM wrappers, LOOP-PRIMER operates under **strict mathematical and architectural constraints**:
 - **Air-gapped & Offline Verification**: No unauthenticated external network requests or speculative token generation during validation.
@@ -205,7 +209,7 @@ pip install -r requirements-dev.txt
 # Run AI context and handoff tests
 .venv/bin/python -m unittest control.test_ai_handoff
 
-# Run the complete M0-M12 regression suite
+# Run the complete M0-M12.5 regression suite
 .venv/bin/python -m unittest discover -s control -p 'test_*.py' -q
 ```
 
@@ -224,7 +228,7 @@ bash bin/preflight.sh
 LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
 
 - **`bin/preflight.sh`**: Ingestion, validation, and `SOURCE_READY` gate verifier.
-- **`bin/check.sh`**: Fast local M11/M12 surface and fail-closed configuration check.
+- **`bin/check.sh`**: Fast local M11/M12/M12.5 surface and fail-closed configuration check.
 - **`bin/start-prime.sh`**: Dry-run-by-default launcher; live mode requires
   explicit authorization, budget/configuration, preflight, STOP clearance and
   a discovered Prime Agent binary.
@@ -262,11 +266,11 @@ LOOP-PRIMER/
 │   ├── roles/                    # 21 YAML definitions for M00, S10-S50, W11-W53
 │   ├── rubrics/                  # Evaluation rubrics for blind jury
 │   └── schemas/                  # JSON Schema definitions for strict validation
-├── control/                      # Contract and milestone test suites (M1 through M12)
+├── control/                      # Contract and milestone test suites (M1 through M12.5)
 ├── docs/                         # Architecture, ADRs, compatibility, and AI history
 │   ├── architecture.md           # Canonical system architecture
 │   ├── decisions.md              # Architectural Decision Records (ADRs)
-│   ├── runbook.md                # Local M11/M12 operation and recovery guide
+│   ├── runbook.md                # Local M11/M12/M12.5 operation and recovery guide
 │   └── AI_HISTORY.md             # Chronological ledger of system evolution
 ├── prompts/                      # Immutable system prompts and role overlays
 ├── scripts/                      # Independent, deterministically tested CLI modules
@@ -302,6 +306,7 @@ All core design choices are formally recorded in [`docs/decisions.md`](docs/deci
 | **ADR-029** | Final Evidence Package & Phase-Covered Recovery | `Accepted` | M10.1 hardening |
 | **ADR-030** | Local Commands & Fail-Closed Prime Integration | `Accepted` | M11 operations |
 | **ADR-031** | Durable Budget & Fail-Closed Observability | `Accepted` | M12 operations |
+| **ADR-032** | Deterministic Inference Routing & Durable Receipts | `Accepted` | M12.5 inference |
 | **ADR-026** | Content-Addressed AI Handoff & Session Ledger | `Accepted` | AI Protocol |
 | **ADR-027** | Audience Separation & Publishable Git History | `Accepted` | Repository Integration |
 

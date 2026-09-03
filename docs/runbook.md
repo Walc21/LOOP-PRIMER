@@ -1,6 +1,6 @@
 # Runbook local do article-loop
 
-Este runbook descreve as camadas operacionais M11 e M12. O estado durável do
+Este runbook descreve as camadas operacionais M11, M12 e M12.5. O estado durável do
 produto continua no repositório; a sessão Prime Agent é apenas um executor
 externo. O PDF de entrada e versões publicadas são imutáveis.
 
@@ -188,3 +188,51 @@ Após crash, execute `check.sh`, consulte o status, preserve reservas
 edite o JSONL. `control/STOP` impede novas reservas; `pause()` conserva ledger
 e reservas, e `stop()` não promete reembolso de trabalho incerto. Nenhum
 supervisor prolongado usa loop textual infinito.
+
+## M12.5: habilitar, verificar e desabilitar inferência
+
+O arquivo versionado é intencionalmente inerte: `inference.enabled` e os três
+campos `allow_*` são `false`, `targets` e `role_routes` são vazios. Para uma
+execução futura autorizada, declare cada target com ID único, provider, model,
+backend, flags `local`/`paid`, tier, capabilities, limites, grupo de
+independência, endpoint, nome da variável de ambiente, timeout e fallback;
+depois declare para cada papel a lista ordenada de targets e capacidades
+obrigatórias. Nunca grave o valor de uma credencial no YAML: somente seu nome
+em `api_key_env`.
+
+Antes de habilitar qualquer chamada:
+
+```sh
+python3 scripts/article_loop_command.py check --root .
+python3 scripts/article_loop_command.py preflight --root .
+python3 scripts/article_loop_command.py status --root . --run-id RUN_ID
+```
+
+`check` valida schema, duplicatas, referências, ciclos, capacidades, endpoint,
+permissões e o hash da política. `preflight` continua offline por padrão; um
+backend efetivo só fica pronto quando estiver registrado no runtime. O status
+expõe target escolhido, provider/model, tokens, reservas abertas, receipts,
+rota/escalation mais recente, `UNCERTAIN` e nível de assurance.
+
+Uma autorização legada continua vinculada a um único provider/modelo. Para
+routing multi-target, `provider` e `model` ficam nulos e
+`routing_policy_hash` deve coincidir exatamente com a política carregada; a
+autorização continua presa a run, perfil, hash da configuração e teto. Alterar
+a política invalida a autorização. Como o ledger M12 não aplica um limite
+monetário duro antes de cada chamada, targets `paid: true` são recusados em
+runtime mesmo se `allow_paid` for ligado.
+
+O fluxo operacional é sempre `route -> reserve -> admit -> backend -> receipt
+-> reconcile`. Em crash após o receipt, repita a mesma requisição: o runtime
+reconcilia o receipt write-once sem nova chamada. Em timeout ou falha depois da
+admissão sem receipt, preserve `UNCERTAIN`, investigue o backend e só então
+registre escalation explícita com reason code permitido. Não faça retry
+automático. Saída inválida é registrada com hash e `schema_invalid`, mas nunca
+entra no pipeline científico.
+
+Para desabilitar, pare novas admissões, resolva receipts/reservas abertas e
+então restaure `inference.enabled: false`, todos os `allow_*: false`, e nenhum
+target ativo. Não apague `state/inference/` nem edite o ledger. O backend local
+aceita apenas `localhost`, `127.0.0.1` ou `::1`, sem proxy/redirect; iniciar um
+servidor ou instalar runtime local é uma operação externa separada e não faz
+parte destes comandos.

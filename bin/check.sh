@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fast, local M11/M12 integrity check. It never starts Prime Agent or a model.
+# Fast, local M11/M12/M12.5 integrity check. It never starts Prime Agent or a model.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

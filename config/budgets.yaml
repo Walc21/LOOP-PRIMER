@@ -75,3 +75,20 @@ observability:
   orphan_after_seconds: 900
   alert_thresholds: [50, 80, 95, 100]
   redaction: allowlist
+
+# M12.5 inference routing is project-local and participates in the complete
+# configuration hash. Targets remain empty and all execution is fail-closed.
+inference:
+  schema_version: "1.0.0"
+  enabled: false
+  allow_local: false
+  allow_remote: false
+  allow_paid: false
+  routing_mode: deterministic
+  targets: {}
+  role_routes: {}
+  escalation:
+    enabled: true
+    max_route_attempts: 2
+  independence:
+    jury_must_differ_from_producer_group: true

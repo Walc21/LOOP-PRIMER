@@ -56,6 +56,23 @@ M11, portanto, não cria `.prime/agent/settings.json` nem presume chaves da
 documentação de `main`; o launcher falha fechado até que uma instalação
 compatível seja encontrada e uma autorização separada exista.
 
+### Auditoria estática M12.5 — 2026-09-03
+
+A nova verificação repetiu `command -v prime-agent`, consultou o caminho
+absoluto histórico e procurou o pacote instalado sem iniciar sessão: nenhum
+executável ou pacote Prime Agent estava disponível neste host. Assim, três
+capacidades permanecem deliberadamente separadas:
+
+- observar o modelo retornado no `ChildHandle` histórico é suportado;
+- escolher um modelo para a sessão raiz não foi verificado nesta instalação;
+- escolher provider/modelo por chamada `rlm(...)` ou por filho é
+  `unsupported_verified` no ambiente atual.
+
+M12.5 não acrescenta argumentos a `PrimeRLMAdapter.spawn(prompt, name)` e não
+usa configuração de `main` como substituto de evidência local. Seu routing
+backend-aware vale somente para a nova fronteira de inferência explícita; não
+altera a topologia, profundidade ou lifecycle dos filhos M6.
+
 ## Documentação oficial consultada
 
 O repositório oficial é
@@ -83,6 +100,7 @@ Também foram examinados, somente para esclarecer contrato já instalado, os arq
 | Local de skills | Skill de projeto em `.prime/agent/skills/`; diretórios com `SKILL.md` são descobertos recursivamente. | suportada |
 | Skill Python | Requer `SKILL.md`, `pyproject.toml`, `src/<nome_com_underscore>/__init__.py`; hífens do nome viram underscores no import. `run()` torna o módulo chamável assíncrono. | suportada; não instalar nesta fase |
 | `rlm(...)` | `await rlm(prompt, name=...)` devolve imediatamente handle de admissão com `rlm_child_id`, `name`, `session_dir`, `model`; nunca devolve resposta do filho. | suportada |
+| Seleção de modelo | O handle permite observar `model`; seleção de sessão não foi revalidada e seleção provider/model por filho/chamada não está exposta no contrato confirmado. | sessão: não verificada; por filho: `unsupported_verified` |
 | Resultados de filhos | Chegam por `agent_message` explícito ou arquivos; `rlm.list_subagents()` recupera filhos diretos; `rlm.delete_subagent(...)` os remove quando não necessários. | suportada |
 | `agent_message` | `list_agents()` é restrito à família. Assinatura segura: `send(message, receiver_role="parent"|"sibling"|"child", receiver_name=...)`; pai não recebe nome, irmãos/filhos exigem nome. | suportada com ressalva abaixo |
 | `/goal` | Cria/meta persistentemente objetivo explícito; possui status, pause, resume, clear e orçamento. No kernel, `goal.get()`, `goal.create()` e `goal.complete()`. | suportada; proibida nesta fase |

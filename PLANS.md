@@ -42,6 +42,11 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   exige autorização/configuração fail-closed, preflight M3 e `prime-agent` no
   `PATH`; como o binário não foi encontrado e o orçamento atual é zero, nenhum
   processo Prime foi iniciado. M12--M13 permanecem fora de escopo.
+- M12 concluído e publicado no checkpoint de referência `e5eb78f`. M12.5 está
+  implementado localmente como camada aditiva de routing/backend entre tarefas
+  canônicas e o ledger, sem alterar M6, estados, ações, papéis ou iniciar M13;
+  a aceitação integral aguarda apenas o smoke do fixture HTTP loopback em
+  ambiente que permita abrir socket local.
 - Ferramentas auxiliares de handoff para IA concluídas: um gerador local de
   contexto compacto e um registrador local de histórico de sessões. Elas não
   alteram a máquina de estados, candidatos, gates ou a autoridade dos scripts
@@ -99,6 +104,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M10.1 | endurecimento de cobertura e gate final de M10 | concluído localmente | pacote final hash-bound, rederivação de decisão, recuperação por fase, concorrência e Pareto verificados sem iniciar M11 |
 | M11 | comandos e configuração do Prime Agent | concluído localmente | ponte CLI, templates planos, guardrails aditivos, runbook e launcher fail-closed; `settings.json` omitido sem schema instalado confirmado |
 | M12 | orçamento, observabilidade e execução prolongada | concluído localmente | ledger hash-bound, reservas atômicas, reconciliação conservadora, perfis opt-in, status/logs/alertas e retomada fail-closed; sem modelo, rede ou execução real |
+| M12.5 | routing de inferência e integração de backends | implementado; aceitação loopback bloqueada pelo sandbox | registry/router determinísticos, política hash-bound, autorização multi-target compatível, receipts write-once e backend loopback testável offline, sem bypass de M6 nem target pago implícito |
 | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
 
 ## Sequência canônica dos Prompts 01–13
@@ -117,6 +123,9 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 11. M11 configura comandos e recursos locais do Prime Agent.
 12. M12 acrescenta orçamento, observabilidade e execução prolongada autorizada.
 13. M13 executa testes sistêmicos e prepara a entrega.
+
+M12.5 é um hardening aditivo surgido depois de M12 e antes de M13; ele não
+renumera nem substitui nenhum dos Prompts canônicos 01--13.
 
 ## Critérios de aceitação do produto
 
@@ -148,6 +157,28 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
 ## Registro de progresso
+
+- 2026-09-03 — M12.5 implementado e validado localmente, exceto pelo smoke
+  HTTP real do fixture loopback: o sandbox recusou a abertura do socket e a
+  tentativa de elevação foi negada, portanto o critério J permanece
+  explicitamente não provado. A suíte completa executou 395 testes com sucesso
+  e 1 skip; as suítes dedicadas M12.5/M12/M11/contratos executaram 116 testes
+  com sucesso e 1 skip. `py_compile`, `bash -n`, `bin/check.sh` e
+  `git diff --check` passaram; `shellcheck` não está instalado. Foram
+  preservados defaults fechados, M6 e autorização legacy. Não houve Prime
+  Agent, modelo, rede externa, segredo, instalação, M13, commit ou push.
+
+- 2026-09-03 — M12.5 iniciado sobre o checkpoint M12 `e5eb78f`. O escopo é a
+  menor camada project-local e content-addressed que transforma `AgentTask` em
+  pedido de inferência, escolhe target deterministicamente e obriga a ordem
+  route → reserve → admit → backend → receipt → reconcile. A autorização M12
+  ganhará modo routed sem invalidar ledgers legacy. A auditoria estática não
+  encontrou o executável/pacote Prime anteriormente registrado, portanto a
+  seleção de modelo per-child fica `unsupported_verified` e
+  `PrimeRLMAdapter.spawn()` permanece inalterado. Targets pagos ficarão
+  bloqueados porque os tetos monetários atuais não têm enforcement no ledger.
+  Não haverá Prime Agent, modelo, rede externa, segredo, instalação, M13,
+  commit ou push nesta sessão.
 
 - 2026-09-03 — M11 planejado para esta sessão sobre árvore limpa e checkpoint
   M10 ancestral. O escopo é estritamente expor as APIs locais existentes por

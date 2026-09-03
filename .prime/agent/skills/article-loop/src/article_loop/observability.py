@@ -29,6 +29,7 @@ _EVENT_TYPES = frozenset({
     "budget_released", "budget_uncertain", "budget_authorized",
     "budget_progress", "budget_alert", "budget_paused", "budget_resumed",
     "budget_stopped", "supervisor_step",
+    "inference_routed", "inference_receipt", "inference_uncertain",
 })
 _SAFE_KEYS = frozenset({
     "alert_code", "assurance", "attempt", "available", "call_id",
@@ -40,6 +41,8 @@ _SAFE_KEYS = frozenset({
     "profile", "provider", "reason_code", "remaining", "reservation_id",
     "retries", "role_id", "state", "status", "threshold", "total_tokens",
     "uncertain", "usage_tokens", "wall_time_seconds", "currency", "scope",
+    "backend_type", "finish_reason", "independence_group", "receipt_id",
+    "route_decision_hash", "routing_policy_hash", "target_id", "usage_available",
 })
 _SAFE_SCALARS = (str, int, float, bool)
 
