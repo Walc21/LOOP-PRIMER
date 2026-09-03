@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `c2a68d3819a2b48ec4e0c3ef4fe42fd337ec12dc6baef2f17ebdc48632fb61e8`
-- Registrado em: `2026-09-03T21:27:30Z`
-- Git: branch `main`, HEAD `49fad01ca1a0`
-- Arquivos relevantes: 191
+- Fingerprint das fontes: `eb05e97f915ce52ccdf84dd6a04f7a3796c78887835084ce2a816783ff9601b3`
+- Registrado em: `2026-09-03T22:48:42Z`
+- Git: branch `main`, HEAD `ba316b50a707`
+- Arquivos relevantes: 197
 
 ## Evolução reconstruída do versionamento
 
@@ -33,7 +33,7 @@
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
-| M12.5 | 2026-09-03 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| M12.5 | 2026-09-03 | 6 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 
 ### Commits exatos
 
@@ -138,6 +138,8 @@
 | `4961907ae` | 2026-09-03 | M12.5 | chore(history): record M12.5 publication | .prime/handoffs/12_5_para_13.md, AI_CONTEXT.md, PLANS.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `3858f0b94` | 2026-09-03 | M12.5 | chore(context): refresh M12.5 publication snapshot | AI_CONTEXT.md |
 | `49fad01ca` | 2026-09-03 | M12.5 | fix(m12.5): normalize closed backend connections | .prime/agent/skills/article-loop/src/article_loop/inference_backends.py, .prime/handoffs/12_5_para_13.md, PLANS.md, control/test_m11_commands.py, control/test_m125_inference_routi… |
+| `90c1e27b7` | 2026-09-03 | M12.5 | docs(m12.5): record green CI validation | .prime/handoffs/12_5_para_13.md, AI_CONTEXT.md, PLANS.md, README.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl |
+| `ba316b50a` | 2026-09-03 | M12.5 | chore(context): refresh M12.5 CI snapshot | AI_CONTEXT.md |
 
 ## Decisões arquiteturais
 
@@ -173,6 +175,7 @@
 - ADR-030 — M11: comandos locais e integração Prime Agent fail-closed
 - ADR-031 — M12: orçamento durável e observabilidade fail-closed
 - ADR-032 — M12.5: routing determinístico governado pelo ledger M12
+- ADR-033 — M12.5.1 Phase A: execução dual ligada ao contrato M6
 
 ## Atualizações de sessão
 
@@ -1067,3 +1070,138 @@
 | modified | `control/test_m125_inference_routing.py` | `a580527f775b` | `175fbc5fd342` |
 | modified | `docs/compatibility.md` | `0d9cefb2b755` | `f532eaf0a54a` |
 | modified | `docs/decisions.md` | `eb992674718f` | `b8a1c20354ac` |
+
+### 2026-09-03T22:46:53Z — M12.5.1 Phase A implementada e validada localmente como ligação dual end-to-end por departamento, com contexto autorizado, privacidade por run, output científico durável, teto monetário inteiro e recovery sem reinferência; configuração e live permanecem deliberadamente inativos e M13 não foi iniciado.
+
+- Session ID: `session-6c69bb7f70ed5c903379`
+- Fingerprint final: `1e80fe6ddcc01dc9f783314b6f6795f52ea1ac71c946108a5bfea483e18b30fd`
+- Git final: `ba316b50a707`; status relevante: 22 item(ns)
+- Delta factual: 6 adicionados, 16 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionado execution.py com ExecutionPolicy, ContextMaterializer, RoutedControlAdapter, DualExecutionAdapter, DualExecutionController e readiness em três níveis.
+- InferenceRuntime agora vincula context_hash e privacy_mode, publica output científico write-once antes do receipt, recupera crashes sem nova chamada e suporta pricing canônico e backend remoto HTTPS sem proxy ou redirect.
+- BudgetLedger agora reserva, reconcilia e reporta custo inteiro sob teto de 10000000 microunits USD; autorização vincula teto e moeda, usage desconhecido conserva reserva e overrun bloqueia novas chamadas.
+- Configuração ativa ganhou execution disabled, mapa vazio e privacy deny_remote; schema, CLI check/status, documentação, exemplo humano, inventário model-driven e handoff M12.5.1 foram sincronizados.
+- Cobertura offline M12.5.1 adicionada para S10 routed e S20 Prime simulado, privacidade, contexto, custo, júri por model, backend remoto mockado, concorrência e recuperação.
+
+**Decisões**
+
+- Seleção ocorre apenas por departamento: Prime preserva spawn prompt/name e routed usa controle local persistente para Sxx com workers no InferenceRuntime, convergindo no receipt e DepartmentPacket M6.
+- A capacidade monetária paid_runtime_ready é verdadeira no código, mas execution, inference, targets, routes, allow_paid e live continuam desabilitados até configuração e autorização humanas.
+- Independência de júri recomenda comparação por model; independence_group legacy permanece interpretável.
+- Prime 0.9.1 foi observado apenas por versão, portanto seleção de modelo por filho permanece unknown_on_current_version.
+
+**Validações**
+
+- python3 -m unittest discover -s control -q: 410 testes aprovados em 268.029s, com 1 skip histórico do fixture loopback.
+- Suítes M12.5.1, M12.5 e M12 dedicadas: 63 testes aprovados, com 1 skip histórico.
+- py_compile dos módulos Python alterados/criados e do teste M12.5.1: aprovado.
+- git diff --check e bash -n bin/check.sh bin/start-prime.sh: aprovados.
+- bin/check.sh: aprovado; implementation_ready=true, configuration_ready=false, live_ready=false, zero targets/rotas, deny_remote, teto 10000000 USD.
+
+**Riscos/limites**
+
+- Nenhum smoke Prime, modelo local/remoto, rede real, API paga, credencial ou artigo real foi executado; configuração humana permanece obrigatória.
+- A seleção Prime de modelo por filho em 0.9.1 não foi auditada além da versão e permanece unknown_on_current_version.
+- A matriz GitHub Actions Python 3.11-3.13 não foi disparada nesta sessão; o workflow existente executará os novos testes offline quando publicado.
+
+**Próximos passos**
+
+- Configuração humana futura deve escolher mapa S10-S50, targets e modelos, endpoints, preços, rotas, privacy mode e autorização de run sem gravar segredo.
+- Qualquer smoke live precisa de pedido e autorização separados; M13 continua pendente.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/src/article_loop/execution.py` | `-` | `6f8d86ccf803` |
+| added | `.prime/handoffs/12_5_1_human_configuration.md` | `-` | `c679cec819ee` |
+| added | `control/test_m1251_dual_execution.py` | `-` | `35ee4e9c290a` |
+| added | `docs/examples/m1251-human-configuration.yaml` | `-` | `26746a614b84` |
+| added | `docs/m1251-phase-a-audit.md` | `-` | `81596d449460` |
+| added | `docs/model-driven-surfaces.md` | `-` | `d1fb59e1b2b6` |
+| modified | `.prime/agent/skills/article-loop/SKILL.md` | `e222eb98ae1c` | `cf254794a433` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `09902d2c1a1f` | `36a0327810c3` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/budget.py` | `b0f41c695b43` | `f4fc7767d6ba` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference.py` | `2b6a50fad3ad` | `5cfc2e6cd444` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` | `65c9818e9c4e` | `395c005c5cb7` |
+| modified | `PLANS.md` | `3debcefda243` | `cfc7ee23f0f9` |
+| modified | `README.md` | `1471a09b2065` | `d796aa3ec6e7` |
+| modified | `bin/check.sh` | `811b45294a81` | `275ae836c32f` |
+| modified | `config/budgets.yaml` | `bc9498cc9e79` | `dc93a24029f2` |
+| modified | `config/schemas/inference-receipt.schema.json` | `21ae25d44751` | `76f33221f512` |
+| modified | `control/test_m125_inference_routing.py` | `175fbc5fd342` | `d6c8ab02fb27` |
+| modified | `docs/architecture.md` | `5dd2e60cd660` | `018f518aebba` |
+| modified | `docs/compatibility.md` | `f532eaf0a54a` | `be929550d830` |
+| modified | `docs/decisions.md` | `b8a1c20354ac` | `5f708176ecd7` |
+| modified | `docs/runbook.md` | `77c793dce656` | `881f74e79ed6` |
+| modified | `scripts/article_loop_command.py` | `fdd07a8a61cd` | `0699196206ee` |
+
+### 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prompt, sem preencher provider, runtime, endpoint, modelo, capacidade, credencial, preço, privacidade, mapa, rota ou autorização.
+
+- Session ID: `session-6a3c1d5e54217ee4379f`
+- Fingerprint final: `0b054cba462067ce0b3592858ffda29ff3d7071c517e66f3707fe23f32db4770`
+- Git final: `ba316b50a707`; status relevante: 22 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- A checklist HUMAN CONFIGURATION REQUIRED foi alinhada palavra por palavra ao contrato da Phase A.
+
+**Decisões**
+
+- Manter todos os campos humanos vazios; exemplos permanecem somente em docs/examples e a configuração ativa continua disabled.
+
+**Validações**
+
+- Leitura do trecho CODE COMPLETE até HUMAN CONFIGURATION REQUIRED confirmou os dois headings e os 15 campos exatos.
+- git diff --check e bin/check.sh passaram após a correção documental.
+
+**Riscos/limites**
+
+- Configuração humana e qualquer smoke live continuam fora da Phase A.
+
+**Próximos passos**
+
+- O humano deverá preencher a checklist em fase posterior e autorizar separadamente qualquer execução live.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/handoffs/12_5_1_human_configuration.md` | `c679cec819ee` | `72b1a756244d` |
+
+### 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.
+
+- Session ID: `session-6cd6a464487f4b67221c`
+- Fingerprint final: `eb05e97f915ce52ccdf84dd6a04f7a3796c78887835084ce2a816783ff9601b3`
+- Git final: `ba316b50a707`; status relevante: 23 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- Workflow CI renomeado para M0-M12.5.1 e passou a executar sintaxe shell e bin/check.sh antes da regressão descoberta automaticamente.
+
+**Decisões**
+
+- Preservar a matriz Python 3.11, 3.12 e 3.13 e o unittest discover completo; testes M12.5.1 permanecem offline e o backend remoto é mockado.
+
+**Validações**
+
+- YAML do workflow foi carregado por PyYAML; bash -n, bin/check.sh e git diff --check passaram.
+
+**Riscos/limites**
+
+- O workflow atualizado não foi disparado no GitHub nesta sessão; validação de CI remota ocorrerá somente após publicação futura.
+
+**Próximos passos**
+
+- Ao publicar futuramente, observar os três jobs 3.11-3.13 sem habilitar modelo, API ou target.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.github/workflows/ci.yml` | `fe0474481ca7` | `61350e140d71` |

@@ -1,6 +1,6 @@
 # Runbook local do article-loop
 
-Este runbook descreve as camadas operacionais M11, M12 e M12.5. O estado durável do
+Este runbook descreve as camadas operacionais M11, M12, M12.5 e M12.5.1. O estado durável do
 produto continua no repositório; a sessão Prime Agent é apenas um executor
 externo. O PDF de entrada e versões publicadas são imutáveis.
 
@@ -218,12 +218,14 @@ Uma autorização legada continua vinculada a um único provider/modelo. Para
 routing multi-target, `provider` e `model` ficam nulos e
 `routing_policy_hash` deve coincidir exatamente com a política carregada; a
 autorização continua presa a run, perfil, hash da configuração e teto. Alterar
-a política invalida a autorização. Como o ledger M12 não aplica um limite
-monetário duro antes de cada chamada, targets `paid: true` são recusados em
-runtime mesmo se `allow_paid` for ligado.
+a política invalida a autorização. M12.5.1 acrescenta o teto monetário duro:
+um target pago só é elegível com preços inteiros explícitos, `allow_paid`,
+moeda/teto coincidentes, perfil live e autorização do mesmo run. Os defaults
+atuais não satisfazem essas condições.
 
-O fluxo operacional é sempre `route -> reserve -> admit -> backend -> receipt
--> reconcile`. Em crash após o receipt, repita a mesma requisição: o runtime
+O fluxo operacional é sempre `route -> reserve -> admit -> backend -> durable
+output -> receipt -> reconcile -> M6 receipt`. Em crash após o receipt, repita
+a mesma requisição: o runtime
 reconcilia o receipt write-once sem nova chamada. Em timeout ou falha depois da
 admissão sem receipt, preserve `UNCERTAIN`, investigue o backend e só então
 registre escalation explícita com reason code permitido. Não faça retry
@@ -236,3 +238,52 @@ target ativo. Não apague `state/inference/` nem edite o ledger. O backend local
 aceita apenas `localhost`, `127.0.0.1` ou `::1`, sem proxy/redirect; iniciar um
 servidor ou instalar runtime local é uma operação externa separada e não faz
 parte destes comandos.
+
+## AFTER M12.5.1 — HUMAN CONFIGURATION
+
+A Phase A terminou no estado deliberadamente inerte. `bin/check.sh` deve
+reportar `implementation_ready: true`, `configuration_ready: false` e
+`live_ready: false`, com `execution.enabled: false`, nenhum departamento,
+target ou rota e `privacy.remote_content_mode: deny_remote`. Não altere esses
+campos durante uma validação de código.
+
+Uma fase humana posterior precisa fornecer e revisar, em configuração
+versionada, todos estes itens antes de qualquer smoke:
+
+1. mapa completo S10–S50 para `prime` ou `routed`, sem mistura por trabalhador
+   em departamento Prime;
+2. target local explícito, incluindo runtime já instalado, endpoint loopback e
+   model ID confirmado pelo usuário;
+3. se autorizado, target remoto com provider, model, endpoint HTTPS explícito
+   e apenas o nome da variável de ambiente da credencial;
+4. preços inteiros em microunits por milhão de tokens para todo target pago;
+5. rotas ordenadas por papel e capacidades obrigatórias;
+6. modo de privacidade do run: `deny_remote`, `scoped_remote` ou
+   `full_remote`;
+7. perfil M12 habilitado e autorização do run vinculada ao hash integral da
+   configuração, `routing_policy_hash`, teto de 10.000.000 microunits e USD;
+8. backend registrado no runtime e preflight local aprovado.
+
+Nunca coloque o valor da chave no YAML, linha de comando, log, handoff ou
+arquivo de exemplo. `api_key_env` contém somente o nome da variável. Não use
+proxy, redirect, autodiscovery ou fallback de endpoint. A configuração precisa
+ser revisada antes de habilitar `execution`, `inference`, `allow_remote` ou
+`allow_paid`.
+
+O primeiro smoke deve ser uma autorização separada, com provider/modelo,
+budget e escopo explicitamente definidos pelo usuário. Execute-o em um novo
+run, não em um ledger anterior. Comece com uma única tarefa local e
+`deny_remote`; somente depois teste um target remoto, se ele tiver sido
+autorizado. Confirme output durável, inference receipt, reconciliação e receipt
+M6; pare diante de `UNCERTAIN`, divergência de hash, custo desconhecido ou
+overrun. Esta Phase A não executou nenhum desses smokes.
+
+Para inspecionar o estado sem tocar em credenciais ou iniciar backends:
+
+```sh
+python3 scripts/article_loop_command.py check --root .
+python3 scripts/article_loop_command.py preflight --root .
+```
+
+O exemplo estrutural fica em `docs/examples/m1251-human-configuration.yaml` e
+não é configuração ativa.

@@ -149,4 +149,33 @@ class LocalOpenAICompatibleBackend:
         )
 
 
-__all__ = ["FakeInferenceBackend", "LocalOpenAICompatibleBackend"]
+class RemoteOpenAICompatibleBackend(LocalOpenAICompatibleBackend):
+    """Bounded HTTPS client with redirects and environment proxies disabled."""
+
+    is_test_double = False
+
+    def preflight(self, target: InferenceTarget) -> Mapping[str, Any]:
+        if target.backend_type != "remote_openai_compatible" or target.local or target.endpoint is None:
+            raise InferenceBackendError("BACKEND_FAILURE", "remote backend target is invalid", sent=False)
+        from urllib.parse import urlsplit
+        parsed = urlsplit(target.endpoint)
+        if parsed.scheme != "https" or not parsed.hostname or parsed.username is not None or parsed.password is not None:
+            raise InferenceBackendError("BACKEND_FAILURE", "remote endpoint must be explicit HTTPS", sent=False)
+        if target.api_key_env is None:
+            raise InferenceBackendError("BACKEND_FAILURE", "remote target lacks a credential environment variable name", sent=False)
+        if target.timeout_seconds <= 0:
+            raise InferenceBackendError("BACKEND_FAILURE", "remote timeout is invalid", sent=False)
+        return {
+            "ready": os.environ.get(target.api_key_env) is not None,
+            "test_double": False,
+            "network": "explicit_https_only",
+            "redirects": False,
+            "proxies": False,
+            "credential_source": "environment",
+        }
+
+
+__all__ = [
+    "FakeInferenceBackend", "LocalOpenAICompatibleBackend",
+    "RemoteOpenAICompatibleBackend",
+]

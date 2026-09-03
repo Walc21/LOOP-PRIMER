@@ -66,7 +66,7 @@ capacidades permanecem deliberadamente separadas:
 - observar o modelo retornado no `ChildHandle` histórico é suportado;
 - escolher um modelo para a sessão raiz não foi verificado nesta instalação;
 - escolher provider/modelo por chamada `rlm(...)` ou por filho é
-  `unsupported_verified` no ambiente atual.
+  `unsupported_on_verified_version` para a versão 0.7.1 auditada em detalhe.
 
 M12.5 não acrescenta argumentos a `PrimeRLMAdapter.spawn(prompt, name)` e não
 usa configuração de `main` como substituto de evidência local. Seu routing
@@ -83,6 +83,15 @@ foi aberto. A evidência anterior continua histórica, e esta descoberta não
 autoriza inferir seleção de modelo por filho. O check deve reportar a presença
 real do binário, enquanto os testes simulam deterministicamente tanto presença
 quanto ausência e confirmam que descoberta não habilita execução live.
+
+Para evitar transformar ausência de auditoria em incompatibilidade provada, o
+status atual usa exatamente três estados: `unsupported_on_verified_version`
+quando uma versão foi auditada e a superfície não existe;
+`unknown_on_current_version` quando só a versão atual foi observada; e
+`supported_verified` somente após prova local da superfície. Como para 0.9.1
+foi executado apenas `--version`, a seleção de modelo por filho é hoje
+`unknown_on_current_version`. M12.5.1 não explora essa incerteza: o caminho
+Prime preserva `await rlm(prompt, name=name)` sem argumento adicional.
 
 ## Documentação oficial consultada
 
@@ -111,7 +120,7 @@ Também foram examinados, somente para esclarecer contrato já instalado, os arq
 | Local de skills | Skill de projeto em `.prime/agent/skills/`; diretórios com `SKILL.md` são descobertos recursivamente. | suportada |
 | Skill Python | Requer `SKILL.md`, `pyproject.toml`, `src/<nome_com_underscore>/__init__.py`; hífens do nome viram underscores no import. `run()` torna o módulo chamável assíncrono. | suportada; não instalar nesta fase |
 | `rlm(...)` | `await rlm(prompt, name=...)` devolve imediatamente handle de admissão com `rlm_child_id`, `name`, `session_dir`, `model`; nunca devolve resposta do filho. | suportada |
-| Seleção de modelo | O handle permite observar `model`; seleção de sessão não foi revalidada e seleção provider/model por filho/chamada não está exposta no contrato confirmado. | sessão: não verificada; por filho: `unsupported_verified` |
+| Seleção de modelo | O handle permite observar `model`; seleção de sessão não foi revalidada e seleção provider/model por filho/chamada não está exposta no contrato confirmado. | 0.7.1: `unsupported_on_verified_version`; 0.9.1 atual: `unknown_on_current_version` |
 | Resultados de filhos | Chegam por `agent_message` explícito ou arquivos; `rlm.list_subagents()` recupera filhos diretos; `rlm.delete_subagent(...)` os remove quando não necessários. | suportada |
 | `agent_message` | `list_agents()` é restrito à família. Assinatura segura: `send(message, receiver_role="parent"|"sibling"|"child", receiver_name=...)`; pai não recebe nome, irmãos/filhos exigem nome. | suportada com ressalva abaixo |
 | `/goal` | Cria/meta persistentemente objetivo explícito; possui status, pause, resume, clear e orçamento. No kernel, `goal.get()`, `goal.create()` e `goal.complete()`. | suportada; proibida nesta fase |

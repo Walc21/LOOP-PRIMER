@@ -10,6 +10,18 @@ model_execution:
   max_model_calls: 0
   max_concurrent_children: 0
 
+# M12.5.1 Phase A only wires the execution contract.  Human configuration is
+# deliberately absent, so no department can run through either implementation.
+execution:
+  schema_version: "1.0.0"
+  enabled: false
+  mode: dual
+  departments: {}
+
+privacy:
+  schema_version: "1.0.0"
+  remote_content_mode: deny_remote
+
 rlm:
   max_depth: 2
   max_active_submanagers: 5
@@ -35,6 +47,8 @@ budget:
   schema_version: "1.0.0"
   unit: tokens
   max_integer: 9223372036854775807
+  currency: USD
+  max_run_cost_microunits: 10000000
   default_profile: null
   limits:
     total_tokens: 0
@@ -92,3 +106,4 @@ inference:
     max_route_attempts: 2
   independence:
     jury_must_differ_from_producer_group: true
+    mode: model

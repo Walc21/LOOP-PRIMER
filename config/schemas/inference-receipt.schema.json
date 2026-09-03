@@ -15,7 +15,7 @@
     "created_at", "receipt_hash"
   ],
   "properties": {
-    "schema_version": {"const": "1.0.0"},
+    "schema_version": {"enum": ["1.0.0", "1.1.0"]},
     "receipt_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"},
     "run_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"},
     "cycle_id": {"type": "integer", "minimum": 0},
@@ -32,6 +32,10 @@
     "independence_group": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"},
     "prompt_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "response_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "output_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "output_locator": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+    "context_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "privacy_mode": {"enum": ["deny_remote", "scoped_remote", "full_remote"]},
     "requested_output_schema": {"enum": ["department-packet.schema.json", "agent-proposal.schema.json"]},
     "input_tokens": {"type": ["integer", "null"], "minimum": 0},
     "output_tokens": {"type": ["integer", "null"], "minimum": 0},
@@ -51,6 +55,10 @@
     "receipt_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
   },
   "allOf": [
+    {
+      "if": {"properties": {"schema_version": {"const": "1.1.0"}}, "required": ["schema_version"]},
+      "then": {"required": ["output_sha256", "output_locator", "context_hash", "privacy_mode"]}
+    },
     {
       "if": {"properties": {"usage_available": {"const": true}}, "required": ["usage_available"]},
       "then": {

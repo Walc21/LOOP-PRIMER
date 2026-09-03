@@ -232,10 +232,12 @@ class ScaffoldTests(unittest.TestCase):
             {path.name for path in (ROOT / "scripts").glob("[0-9][0-9]_*.py")},
             scripts,
         )
-        for name in ("start-prime.sh", "check.sh"):
-            path = ROOT / "bin" / name
-            self.assertTrue(path.is_file())
-            self.assertEqual(path.stat().st_mode & 0o111, 0)
+        prime_launcher = ROOT / "bin/start-prime.sh"
+        self.assertTrue(prime_launcher.is_file())
+        self.assertEqual(prime_launcher.stat().st_mode & 0o111, 0)
+        project_check = ROOT / "bin/check.sh"
+        self.assertTrue(project_check.is_file())
+        self.assertNotEqual(project_check.stat().st_mode & 0o111, 0)
         self.assertTrue((ROOT / "bin/preflight.sh").is_file())
         self.assertNotEqual((ROOT / "bin/preflight.sh").stat().st_mode & 0o111, 0)
 

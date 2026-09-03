@@ -210,7 +210,30 @@ tentativa limitada e nova decisão persistida; nunca faça retry silencioso.
 O fake exige `allow_test_doubles=True` estritamente booleano e é recusado com
 `live=True`. O backend OpenAI-compatible local aceita só loopback explícito,
 timeout e resposta limitada, sem proxies ou redirects. A configuração
-versionada mantém inferência e permissões desabilitadas. Targets pagos são
-recusados porque ainda não existe enforcement monetário duro pré-chamada. Uma
-autorização roteada usa provider/model nulos e `routing_policy_hash`; qualquer
-drift invalida a autorização.
+versionada mantém inferência e permissões desabilitadas. Uma autorização
+roteada usa provider/model nulos e `routing_policy_hash`; qualquer drift
+invalida a autorização.
+
+## Execução dual M12.5.1 Phase A
+
+`ExecutionPolicy` valida as seções top-level `execution` e `privacy`.
+`DualExecutionAdapter` escolhe `prime` ou `routed` somente por Sxx. O caminho
+Prime delega sem mudar `PrimeRLMAdapter.spawn(prompt, name)`; o caminho routed
+persiste um handle de controle local e mantém a mesma admissão Wxx de M6.
+`DualExecutionController.execute_routed_department()` materializa a tarefa,
+chama `InferenceRuntime`, copia os bytes científicos duráveis para
+`agent-proposal.json`, usa `Orchestrator.receipt()` e chama a consolidação M6.
+
+`ContextMaterializer` só lê texto autorizado pela AgentTask/view, rejeita
+travessia e symlink, omite o PDF binário, registra proveniência/hash e falha se
+contexto + output excederem o target. `deny_remote` é o default; os modos
+remotos não autorizam conteúdo fora dos locators. Outputs ficam write-once sob
+`state/inference/<run>/outputs/` e sustentam retomada sem reinferência.
+
+O ledger reserva e reporta custo inteiro. O teto versionado é 10.000.000
+microunits USD; preços são inteiros por milhão de tokens, usage conhecido é
+recalculado e usage desconhecido mantém a reserva. `PAID_RUNTIME_READY` descreve
+a capacidade do código, não autorização: `execution.enabled`, inferência,
+targets, rotas e paid/live continuam desabilitados. `execution_readiness()`
+separa `implementation_ready`, `configuration_ready` e `live_ready` sem ler
+credenciais.

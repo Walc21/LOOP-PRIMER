@@ -207,6 +207,8 @@ class RunAuthorization:
     approved_at: str
     approval_reference: str
     routing_policy_hash: str | None = None
+    max_run_cost_microunits: int | None = None
+    currency: str | None = None
 
     @classmethod
     def from_mapping(cls, value: Mapping[str, Any]) -> "RunAuthorization":
@@ -229,9 +231,21 @@ class RunAuthorization:
             not isinstance(routing_policy_hash, str) or _SHA.fullmatch(routing_policy_hash) is None
         ):
             raise BudgetAuthorizationError("authorization.routing_policy_hash is invalid")
+        max_run_cost = _integer(
+            value.get("max_run_cost_microunits"),
+            "authorization.max_run_cost_microunits", allow_none=True,
+        )
+        currency = value.get("currency")
+        if currency is not None and (
+            not isinstance(currency, str) or re.fullmatch(r"[A-Z]{3}", currency) is None
+        ):
+            raise BudgetAuthorizationError("authorization.currency is invalid")
+        if (max_run_cost is None) != (currency is None):
+            raise BudgetAuthorizationError("authorization monetary ceiling and currency must be paired")
         return cls(
             run_id, profile, config_hash, provider, model, token_limit,
             approved_at, reference.strip(), routing_policy_hash,
+            max_run_cost, currency,
         )
 
     def public(self) -> dict[str, Any]:
@@ -249,6 +263,9 @@ class RunAuthorization:
         # single-target authorizations.
         if self.routing_policy_hash is not None:
             result["routing_policy_hash"] = self.routing_policy_hash
+        if self.max_run_cost_microunits is not None:
+            result["max_run_cost_microunits"] = self.max_run_cost_microunits
+            result["currency"] = self.currency
         return result
 
 
@@ -317,6 +334,7 @@ class BudgetLedger:
         profile: str | None = None,
         config_hash: str | None = None,
         currency: str | None = None,
+        max_run_cost_microunits: int | None = None,
         live_enabled: bool = False,
         deadline_at: str | None = None,
         max_integer: int = MAX_INTEGER,
@@ -360,6 +378,11 @@ class BudgetLedger:
             if not isinstance(currency, str) or re.fullmatch(r"[A-Z]{3}", currency) is None:
                 raise BudgetError("currency must be an ISO-like uppercase code")
         self.currency = currency
+        self.max_run_cost_microunits = _integer(
+            max_run_cost_microunits, "max_run_cost_microunits", allow_none=True,
+        )
+        if self.max_run_cost_microunits is not None and self.currency is None:
+            raise BudgetError("monetary ceiling requires a currency")
         if type(live_enabled) is not bool:
             raise BudgetError("live_enabled must be boolean")
         self.live_enabled = live_enabled
@@ -397,6 +420,8 @@ class BudgetLedger:
                 "budget_max_integer": self.max_integer,
                 "budget_currency": self.currency,
             }
+            if self.max_run_cost_microunits is not None:
+                expected_binding["budget_max_run_cost_microunits"] = self.max_run_cost_microunits
             actual_binding = {key: persisted.get(key) for key in expected_binding}
             if actual_binding != expected_binding:
                 raise BudgetIntegrityError("run budget binding cannot be enlarged or changed")
@@ -449,7 +474,11 @@ class BudgetLedger:
             limits=limits,
             profile=profile,
             config_hash=config_hash,
-            currency=execution.get("currency"),
+            currency=section.get("currency", execution.get("currency")),
+            max_run_cost_microunits=_integer(
+                section.get("max_run_cost_microunits"),
+                "budget.max_run_cost_microunits", allow_none=True,
+            ),
             live_enabled=execution.get("enabled") is True and active_profile is not None,
             max_integer=max_integer,
             orphan_after_seconds=_integer(observability.get("orphan_after_seconds", 900), "orphan_after_seconds"),
@@ -755,12 +784,20 @@ class BudgetLedger:
         reserved_tokens = sum_field(open_items, "estimate_tokens")
         confirmed_wall = sum_field(confirmed, "wall_time_seconds")
         reserved_wall = sum_field(open_items, "estimated_wall_time_seconds")
+        confirmed_cost = sum_field(confirmed, "cost_microunits")
+        reserved_cost = sum_field(open_items, "estimated_cost_microunits")
         return {
             "confirmed_tokens": confirmed_tokens,
             "reserved_tokens": reserved_tokens,
             "available_tokens": max(0, (self.limits.total_tokens - confirmed_tokens - reserved_tokens) if self.limits.total_tokens is not None else MAX_INTEGER),
             "confirmed_wall_time_seconds": confirmed_wall,
             "reserved_wall_time_seconds": reserved_wall,
+            "confirmed_cost_microunits": confirmed_cost,
+            "reserved_cost_microunits": reserved_cost,
+            "available_cost_microunits": max(
+                0,
+                self.max_run_cost_microunits - confirmed_cost - reserved_cost,
+            ) if self.max_run_cost_microunits is not None else MAX_INTEGER,
             "calls": len(reservations),
             "active_calls": len(open_items),
             "retries": sum(item.get("attempt", 0) for item in reservations),
@@ -788,6 +825,7 @@ class BudgetLedger:
         role_id: str | None,
         model: str | None,
         estimate_tokens: int,
+        estimated_cost_microunits: int,
         estimated_wall_time_seconds: int,
         children: int,
         attempt: int,
@@ -809,6 +847,20 @@ class BudgetLedger:
         open_items = [item for item in reservations if self._open(item)]
         if any(item.get("status") == "RECONCILED" and item.get("usage_tokens", 0) > item.get("estimate_tokens", 0) for item in reservations):
             raise BudgetExceeded("a prior call exceeded its estimate; new reservations are blocked")
+        if any(
+            item.get("status") == "RECONCILED"
+            and int(item.get("cost_microunits", 0) or 0) > int(item.get("estimated_cost_microunits", 0) or 0)
+            for item in reservations
+        ):
+            raise BudgetExceeded("a prior call exceeded its monetary reserve; new reservations are blocked")
+        confirmed_cost = sum(int(item.get("cost_microunits", 0) or 0) for item in confirmed)
+        open_cost = sum(int(item.get("estimated_cost_microunits", 0) or 0) for item in open_items)
+        if (
+            self.max_run_cost_microunits is not None
+            and _add(_add(confirmed_cost, open_cost, "cost_microunits"), estimated_cost_microunits, "cost_microunits")
+            > self.max_run_cost_microunits
+        ):
+            raise BudgetExceeded("max_run_cost_microunits exceeded")
         self._check_limit("total_tokens", sum(int(item.get("usage_tokens", 0) or 0) for item in confirmed) + sum(int(item.get("estimate_tokens", 0) or 0) for item in open_items), estimate_tokens)
         for name, field, value in (
             ("per_cycle_tokens", "cycle_id", cycle_id),
@@ -861,9 +913,11 @@ class BudgetLedger:
                 continue
             if not local and policy.get("allow_remote") is not True:
                 continue
-            # M12 records monetary values but does not enforce a hard monetary
-            # ceiling before each call. Paid runtime therefore remains closed.
-            if paid:
+            if paid and (
+                policy.get("allow_paid") is not True
+                or self.max_run_cost_microunits is None
+                or self.currency is None
+            ):
                 continue
             return True
         return False
@@ -871,6 +925,7 @@ class BudgetLedger:
     def _authorization_valid(
         self, state: Mapping[str, Any], *, provider: str | None,
         model: str | None, role_id: str | None, estimate_tokens: int,
+        estimated_cost_microunits: int,
     ) -> None:
         if not self.live_enabled:
             raise BudgetAuthorizationError("live execution is disabled")
@@ -885,6 +940,13 @@ class BudgetLedger:
             raise BudgetAuthorizationError("authorization is not bound to this run/config/profile")
         if estimate_tokens > auth.token_limit:
             raise BudgetAuthorizationError("authorization token ceiling differs")
+        if self.max_run_cost_microunits is not None:
+            if (
+                auth.max_run_cost_microunits != self.max_run_cost_microunits
+                or auth.currency != self.currency
+                or estimated_cost_microunits > auth.max_run_cost_microunits
+            ):
+                raise BudgetAuthorizationError("authorization monetary ceiling/currency differs")
         if auth.routing_policy_hash is None:
             if auth.provider != provider or auth.model != model:
                 raise BudgetAuthorizationError("authorization provider/model/teto differs")
@@ -915,6 +977,11 @@ class BudgetLedger:
                 raise BudgetAuthorizationError("routed authorization requires null provider/model")
             if auth.routing_policy_hash != self.routing_policy_hash:
                 raise BudgetAuthorizationError("authorization routing policy hash differs")
+        if self.max_run_cost_microunits is not None and (
+            auth.max_run_cost_microunits != self.max_run_cost_microunits
+            or auth.currency != self.currency
+        ):
+            raise BudgetAuthorizationError("authorization monetary ceiling/currency differs")
         with self._lock():
             state = self._state_locked()
             previous = state.get("authorization")
@@ -937,6 +1004,7 @@ class BudgetLedger:
         provider: str | None = None,
         model: str | None = None,
         estimated_wall_time_seconds: int = 0,
+        estimated_cost_microunits: int = 0,
         children: int = 0,
         deadline_at: str | None = None,
         extra_judgment: bool = False,
@@ -955,6 +1023,7 @@ class BudgetLedger:
         provider = _safe_id(provider, "provider", allow_none=True)
         model = _safe_id(model, "model", allow_none=True)
         estimated_wall_time_seconds = _integer(estimated_wall_time_seconds, "estimated_wall_time_seconds")
+        estimated_cost_microunits = _integer(estimated_cost_microunits, "estimated_cost_microunits")
         children = _integer(children, "children")
         if type(extra_judgment) is not bool or type(live) is not bool or type(dry_run) is not bool:
             raise BudgetError("boolean reservation flags are invalid")
@@ -968,13 +1037,33 @@ class BudgetLedger:
             return {
                 "status": "dry_run", "reservation_id": reservation_id,
                 "run_id": self.run_id, "call_id": call_id, "estimate_tokens": estimate_tokens,
+                "estimated_cost_microunits": estimated_cost_microunits,
                 "usage_tokens": 0, "model_called": False,
             }
         with self._lock():
             state = self._state_locked()
+            prior = state["reservations"].get(reservation_id)
+            if prior is not None:
+                expected = {
+                    "call_id": call_id, "estimate_tokens": estimate_tokens,
+                    "estimated_cost_microunits": estimated_cost_microunits,
+                    "cycle_id": cycle_id, "department_id": department_id,
+                    "role_id": role_id, "attempt": attempt,
+                    "provider": provider, "model": model,
+                    "estimated_wall_time_seconds": estimated_wall_time_seconds,
+                    "children": children, "extra_judgment": extra_judgment,
+                    "live": live,
+                }
+                if any(
+                    prior.get(key, 0 if key == "estimated_cost_microunits" else None) != value
+                    for key, value in expected.items()
+                ):
+                    raise BudgetIdempotencyError("conflicting reservation retry")
+                return dict(prior)
             self._check_reservation_limits(
                 state, cycle_id=cycle_id, department_id=department_id, role_id=role_id,
                 model=model, estimate_tokens=estimate_tokens,
+                estimated_cost_microunits=estimated_cost_microunits,
                 estimated_wall_time_seconds=estimated_wall_time_seconds,
                 children=children, attempt=attempt, extra_judgment=extra_judgment,
                 deadline_at=deadline_at,
@@ -983,10 +1072,12 @@ class BudgetLedger:
                 self._authorization_valid(
                     state, provider=provider, model=model, role_id=role_id,
                     estimate_tokens=estimate_tokens,
+                    estimated_cost_microunits=estimated_cost_microunits,
                 )
             payload = {
                 "reservation_id": reservation_id, "call_id": call_id,
                 "estimate_tokens": estimate_tokens, "cycle_id": cycle_id,
+                "estimated_cost_microunits": estimated_cost_microunits,
                 "department_id": department_id, "role_id": role_id,
                 "attempt": attempt, "provider": provider, "model": model,
                 "estimated_wall_time_seconds": estimated_wall_time_seconds,
@@ -997,6 +1088,8 @@ class BudgetLedger:
                 "budget_max_integer": self.max_integer,
                 "budget_currency": self.currency,
             }
+            if self.max_run_cost_microunits is not None:
+                payload["budget_max_run_cost_microunits"] = self.max_run_cost_microunits
             event = self._append_locked(
                 "RESERVED", idempotency_key=f"reserve:{reservation_id}",
                 cycle_id=cycle_id, department_id=department_id, role_id=role_id,
@@ -1107,6 +1200,10 @@ class BudgetLedger:
                 "wall_time_seconds": wall, "cost_microunits": cost_microunits,
                 "currency": currency, "assurance": "reported" if usage_available is True or all(value is not None for value in values.values()) else "estimated",
                 "over_estimate": usage_tokens > item["estimate_tokens"],
+                "over_cost_reserve": (
+                    cost_microunits is not None
+                    and cost_microunits > int(item.get("estimated_cost_microunits", 0) or 0)
+                ),
             }
             event = self._append_locked(
                 "RECONCILED", idempotency_key=f"reconcile:{reservation_id}",
@@ -1304,6 +1401,8 @@ class BudgetLedger:
         reserved_tokens = sum(metric(item, "usage_tokens", "estimate_tokens")[1] for item in open_items)
         confirmed_wall = sum(metric(item, "wall_time_seconds", "estimated_wall_time_seconds")[0] for item in confirmed)
         reserved_wall = sum(metric(item, "wall_time_seconds", "estimated_wall_time_seconds")[1] for item in open_items)
+        confirmed_cost = sum(metric(item, "cost_microunits", "estimated_cost_microunits")[0] for item in confirmed)
+        reserved_cost = sum(metric(item, "cost_microunits", "estimated_cost_microunits")[1] for item in open_items)
         cycle_values = [item["cycle_id"] for item in reservations]
         progress_cycles = [item["cycle_id"] for item in state["progress"]]
         effective_cycle = current_cycle if current_cycle is not None else max(cycle_values + progress_cycles, default=None)
@@ -1328,6 +1427,10 @@ class BudgetLedger:
             "max_extra_judgments": report("max_extra_judgments", "judgments", self.limits.max_extra_judgments, sum(1 for item in reservations if item.get("extra_judgment") is True), 0),
             "max_cycles": report("max_cycles", "cycles", self.limits.max_cycles, cycles_started, 0),
             "max_cycles_without_improvement": report("max_cycles_without_improvement", "cycles", self.limits.max_cycles_without_improvement, cycles_without_improvement, 0),
+            "max_run_cost_microunits": report(
+                "max_run_cost_microunits", "microunits",
+                self.max_run_cost_microunits, confirmed_cost, reserved_cost,
+            ),
         }
         balance = {
             name: (value["available"] if isinstance(value, Mapping) and "available" in value else {
@@ -1358,10 +1461,25 @@ class BudgetLedger:
             "config_hash": self.config_hash,
             "state": state["state"],
             "limits": {**asdict(self.limits), "unit": "tokens", "max_integer": self.max_integer},
-            "usage": {"confirmed_tokens": confirmed_tokens, "reserved_tokens": reserved_tokens, "total_reconciled_tokens": confirmed_tokens, "by_limit": usage_by_limit},
+            "usage": {
+                "confirmed_tokens": confirmed_tokens,
+                "reserved_tokens": reserved_tokens,
+                "total_reconciled_tokens": confirmed_tokens,
+                "confirmed_cost_microunits": confirmed_cost,
+                "reserved_cost_microunits": reserved_cost,
+                "total_cost_microunits": _add(confirmed_cost, reserved_cost, "cost_microunits"),
+                "currency": self.currency,
+                "by_limit": usage_by_limit,
+            },
             "usage_by_limit": usage_by_limit,
             "balance": balance,
-            "available": {"total_tokens": balance["total_tokens"], "wall_time_seconds": balance["max_wall_time_seconds"], "calls": balance["max_calls"], "concurrent_children": balance["max_concurrent_children"]},
+            "available": {
+                "total_tokens": balance["total_tokens"],
+                "cost_microunits": balance["max_run_cost_microunits"],
+                "wall_time_seconds": balance["max_wall_time_seconds"],
+                "calls": balance["max_calls"],
+                "concurrent_children": balance["max_concurrent_children"],
+            },
             "reservations": sorted(public_reservations, key=lambda item: item["reservation_id"]),
             "open_reservations": len(open_items),
             "children": sum(int(item.get("children", 0) or 0) for item in open_items),
@@ -1386,6 +1504,7 @@ class BudgetLedger:
         return "\n".join((
             f"run={value['run_id']} state={value['state']} assurance={value['assurance']}",
             f"tokens confirmed={usage['confirmed_tokens']} reserved={usage['reserved_tokens']} available={value['available']['total_tokens']}",
+            f"cost {usage['currency']} confirmed={usage['confirmed_cost_microunits']} reserved={usage['reserved_cost_microunits']} available={value['available']['cost_microunits']}",
             f"reservations open={value['open_reservations']} calls={value['calls']} retries={value['retries']} children={value['children']}",
             f"alerts={len(value['alerts'])} last_improvement={value['last_improvement']}",
         ))

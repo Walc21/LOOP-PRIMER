@@ -362,15 +362,77 @@ fonte de recuperação: uma retomada reconcilia sem repetir a chamada. Falha ap�
 admissão sem receipt permanece `UNCERTAIN` e não libera saldo automaticamente.
 
 Os defaults são fechados: `inference.enabled`, `allow_local`, `allow_remote` e
-`allow_paid` começam falsos e não há targets versionados ativos. Targets pagos
-são recusados mesmo com opt-in declarativo, pois M12 ainda não oferece um teto
-monetário duro pré-chamada. O backend local OpenAI-compatible aceita somente
+`allow_paid` começam falsos e não há targets versionados ativos. O backend local OpenAI-compatible aceita somente
 loopback explícito, timeout e resposta limitada, sem redirects ou proxies; o
 fake exige autorização booleana de teste e nunca pode executar em modo live.
 `FREEZE` não cria rota, reserva, receipt nem chamada. Júri pode exigir grupo de
 independência diferente do produtor, e escalation somente ocorre por reason
 code fechado, tentativa limitada e nova decisão persistida — nunca por retry
 silencioso.
+
+### Ligação end-to-end dual M12.5.1 — Phase A
+
+M12.5.1 introduz uma escolha explícita por departamento, sem criar novos
+papéis. Um departamento `prime` segue integralmente o contrato M6 existente.
+Um departamento `routed` recebe um Sxx local, determinístico e persistente que
+admite os mesmos Wxx no journal M6; somente esses trabalhadores passam por
+`InferenceRuntime`. Misturar trabalhadores routed dentro de um departamento
+Prime não é permitido. Nos dois caminhos, a convergência é idêntica:
+
+```text
+AgentTask + closed M5 view
+-> compiled role prompt
+-> ContextMaterializer
+-> privacy filter
+-> ModelRouter
+-> monetary/token reservation
+-> one backend call
+-> validated scientific JSON
+-> durable output tree
+-> M6 workspace/agent-proposal.json
+-> Orchestrator.receipt()
+-> existing DepartmentPacket consolidation
+-> M7 synthesis, gates, M8 jury and Decision unchanged
+```
+
+`ContextMaterializer` aceita apenas locators já presentes na `AgentTask` e na
+view fechada. Caminhos precisam permanecer dentro da raiz sem symlinks; árvores
+são enumeradas em ordem e só arquivos textuais autorizados entram no contexto.
+O PDF binário é deliberadamente omitido: o conteúdo consultável vem do texto
+extraído por M3. Cada item registra locator, origem e SHA-256, e o conjunto
+produz `context_hash`. O limite do target inclui contexto, overhead e output;
+overflow falha antes do router. O conteúdo materializado nunca entra em logs,
+route decisions ou inference receipts.
+
+A política por run é `deny_remote`, `scoped_remote` ou `full_remote`.
+`deny_remote` elimina targets não locais; os outros modos continuam restritos
+a locators explícitos da tarefa — `full_remote` não é autorização para varrer o
+repositório. O modo e `context_hash` ficam vinculados à rota, ao output e ao
+receipt. Como o hash da configuração integral pertence ao ledger e à
+autorização, mudar a política no mesmo run invalida a retomada autorizada.
+
+Saída válida é publicada primeiro em
+`state/inference/<run>/outputs/<call_id>/<output_sha256>.json`, acompanhada de
+manifesto hash-bound, por staging sincronizado e rename atômico. Só seus bytes
+exatos chegam ao workspace M6. Isso permite recuperar quedas entre output,
+receipt, reconciliação e receipt M6 sem reinferência; ausência de resultado
+conhecido após admissão permanece `UNCERTAIN`, e divergência de hash falha
+fechada.
+
+O ledger aplica moeda e custo como inteiros. O teto padrão é 10.000.000
+microunits USD por run. Um target pago só é elegível se tiver preços inteiros
+por milhão de tokens, `allow_paid`, autorização com o mesmo teto/moeda e
+reserva conservadora anterior ao backend. Usage conhecido recalcula o custo a
+partir dos tokens; usage desconhecido conserva a reserva. Overrun é registrado
+e bloqueia nova admissão. A capacidade está implementada, mas execução,
+targets, rotas e paid/live permanecem desabilitados na configuração versionada.
+
+M8 não é contornado por esta camada. Seus jurors e meta-reviewer continuam
+entrando pela interface de avaliação já existente. A política de routing passa
+a poder exigir independência pelo identificador exato de `model`; o modo
+legacy por `independence_group` permanece interpretável. O inventário completo
+das superfícies model-driven e da fronteira M8 está em
+`docs/model-driven-surfaces.md`.
 
 ### Ferramentas auxiliares de handoff para IA
 

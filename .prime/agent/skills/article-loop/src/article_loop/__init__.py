@@ -43,9 +43,14 @@ from .inference import (
     InferenceIntegrityError, InferenceOutputError, InferenceReceipt,
     InferenceRequest, InferenceResult, InferenceRuntime, InferenceStore,
     InferenceTarget, ModelRegistry, ModelRouter, RouteDecision,
-    inference_preflight, routing_policy_hash,
+    TargetPricing, inference_preflight, routing_policy_hash,
 )
-from .inference_backends import FakeInferenceBackend, LocalOpenAICompatibleBackend
+from .inference_backends import FakeInferenceBackend, LocalOpenAICompatibleBackend, RemoteOpenAICompatibleBackend
+from .execution import (
+    ContextItem, ContextMaterializer, DualExecutionAdapter,
+    DualExecutionController, ExecutionError, ExecutionPolicy,
+    MaterializedContext, RoutedControlAdapter, execution_readiness,
+)
 
 __version__ = "0.7.0"
 
@@ -81,8 +86,12 @@ __all__ = [
     "InferenceError", "InferenceIntegrityError", "InferenceOutputError",
     "InferenceReceipt", "InferenceRequest", "InferenceResult",
     "InferenceRuntime", "InferenceStore", "InferenceTarget", "ModelRegistry",
-    "ModelRouter", "RouteDecision", "FakeInferenceBackend",
-    "LocalOpenAICompatibleBackend", "inference_preflight",
+    "ModelRouter", "RouteDecision", "TargetPricing", "FakeInferenceBackend",
+    "LocalOpenAICompatibleBackend", "RemoteOpenAICompatibleBackend",
+    "ContextItem", "ContextMaterializer", "DualExecutionAdapter",
+    "DualExecutionController", "ExecutionError", "ExecutionPolicy",
+    "MaterializedContext", "RoutedControlAdapter", "execution_readiness",
+    "inference_preflight",
     "routing_policy_hash",
     "check_inversion_consistency", "classify_cycle_progress", "compare",
     "choose_action", "compile_manager_prompt", "compile_prompt", "decide", "diagnose_cycle",

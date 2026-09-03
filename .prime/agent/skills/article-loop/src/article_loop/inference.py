@@ -17,6 +17,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import tempfile
 from typing import Any, Mapping, Protocol, Sequence
 from urllib.parse import urlsplit
@@ -27,8 +28,10 @@ from .budget import BudgetLedger
 
 
 SCHEMA_VERSION = "1.0.0"
-PRIME_PER_CHILD_MODEL_SELECTION = "unsupported_verified"
-PAID_RUNTIME_READY = False
+RECEIPT_SCHEMA_VERSION = "1.1.0"
+PRIME_PER_CHILD_MODEL_SELECTION = "unknown_on_current_version"
+PAID_RUNTIME_READY = True
+PRIVACY_MODES = frozenset({"deny_remote", "scoped_remote", "full_remote"})
 ROLE_IDS = frozenset({
     "M00",
     *{f"S{department}0" for department in range(1, 6)},
@@ -146,6 +149,28 @@ def _safe_endpoint(endpoint: str, *, local: bool) -> None:
 
 
 @dataclass(frozen=True)
+class TargetPricing:
+    """Integer microunits per one million tokens."""
+
+    currency: str
+    input_microunits_per_million: int
+    output_microunits_per_million: int
+    cached_input_microunits_per_million: int = 0
+
+    def cost(self, input_tokens: int, output_tokens: int, cache_tokens: int = 0) -> int:
+        values = (input_tokens, output_tokens, cache_tokens)
+        if any(type(value) is not int or value < 0 for value in values):
+            raise InferenceConfigError("token usage is invalid for pricing")
+        uncached = max(0, input_tokens - cache_tokens)
+        numerator = (
+            uncached * self.input_microunits_per_million
+            + cache_tokens * self.cached_input_microunits_per_million
+            + output_tokens * self.output_microunits_per_million
+        )
+        return (numerator + 999_999) // 1_000_000
+
+
+@dataclass(frozen=True)
 class InferenceTarget:
     target_id: str
     provider: str
@@ -163,6 +188,7 @@ class InferenceTarget:
     api_key_env: str | None
     timeout_seconds: int
     fallback_target: str | None = None
+    pricing: TargetPricing | None = None
 
     def public(self) -> dict[str, Any]:
         return {
@@ -176,6 +202,12 @@ class InferenceTarget:
             "endpoint": self.endpoint, "api_key_env": self.api_key_env,
             "timeout_seconds": self.timeout_seconds,
             "fallback_target": self.fallback_target,
+            "pricing": None if self.pricing is None else {
+                "currency": self.pricing.currency,
+                "input_microunits_per_million": self.pricing.input_microunits_per_million,
+                "output_microunits_per_million": self.pricing.output_microunits_per_million,
+                "cached_input_microunits_per_million": self.pricing.cached_input_microunits_per_million,
+            },
         }
 
 
@@ -190,10 +222,10 @@ class ModelRegistry:
         "target_id", "provider", "model", "backend_type", "enabled", "local",
         "paid", "tier", "capabilities", "context_limit", "max_output_tokens",
         "independence_group", "endpoint", "api_key_env", "timeout_seconds",
-        "fallback_target",
+        "fallback_target", "pricing",
     }
 
-    def __init__(self, policy: Mapping[str, Any]):
+    def __init__(self, policy: Mapping[str, Any], *, privacy_mode: str | None = None):
         if not isinstance(policy, Mapping) or set(policy) != self._POLICY_FIELDS:
             raise InferenceConfigError("inference policy fields are invalid")
         if policy.get("schema_version") != SCHEMA_VERSION or policy.get("routing_mode") != "deterministic":
@@ -208,13 +240,21 @@ class ModelRegistry:
         if type(escalation.get("enabled")) is not bool:
             raise InferenceConfigError("inference escalation.enabled must be boolean")
         _bounded_int(escalation.get("max_route_attempts"), "max_route_attempts", positive=True)
-        if not isinstance(independence, Mapping) or set(independence) != {"jury_must_differ_from_producer_group"} or type(independence.get("jury_must_differ_from_producer_group")) is not bool:
+        if not isinstance(independence, Mapping) or set(independence) not in (
+            {"jury_must_differ_from_producer_group"},
+            {"jury_must_differ_from_producer_group", "mode"},
+        ) or type(independence.get("jury_must_differ_from_producer_group")) is not bool:
             raise InferenceConfigError("inference independence policy is invalid")
+        if independence.get("mode", "independence_group") not in {"model", "independence_group"}:
+            raise InferenceConfigError("inference independence mode is invalid")
 
         self.enabled = policy["enabled"]
         self.allow_local = policy["allow_local"]
         self.allow_remote = policy["allow_remote"]
         self.allow_paid = policy["allow_paid"]
+        if privacy_mode is not None and privacy_mode not in PRIVACY_MODES:
+            raise InferenceConfigError("registry privacy mode is invalid")
+        self.privacy_mode = privacy_mode
 
         raw_targets = policy.get("targets")
         pairs: list[tuple[str, Mapping[str, Any]]] = []
@@ -243,6 +283,7 @@ class ModelRegistry:
         self.max_route_attempts = escalation["max_route_attempts"]
         self.escalation_enabled = escalation["enabled"]
         self.jury_independence = independence["jury_must_differ_from_producer_group"]
+        self.jury_independence_mode = independence.get("mode", "independence_group")
         self.validate_enabled_policy()
 
     @classmethod
@@ -252,14 +293,16 @@ class ModelRegistry:
         policy = config.get("inference")
         if not isinstance(policy, Mapping):
             raise InferenceConfigError("config/budgets.yaml lacks inference policy")
-        return cls(policy)
+        privacy = config.get("privacy")
+        privacy_mode = privacy.get("remote_content_mode") if isinstance(privacy, Mapping) else None
+        return cls(policy, privacy_mode=privacy_mode)
 
     def _target(self, key: str, raw: Mapping[str, Any]) -> InferenceTarget:
         if not isinstance(raw, Mapping):
             raise InferenceConfigError("inference target must be an object")
         expected = set(self._TARGET_FIELDS)
-        if set(raw) == expected - {"fallback_target"}:
-            raw = {**raw, "fallback_target": None}
+        if set(raw).issubset(expected) and expected - set(raw) <= {"fallback_target", "pricing"}:
+            raw = {**raw, "fallback_target": raw.get("fallback_target"), "pricing": raw.get("pricing")}
         if set(raw) != expected:
             raise InferenceConfigError("inference target fields are invalid")
         target_id = _safe_id(raw.get("target_id"), "target_id")
@@ -297,10 +340,34 @@ class ModelRegistry:
         if env_name is not None and (not isinstance(env_name, str) or _ENV.fullmatch(env_name) is None):
             raise InferenceConfigError("api_key_env must name an environment variable")
         fallback = _safe_id(raw.get("fallback_target"), "fallback_target", allow_none=True)
+        pricing_raw = raw.get("pricing")
+        pricing = None
+        if pricing_raw is not None:
+            expected_pricing = {
+                "currency", "input_microunits_per_million",
+                "output_microunits_per_million",
+                "cached_input_microunits_per_million",
+            }
+            if not isinstance(pricing_raw, Mapping) or set(pricing_raw) not in (
+                expected_pricing, expected_pricing - {"cached_input_microunits_per_million"},
+            ):
+                raise InferenceConfigError("target pricing fields are invalid")
+            currency = pricing_raw.get("currency")
+            if not isinstance(currency, str) or re.fullmatch(r"[A-Z]{3}", currency) is None:
+                raise InferenceConfigError("target pricing currency is invalid")
+            pricing = TargetPricing(
+                currency,
+                _bounded_int(pricing_raw.get("input_microunits_per_million"), "input price"),
+                _bounded_int(pricing_raw.get("output_microunits_per_million"), "output price"),
+                _bounded_int(pricing_raw.get("cached_input_microunits_per_million", 0), "cached input price"),
+            )
+        if raw["paid"] and pricing is None:
+            raise InferenceConfigError("paid target requires explicit integer pricing")
         return InferenceTarget(
             target_id, provider, model, backend_type, raw["enabled"], raw["local"],
             raw["paid"], raw["tier"], tuple(capabilities), context_limit,
             max_output_tokens, group, endpoint, env_name, timeout_seconds, fallback,
+            pricing,
         )
 
     def _validate_fallbacks(self) -> None:
@@ -341,8 +408,8 @@ class ModelRegistry:
                 raise InferenceConfigError("enabled local target requires allow_local")
             if not target.local and not self.allow_remote:
                 raise InferenceConfigError("enabled remote target requires allow_remote")
-            if target.paid:
-                raise InferenceConfigError("paid target is blocked without hard monetary enforcement")
+            if target.paid and (not self.allow_paid or target.pricing is None):
+                raise InferenceConfigError("paid target requires allow_paid and explicit pricing")
             if target.backend_type == "fake":
                 # A fake may exist in test policy, but a production preflight
                 # must make its test-only nature explicit in status.
@@ -362,6 +429,8 @@ class ModelRegistry:
             "allow_local": self.allow_local,
             "allow_remote": self.allow_remote,
             "allow_paid": self.allow_paid,
+            "privacy_mode": self.privacy_mode,
+            "jury_independence_mode": self.jury_independence_mode,
             "paid_runtime_ready": PAID_RUNTIME_READY,
             "inference_backend_routing": "available" if self.enabled else "disabled",
             "prime_child_model_routing": PRIME_PER_CHILD_MODEL_SELECTION,
@@ -391,6 +460,9 @@ class InferenceRequest:
     prompt: str
     escalation_from: str | None = None
     escalation_reason: str | None = None
+    context_hash: str | None = None
+    privacy_mode: str = "deny_remote"
+    producer_model: str | None = None
 
     def __post_init__(self) -> None:
         _safe_id(self.run_id, "request.run_id")
@@ -423,8 +495,14 @@ class InferenceRequest:
             _safe_id(self.producer_target, "request.producer_target")
         if self.producer_group is not None:
             _safe_id(self.producer_group, "request.producer_group")
+        if self.producer_model is not None:
+            _safe_id(self.producer_model, "request.producer_model")
         if self.jury and (self.producer_target is None or self.producer_group is None):
             raise InferenceConfigError("jury request requires producer identity metadata")
+        if self.context_hash is not None and _SHA.fullmatch(self.context_hash) is None:
+            raise InferenceConfigError("request context_hash is invalid")
+        if self.privacy_mode not in PRIVACY_MODES:
+            raise InferenceConfigError("request privacy_mode is invalid")
         has_escalation = self.escalation_from is not None or self.escalation_reason is not None
         if self.attempt == 0 and has_escalation:
             raise InferenceConfigError("initial request cannot contain escalation metadata")
@@ -441,7 +519,8 @@ class InferenceRequest:
         max_output_tokens: int, attempt: int = 0, extra_judgment: bool = False,
         jury: bool = False, producer_target: str | None = None,
         producer_group: str | None = None, escalation_from: str | None = None,
-        escalation_reason: str | None = None,
+        escalation_reason: str | None = None, context_hash: str | None = None,
+        privacy_mode: str = "deny_remote", producer_model: str | None = None,
     ) -> "InferenceRequest":
         schema_path = Path(root) / "config" / "schemas" / "agent-task.schema.json"
         if schema_path.is_symlink() or not schema_path.is_file():
@@ -467,17 +546,30 @@ class InferenceRequest:
             _safe_id(producer_target, "producer_target")
         if producer_group is not None:
             _safe_id(producer_group, "producer_group")
+        if producer_model is not None:
+            _safe_id(producer_model, "producer_model")
+        if context_hash is not None and _SHA.fullmatch(context_hash) is None:
+            raise InferenceConfigError("context_hash is invalid")
+        if privacy_mode not in PRIVACY_MODES:
+            raise InferenceConfigError("privacy_mode is invalid")
         if escalation_from is not None and _SHA.fullmatch(escalation_from) is None:
             raise InferenceConfigError("escalation_from is invalid")
         if escalation_reason is not None and escalation_reason not in ESCALATION_REASONS:
             raise InferenceConfigError("escalation_reason is invalid")
         return cls(
-            task["run_id"], task["cycle_id"], task["task_id"], role, department,
-            task["activation_mode"], sha256(prompt.encode("utf-8")),
-            task["prompt_version"], task["base_hash"], task["requested_output_schema"],
-            caps, estimate_tokens, max_output_tokens, attempt, extra_judgment,
-            jury, producer_target, producer_group, prompt, escalation_from,
-            escalation_reason,
+            run_id=task["run_id"], cycle_id=task["cycle_id"],
+            task_id=task["task_id"], role_id=role, department_id=department,
+            activation_mode=task["activation_mode"],
+            prompt_hash=sha256(prompt.encode("utf-8")),
+            prompt_version=task["prompt_version"], base_hash=task["base_hash"],
+            requested_output_schema=task["requested_output_schema"],
+            required_capabilities=caps, estimate_tokens=estimate_tokens,
+            max_output_tokens=max_output_tokens, attempt=attempt,
+            extra_judgment=extra_judgment, jury=jury,
+            producer_target=producer_target, producer_group=producer_group,
+            prompt=prompt, escalation_from=escalation_from,
+            escalation_reason=escalation_reason, context_hash=context_hash,
+            privacy_mode=privacy_mode, producer_model=producer_model,
         )
 
     def identity(self) -> dict[str, Any]:
@@ -495,6 +587,9 @@ class InferenceRequest:
             "attempt": self.attempt, "extra_judgment": self.extra_judgment,
             "jury": self.jury, "producer_target": self.producer_target,
             "producer_group": self.producer_group,
+            "producer_model": self.producer_model,
+            "context_hash": self.context_hash,
+            "privacy_mode": self.privacy_mode,
             "escalation_from": self.escalation_from,
             "escalation_reason": self.escalation_reason,
         }
@@ -530,6 +625,8 @@ class RouteDecision:
     matched_capabilities: tuple[str, ...]
     fallback_chain: tuple[str, ...]
     independence_group: str | None
+    context_hash: str | None = None
+    privacy_mode: str = "deny_remote"
 
     def identity(self) -> dict[str, Any]:
         return {
@@ -544,6 +641,8 @@ class RouteDecision:
             "matched_capabilities": list(self.matched_capabilities),
             "fallback_chain": list(self.fallback_chain),
             "independence_group": self.independence_group,
+            "context_hash": self.context_hash,
+            "privacy_mode": self.privacy_mode,
         }
 
     @property
@@ -573,6 +672,7 @@ class ModelRouter:
                 request.request_hash, self.registry.policy_hash, None, None, None,
                 None, "NO_INFERENCE_REQUIRED", request.attempt, None, None,
                 request.required_capabilities, (), (), None,
+                request.context_hash, request.privacy_mode,
             )
         if not self.registry.enabled:
             raise InferenceRoutingError("inference is disabled")
@@ -591,7 +691,9 @@ class ModelRouter:
                 continue
             if not target.local and not self.registry.allow_remote:
                 continue
-            if target.paid:
+            if target.paid and not self.registry.allow_paid:
+                continue
+            if not target.local and request.privacy_mode == "deny_remote":
                 continue
             if request.max_output_tokens > target.max_output_tokens or request.estimate_tokens + request.max_output_tokens > target.context_limit:
                 continue
@@ -599,8 +701,12 @@ class ModelRouter:
                 continue
             if not set(required).issubset(target.capabilities):
                 continue
-            if request.jury and self.registry.jury_independence and request.producer_group == target.independence_group:
-                continue
+            if request.jury and self.registry.jury_independence:
+                if self.registry.jury_independence_mode == "model":
+                    if request.producer_model is None or request.producer_model == target.model:
+                        continue
+                elif request.producer_group == target.independence_group:
+                    continue
             eligible.append(target)
         if not eligible:
             raise InferenceRoutingError("no authorized target satisfies required capabilities")
@@ -619,6 +725,7 @@ class ModelRouter:
             request.attempt, target.local, target.paid, required,
             tuple(sorted(set(required) & set(target.capabilities))),
             tuple(item.target_id for item in eligible), target.independence_group,
+            request.context_hash, request.privacy_mode,
         )
 
 
@@ -685,9 +792,13 @@ class InferenceReceipt:
     escalation_from: str | None
     escalation_reason: str | None
     created_at: str
+    output_sha256: str | None = None
+    output_locator: str | None = None
+    context_hash: str | None = None
+    privacy_mode: str = "deny_remote"
 
     def public(self) -> dict[str, Any]:
-        return {"schema_version": SCHEMA_VERSION, **self.__dict__}
+        return {"schema_version": RECEIPT_SCHEMA_VERSION, **self.__dict__}
 
 
 class InferenceStore:
@@ -703,8 +814,9 @@ class InferenceStore:
         self.inference_dir = self.root / "state" / "inference" / self.run_id
         self.routes_dir = self.inference_dir / "routes"
         self.receipts_dir = self.inference_dir / "receipts"
+        self.outputs_dir = self.inference_dir / "outputs"
         self.lock_dir = self.root / "state" / "locks"
-        for path in (self.root / "state", self.root / "state" / "inference", self.inference_dir, self.routes_dir, self.receipts_dir, self.lock_dir):
+        for path in (self.root / "state", self.root / "state" / "inference", self.inference_dir, self.routes_dir, self.receipts_dir, self.outputs_dir, self.lock_dir):
             self._ensure_dir(path)
 
     @staticmethod
@@ -815,6 +927,109 @@ class InferenceStore:
             self._atomic(path, encoded)
             return self._regular_json(path)
 
+    def persist_output(
+        self, call_id: str, document: Mapping[str, Any], metadata: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Publish one validated scientific output as an fsynced write-once tree."""
+        _safe_id(call_id, "call_id")
+        if not isinstance(document, Mapping) or not isinstance(metadata, Mapping):
+            raise InferenceIntegrityError("output document/metadata must be objects")
+        output_bytes = canonical_bytes(document) + b"\n"
+        output_sha = sha256(output_bytes)
+        locator = f"state/inference/{self.run_id}/outputs/{call_id}/{output_sha}.json"
+        manifest = {
+            **dict(metadata), "schema_version": RECEIPT_SCHEMA_VERSION,
+            "run_id": self.run_id, "call_id": call_id,
+            "output_sha256": output_sha, "output_locator": locator,
+            "output_size_bytes": len(output_bytes),
+        }
+        manifest["manifest_hash"] = sha256(canonical_bytes(manifest))
+        encoded_manifest = canonical_bytes(manifest) + b"\n"
+        final = self.outputs_dir / call_id
+        if final.is_symlink():
+            raise InferenceIntegrityError("output path is symlinked")
+        with self._lock():
+            if final.exists():
+                prior = self.output_for_call(call_id)
+                if prior is None or prior["bytes"] != output_bytes or prior["manifest"] != manifest:
+                    raise InferenceIntegrityError("conflicting durable inference output")
+                return prior["manifest"]
+            temporary = Path(tempfile.mkdtemp(prefix=".tmp-output-", dir=self.outputs_dir))
+            try:
+                output_path = temporary / f"{output_sha}.json"
+                manifest_path = temporary / "manifest.json"
+                for path, data in ((output_path, output_bytes), (manifest_path, encoded_manifest)):
+                    with path.open("wb") as stream:
+                        stream.write(data)
+                        stream.flush()
+                        os.fsync(stream.fileno())
+                self._fsync_dir(temporary)
+                os.replace(temporary, final)
+                self._fsync_dir(self.outputs_dir)
+            finally:
+                if temporary.exists():
+                    shutil.rmtree(temporary)
+        loaded = self.output_for_call(call_id)
+        if loaded is None or loaded["manifest"] != manifest:
+            raise InferenceIntegrityError("durable inference output verification failed")
+        return manifest
+
+    def output_for_call(self, call_id: str) -> dict[str, Any] | None:
+        _safe_id(call_id, "call_id")
+        directory = self.outputs_dir / call_id
+        if not directory.exists():
+            return None
+        if directory.is_symlink() or not directory.is_dir():
+            raise InferenceIntegrityError("durable output directory is unsafe")
+        manifest_path = directory / "manifest.json"
+        manifest = self._regular_json(manifest_path)
+        advertised = manifest.get("manifest_hash")
+        body = {key: value for key, value in manifest.items() if key != "manifest_hash"}
+        if advertised != sha256(canonical_bytes(body)):
+            raise InferenceIntegrityError("durable output manifest hash differs")
+        if manifest.get("run_id") != self.run_id or manifest.get("call_id") != call_id:
+            raise InferenceIntegrityError("durable output identity differs")
+        output_sha = manifest.get("output_sha256")
+        if not isinstance(output_sha, str) or _SHA.fullmatch(output_sha) is None:
+            raise InferenceIntegrityError("durable output hash is invalid")
+        if {path.name for path in directory.iterdir()} != {"manifest.json", f"{output_sha}.json"}:
+            raise InferenceIntegrityError("durable output tree contains unexpected entries")
+        output_path = directory / f"{output_sha}.json"
+        if output_path.is_symlink() or not output_path.is_file():
+            raise InferenceIntegrityError("durable output artifact is unsafe")
+        data = output_path.read_bytes()
+        if sha256(data) != output_sha or len(data) != manifest.get("output_size_bytes"):
+            raise InferenceIntegrityError("durable output bytes differ")
+        expected_locator = f"state/inference/{self.run_id}/outputs/{call_id}/{output_sha}.json"
+        if manifest.get("output_locator") != expected_locator:
+            raise InferenceIntegrityError("durable output locator differs")
+        try:
+            document = json.loads(data)
+        except json.JSONDecodeError as error:
+            raise InferenceIntegrityError("durable output is invalid JSON") from error
+        if not isinstance(document, dict):
+            raise InferenceIntegrityError("durable output must be an object")
+        return {"manifest": manifest, "document": document, "bytes": data, "path": output_path}
+
+    def materialize_output(self, call_id: str, workspace: str | Path) -> dict[str, Any]:
+        loaded = self.output_for_call(call_id)
+        if loaded is None:
+            raise InferenceIntegrityError("durable output is missing")
+        directory = Path(workspace)
+        resolved = directory.resolve()
+        if directory.is_symlink() or not directory.is_dir() or self.root not in resolved.parents:
+            raise InferenceIntegrityError("M6 workspace is unsafe")
+        target = directory / "agent-proposal.json"
+        if target.is_symlink():
+            raise InferenceIntegrityError("M6 output path is symlinked")
+        data = loaded["bytes"]
+        if target.exists():
+            if not target.is_file() or target.read_bytes() != data:
+                raise InferenceIntegrityError("M6 output conflicts with durable inference output")
+        else:
+            self._atomic(target, data)
+        return {"path": str(target), "sha256": loaded["manifest"]["output_sha256"]}
+
     def receipt_for_call(self, call_id: str) -> dict[str, Any] | None:
         _safe_id(call_id, "call_id")
         path = self.receipts_dir / f"{call_id}.json"
@@ -903,7 +1118,7 @@ class InferenceRuntime:
             self.store.persist_route(decision)
         return decision
 
-    def _validate_response_schema(self, request: InferenceRequest, response: str) -> bool:
+    def _validated_document(self, request: InferenceRequest, response: str) -> dict[str, Any] | None:
         schema_path = self.root / "config" / "schemas" / request.requested_output_schema
         if schema_path.is_symlink() or not schema_path.is_file():
             raise InferenceIntegrityError("requested output schema is missing or unsafe")
@@ -912,8 +1127,37 @@ class InferenceRuntime:
             value = json.loads(response)
             jsonschema.Draft202012Validator(schema, format_checker=jsonschema.FormatChecker()).validate(value)
         except (OSError, json.JSONDecodeError, jsonschema.ValidationError):
-            return False
-        return True
+            return None
+        return value if isinstance(value, dict) else None
+
+    def _validate_response_schema(self, request: InferenceRequest, response: str) -> bool:
+        return self._validated_document(request, response) is not None
+
+    @staticmethod
+    def _receipt_from_manifest(manifest: Mapping[str, Any]) -> InferenceReceipt:
+        names = InferenceReceipt.__dataclass_fields__
+        try:
+            return InferenceReceipt(**{name: manifest[name] for name in names})
+        except (KeyError, TypeError) as error:
+            raise InferenceIntegrityError("durable output lacks receipt reconstruction metadata") from error
+
+    @staticmethod
+    def _estimated_cost(request: InferenceRequest, target: InferenceTarget) -> int:
+        if target.pricing is None:
+            return 0
+        return target.pricing.cost(request.estimate_tokens, request.max_output_tokens, 0)
+
+    def _canonical_cost(self, result: InferenceResult, target: InferenceTarget) -> tuple[int | None, str | None]:
+        if target.pricing is None:
+            return result.cost_microunits, result.currency
+        if not result.usage_available or any(
+            value is None for value in (result.input_tokens, result.output_tokens, result.cache_tokens)
+        ):
+            return None, None
+        cost = target.pricing.cost(
+            int(result.input_tokens), int(result.output_tokens), int(result.cache_tokens),
+        )
+        return cost, target.pricing.currency
 
     def _reconcile_receipt(self, value: Mapping[str, Any]) -> dict[str, Any]:
         return self.ledger.reconcile(
@@ -930,6 +1174,8 @@ class InferenceRuntime:
     ) -> dict[str, Any]:
         if type(live) is not bool or type(allow_test_doubles) is not bool:
             raise InferenceConfigError("runtime flags must be strictly boolean")
+        if self.registry.privacy_mode is not None and request.privacy_mode != self.registry.privacy_mode:
+            raise InferenceRoutingError("request privacy mode differs from project policy")
         decision = self.router.route(request, self.ledger.status(current_cycle=request.cycle_id))
         if decision.reason_code == "NO_INFERENCE_REQUIRED":
             return {"decision": decision.identity(), "result": None, "receipt": None, "replayed": False}
@@ -939,18 +1185,39 @@ class InferenceRuntime:
         if existing is not None:
             if existing.get("route_decision_hash") != decision.decision_hash or existing.get("prompt_hash") != request.prompt_hash:
                 raise InferenceIntegrityError("existing receipt conflicts with replayed request")
+            if existing.get("output_sha256") is not None:
+                durable = self.store.output_for_call(call_id)
+                if (
+                    durable is None
+                    or durable["manifest"].get("output_sha256") != existing.get("output_sha256")
+                    or durable["manifest"].get("output_locator") != existing.get("output_locator")
+                    or durable["manifest"].get("context_hash") != existing.get("context_hash")
+                    or durable["manifest"].get("privacy_mode") != existing.get("privacy_mode")
+                ):
+                    raise InferenceIntegrityError("receipt and durable output binding differ")
             reconciled = self._reconcile_receipt(existing)
             return {"decision": persisted_route, "result": None, "receipt": existing, "reconciled": reconciled, "replayed": True}
         target = self.registry.target(str(decision.target_id))
-        backend = self.backends.get(target.backend_type)
-        if backend is None:
-            raise InferenceBackendError("BACKEND_FAILURE", "selected backend is not registered", sent=False)
-        is_test_double = getattr(backend, "is_test_double", False)
-        if is_test_double:
-            if not allow_test_doubles or live:
-                raise InferenceBackendError("BACKEND_FAILURE", "test double is not authorized", sent=False)
-        elif not live:
-            raise InferenceBackendError("BACKEND_FAILURE", "real inference requires live authorization", sent=False)
+        if not target.local and request.context_hash is None:
+            raise InferenceRoutingError("remote routing requires a hash-bound materialized context")
+        if target.paid and (
+            target.pricing is None
+            or self.ledger.max_run_cost_microunits is None
+            or self.ledger.currency != target.pricing.currency
+        ):
+            raise InferenceRoutingError("paid routing lacks matching monetary enforcement")
+        durable_output = self.store.output_for_call(call_id)
+        backend = None
+        if durable_output is None:
+            backend = self.backends.get(target.backend_type)
+            if backend is None:
+                raise InferenceBackendError("BACKEND_FAILURE", "selected backend is not registered", sent=False)
+            is_test_double = getattr(backend, "is_test_double", False)
+            if is_test_double:
+                if not allow_test_doubles or live:
+                    raise InferenceBackendError("BACKEND_FAILURE", "test double is not authorized", sent=False)
+            elif not live:
+                raise InferenceBackendError("BACKEND_FAILURE", "real inference requires live authorization", sent=False)
         self.ledger.logger.emit("inference_routed", {
             "call_id": call_id, "target_id": target.target_id,
             "provider": target.provider, "model": target.model,
@@ -961,23 +1228,56 @@ class InferenceRuntime:
             "cycle_id": request.cycle_id,
         })
         receipt_id = self.receipt_id(call_id)
+        estimated_cost = self._estimated_cost(request, target)
         reservation = self.ledger.reserve(
             call_id, request.estimate_tokens, cycle_id=request.cycle_id,
             department_id=request.department_id, role_id=request.role_id,
             attempt=request.attempt, provider=target.provider, model=target.model,
             estimated_wall_time_seconds=target.timeout_seconds,
+            estimated_cost_microunits=estimated_cost,
             extra_judgment=request.extra_judgment, live=live,
         )
+        if durable_output is not None:
+            if reservation.get("status") not in {"ADMITTED", "UNCERTAIN", "RECONCILED"}:
+                raise InferenceIntegrityError("durable output exists before a compatible admission")
+            recovered_receipt = self._receipt_from_manifest(durable_output["manifest"])
+            persisted_receipt = self.store.persist_receipt(recovered_receipt)
+            reconciled = self._reconcile_receipt(persisted_receipt)
+            return {
+                "decision": persisted_route, "result": None,
+                "receipt": persisted_receipt, "reconciled": reconciled,
+                "replayed": True, "recovered_from_output": True,
+            }
+        if reservation.get("status") == "RESERVED":
+            raise InferenceIntegrityError("an earlier reservation requires explicit non-admission proof")
+        if reservation.get("status") in {"ADMITTED", "UNCERTAIN"}:
+            if reservation.get("status") == "ADMITTED":
+                self.ledger.mark_uncertain(
+                    reservation["reservation_id"], "response_unknown_after_admission",
+                    receipt_id=receipt_id,
+                )
+            raise InferenceBackendError(
+                "BACKEND_FAILURE", "admitted call has no durable response; automatic retry is forbidden",
+                sent=True,
+            )
+        if self.fault is not None:
+            self.fault("after_reserve")
         self.ledger.admit(reservation["reservation_id"], receipt_id)
         try:
+            if self.fault is not None:
+                self.fault("after_admit")
+            if backend is None:
+                raise InferenceIntegrityError("backend is unexpectedly unavailable for a new call")
             result = backend.complete(request, target)
             if not isinstance(result, InferenceResult):
                 raise InferenceBackendError("BACKEND_FAILURE", "backend returned an invalid result", sent=True)
             if len(result.response.encode("utf-8")) > max(4096, target.max_output_tokens * 32):
                 raise InferenceBackendError("BACKEND_FAILURE", "backend content exceeds the routed output bound", sent=True)
-            schema_valid = self._validate_response_schema(request, result.response)
+            document = self._validated_document(request, result.response)
+            schema_valid = document is not None
             finish_reason = result.finish_reason if schema_valid else "schema_invalid"
             created_at = self.clock.now_utc() if self.clock is not None else _now()
+            cost_microunits, currency = self._canonical_cost(result, target)
             receipt = InferenceReceipt(
                 receipt_id, request.run_id, request.cycle_id, request.task_id,
                 request.role_id, call_id, reservation["reservation_id"],
@@ -987,10 +1287,24 @@ class InferenceRuntime:
                 request.prompt_hash, sha256(result.response.encode("utf-8")),
                 request.requested_output_schema, result.input_tokens,
                 result.output_tokens, result.cache_tokens, result.usage_available,
-                result.cost_microunits, result.currency, result.wall_time_seconds,
+                cost_microunits, currency, result.wall_time_seconds,
                 finish_reason, request.attempt, request.escalation_from,
                 request.escalation_reason, created_at,
+                None, None, request.context_hash, request.privacy_mode,
             )
+            if document is not None:
+                output_manifest = self.store.persist_output(
+                    call_id, document, receipt.public() | {
+                        "output_sha256": None, "output_locator": None,
+                    },
+                )
+                receipt = replace(
+                    receipt,
+                    output_sha256=output_manifest["output_sha256"],
+                    output_locator=output_manifest["output_locator"],
+                )
+                if self.fault is not None:
+                    self.fault("after_output")
             persisted_receipt = self.store.persist_receipt(receipt)
             self.ledger.logger.emit("inference_receipt", {
                 "call_id": call_id, "receipt_id": receipt_id,
@@ -1023,6 +1337,8 @@ class InferenceRuntime:
             raise
         if not schema_valid:
             raise InferenceOutputError("backend output does not satisfy requested schema")
+        if self.fault is not None:
+            self.fault("after_reconcile")
         return {
             "decision": persisted_route, "result": result,
             "receipt": persisted_receipt, "reconciled": reconciled,
@@ -1079,6 +1395,7 @@ __all__ = [
     "InferenceIntegrityError", "InferenceOutputError", "InferenceReceipt",
     "InferenceRequest", "InferenceResult", "InferenceRuntime", "InferenceStore",
     "InferenceTarget", "ModelRegistry", "ModelRouter", "PAID_RUNTIME_READY",
-    "PRIME_PER_CHILD_MODEL_SELECTION", "RouteDecision", "canonical_bytes",
+    "PRIME_PER_CHILD_MODEL_SELECTION", "PRIVACY_MODES", "RECEIPT_SCHEMA_VERSION",
+    "RouteDecision", "TargetPricing", "canonical_bytes",
     "inference_preflight", "routing_policy_hash", "sha256",
 ]

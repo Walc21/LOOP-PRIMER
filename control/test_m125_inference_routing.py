@@ -161,8 +161,8 @@ class M125ConfigurationAndRoutingTests(M125Base):
         status = registry.status()
         self.assertFalse(status["enabled"])
         self.assertEqual(status["enabled_targets"], [])
-        self.assertFalse(status["paid_runtime_ready"])
-        self.assertEqual(status["prime_child_model_routing"], "unsupported_verified")
+        self.assertTrue(status["paid_runtime_ready"])
+        self.assertEqual(status["prime_child_model_routing"], "unknown_on_current_version")
 
     def test_disabled_inference_never_calls_backend(self):
         route_policy = policy(enabled=False)
@@ -467,7 +467,7 @@ class M125TransactionTests(M125Base):
         second = runtime.escalation(request, first, "OUTPUT_SCHEMA_INVALID")
         self.assertEqual(second.target_id, "large")
 
-    def test_receipt_and_logs_never_persist_prompt_or_response(self):
+    def test_receipt_and_logs_never_persist_prompt_or_scientific_output(self):
         route_policy = policy(target("redacted"))
         sensitive_prompt = "PROMPT-SHOULD-NOT-PERSIST"
         response = proposal()
@@ -475,11 +475,17 @@ class M125TransactionTests(M125Base):
         backend = FakeInferenceBackend(result=InferenceResult(json.dumps(response), 1, 1, 0, True, wall_time_seconds=1, finish_reason="stop"))
         runtime = self.runtime(route_policy, backend)
         request = InferenceRequest.from_agent_task(self.root, self.task(), prompt=sensitive_prompt, required_capabilities=["language", "structured_output"], estimate_tokens=20, max_output_tokens=100)
-        runtime.execute(request, allow_test_doubles=True)
-        durable = "\n".join(path.read_text(errors="ignore") for path in (self.root / "state").rglob("*") if path.is_file())
-        durable += "\n" + "\n".join(path.read_text(errors="ignore") for path in (self.root / "logs").rglob("*") if path.is_file())
-        self.assertNotIn(sensitive_prompt, durable)
-        self.assertNotIn("RESPONSE-SHOULD-NOT-PERSIST", durable)
+        outcome = runtime.execute(request, allow_test_doubles=True)
+        metadata = "\n".join(
+            path.read_text(errors="ignore")
+            for directory in (self.root / "state/budgets", self.root / "state/inference/run-1/routes", self.root / "state/inference/run-1/receipts", self.root / "logs")
+            if directory.exists()
+            for path in directory.rglob("*") if path.is_file()
+        )
+        self.assertNotIn(sensitive_prompt, metadata)
+        self.assertNotIn("RESPONSE-SHOULD-NOT-PERSIST", metadata)
+        output = self.root / outcome["receipt"]["output_locator"]
+        self.assertIn("RESPONSE-SHOULD-NOT-PERSIST", output.read_text())
 
     def test_symlink_and_path_traversal_are_rejected(self):
         with self.assertRaises(Exception):
@@ -665,7 +671,7 @@ class M125PrimeBoundaryTests(unittest.TestCase):
         import inspect
         from article_loop.adapters import PrimeRLMAdapter
 
-        self.assertEqual(PRIME_PER_CHILD_MODEL_SELECTION, "unsupported_verified")
+        self.assertEqual(PRIME_PER_CHILD_MODEL_SELECTION, "unknown_on_current_version")
         self.assertEqual(list(inspect.signature(PrimeRLMAdapter.spawn).parameters), ["self", "prompt", "name"])
         source = inspect.getsource(PrimeRLMAdapter.spawn)
         self.assertNotIn("model=", source)

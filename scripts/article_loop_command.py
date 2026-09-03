@@ -47,6 +47,7 @@ from article_loop.inference import (  # noqa: E402
     ModelRegistry,
     inference_preflight,
 )
+from article_loop.execution import ExecutionError, execution_readiness  # noqa: E402
 
 
 COMMANDS = (
@@ -298,6 +299,8 @@ def _validate_m12_budget(config: Mapping[str, Any]) -> dict[str, Any]:
     maximum = section.get("max_integer")
     if type(maximum) is not int or maximum < 1 or maximum > 2**63 - 1:
         raise ProjectCheckError("M12 budget max_integer is invalid")
+    if section.get("currency") != "USD" or section.get("max_run_cost_microunits") != 10_000_000:
+        raise ProjectCheckError("M12.5.1 monetary ceiling must be exactly 10000000 microunits USD")
     limits = section.get("limits")
     if not isinstance(limits, Mapping):
         raise ProjectCheckError("M12 budget limits are invalid")
@@ -358,6 +361,17 @@ def _validate_m125_inference(root: Path) -> dict[str, Any]:
         raise ProjectCheckError("M12.5 inference configuration is invalid") from error
 
 
+def _validate_m1251_execution(root: Path) -> dict[str, Any]:
+    """Report code/config/live readiness without reading credentials."""
+    try:
+        result = execution_readiness(root)
+    except (ExecutionError, InferenceConfigError, BudgetError) as error:
+        raise ProjectCheckError("M12.5.1 execution/privacy configuration is invalid") from error
+    if result["implementation_ready"] is not True:
+        raise ProjectCheckError("M12.5.1 implementation is not ready")
+    return result
+
+
 def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, Any]:
     """Validate only local M11 surfaces and fail closed on unsafe drift."""
     project = _safe_root(str(root))
@@ -406,6 +420,7 @@ def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, 
     execution = _validate_fail_closed_budget(budgets, require_live=require_live)
     m12 = _validate_m12_budget(budgets)
     m125 = _validate_m125_inference(project)
+    m1251 = _validate_m1251_execution(project)
     system = _load_yaml(project / "config/system.yaml")
     project_config = system.get("project")
     if not isinstance(project_config, Mapping) or project_config.get("rlm_max_depth") != 2:
@@ -420,6 +435,7 @@ def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, 
         "execution": execution,
         "m12": m12,
         "m125": m125,
+        "m1251": m1251,
         "stop_present": False,
     }
 
@@ -432,7 +448,10 @@ def _run_command(command: str, params: Mapping[str, Any]) -> Any:
         return asyncio.run(bootstrap(params["pdf"], root=root))
     if command == "preflight":
         result = asyncio.run(preflight(root=root))
-        return {**dict(result), "inference": _validate_m125_inference(root)}
+        return {
+            **dict(result), "inference": _validate_m125_inference(root),
+            "execution": _validate_m1251_execution(root),
+        }
     if command == "run":
         return asyncio.run(
             run_cycle(
@@ -452,6 +471,7 @@ def _run_command(command: str, params: Mapping[str, Any]) -> Any:
                 **result,
                 "budget": ledger.status(current_cycle=cycle_id),
                 "inference": InferenceRuntime(root, ledger, registry, {}).status(),
+                "execution": _validate_m1251_execution(root),
             }
         except BudgetError as error:
             raise RuntimeError("budget status is unavailable") from error

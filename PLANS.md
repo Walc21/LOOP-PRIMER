@@ -46,6 +46,12 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   concluído como camada aditiva de routing/backend entre tarefas canônicas e o
   ledger, sem alterar M6, estados, ações, papéis ou iniciar M13. O fixture HTTP
   loopback real passou na matriz GitHub Actions Python 3.11–3.13.
+- M12.5.1 Phase A concluída localmente sobre o checkpoint inicial `ba316b5`:
+  execução dual por departamento converge no contrato M6, contexto autorizado
+  é materializado e hash-bound, saída científica precede o receipt, privacidade
+  é vinculada ao run e o ledger impõe teto inteiro de USD 10. A configuração
+  final permanece desabilitada, sem targets, rotas, modelos ou credenciais;
+  configuração humana e qualquer smoke live continuam fora desta fase.
 - Ferramentas auxiliares de handoff para IA concluídas: um gerador local de
   contexto compacto e um registrador local de histórico de sessões. Elas não
   alteram a máquina de estados, candidatos, gates ou a autoridade dos scripts
@@ -104,6 +110,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M11 | comandos e configuração do Prime Agent | concluído localmente | ponte CLI, templates planos, guardrails aditivos, runbook e launcher fail-closed; `settings.json` omitido sem schema instalado confirmado |
 | M12 | orçamento, observabilidade e execução prolongada | concluído localmente | ledger hash-bound, reservas atômicas, reconciliação conservadora, perfis opt-in, status/logs/alertas e retomada fail-closed; sem modelo, rede ou execução real |
 | M12.5 | routing de inferência e integração de backends | concluído localmente e na CI | registry/router determinísticos, política hash-bound, autorização multi-target compatível, receipts write-once e backend loopback validado na matriz Python 3.11–3.13, sem bypass de M6 nem target pago implícito |
+| M12.5.1 | ligação end-to-end de execução dual — Phase A | concluído localmente | seleção Prime/Routed por departamento, ator de controle routed persistente, contexto mínimo hash-bound, privacidade fail-closed, teto monetário inteiro, saída científica durável e retomada sem reinferência; defaults disabled e nenhum smoke live |
 | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
 
 ## Sequência canônica dos Prompts 01–13
@@ -123,8 +130,10 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 12. M12 acrescenta orçamento, observabilidade e execução prolongada autorizada.
 13. M13 executa testes sistêmicos e prepara a entrega.
 
-M12.5 é um hardening aditivo surgido depois de M12 e antes de M13; ele não
-renumera nem substitui nenhum dos Prompts canônicos 01--13.
+M12.5 e M12.5.1 são hardenings aditivos surgidos depois de M12 e antes de M13;
+eles não renumeram nem substituem nenhum dos Prompts canônicos 01--13. A Phase
+A de M12.5.1 entrega código e validação offline; configuração humana e smoke
+live exigem uma fase posterior e autorização específica.
 
 ## Critérios de aceitação do produto
 
@@ -156,6 +165,47 @@ renumera nem substitui nenhum dos Prompts canônicos 01--13.
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
 ## Registro de progresso
+
+- 2026-09-03 — A validação pré-publicação da M12.5.1 revelou uma
+  divergência de contrato: a Phase A e a CI executam literalmente
+  `bin/check.sh`, portanto o arquivo precisa ser executável, mas o teste de
+  scaffold M1 ainda exigia bit executável ausente para `check.sh`. A correção
+  planejada é atualizar somente essa asserção legada, preservando
+  `start-prime.sh` não executável e `preflight.sh` executável, e repetir a
+  regressão integral antes de qualquer commit ou push.
+
+- 2026-09-03 — M12.5.1 Phase A concluída localmente. A prova end-to-end usa
+  S10 routed com W11 local, W12 remoto simulado e W13 local, publica outputs
+  científicos duráveis, chama receipts M6 e reutiliza a consolidação
+  `DepartmentPacket`; S20 permanece no caminho Prime simulado. Cobertura
+  dedicada validou privacidade `deny_remote`/`scoped_remote`/`full_remote`,
+  marcador de não exfiltração, contenção/symlink/overflow, preço inteiro, teto
+  exato de 10.000.000 microunits e rejeição de +1, concorrência, autorização,
+  independência por modelo, backend HTTPS mockado sem proxy/redirect e todos os
+  cortes de recuperação sem chamada adicional. As suítes dedicadas executaram
+  63 testes com sucesso e 1 skip histórico; a regressão integral final executou
+  410 testes com sucesso em 268,029 s e 1 skip histórico do fixture loopback.
+  `py_compile`, `bash -n`, `git diff --check` e o check JSON passaram. A
+  configuração final reporta `implementation_ready=true`,
+  `configuration_ready=false`, `live_ready=false`, sem targets/rotas e com
+  `deny_remote`; nenhum Prime Agent, modelo, rede real, API paga, credencial,
+  artigo real, instalação, M13, commit ou push foi executado.
+
+- 2026-09-03 — M12.5.1 Phase A iniciada sobre HEAD limpo
+  `ba316b50a707d490348192d528046b6eec567250`. A decisão é preservar
+  `PrimeRLMAdapter.spawn(prompt, name)` e adicionar seleção por departamento:
+  departamentos Prime mantêm a hierarquia M6, enquanto departamentos routed
+  usam um ator de controle local persistente e trabalhadores via
+  `InferenceRuntime`, sempre publicando o mesmo `agent-proposal.json` e usando
+  `Orchestrator.receipt()`. O contexto virá apenas de locators autorizados e
+  texto M3, com contenção/symlink checks, hash e limite fail-closed. A política
+  de privacidade por run inicia em `deny_remote`; o teto monetário será
+  10.000.000 microunits USD, com reserva antes da chamada e reconciliação
+  conservadora. Incertezas explícitas: a instalação observada hoje informa
+  somente `prime-agent 0.9.1`, portanto seleção de modelo por filho é
+  `unknown_on_current_version`; não há configuração real de target, preço,
+  rota, modelo ou credencial. Não haverá Prime Agent, modelo, rede, API paga,
+  artigo real, instalação, M13, commit ou push nesta fase.
 
 - 2026-09-03 — Correção CI M12.5 confirmada no GitHub Actions pelo run
   `33807419247` do commit `49fad01`: os três jobs passaram, cada um com 399

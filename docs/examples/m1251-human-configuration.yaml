@@ -1,0 +1,34 @@
+# EXAMPLE ONLY — do not copy into active config without human review.
+execution:
+  schema_version: "1.0.0"
+  enabled: true
+  mode: dual
+  departments:
+    S10: routed
+    S20: prime
+    S30: routed
+    S40: routed
+    S50: prime
+
+privacy:
+  schema_version: "1.0.0"
+  remote_content_mode: scoped_remote
+
+inference_target_example:
+  target_id: human-selected-target
+  provider: human-selected-provider
+  model: human-selected-model-id
+  backend_type: remote_openai_compatible
+  enabled: true
+  local: false
+  paid: true
+  endpoint: https://human-reviewed.example/v1/chat/completions
+  api_key_env: HUMAN_SELECTED_API_KEY_ENV_NAME
+  pricing:
+    currency: USD
+    input_microunits_per_million: 0
+    output_microunits_per_million: 0
+    cached_input_microunits_per_million: 0
+
+# Replace every illustrative value, including zero prices, with verified data.
+# The active ceiling remains 10000000 microunits USD per run.

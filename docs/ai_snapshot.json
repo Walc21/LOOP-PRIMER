@@ -25,10 +25,10 @@
       "sha256": "42ee22ace252ae0d24e011b09507b877f0238d6fd0eb1bab8790b48728ba7957"
     },
     ".github/workflows/ci.yml": {
-      "bytes": 1194,
+      "bytes": 1369,
       "kind": "text",
-      "lines": 40,
-      "sha256": "fe0474481ca7a00cc4dc8abaff36742dd72f92a3044a399b406b8545c32dca1f"
+      "lines": 45,
+      "sha256": "61350e140d71435bf8cc84acbec9fab01cfca8a10ec0f348f969cae6de9a98e8"
     },
     ".gitignore": {
       "bytes": 983,
@@ -103,10 +103,10 @@
       "sha256": "7d9a74a1302a597798556a0c8a79d9efbb658a13b854dcb08162bbf5e441dbd1"
     },
     ".prime/agent/skills/article-loop/SKILL.md": {
-      "bytes": 12884,
+      "bytes": 14225,
       "kind": "text",
-      "lines": 216,
-      "sha256": "e222eb98ae1c4569a5af3e04b0add6839cd398b33bc61546eba975f58dbe0038"
+      "lines": 239,
+      "sha256": "cf254794a43338c133540367b43d4a678a55b58b5bf3301923634aa3f0eaf588"
     },
     ".prime/agent/skills/article-loop/pyproject.toml": {
       "bytes": 304,
@@ -115,10 +115,10 @@
       "sha256": "3a6e28296b26a6724897df658b0eba77add92e9f10bc228644f48f1d89d12bf3"
     },
     ".prime/agent/skills/article-loop/src/article_loop/__init__.py": {
-      "bytes": 5477,
+      "bytes": 6002,
       "kind": "text",
-      "lines": 95,
-      "sha256": "09902d2c1a1feb11d1fea487f8b54ba1a4a7a9fa3f82ce81ede7fefbf6f573d4"
+      "lines": 104,
+      "sha256": "36a0327810c3429b6a53b65ec4ec4ab84d4e6ea6952c246404e4ef9e1daa936f"
     },
     ".prime/agent/skills/article-loop/src/article_loop/activation.py": {
       "bytes": 11504,
@@ -139,10 +139,10 @@
       "sha256": "764d6a1441a9f233f336310eec067147f4a824a293920b88aef19a75ae732df2"
     },
     ".prime/agent/skills/article-loop/src/article_loop/budget.py": {
-      "bytes": 75119,
+      "bytes": 81625,
       "kind": "text",
-      "lines": 1450,
-      "sha256": "b0f41c695b4335b6ad7c78aa075f801ee8d791fea1cecca5e1886511e4403e74"
+      "lines": 1569,
+      "sha256": "f4fc7767d6ba329f0edfde31a0b3f5fa42fe560e130ce9caf9f1b9baa31f3611"
     },
     ".prime/agent/skills/article-loop/src/article_loop/diagnosis.py": {
       "bytes": 52562,
@@ -155,6 +155,12 @@
       "kind": "text",
       "lines": 1610,
       "sha256": "8babd430c3b629abf9c37e4551743c9997526c3e56d827ad4822a3c1c333bda5"
+    },
+    ".prime/agent/skills/article-loop/src/article_loop/execution.py": {
+      "bytes": 28440,
+      "kind": "text",
+      "lines": 595,
+      "sha256": "6f8d86ccf803c2e9e572bd1226081b79f8f8af4ee3240aa9e9f83bc08e3455fd"
     },
     ".prime/agent/skills/article-loop/src/article_loop/finalization.py": {
       "bytes": 29899,
@@ -169,16 +175,16 @@
       "sha256": "0f7376d992db558f17460b08c2d501cb84ed7b2479938bcf37ef06c917010bac"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference.py": {
-      "bytes": 53269,
+      "bytes": 70929,
       "kind": "text",
-      "lines": 1084,
-      "sha256": "2b6a50fad3ad1ab32b6a09bb391881784d9ac35d970266a2418eeb27459bc3fc"
+      "lines": 1401,
+      "sha256": "5cfc2e6cd4442e97abff5a615c65447d4f18bc54d715072bee1855ec46ee609f"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference_backends.py": {
-      "bytes": 8075,
+      "bytes": 9498,
       "kind": "text",
-      "lines": 152,
-      "sha256": "65c9818e9c4e20079491d716b3c3cc800e51c63105c07796f0751deebf195d9e"
+      "lines": 181,
+      "sha256": "395c005c5cb7b5c371187cfada7d3a4228fa4ea341a95db1c7237b007a506492"
     },
     ".prime/agent/skills/article-loop/src/article_loop/ingestion.py": {
       "bytes": 31068,
@@ -294,6 +300,12 @@
       "lines": 82,
       "sha256": "3d11ea0dd239eb53758d72956d34b68ea2947f5bd29031b767cf92828ff38744"
     },
+    ".prime/handoffs/12_5_1_human_configuration.md": {
+      "bytes": 1752,
+      "kind": "text",
+      "lines": 48,
+      "sha256": "72b1a756244d2ed87261053f75e0b86135af975769210a5dfb946d0321aac472"
+    },
     ".prime/handoffs/12_5_para_13.md": {
       "bytes": 4199,
       "kind": "text",
@@ -337,16 +349,16 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 47255,
+      "bytes": 50570,
       "kind": "text",
-      "lines": 659,
-      "sha256": "3debcefda2437ea5b2b0a71bb14f86746d5e14031e6a5a69ca28030cc73d7df7"
+      "lines": 701,
+      "sha256": "cfc7ee23f0f9c44efe5b938945d7faae81599ef97bd3d91de0350d78a9b24dbb"
     },
     "README.md": {
-      "bytes": 17809,
+      "bytes": 18273,
       "kind": "text",
-      "lines": 322,
-      "sha256": "1471a09b20659b531153ef4e878d82555b0d8149f2dad21b19d853368c0126b2"
+      "lines": 328,
+      "sha256": "d796aa3ec6e7a7564879947806e7246980e6f3c38049be9e4a900045629bd780"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -379,10 +391,10 @@
       "sha256": "663e5a0a596c91f5fef6b33b14e01fb632c451455a029693405dc278c0299c20"
     },
     "bin/check.sh": {
-      "bytes": 431,
+      "bytes": 439,
       "kind": "text",
       "lines": 14,
-      "sha256": "811b45294a81c19dd491e6797a3e190ecb8f082bffdfaf3ca5b50efebaa67fff"
+      "sha256": "275ae836c32f3bcfc9876be20b3bba2d65a37799af0ebb954e9eed7db21ddc64"
     },
     "bin/preflight.sh": {
       "bytes": 384,
@@ -397,10 +409,10 @@
       "sha256": "5805e1b6f491b0ff0ba8b12dd27e2f9b611d89da255ebc2bc4c6cd5acd646463"
     },
     "config/budgets.yaml": {
-      "bytes": 2442,
+      "bytes": 2823,
       "kind": "text",
-      "lines": 94,
-      "sha256": "bc9498cc9e79675aaba8897ed7bc6a78b151979b0d1172fe126ae92a52fa2a3f"
+      "lines": 109,
+      "sha256": "dc93a24029f2e0aa39ceed08d979348e548163945113657aae9a6ba9d0be747b"
     },
     "config/decision-policy.yaml": {
       "bytes": 667,
@@ -637,10 +649,10 @@
       "sha256": "c71be17e4ef0ef37f3df37dd22ba52c557fd5e60faa89cc8e14f948985be80c2"
     },
     "config/schemas/inference-receipt.schema.json": {
-      "bytes": 3792,
+      "bytes": 4336,
       "kind": "text",
-      "lines": 69,
-      "sha256": "21ae25d4475194c6277d7bafbcf4d4057eee404c0f97d87e9daf004e3060bf08"
+      "lines": 77,
+      "sha256": "76f33221f5123ec402f58938a52eb5a113e72ec6fa849fea11f80101719d817d"
     },
     "config/schemas/jury-verdict.schema.json": {
       "bytes": 3127,
@@ -756,11 +768,17 @@
       "lines": 197,
       "sha256": "bccd8c0c21656776d3681dfcc2224e6376d83804f021218c417785c7db79f6bd"
     },
-    "control/test_m125_inference_routing.py": {
-      "bytes": 32107,
+    "control/test_m1251_dual_execution.py": {
+      "bytes": 26443,
       "kind": "text",
-      "lines": 675,
-      "sha256": "175fbc5fd34267fea6e1a2bc6f6c68306bf5c35053fe66471ee08255e3df8bce"
+      "lines": 524,
+      "sha256": "35ee4e9c290acf994e95c482e7ea335e113b46319a4f9b8bae4baf480a247ee3"
+    },
+    "control/test_m125_inference_routing.py": {
+      "bytes": 32373,
+      "kind": "text",
+      "lines": 681,
+      "sha256": "d6c8ab02fb272e3de1c2a10bcef84270c054941e8a652deeaec500a56af1baf0"
     },
     "control/test_m12_budget_observability.py": {
       "bytes": 16029,
@@ -817,28 +835,46 @@
       "sha256": "0de4b64409e0ed7d0345a965c2aedb841ce7c8be4135128dc0ae6adee4b12e0f"
     },
     "docs/architecture.md": {
-      "bytes": 21793,
+      "bytes": 25021,
       "kind": "text",
-      "lines": 445,
-      "sha256": "5dd2e60cd660e6ca3a0a2999dfd2dd535351d74e47c2fdc686db5744f28f0990"
+      "lines": 507,
+      "sha256": "018f518aebba51170a2c12f609115725876cdb3791458b04c9e5566a7c2bbc05"
     },
     "docs/compatibility.md": {
-      "bytes": 12336,
+      "bytes": 12986,
       "kind": "text",
-      "lines": 179,
-      "sha256": "f532eaf0a54a4ac8d030c504113339da3ea6dd3cb8ec3fb3d71b6815c73fa0b7"
+      "lines": 188,
+      "sha256": "be929550d830cb3203e13cbde156a8f5fe73e904a6145c7c9a2b346b9c17ced8"
     },
     "docs/decisions.md": {
-      "bytes": 66690,
+      "bytes": 71186,
       "kind": "text",
-      "lines": 1139,
-      "sha256": "b8a1c20354ac97d40d2d7a43bf2630e669ed995915e65f850bc9e6a98e74421e"
+      "lines": 1213,
+      "sha256": "5f708176ecd72ba10a19bd4b0b5779e886f2d05d024879b94021f1fe5117787a"
+    },
+    "docs/examples/m1251-human-configuration.yaml": {
+      "bytes": 917,
+      "kind": "text",
+      "lines": 34,
+      "sha256": "26746a614b8423da9e8ab2c9ab59a1da456f30c63e911cf71e627cfe95e8be68"
+    },
+    "docs/m1251-phase-a-audit.md": {
+      "bytes": 2599,
+      "kind": "text",
+      "lines": 43,
+      "sha256": "81596d44946072bfcadb784b3d5c3d030f6ab898cdfe444d6a504856671b3e59"
+    },
+    "docs/model-driven-surfaces.md": {
+      "bytes": 2385,
+      "kind": "text",
+      "lines": 33,
+      "sha256": "d1fb59e1b2b64b10aefd3c42328bcc7bf16b655e9657e895d07530e6dadc21cb"
     },
     "docs/runbook.md": {
-      "bytes": 11905,
+      "bytes": 14488,
       "kind": "text",
-      "lines": 238,
-      "sha256": "77c793dce656ecafb2c237830914e8699f69e887693f228a55f1e00a75edb3ff"
+      "lines": 289,
+      "sha256": "881f74e79ed6e825e63913477052685a9515bdee01da27dda6e85975baad471e"
     },
     "input/inbox/.gitkeep": {
       "bytes": 1,
@@ -1069,10 +1105,10 @@
       "sha256": "3486b7e1f10232c7a4ac5942659770c2e453625e76eca435ab5cd937894e14b8"
     },
     "scripts/article_loop_command.py": {
-      "bytes": 22170,
+      "bytes": 23164,
       "kind": "text",
-      "lines": 519,
-      "sha256": "fdd07a8a61cd20b39dca95ef2d9b71c4ab31fcd07229f5a51248c34713e590a2"
+      "lines": 539,
+      "sha256": "0699196206eec70d13cf8defd9bc8f08d8f077f3e5b416a7932c09b6ad5f1141"
     },
     "state/checkpoints/.gitkeep": {
       "bytes": 1,
@@ -1147,18 +1183,38 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "c2a68d3819a2b48ec4e0c3ef4fe42fd337ec12dc6baef2f17ebdc48632fb61e8",
+  "fingerprint": "eb05e97f915ce52ccdf84dd6a04f7a3796c78887835084ce2a816783ff9601b3",
   "git": {
     "available": true,
     "branch": "main",
-    "head": "49fad01ca1a06ed8c034b9f8ca67b0b882b19461",
+    "head": "ba316b50a707d490348192d528046b6eec567250",
     "status": [
-      " M .prime/handoffs/12_5_para_13.md",
+      " M .github/workflows/ci.yml",
+      " M .prime/agent/skills/article-loop/SKILL.md",
+      " M .prime/agent/skills/article-loop/src/article_loop/__init__.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/budget.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/inference.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/inference_backends.py",
       " M PLANS.md",
-      " M README.md"
+      " M README.md",
+      " M bin/check.sh",
+      " M config/budgets.yaml",
+      " M config/schemas/inference-receipt.schema.json",
+      " M control/test_m125_inference_routing.py",
+      " M docs/architecture.md",
+      " M docs/compatibility.md",
+      " M docs/decisions.md",
+      " M docs/runbook.md",
+      " M scripts/article_loop_command.py",
+      "?? .prime/agent/skills/article-loop/src/article_loop/execution.py",
+      "?? .prime/handoffs/12_5_1_human_configuration.md",
+      "?? control/test_m1251_dual_execution.py",
+      "?? docs/examples/m1251-human-configuration.yaml",
+      "?? docs/m1251-phase-a-audit.md",
+      "?? docs/model-driven-surfaces.md"
     ]
   },
-  "recorded_at": "2026-09-03T21:27:30Z",
+  "recorded_at": "2026-09-03T22:48:42Z",
   "schema_version": "1.0.0",
-  "session_id": "session-87ecd36b0d1ddca820bd"
+  "session_id": "session-6cd6a464487f4b67221c"
 }

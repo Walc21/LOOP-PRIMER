@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Contract & Architecture Tests (Python ${{ matrix.python-version }})
+    name: M0-M12.5.1 Contract & Architecture Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -36,5 +36,10 @@ jobs:
         run: |
           python -m py_compile scripts/*.py control/*.py .prime/agent/skills/article-loop/src/article_loop/*.py
 
-      - name: Run complete M0-M9 regression suite
+      - name: Check project-local shell and fail-closed configuration
+        run: |
+          bash -n bin/check.sh bin/start-prime.sh
+          bin/check.sh
+
+      - name: Run complete M0-M12.5.1 regression suite
         run: python -m unittest discover -s control -p 'test_*.py' -q

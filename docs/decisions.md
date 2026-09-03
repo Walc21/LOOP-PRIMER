@@ -1137,3 +1137,81 @@ deve convertê-la em `InferenceBackendError(BACKEND_FAILURE, sent=True)`. O
 runtime conserva a reserva como `UNCERTAIN`; não há retry nem reembolso
 automático. Um teste socketless cobre a forma direta da exceção, além do
 fixture loopback existente.
+
+## ADR-033 — M12.5.1 Phase A: execução dual ligada ao contrato M6
+
+**Data:** 2026-09-03
+
+**Status:** Aceito para implementação local
+
+### Contexto
+
+M6 já define admissão, handles, workspaces, receipts e consolidação dos 21
+papéis; M12 controla recursos; M12.5 seleciona um backend, mas ainda não conduz
+uma tarefa routed até o `DepartmentPacket`. Também faltam privacidade por run,
+materialização mínima do contexto autorizado, persistência da saída científica
+e enforcement monetário anterior à chamada. A única evidência atual sobre o
+Prime Agent é a versão `0.9.1`; ela não confirma nem refuta uma API segura para
+seleção de modelo por filho.
+
+### Decisão
+
+1. A execução será selecionada por departamento, nunca por trabalhador dentro
+   de um departamento Prime. O caminho Prime preserva
+   `PrimeRLMAdapter.spawn(prompt, name)`; o caminho routed usa um ator de
+   controle local, determinístico e persistente para Sxx e delega somente os
+   trabalhadores Wxx ao `InferenceRuntime`. Ambos convergem no
+   `agent-proposal.json`, em `Orchestrator.receipt()` e na consolidação M6 já
+   existente.
+2. `ContextMaterializer` aceitará somente a `AgentTask` e a view fechada de M5,
+   resolverá locators sob a raiz autorizada com contenção real e rejeição de
+   symlinks, usará texto extraído por M3 em vez do PDF binário e emitirá itens
+   de proveniência com SHA-256. O contexto completo será limitado pelo target;
+   overflow, locator inválido, divergência ou travessia falham fechados. O
+   conteúdo não entra em logs, route decisions ou receipts.
+3. Cada run terá uma política imutável `deny_remote`, `scoped_remote` ou
+   `full_remote`, vinculada ao hash da configuração e ao receipt. O filtro será
+   aplicado antes do router. `deny_remote` recusará targets remotos; os modos
+   remotos só poderão enviar o material explicitamente autorizado pela tarefa.
+4. A saída científica validada será publicada write-once em
+   `state/inference/<run>/outputs/`, com artefato, manifesto e hashes exatos,
+   usando staging, `fsync`, `os.replace`, sincronização do diretório-pai e
+   proteção contra symlink. Só depois os bytes exatos serão materializados no
+   workspace M6 e recepcionados pelo orquestrador. Reinício recuperará saída,
+   receipt e ledger sem nova chamada; divergência falha fechada.
+5. O ledger usará inteiros em microunits, moeda USD e teto padrão de
+   10.000.000 microunits por run. Targets pagos exigirão preço explícito,
+   autorização hash-bound e reserva conservadora antes do backend. Custo
+   conhecido será recalculado de tokens; custo desconhecido permanecerá
+   reservado/`UNCERTAIN`. Overrun bloqueia novas admissões. A capacidade de
+   enforcement poderá ser marcada implementada, mas a configuração ativa
+   continuará com execução e paid/live desabilitados.
+6. O backend remoto OpenAI-compatible exigirá endpoint HTTPS explícito e nome
+   de variável de ambiente para a chave, sem descoberta, redirects ou proxies;
+   aplicará timeout, limites de corpo, validação JSON, usage e finish reason e
+   nunca persistirá segredo. Esta Phase A não terá endpoint, chave, target,
+   rota ou chamada real.
+7. Independência do júri poderá ser declarada por `model`; configurações legacy
+   por `independence_group` continuam interpretáveis. O status Prime passa a
+   distinguir `unsupported_on_verified_version`,
+   `unknown_on_current_version` e `supported_verified`; o estado atual é
+   `unknown_on_current_version`.
+8. A configuração inicial será `execution.enabled: false`, mapa de
+   departamentos vazio, `privacy.remote_content_mode: deny_remote`, sem targets
+   e sem rotas. O status separará `implementation_ready: true`,
+   `configuration_ready: false` e `live_ready: false`, enumerando apenas campos
+   ausentes, nunca segredos. M8 continuará usando sua interface de juror; esta
+   fase documentará a fronteira em vez de criar um bypass paralelo.
+9. `bin/check.sh` será executável porque a aceitação da Phase A e o workflow
+   CI o invocam diretamente. O contrato de scaffold distinguirá esse check
+   local de `bin/start-prime.sh`, que permanece não executável e só deve ser
+   iniciado de forma explícita pelo operador.
+
+### Consequências e limites
+
+M12.5.1 Phase A aumenta a completude do caminho offline sem executar o sistema
+científico. Nenhuma API nova do Prime é inventada, nenhum segredo é lido, e os
+16 estados, 9 ações, 21 papéis, gates, júri, síntese e decisão permanecem
+inalterados. Configuração humana e smoke live ficam explicitamente posteriores
+e exigirão autorização própria, provider/modelo, preço, endpoint local ou
+remoto, rotas, credencial via ambiente e orçamento confirmados pelo usuário.
