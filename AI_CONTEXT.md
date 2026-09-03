@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba`
-- Baseline da última sessão: `42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba`
+- Fingerprint atual das fontes: `686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6`
+- Baseline da última sessão: `686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 191 arquivos relevantes, 1452130 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 191 arquivos relevantes, 1452680 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -50,167 +50,39 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 
 ```diff
 # Alterações não commitadas
-diff --git a/.prime/agent/skills/article-loop/SKILL.md b/.prime/agent/skills/article-loop/SKILL.md
-index 0ff55c7..a791125 100644
---- a/.prime/agent/skills/article-loop/SKILL.md
-+++ b/.prime/agent/skills/article-loop/SKILL.md
-@@ -192 +192,25 @@ crash, reabrir o ledger, verificar a cadeia e reconciliar receipts/handles;
- nunca devolver saldo por suposição nem usar loop textual infinito.
-+
-+## Routing de inferência M12.5
-+
-+`ModelRegistry` carrega e valida a seção `inference` de
-+`config/budgets.yaml`; `ModelRouter` é puro e escolhe targets por papel,
-+capacidade, limite, fallback e independência. `InferenceRuntime` aceita somente
-+um `AgentTask` já validado e executa a sequência fechada `route -> reserve ->
-+admit -> backend -> receipt -> reconcile`. Ele não substitui o orchestrator M6,
-+não cria filhos e não altera `PrimeRLMAdapter.spawn(prompt, name)`.
-+
-+Decisões ficam em `state/inference/<run>/routes/` e receipts operacionais em
-+`state/inference/<run>/receipts/`, ambos write-once, hash-bound e sem prompt ou
-+resposta integral. Repetir a mesma chamada depois de crash reconcilia o receipt
-+existente sem reinferência; ausência de receipt após admissão fica `UNCERTAIN`.
-+`FREEZE` não reserva nem chama backend. Escalation requer reason code fechado,
-+tentativa limitada e nova decisão persistida; nunca faça retry silencioso.
-+
-+O fake exige `allow_test_doubles=True` estritamente booleano e é recusado com
-+`live=True`. O backend OpenAI-compatible local aceita só loopback explícito,
-+timeout e resposta limitada, sem proxies ou redirects. A configuração
-+versionada mantém inferência e permissões desabilitadas. Targets pagos são
-+recusados porque ainda não existe enforcement monetário duro pré-chamada. Uma
-+autorização roteada usa provider/model nulos e `routing_policy_hash`; qualquer
-+drift invalida a autorização.
-diff --git a/.prime/agent/skills/article-loop/src/article_loop/__init__.py b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-index 77a5e55..6be5a37 100644
---- a/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-+++ b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-@@ -40,4 +40,12 @@ from .budget import (
- from .observability import ObservabilityError, StructuredLogger, redact_payload
-+from .inference import (
-+    InferenceBackend, InferenceBackendError, InferenceConfigError, InferenceError,
-+    InferenceIntegrityError, InferenceOutputError, InferenceReceipt,
-+    InferenceRequest, InferenceResult, InferenceRuntime, InferenceStore,
-+    InferenceTarget, ModelRegistry, ModelRouter, RouteDecision,
-+    inference_preflight, routing_policy_hash,
-+)
-+from .inference_backends import FakeInferenceBackend, LocalOpenAICompatibleBackend
+diff --git a/.prime/handoffs/12_5_para_13.md b/.prime/handoffs/12_5_para_13.md
+index 02b8585..2c23a13 100644
+--- a/.prime/handoffs/12_5_para_13.md
++++ b/.prime/handoffs/12_5_para_13.md
+@@ -4,3 +4,5 @@
 
--__version__ = "0.6.0"
-+__version__ = "0.7.0"
+-M12.5 foi implementado sobre o checkpoint M12 `e5eb78f`, sem commit ou push.
++M12.5 foi implementado sobre o checkpoint M12 `e5eb78f` e publicado em
++`origin/main` pelo commit `dbf411c` (`feat(m12.5): add deterministic inference
++routing`), por fast-forward normal.
+ A camada é aditiva: não muda os 21 papéis, 16 estados, 9 ações, profundidade
+@@ -57,2 +59,3 @@ O runtime de inferência não finge ser um filho RLM nem substitui M6.
+ - `shellcheck`: ausente; não instalado.
++- publicação: `e5eb78f..dbf411c main -> main`, sem force-push.
 
-@@ -71,2 +79,9 @@ __all__ = [
-     "StructuredLogger", "redact_payload",
-+    "InferenceBackend", "InferenceBackendError", "InferenceConfigError",
-+    "InferenceError", "InferenceIntegrityError", "InferenceOutputError",
-+    "InferenceReceipt", "InferenceRequest", "InferenceResult",
-+    "InferenceRuntime", "InferenceStore", "InferenceTarget", "ModelRegistry",
-+    "ModelRouter", "RouteDecision", "FakeInferenceBackend",
-+    "LocalOpenAICompatibleBackend", "inference_preflight",
-+    "routing_policy_hash",
-     "check_inversion_consistency", "classify_cycle_progress", "compare",
-diff --git a/.prime/agent/skills/article-loop/src/article_loop/budget.py b/.prime/agent/skills/article-loop/src/article_loop/budget.py
-index bd623d0..ce0dddf 100644
---- a/.prime/agent/skills/article-loop/src/article_loop/budget.py
-+++ b/.prime/agent/skills/article-loop/src/article_loop/budget.py
-@@ -29,2 +29,32 @@ except ImportError:  # pragma: no cover - project environments already use PyYAM
+diff --git a/PLANS.md b/PLANS.md
+index 2d2bc73..f60072f 100644
+--- a/PLANS.md
++++ b/PLANS.md
+@@ -160,2 +160,8 @@ renumera nem substitui nenhum dos Prompts canônicos 01--13.
 
++- 2026-09-03 — A implementação M12.5 foi commitada como `dbf411c`
++  (`feat(m12.5): add deterministic inference routing`) e publicada por
++  fast-forward em `origin/main` (`e5eb78f..dbf411c`). O status técnico não foi
++  inflado: o critério J continua pendente por bloqueio de socket loopback, M13
++  não foi iniciado e inferência/targets pagos continuam desabilitados.
 +
-+if yaml is not None:
-+    class _UniqueSafeLoader(yaml.SafeLoader):
-+        """Safe YAML loader which rejects duplicate mapping keys."""
-+
-+    def _construct_unique_mapping(loader, node, deep=False):  # noqa: ANN001, ANN202
-+        loader.flatten_mapping(node)
-+        mapping = {}
-+        for key_node, value_node in node.value:
-+            key = loader.construct_object(key_node, deep=deep)
-+            try:
-+                duplicate = key in mapping
-+            except TypeError as error:
-+                raise yaml.constructor.ConstructorError(
-+                    "while constructing a mapping", node.start_mark,
-+                    "found an unhashable mapping key", key_node.start_mark,
-+                ) from error
-+            if duplicate:
-+                raise yaml.constructor.ConstructorError(
-+                    "while constructing a mapping", node.start_mark,
-+                    f"found duplicate key: {key!r}", key_node.start_mark,
-+                )
-+            mapping[key] = loader.construct_object(value_node, deep=deep)
-+        return mapping
-+
-+    _UniqueSafeLoader.add_constructor(
-+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-+        _construct_unique_mapping,
-+    )
-+
- from .observability import StructuredLogger
-@@ -178,2 +208,3 @@ class RunAuthorization:
-     approval_reference: str
-+    routing_policy_hash: str | None = None
-
-@@ -195,6 +226,14 @@ class RunAuthorization:
-             raise BudgetAuthorizationError("authorization.approval_reference is invalid")
--        return cls(run_id, profile, config_hash, provider, model, token_limit, approved_at, reference.strip())
-+        routing_policy_hash = value.get("routing_policy_hash")
-+        if routing_policy_hash is not None and (
-+            not isinstance(routing_policy_hash, str) or _SHA.fullmatch(routing_policy_hash) is None
-+        ):
-+            raise BudgetAuthorizationError("authorization.routing_policy_hash is invalid")
-+        return cls(
-+            run_id, profile, config_hash, provider, model, token_limit,
-+            approved_at, reference.strip(), routing_policy_hash,
-+        )
-
-     def public(self) -> dict[str, Any]:
--        return {
-+        result = {
-             "run_id": self.run_id,
-@@ -208,2 +247,7 @@ class RunAuthorization:
-         }
-+        # Preserve the historical event bytes and fixtures for legacy
-+        # single-target authorizations.
-+        if self.routing_policy_hash is not None:
-+            result["routing_policy_hash"] = self.routing_policy_hash
-+        return result
-
-@@ -255,3 +299,3 @@ def load_budget_config(root: str | Path) -> Mapping[str, Any]:
-     try:
--        value = yaml.safe_load(path.read_text(encoding="utf-8"))
-+        value = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueSafeLoader)
-     except (OSError, UnicodeError, yaml.YAMLError) as error:
-@@ -281,2 +325,4 @@ class BudgetLedger:
-         logger: StructuredLogger | None = None,
-+        inference_policy: Mapping[str, Any] | None = None,
-+        routing_policy_hash: str | None = None,
-     ):
-@@ -301,2 +347,13 @@ class BudgetLedger:
-         self.config_hash = config_hash
-+        self.inference_policy = dict(inference_policy) if isinstance(inference_policy, Mapping) else None
-+        computed_routing_hash = (
-+            _hash(_canonical(self.inference_policy)) if self.inference_policy is not None else None
-+        )
-+        if routing_policy_hash is not None and (
-+            not isinstance(routing_policy_hash, str) or _SHA.fullmatch(routing_policy_hash) is None
-+        ):
-+            raise BudgetError("routing_policy_hash is invalid")
-+        if routing_policy_hash is not None and routing_policy_hash != computed_routing_hash:
-+            raise BudgetIntegrityError("routing policy hash differs from configured policy")
-+        self.routing_policy_hash = routing_policy_hash or computed_routing_hash
-         if currency is not None:
-@@ -385,2 +442,5 @@ class BudgetLedger:
-         )
-+        inference = config.get("inference")
-+        if not isinstance(inference, Mapping):
-+            raise BudgetError("inference configuration is invalid")
-         return cls(
-@@ -397,2 +457,4 @@ class BudgetLedger:
-... [diff truncado em 8000 caracteres; consulte somente o arquivo necessário]
+ - 2026-09-03 — M12.5 implementado e validado localmente, exceto pelo smoke
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (78561 bytes; SHA-256 `3a8aff95ad30c7fc`).
+- Fonte lida: `docs/AI_HISTORY.md` (80718 bytes; SHA-256 `06581414305cb063`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -233,23 +105,24 @@ index bd623d0..ce0dddf 100644
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| M12.5 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 
-- Sessões estruturadas registradas: 20.
-- Índice recente: 2026-09-03T04:11:47Z — Concluído o endurecimento M10.1 local: pacote final hash-bound, rederivação da Decision, recuperação pós-recibo e cober…; 2026-09-03T04:19:31Z — Publicado M10.1 no GitHub após commit e fast-forward normais em origin/main; nenhum código adicional foi alterado nesta…; 2026-09-03T05:00:04Z — Implementação local do M11 concluída: a camada operacional agora expõe as APIs existentes por uma ponte JSON-in/JSON-ou…; 2026-09-03T05:04:53Z — Commit e publicação da implementação local da M11 concluídos no repositório LOOP-PRIMER; a integração de comandos, temp…; 2026-09-03T05:18:47Z — Avaliada a prontidão para iniciar M12 após a publicação da M11; nenhum código, configuração, execução live, modelo, Pri…; 2026-09-03T06:08:39Z — M12 implementado localmente sobre a base M11: ledger de orçamento durável, observabilidade estruturada redigida, perfis…; 2026-09-03T19:09:00Z — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branc…; 2026-09-03T20:22:56Z — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem i…. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 21.
+- Índice recente: 2026-09-03T04:19:31Z — Publicado M10.1 no GitHub após commit e fast-forward normais em origin/main; nenhum código adicional foi alterado nesta…; 2026-09-03T05:00:04Z — Implementação local do M11 concluída: a camada operacional agora expõe as APIs existentes por uma ponte JSON-in/JSON-ou…; 2026-09-03T05:04:53Z — Commit e publicação da implementação local da M11 concluídos no repositório LOOP-PRIMER; a integração de comandos, temp…; 2026-09-03T05:18:47Z — Avaliada a prontidão para iniciar M12 após a publicação da M11; nenhum código, configuração, execução live, modelo, Pri…; 2026-09-03T06:08:39Z — M12 implementado localmente sobre a base M11: ledger de orçamento durável, observabilidade estruturada redigida, perfis…; 2026-09-03T19:09:00Z — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branc…; 2026-09-03T20:22:56Z — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem i…; 2026-09-03T20:28:25Z — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e se…. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-m12-evaluation-20260903` — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branch main alinhada ao origin/main, M13 ainda pendente e execução live corretamente bloqueada.
-  - mudanças: Nenhum arquivo de produto, contrato, configuração, código ou marco foi alterado; somente o registro obrigatório desta sessão diagnóstica e o contexto gerado foram atualizados.
-  - decisões: Considerar o M12 tecnicamente saudável para avançar ao planejamento do M13, preservando os defaults fail-closed e sem autorizar Prime Agent, modelos, rede ou APIs pagas.
-  - validações: bash bin/check.sh: status success; live_ready=false; model_execution_enabled=false; paid_apis_enabled=false; perfis calibration e overnight desabilitados; prime_agent_discovered=false.; python3 -m unittest discover -s control -q: 366 testes aprovados em 231.770s; único warning conhecido Duplicate name: a.tex no fixture adversarial de ZIP.; git rev-list --left-right --count HEAD...origin/main retornou 0 0; HEAD e origin/main apontam para e5eb78f feat(m12): add durable budget observability.
-  - riscos: O handoff 12_para_13.md ainda descreve corretamente a sessão de implementação pré-commit, mas sua frase de que não houve commit/publicação está desatualizada em relação ao estado atual e pode confundir o próximo operador.; M13 possui objetivo geral, mas ainda carece de um plano detalhado e critérios sistêmicos específicos antes da implementação.
-  - próximos: Se autorizado, planejar M13 em PLANS.md e docs/decisions.md, corrigir a superfície de handoff/publicação e então implementar testes sistêmicos e empacotamento sem executar o artigo real.
 - `session-2dffb2bba91ea37f3f05` — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem iniciar M13; aceitação integral permanece aberta somente pelo smoke HTTP loopback bloqueado pelo sandbox.
   - mudanças: Adicionados registry, router, request/result/receipt, store write-once e runtime transacional em inference.py.; Adicionados fake determinístico e backend local OpenAI-compatible limitado a loopback em inference_backends.py, além do schema de receipt.; Estendidos autorização routed hash-bound, status, preflight/check, observabilidade, documentação, testes e handoff 12_5_para_13.
   - decisões: PrimeRLMAdapter.spawn(prompt, name) permaneceu intacto; seleção de modelo por filho foi registrada como unsupported_verified porque o Prime Agent não está instalado neste host.; Targets pagos permanecem recusados porque M12 não possui enforcement monetário duro pré-chamada; defaults inference/local/remote/paid permanecem falsos.; M12.5 não é executor de papel RLM: opera apenas pedidos derivados de AgentTask sem substituir handles, receipts ou hierarquia M6.
   - validações: python3 -m unittest discover -s control -q: 395 testes aprovados, 1 skip do fixture HTTP loopback.; Suítes M12.5, M12, M11 e contratos: 116 testes aprovados, 1 skip do fixture HTTP loopback.; py_compile dos Python alterados/criados, bash -n bin/check.sh, bin/check.sh, json.tool do schema e git diff --check: aprovados.; bin/check.sh confirmou inference desabilitada, zero targets, paid_runtime_ready false, Prime não descoberto e policy hash estável.
   - riscos: O sandbox recusou socket loopback e a elevação foi negada; o critério J não foi provado e M12.5 não foi marcado como integralmente aceito.; shellcheck não está instalado; não houve instalação global.
   - próximos: Antes de M13, executar control.test_m125_inference_routing.M125LoopbackBackendTests em ambiente que permita socket local e confirmar todos os cenários HTTP.; Manter Prime, modelos, rede remota e targets pagos desabilitados até nova autorização específica.
+- `session-8099f5a97e6e063424d5` — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e sem iniciar M13.
+  - mudanças: Atualizados PLANS.md e o handoff 12_5_para_13.md com o commit e a publicação efetivamente observados.
+  - decisões: A implementação e o registro de publicação permanecem em commits separados para que o histórico final reflita fatos já confirmados.; Nenhum force-push, rebase, modelo, Prime Agent, target pago ou M13 foi executado.
+  - validações: git fetch --prune origin e git rev-list confirmaram HEAD...origin/main em 0 0 antes do commit.; bin/check.sh passou e as suítes M12.5/M12/M11/contratos executaram 116 testes com sucesso e 1 skip de loopback antes da publicação.; Commit dbf411c publicado com sucesso: e5eb78f..dbf411c main -> main.
+  - riscos: O critério J do M12.5 continua pendente porque o sandbox não permite abrir o fixture HTTP loopback.
+  - próximos: Executar o fixture loopback em ambiente permitido antes de declarar aceitação integral do M12.5 ou iniciar M13.
 
 ## Marcos planejados
 
@@ -405,7 +278,9 @@ Fonte: `.prime/handoffs/12_5_para_13.md`.
 
 ## Estado
 
-M12.5 foi implementado sobre o checkpoint M12 `e5eb78f`, sem commit ou push.
+M12.5 foi implementado sobre o checkpoint M12 `e5eb78f` e publicado em
+`origin/main` pelo commit `dbf411c` (`feat(m12.5): add deterministic inference
+routing`), por fast-forward normal.
 A camada é aditiva: não muda os 21 papéis, 16 estados, 9 ações, profundidade
 RLM, gates, júri, Decision, finalizador, champion ou autoridade de merge. M13
 não foi iniciado.
@@ -458,12 +333,9 @@ O runtime de inferência não finge ser um filho RLM nem substitui M6.
 - `bin/check.sh`: OK; inference desabilitada, zero targets, paid false.
 - `git diff --check`: OK.
 - `shellcheck`: ausente; não instalado.
+- publicação: `e5eb78f..dbf411c main -> main`, sem force-push.
 
 ## Próximo passo permitido
-
-Antes de iniciar M13, executar somente o fixture loopback em ambiente que
-autorize socket local e confirmar sucesso, erro HTTP, malformed, resposta
-grande, conexão fechada, timeout, redirect bloqueado e usage ausente. Não
 
 ... [handoff truncado em 3000 caracteres; consulte o arquivo original]
 </latest_handoff>
@@ -473,7 +345,7 @@ grande, conexão fechada, timeout, redirect bloqueado e usage ausente. Não
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
 - Total: 191 arquivos; runtime=18, text=173.
-- Fingerprint canônico: `42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba`.
+- Fingerprint canônico: `686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6`.
 
 ## Roteamento para aprofundamento
 

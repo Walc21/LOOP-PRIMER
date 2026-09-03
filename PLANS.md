@@ -158,6 +158,12 @@ renumera nem substitui nenhum dos Prompts canônicos 01--13.
 
 ## Registro de progresso
 
+- 2026-09-03 — A implementação M12.5 foi commitada como `dbf411c`
+  (`feat(m12.5): add deterministic inference routing`) e publicada por
+  fast-forward em `origin/main` (`e5eb78f..dbf411c`). O status técnico não foi
+  inflado: o critério J continua pendente por bloqueio de socket loopback, M13
+  não foi iniciado e inferência/targets pagos continuam desabilitados.
+
 - 2026-09-03 — M12.5 implementado e validado localmente, exceto pelo smoke
   HTTP real do fixture loopback: o sandbox recusou a abertura do socket e a
   tentativa de elevação foi negada, portanto o critério J permanece

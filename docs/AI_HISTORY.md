@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba`
-- Registrado em: `2026-09-03T20:22:56Z`
-- Git: branch `main`, HEAD `e5eb78fbce40`
+- Fingerprint das fontes: `686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6`
+- Registrado em: `2026-09-03T20:28:25Z`
+- Git: branch `main`, HEAD `dbf411c80ae0`
 - Arquivos relevantes: 191
 
 ## Evolução reconstruída do versionamento
@@ -33,6 +33,7 @@
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| M12.5 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 
 ### Commits exatos
 
@@ -133,6 +134,7 @@
 | `87c26ae37` | 2026-09-03 | M11 | feat(m11): add local Prime Agent command integration | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | `af08c798d` | 2026-09-03 | M11 | chore(history): record M11 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `e5eb78fbc` | 2026-09-03 | M12 | feat(m12): add durable budget observability | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| `dbf411c80` | 2026-09-03 | M12.5 | feat(m12.5): add deterministic inference routing | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 
 ## Decisões arquiteturais
 
@@ -978,3 +980,40 @@
 | modified | `docs/runbook.md` | `f067531f3d3d` | `77c793dce656` |
 | modified | `scripts/ai_context.py` | `3f7517e51d98` | `030ac491a33d` |
 | modified | `scripts/article_loop_command.py` | `09b6ae4eafc7` | `fdd07a8a61cd` |
+
+### 2026-09-03T20:28:25Z — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e sem iniciar M13.
+
+- Session ID: `session-8099f5a97e6e063424d5`
+- Fingerprint final: `686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6`
+- Git final: `dbf411c80ae0`; status relevante: 2 item(ns)
+- Delta factual: 0 adicionados, 2 modificados, 0 removidos
+
+**Mudanças**
+
+- Atualizados PLANS.md e o handoff 12_5_para_13.md com o commit e a publicação efetivamente observados.
+
+**Decisões**
+
+- A implementação e o registro de publicação permanecem em commits separados para que o histórico final reflita fatos já confirmados.
+- Nenhum force-push, rebase, modelo, Prime Agent, target pago ou M13 foi executado.
+
+**Validações**
+
+- git fetch --prune origin e git rev-list confirmaram HEAD...origin/main em 0 0 antes do commit.
+- bin/check.sh passou e as suítes M12.5/M12/M11/contratos executaram 116 testes com sucesso e 1 skip de loopback antes da publicação.
+- Commit dbf411c publicado com sucesso: e5eb78f..dbf411c main -> main.
+
+**Riscos/limites**
+
+- O critério J do M12.5 continua pendente porque o sandbox não permite abrir o fixture HTTP loopback.
+
+**Próximos passos**
+
+- Executar o fixture loopback em ambiente permitido antes de declarar aceitação integral do M12.5 ou iniciar M13.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/handoffs/12_5_para_13.md` | `e73540e766e6` | `d1b564d69d81` |
+| modified | `PLANS.md` | `f29dacfae80c` | `3d5999659a31` |

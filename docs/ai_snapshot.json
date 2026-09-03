@@ -295,10 +295,10 @@
       "sha256": "3d11ea0dd239eb53758d72956d34b68ea2947f5bd29031b767cf92828ff38744"
     },
     ".prime/handoffs/12_5_para_13.md": {
-      "bytes": 3119,
+      "bytes": 3293,
       "kind": "text",
-      "lines": 64,
-      "sha256": "e73540e766e69cabf05f734996acd69ceb17b2d442fa893287edbc614d8459cf"
+      "lines": 67,
+      "sha256": "d1b564d69d81277b722c66923dad8bef4f82dd76421cbf9fdb4acfd2ce98ab36"
     },
     ".prime/handoffs/12_para_13.md": {
       "bytes": 2491,
@@ -337,10 +337,10 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 45195,
+      "bytes": 45571,
       "kind": "text",
-      "lines": 627,
-      "sha256": "f29dacfae80c79756498fb234d34efe3b5592b1451537669a1e246a12b19a557"
+      "lines": 633,
+      "sha256": "3d5999659a313f7924590c82639dce7d89c1d86a5fc0ccabdbed74375223d9e8"
     },
     "README.md": {
       "bytes": 17747,
@@ -1147,35 +1147,17 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "42f5751f17afacc240f805894624af2f74ceb14298b9e5d6facf79791a1600ba",
+  "fingerprint": "686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6",
   "git": {
     "available": true,
     "branch": "main",
-    "head": "e5eb78fbce40775e826af09d883458fb58dd2fbc",
+    "head": "dbf411c80ae08ef761b64a90929b9e54d04bb3a9",
     "status": [
-      " M .prime/agent/skills/article-loop/SKILL.md",
-      " M .prime/agent/skills/article-loop/src/article_loop/__init__.py",
-      " M .prime/agent/skills/article-loop/src/article_loop/budget.py",
-      " M .prime/agent/skills/article-loop/src/article_loop/observability.py",
-      " M PLANS.md",
-      " M README.md",
-      " M bin/check.sh",
-      " M config/budgets.yaml",
-      " M control/test_contracts.py",
-      " M docs/architecture.md",
-      " M docs/compatibility.md",
-      " M docs/decisions.md",
-      " M docs/runbook.md",
-      " M scripts/ai_context.py",
-      " M scripts/article_loop_command.py",
-      "?? .prime/agent/skills/article-loop/src/article_loop/inference.py",
-      "?? .prime/agent/skills/article-loop/src/article_loop/inference_backends.py",
-      "?? .prime/handoffs/12_5_para_13.md",
-      "?? config/schemas/inference-receipt.schema.json",
-      "?? control/test_m125_inference_routing.py"
+      " M .prime/handoffs/12_5_para_13.md",
+      " M PLANS.md"
     ]
   },
-  "recorded_at": "2026-09-03T20:22:56Z",
+  "recorded_at": "2026-09-03T20:28:25Z",
   "schema_version": "1.0.0",
-  "session_id": "session-2dffb2bba91ea37f3f05"
+  "session_id": "session-8099f5a97e6e063424d5"
 }
