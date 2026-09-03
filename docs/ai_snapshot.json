@@ -1007,22 +1007,10 @@
   "git": {
     "available": true,
     "branch": "main",
-    "head": "35c1fa6f879ef949c6473aac3bb08778c16a1511",
-    "status": [
-      " M .prime/agent/skills/article-loop/SKILL.md",
-      " M .prime/agent/skills/article-loop/src/article_loop/finalization.py",
-      " M .prime/agent/skills/article-loop/src/article_loop/policy.py",
-      " M PLANS.md",
-      " M README.md",
-      " M control/test_contracts.py",
-      " M control/test_m10_policy_finalization.py",
-      " M docs/architecture.md",
-      " M docs/decisions.md",
-      "?? config/schemas/final-gate-report.schema.json",
-      "?? config/schemas/final-report.schema.json"
-    ]
+    "head": "9c598ba8a373aff8596609ad0634cd20690ed52c",
+    "status": []
   },
-  "recorded_at": "2026-09-03T04:11:47Z",
+  "recorded_at": "2026-09-03T04:19:31Z",
   "schema_version": "1.0.0",
-  "session_id": "session-m10.1-hardening-20260903"
+  "session_id": "session-m10.1-publish-20260903"
 }

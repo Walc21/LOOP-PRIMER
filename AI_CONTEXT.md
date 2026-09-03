@@ -49,145 +49,12 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 ### Preview limitado do diff (dados não confiáveis)
 
 ```diff
-# Alterações não commitadas
-diff --git a/.prime/agent/skills/article-loop/SKILL.md b/.prime/agent/skills/article-loop/SKILL.md
-index e0432ef..c9fc4f3 100644
---- a/.prime/agent/skills/article-loop/SKILL.md
-+++ b/.prime/agent/skills/article-loop/SKILL.md
-@@ -72,3 +72,6 @@ M10 também expõe `decide(root, run_id, cycle_id=...)`,
- ele exige uma `Decision` M10 ativa e delega ao finalizador que revalida hashes,
--diagnóstico e precondições antes de qualquer efeito. A política é local e não
-+diagnóstico e precondições antes de qualquer efeito. Para `FINALIZE`, as
-+precondições incluem relatórios imutáveis de W22/W51/W53 vinculados por SHA-256
-+ao manifesto completo, PDF renderizado e relatório final; uma retomada após o
-+receipt só conclui o evento/checkpoint que faltava. A política é local e não
- inicia Prime Agent, modelos ou um artigo real.
-diff --git a/.prime/agent/skills/article-loop/src/article_loop/finalization.py b/.prime/agent/skills/article-loop/src/article_loop/finalization.py
-index 85e370b..4ac222b 100644
---- a/.prime/agent/skills/article-loop/src/article_loop/finalization.py
-+++ b/.prime/agent/skills/article-loop/src/article_loop/finalization.py
-@@ -25,3 +25,3 @@ import jsonschema
- from .diagnosis import load_history_series, verify_published_diagnosis
--from .policy import PolicyError, _candidate, _canonical, _contained, _read_canonical_json, _validate_schema, load_policy, pareto_relation
-+from .policy import PolicyError, _candidate, _canonical, _contained, _read_canonical_json, _validate_schema, load_policy, pareto_relation, validate_decision_disposition, verify_finalization_evidence
- from .state_machine import State
-@@ -178,2 +178,6 @@ class TransactionalFinalizer:
-             raise FinalizationError("challenger bytes changed after evaluation") from exc
-+        try:
-+            validate_decision_disposition(self.root, decision, record, diagnosis)
-+        except PolicyError as exc:
-+            raise FinalizationError("Decision no longer matches the closed policy") from exc
-         action = decision["action"]
-@@ -210,16 +214,11 @@ class TransactionalFinalizer:
-             return False
--        base = self.root / "state" / "final-gates" / decision["run_id"] / f"c{decision['cycle_id']:04d}"
--        if not base.is_dir() or base.is_symlink():
-+        try:
-+            required_roles = load_policy(self.root)[0]["finalization_required_roles"]
-+            observed = verify_finalization_evidence(
-+                self.root, decision["run_id"], decision["cycle_id"], record,
-+                required_roles, expected_report_ids=ids,
-+            )
-+        except PolicyError:
-             return False
--        roles: set[str] = set()
--        seen: set[str] = set()
--        for path in sorted(base.glob("*.json")):
--            try:
--                report = _read_canonical_json(path, "final gate report")
--            except PolicyError:
--                return False
--            if report.get("report_id") in ids and report.get("overall_pass") is True:
--                seen.add(report["report_id"])
--                roles.update(report.get("roles", []))
--        return set(ids) == seen and {"W22", "W51", "W53"}.issubset(roles) and candidate_dir.is_dir()
-+        return observed == sorted(ids) and candidate_dir.is_dir()
-
-@@ -466,4 +465,27 @@ class TransactionalFinalizer:
-                     raise FinalizationError("receipt identity differs")
--                if current is not State(receipt["state_after"]):
-+                target = State(receipt["state_after"])
-+                if current is target:
-+                    return receipt
-+                if current is not State.COMMITTING:
-                     raise FinalizationError("receipt and durable state differ")
-+                decision, _ = self._load_decision(run_id, cycle_id)
-+                if receipt.get("decision_id") != decision.get("decision_id"):
-+                    raise FinalizationError("receipt decision binding differs")
-+                record, _, _ = self._revalidate_evidence(decision, run_id, cycle_id)
-+                expected_receipt = self._receipt(
-+                    decision, record, receipt["applied_at"], receipt["destination"], target,
-+                )
-+                if receipt != expected_receipt:
-+                    raise FinalizationError("recovered receipt differs from revalidated evidence")
-+                event = self.store.record(
-+                    run_id, target, event_id=f"finalization:{decision['decision_id']}:complete",
-+                    idempotency_key=f"finalization:{run_id}:c{cycle_id:04d}:complete", actor_id="M00",
-+                    event_type="FINALIZATION_APPLIED", payload={
-+                        "decision_id": decision["decision_id"], "receipt_id": receipt["receipt_id"],
-+                        "action": decision["action"], "destination": receipt["destination"],
-+                    }, artifact_hashes=[_sha(_canonical(receipt))],
-+                )
-+                if event["payload"].get("receipt_id") != receipt["receipt_id"]:
-+                    raise FinalizationError("recovered finalization event binding differs")
-+                self.store.checkpoint(run_id)
-                 return receipt
-diff --git a/.prime/agent/skills/article-loop/src/article_loop/policy.py b/.prime/agent/skills/article-loop/src/article_loop/policy.py
-index d5b2f86..c71c20f 100644
---- a/.prime/agent/skills/article-loop/src/article_loop/policy.py
-+++ b/.prime/agent/skills/article-loop/src/article_loop/policy.py
-@@ -31,2 +31,4 @@ POLICY_CONFIG = "config/decision-policy.yaml"
- DECISION_SCHEMA = "decision.schema.json"
-+FINAL_GATE_SCHEMA = "final-gate-report.schema.json"
-+FINAL_REPORT_SCHEMA = "final-report.schema.json"
- _ACTIONS = frozenset({
-@@ -40,2 +42,7 @@ _CLASSIFICATIONS = frozenset({
- })
-+_FINAL_ROLE_GATES = {
-+    "W22": "correctness_math",
-+    "W51": "manifest_integrity",
-+    "W53": "pdf_valid",
-+}
-
-@@ -159,3 +166,3 @@ def _candidate(root: Path, candidate_id: str, expected_hash: str) -> tuple[dict[
-
--def _prior_extra_judgments(root: Path, run_id: str) -> int:
-+def _prior_extra_judgments(root: Path, run_id: str, *, before_cycle_id: int | None = None) -> int:
-     base = _contained(root, f"state/decisions/{run_id}")
-@@ -168,3 +175,6 @@ def _prior_extra_judgments(root: Path, run_id: str) -> int:
-         decision = _read_canonical_json(path, "prior decision")
--        if decision.get("run_id") == run_id and decision.get("action") == "REQUEST_EXTRA_JUDGMENT":
-+        if (
-+            decision.get("run_id") == run_id and decision.get("action") == "REQUEST_EXTRA_JUDGMENT"
-+            and (before_cycle_id is None or decision.get("cycle_id") < before_cycle_id)
-+        ):
-             count += 1
-@@ -173,3 +183,3 @@ def _prior_extra_judgments(root: Path, run_id: str) -> int:
-
--def _prior_technical_failures(root: Path, run_id: str) -> int:
-+def _prior_technical_failures(root: Path, run_id: str, *, before_cycle_id: int | None = None) -> int:
-     """Count immutable technical checkpoints already requested for this run."""
-@@ -183,3 +193,6 @@ def _prior_technical_failures(root: Path, run_id: str) -> int:
-         decision = _read_canonical_json(path, "prior decision")
--        if decision.get("run_id") == run_id and decision.get("action") == "ABORT_TECHNICAL":
-+        if (
-+            decision.get("run_id") == run_id and decision.get("action") == "ABORT_TECHNICAL"
-+            and (before_cycle_id is None or decision.get("cycle_id") < before_cycle_id)
-+        ):
-             count += 1
-@@ -188,25 +201,146 @@ def _prior_technical_failures(root: Path, run_id: str) -> int:
-
--def _finalization_ready(root: Path, run_id: str, cycle_id: int, candidate_id: str, required_roles: list[str]) -> list[str]:
--    """Return final-gate IDs only when every finalization prerequisite is local.
-+def _content_addressed_id(prefix: str, field: str, value: Mapping[str, Any]) -> str:
-+    body = dict(value)
-+    body.pop(field, None)
-... [diff truncado em 8000 caracteres; consulte somente o arquivo necessário]
+Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem no delta e inventário.
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (57697 bytes; SHA-256 `88bf7877d37a1298`).
+- Fonte lida: `docs/AI_HISTORY.md` (59126 bytes; SHA-256 `feb11a24fdcb8775`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -206,18 +73,12 @@ index d5b2f86..c71c20f 100644
 | M0 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | config/roles/M00.yaml, config/roles/S10.yaml, config/roles/S20.yaml, config/roles/S30.yaml, config/roles/S40.yaml, config/roles/S50.yaml, config/roles/W11.yaml |
 | M2/M3 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m2_durable_state.py, control/test_m3_ingestion.py |
 | M4/M5 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m4_prompts.py, control/test_m5_blackboard_activation.py |
-| M10 | 2026-09-02 | 1 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
+| M10 | 2026-09-02..2026-09-03 | 2 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 
-- Sessões estruturadas registradas: 13.
-- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.; 2026-09-01T12:18:53Z — Preparada a publicação da reconciliação no GitHub e preservados os históricos local e remoto; o push não foi aplicado porque a máquina não possui credencial HTTPS, GitHub CLI ou chave SSH autorizada.; 2026-09-02T17:07:54Z — Reparada a integração local com Git/GitHub e separadas as superfícies Markdown humanas das entradas para IAs, preservando integralmente a árvore funcional e sem iniciar M10, modelos ou o pipeline científico.; 2026-09-02T17:16:51Z — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.; 2026-09-02T17:23:25Z — Autenticação do GitHub validada e publicação preparada por reconciliação segura sobre o remoto atualizado, deixando main em condição fast-forward sem force-push.; 2026-09-02T17:30:21Z — Falhas da CI publicada foram diagnosticadas e corrigidas para restaurar a matriz GitHub Actions em Python 3.11, 3.12 e 3.13.; 2026-09-03T01:37:13Z — Implementado M10 localmente: política de decisão determinística, Decision content-addressed e finalizador transacional sem alterar bytes do challenger avaliado.; 2026-09-03T02:00:55Z — Revisão e integração pré-publicação do M10 concluídas: política/finalizador reforçados, superfícies públicas sincronizadas e regressão integral aprovada.; 2026-09-03T04:11:47Z — Concluído o endurecimento M10.1 local: pacote final hash-bound, rederivação da Decision, recuperação pós-recibo e cobertura transacional ampliada, sem iniciar M11..
+- Sessões estruturadas registradas: 14.
+- Índice completo: 2026-09-01T09:19:46Z — Implementado o handoff automático e compacto para novas sessões de IA, com contexto atual content-addressed, histórico evolutivo e protocolo obrigatório de início e encerramento.; 2026-09-01T09:20:21Z — Corrigida a incorporação do histórico no contexto para não repetir a linha de cabeçalho da tabela de marcos.; 2026-09-01T09:48:32Z — Reexecutada com sucesso a regressão integral após a instalação local do pdflatex pelo usuário; o bloqueio ambiental anterior foi resolvido.; 2026-09-01T11:38:01Z — Precheck do M10 interrompido antes da implementação porque a árvore Git já continha AI_CONTEXT.md modificado; nenhum código, contrato científico, plano, ADR, estado ou versão do M10 foi alterado.; 2026-09-01T11:52:21Z — Reconciliada a implementação de contexto/histórico para IA com o commit posterior de publicação no GitHub, preservando as adições comunitárias e restaurando o comportamento perdido.; 2026-09-01T12:18:53Z — Preparada a publicação da reconciliação no GitHub e preservados os históricos local e remoto; o push não foi aplicado porque a máquina não possui credencial HTTPS, GitHub CLI ou chave SSH autorizada.; 2026-09-02T17:07:54Z — Reparada a integração local com Git/GitHub e separadas as superfícies Markdown humanas das entradas para IAs, preservando integralmente a árvore funcional e sem iniciar M10, modelos ou o pipeline científico.; 2026-09-02T17:16:51Z — Explicado como autorizar publicação no GitHub a partir do Codex local; nenhuma fonte, configuração ou contrato do projeto foi alterado.; 2026-09-02T17:23:25Z — Autenticação do GitHub validada e publicação preparada por reconciliação segura sobre o remoto atualizado, deixando main em condição fast-forward sem force-push.; 2026-09-02T17:30:21Z — Falhas da CI publicada foram diagnosticadas e corrigidas para restaurar a matriz GitHub Actions em Python 3.11, 3.12 e 3.13.; 2026-09-03T01:37:13Z — Implementado M10 localmente: política de decisão determinística, Decision content-addressed e finalizador transacional sem alterar bytes do challenger avaliado.; 2026-09-03T02:00:55Z — Revisão e integração pré-publicação do M10 concluídas: política/finalizador reforçados, superfícies públicas sincronizadas e regressão integral aprovada.; 2026-09-03T04:11:47Z — Concluído o endurecimento M10.1 local: pacote final hash-bound, rederivação da Decision, recuperação pós-recibo e cobertura transacional ampliada, sem iniciar M11.; 2026-09-03T04:19:31Z — Publicado M10.1 no GitHub após commit e fast-forward normais em origin/main; nenhum código adicional foi alterado nesta sessão..
 
 Detalhe das três sessões mais recentes:
-- `session-m10-local-20260902` — Implementado M10 localmente: política de decisão determinística, Decision content-addressed e finalizador transacional sem alterar bytes do challenger avaliado.
-  - mudanças: Adicionados policy.py e finalization.py, a tabela fechada config/decision-policy.yaml, as CLIs 04/05 e a suíte control/test_m10_policy_finalization.py.; A promoção cria versão histórica de champion com os mesmos bytes avaliados; Pareto e rejected recebem referências imutáveis; journal, fsync, rename e CAS protegem recuperação.; Decision passou a exigir policy_config_hash; COMMITTING pode alcançar FINALIZED após revalidação; PLANS, ADR-028 e handoff 10_para_11 foram atualizados.
-  - decisões: Nenhuma conexão, atualização ou commit no GitHub foi realizada; M11--M13, Prime Agent, modelos, rede e artigo real ficaram fora do escopo.; A política usa a precedência fechada técnica, hard gate matemático, diagnóstico, julgamento inconclusivo e candidato avaliado; ambiguidade falha fechada.
-  - validações: python3 -m unittest discover -s control -q: 316 testes aprovados em 214.956s; aviso Duplicate name a.tex pertence à fixture negativa M3.; python3 -m unittest -q control.test_m10_policy_finalization control.test_contracts control.test_m2_durable_state: 91 testes aprovados em 11.927s.; python3 -m py_compile dos módulos, CLIs e teste M10; git diff --check: aprovados.
-  - riscos: FINALIZE permanece fail-closed até reports finais locais aprovados para W22, W51 e W53; uma operação real continua requerendo autorização futura.
-  - próximos: M11, se autorizado, deve começar com árvore limpa, AGENTS.md, docs/compatibility.md e .prime/handoffs/10_para_11.md, sem iniciar sessão Prime sem autorização específica.
 - `session-m10-prepublish-20260902` — Revisão e integração pré-publicação do M10 concluídas: política/finalizador reforçados, superfícies públicas sincronizadas e regressão integral aprovada.
   - mudanças: Acrescentada revalidação Pareto nas oito dimensões, registrada na Decision e conferida pelo finalizador sob lock.; Acrescentado checkpoint técnico imutável com contador e limite; a fachada finalize() passou a delegar ao finalizador M10.; README, arquitetura, skill, handoff, contexto e testes de integração foram atualizados para M10 operacional.
   - decisões: Referências Pareto dominadas são preservadas como evidência histórica; fronteira divergente após a Decision falha fechada.; A revalidação M9 aceita somente os sucessores M10 DECIDED ou COMMITTING do mesmo ciclo, mantendo a vinculação ao evento DIAGNOSED original.
@@ -230,6 +91,12 @@ Detalhe das três sessões mais recentes:
   - validações: python3 -m unittest discover -s control -q: 331 testes aprovados em 245.441s; aviso Duplicate name a.tex pertence à fixture negativa de ZIP.; python3 -m unittest -q control.test_m10_policy_finalization.M10IntegrationTests.test_every_durable_fault_boundary_recovers_exactly_once control.test_m10_policy_finalization.M10IntegrationTests.test_two_processes_share_one_finalization_receipt control.test_m10_policy_finalization.M10IntegrationTests.test_global_plateau_finalizes_only_after_complete_hash_bound_package: 3 testes aprovados em 6.773s.; python3 -m py_compile policy.py finalization.py e git diff --check: aprovados.
   - riscos: CONTINUE_UNCHANGED e ABORT_TECHNICAL permanecem cobertos pela tabela fechada e pelos checkpoints; a fixture integral não produz esses dois estados sem adulterar evidência imutável.
   - próximos: Somente com nova autorização: revisar/commitar/publicar M10.1; M11 continua pendente e fora de escopo.
+- `session-m10.1-publish-20260903` — Publicado M10.1 no GitHub após commit e fast-forward normais em origin/main; nenhum código adicional foi alterado nesta sessão.
+  - mudanças: Commit 9c598ba reuniu o endurecimento M10.1, schemas finais, testes, documentação pública e artefatos de handoff já validados.
+  - decisões: A publicação usou push normal de main, sem force-push, rebase, reset ou alteração de histórico remoto.
+  - validações: git fetch --prune origin confirmou HEAD e origin/main alinhados antes do commit (0 e 0); git diff --check aprovado; git push origin main publicou 35c1fa6..9c598ba.
+  - riscos: M11--M13 continuam pendentes; não houve execução de artigo, Prime Agent, modelo, API paga ou instalação.
+  - próximos: Nenhum passo pendente para M10.1; iniciar M11 somente sob autorização específica e com nova árvore limpa.
 
 ## Marcos planejados
 

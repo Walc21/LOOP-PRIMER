@@ -5,8 +5,8 @@
 ## Baseline registrado
 
 - Fingerprint das fontes: `5c57df597e90c7bd2b9a43adefadf9951b65264fcc901b5f710a1300688fa299`
-- Registrado em: `2026-09-03T04:11:47Z`
-- Git: branch `main`, HEAD `35c1fa6f879e`
+- Registrado em: `2026-09-03T04:19:31Z`
+- Git: branch `main`, HEAD `9c598ba8a373`
 - Arquivos relevantes: 167
 
 ## Evolução reconstruída do versionamento
@@ -29,7 +29,7 @@
 | M0 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | config/roles/M00.yaml, config/roles/S10.yaml, config/roles/S20.yaml, config/roles/S30.yaml, config/roles/S40.yaml, config/roles/S50.yaml, config/roles/W11.yaml |
 | M2/M3 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m2_durable_state.py, control/test_m3_ingestion.py |
 | M4/M5 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m4_prompts.py, control/test_m5_blackboard_activation.py |
-| M10 | 2026-09-02 | 1 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
+| M10 | 2026-09-02..2026-09-03 | 2 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 
 ### Commits exatos
 
@@ -125,6 +125,7 @@
 | `35e2f80be` | 2026-09-02 | sem marco explícito | fix(repo): separate GitHub and AI integration | .github/copilot-instructions.md, AI_CONTEXT.md, GEMINI.md, PLANS.md, README.md, control/test_ai_handoff.py |
 | `051f969db` | 2026-09-02 | sem marco explícito | fix(ci): restore GitHub Actions matrix | .github/workflows/ci.yml, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `35c1fa6f8` | 2026-09-02 | M10 | feat(m10): add deterministic decision finalizer | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
+| `9c598ba8a` | 2026-09-03 | M10 | feat(m10): harden finalization evidence and recovery | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/finalization.py, .prime/agent/skills/article-loop/src/article_loop/policy.py, AI_CONTE… |
 
 ## Decisões arquiteturais
 
@@ -677,3 +678,30 @@
 | modified | `control/test_m10_policy_finalization.py` | `6bd8ac5a32e6` | `3084e0cf69b9` |
 | modified | `docs/architecture.md` | `d6942938ab13` | `71e182c75e53` |
 | modified | `docs/decisions.md` | `38c2a4b299e0` | `540ce5851b09` |
+
+### 2026-09-03T04:19:31Z — Publicado M10.1 no GitHub após commit e fast-forward normais em origin/main; nenhum código adicional foi alterado nesta sessão.
+
+- Session ID: `session-m10.1-publish-20260903`
+- Fingerprint final: `5c57df597e90c7bd2b9a43adefadf9951b65264fcc901b5f710a1300688fa299`
+- Git final: `9c598ba8a373`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Commit 9c598ba reuniu o endurecimento M10.1, schemas finais, testes, documentação pública e artefatos de handoff já validados.
+
+**Decisões**
+
+- A publicação usou push normal de main, sem force-push, rebase, reset ou alteração de histórico remoto.
+
+**Validações**
+
+- git fetch --prune origin confirmou HEAD e origin/main alinhados antes do commit (0 e 0); git diff --check aprovado; git push origin main publicou 35c1fa6..9c598ba.
+
+**Riscos/limites**
+
+- M11--M13 continuam pendentes; não houve execução de artigo, Prime Agent, modelo, API paga ou instalação.
+
+**Próximos passos**
+
+- Nenhum passo pendente para M10.1; iniciar M11 somente sob autorização específica e com nova árvore limpa.
