@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6`
-- Registrado em: `2026-09-03T20:28:25Z`
-- Git: branch `main`, HEAD `dbf411c80ae0`
+- Fingerprint das fontes: `c2a68d3819a2b48ec4e0c3ef4fe42fd337ec12dc6baef2f17ebdc48632fb61e8`
+- Registrado em: `2026-09-03T21:27:30Z`
+- Git: branch `main`, HEAD `49fad01ca1a0`
 - Arquivos relevantes: 191
 
 ## Evolução reconstruída do versionamento
@@ -33,7 +33,7 @@
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
-| M12.5 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| M12.5 | 2026-09-03 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 
 ### Commits exatos
 
@@ -135,6 +135,9 @@
 | `af08c798d` | 2026-09-03 | M11 | chore(history): record M11 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `e5eb78fbc` | 2026-09-03 | M12 | feat(m12): add durable budget observability | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 | `dbf411c80` | 2026-09-03 | M12.5 | feat(m12.5): add deterministic inference routing | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| `4961907ae` | 2026-09-03 | M12.5 | chore(history): record M12.5 publication | .prime/handoffs/12_5_para_13.md, AI_CONTEXT.md, PLANS.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `3858f0b94` | 2026-09-03 | M12.5 | chore(context): refresh M12.5 publication snapshot | AI_CONTEXT.md |
+| `49fad01ca` | 2026-09-03 | M12.5 | fix(m12.5): normalize closed backend connections | .prime/agent/skills/article-loop/src/article_loop/inference_backends.py, .prime/handoffs/12_5_para_13.md, PLANS.md, control/test_m11_commands.py, control/test_m125_inference_routi… |
 
 ## Decisões arquiteturais
 
@@ -1017,3 +1020,50 @@
 |---|---|---|---|
 | modified | `.prime/handoffs/12_5_para_13.md` | `e73540e766e6` | `d1b564d69d81` |
 | modified | `PLANS.md` | `f29dacfae80c` | `3d5999659a31` |
+
+### 2026-09-03T21:27:30Z — Corrigiu a falha da CI M12.5 causada por conexão HTTP fechada sem resposta, publicou a correção e confirmou a matriz GitHub Actions Python 3.11–3.13 integralmente verde.
+
+- Session ID: `session-87ecd36b0d1ddca820bd`
+- Fingerprint final: `c2a68d3819a2b48ec4e0c3ef4fe42fd337ec12dc6baef2f17ebdc48632fb61e8`
+- Git final: `49fad01ca1a0`; status relevante: 3 item(ns)
+- Delta factual: 0 adicionados, 8 modificados, 0 removidos
+
+**Mudanças**
+
+- Inference backend agora normaliza RemoteDisconnected, ConnectionResetError e BrokenPipeError diretos como BACKEND_FAILURE pós-envio.
+- Cobertura socketless reproduz a exceção exata e testes M11 deixaram de depender da presença real do binário Prime no host.
+- README, PLANS, ADR-032, compatibilidade e handoff M12.5 foram sincronizados com a correção e a evidência da CI.
+
+**Decisões**
+
+- Falhas de transporte após envio preservam sent=True e levam a reserva para UNCERTAIN; não há retry implícito nem ampliação de rede ou custo.
+- A presença de prime-agent no PATH é diagnóstico, não autorização para sessão, modelo ou API.
+
+**Validações**
+
+- Suíte local completa: 396 testes passaram em 280.579s, com 1 skip explícito do fixture loopback bloqueado pelo sandbox.
+- Subconjunto M12.5/M12/M11/contratos: 117 testes passaram, com 1 skip local.
+- bin/check.sh passou com inference, execução de modelo e targets pagos desabilitados.
+- GitHub Actions run 33807419247 passou em Python 3.11, 3.12 e 3.13; 399 testes por job em 213.130s, 248.472s e 233.922s, respectivamente.
+- git diff --check passou após a sincronização documental.
+
+**Riscos/limites**
+
+- shellcheck permanece indisponível localmente e não foi instalado; o sandbox local continua sem socket loopback, mitigado pela matriz CI real.
+
+**Próximos passos**
+
+- M13 permanece não iniciado e requer solicitação própria; Prime Agent, modelo e targets pagos exigem autorização específica.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` | `7158723dfaa6` | `65c9818e9c4e` |
+| modified | `.prime/handoffs/12_5_para_13.md` | `d1b564d69d81` | `87908f4d39d0` |
+| modified | `PLANS.md` | `3d5999659a31` | `3debcefda243` |
+| modified | `README.md` | `99310c8e1ff7` | `1471a09b2065` |
+| modified | `control/test_m11_commands.py` | `344693b92f05` | `bccd8c0c2165` |
+| modified | `control/test_m125_inference_routing.py` | `a580527f775b` | `175fbc5fd342` |
+| modified | `docs/compatibility.md` | `0d9cefb2b755` | `f532eaf0a54a` |
+| modified | `docs/decisions.md` | `eb992674718f` | `b8a1c20354ac` |

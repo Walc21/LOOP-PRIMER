@@ -17,9 +17,9 @@
 </div>
 
 > **Implementation status:** M0–M12 are implemented and locally validated;
-> M12.5 adds deterministic, fail-closed inference routing and is locally
-> implemented, with the real loopback HTTP smoke still pending in an
-> environment that permits sockets. M10
+> M12.5 adds deterministic, fail-closed inference routing and is validated
+> locally plus on GitHub Actions with its real loopback HTTP fixture across
+> Python 3.11–3.13. M10
 > publishes a canonical, content-addressed `Decision`, revalidates it under a
 > per-run lock, and applies its authorized disposition atomically. `FINALIZE`
 > additionally requires immutable W22/W51/W53 attestations bound by SHA-256 to
@@ -29,7 +29,8 @@
 > receipts without changing M6 topology; M13 remains pending. M10 CLIs are operational; M11
 > adds local commands and templates.
 > They do not run an article, a model, or a paid API by themselves; the Prime
-> Agent binary was not available for an M11 live smoke test.
+> Agent live smoke was not authorized or executed; the currently discovered
+> binary does not by itself enable model execution.
 
 ---
 

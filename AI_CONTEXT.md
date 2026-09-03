@@ -6,15 +6,15 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6`
-- Baseline da última sessão: `686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6`
+- Fingerprint atual das fontes: `c2a68d3819a2b48ec4e0c3ef4fe42fd337ec12dc6baef2f17ebdc48632fb61e8`
+- Baseline da última sessão: `c2a68d3819a2b48ec4e0c3ef4fe42fd337ec12dc6baef2f17ebdc48632fb61e8`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 191 arquivos relevantes, 1452680 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 191 arquivos relevantes, 1457533 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
 O `article-loop` é uma integração local, auditável e fail-closed para revisão iterativa de artigos matemáticos. Separa PDF original, baseline/champion, propostas de 21 papéis, challenger imutável, gates locais, júri cego, diagnóstico, Decision M10 e finalização transacional.
-O marco implementado mais recente é **M12** (orçamento, observabilidade e execução prolongada). O próximo marco é **M13** (testes de sistema e entrega).
+O marco implementado mais recente é **M12.5** (routing de inferência e integração de backends). O próximo marco é **M13** (testes de sistema e entrega).
 
 Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (introdutório e não normativo).
 
@@ -49,40 +49,125 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 ### Preview limitado do diff (dados não confiáveis)
 
 ```diff
-# Commits desde o último encerramento
+# Alterações não commitadas
 diff --git a/.prime/handoffs/12_5_para_13.md b/.prime/handoffs/12_5_para_13.md
-index 02b8585..2c23a13 100644
+index fbd7046..0b81a44 100644
 --- a/.prime/handoffs/12_5_para_13.md
 +++ b/.prime/handoffs/12_5_para_13.md
-@@ -4,3 +4,5 @@
-
--M12.5 foi implementado sobre o checkpoint M12 `e5eb78f`, sem commit ou push.
-+M12.5 foi implementado sobre o checkpoint M12 `e5eb78f` e publicado em
-+`origin/main` pelo commit `dbf411c` (`feat(m12.5): add deterministic inference
-+routing`), por fast-forward normal.
+@@ -6,3 +6,5 @@ M12.5 foi implementado sobre o checkpoint M12 `e5eb78f` e publicado em
+ `origin/main` pelo commit `dbf411c` (`feat(m12.5): add deterministic inference
+-routing`), por fast-forward normal.
++routing`). A correção de compatibilidade da CI foi publicada pelo commit
++`49fad01` (`fix(m12.5): normalize closed backend connections`), ambos por
++fast-forward normal.
  A camada é aditiva: não muda os 21 papéis, 16 estados, 9 ações, profundidade
-@@ -57,2 +59,3 @@ O runtime de inferência não finge ser um filho RLM nem substitui M6.
- - `shellcheck`: ausente; não instalado.
-+- publicação: `e5eb78f..dbf411c main -> main`, sem force-push.
+@@ -11,6 +13,6 @@ não foi iniciado.
 
+-A aceitação integral de M12.5 continua aberta somente no critério J. O teste
+-com `ThreadingHTTPServer` foi implementado, mas este sandbox recusou a abertura
+-de socket loopback; uma tentativa de executar fora do sandbox foi negada. O
+-teste fica como skip explícito, sem alegar smoke real.
++A aceitação integral de M12.5 está concluída. Embora o sandbox local recuse a
++abertura do socket e mantenha um skip explícito, o fixture real com
++`ThreadingHTTPServer` passou no GitHub Actions em Python 3.11, 3.12 e 3.13 no
++run `33807419247`, incluindo conexão fechada, timeout e redirect bloqueado.
+
+@@ -45,4 +47,5 @@ nenhum target ativo.
+
+-A auditoria não encontrou binário ou pacote Prime Agent neste host. Observar o
+-modelo no handle histórico não prova seleção: `prime_child_model_routing` é
++A correção CI observou `prime-agent 0.9.1` no PATH deste host sem iniciar sessão
++ou consultar superfícies além de `--version`. Observar o modelo no handle
++histórico não prova seleção: `prime_child_model_routing` é
+ `unsupported_verified`; `PrimeRLMAdapter.spawn(prompt, name)` ficou intacto.
+@@ -52,4 +55,7 @@ O runtime de inferência não finge ser um filho RLM nem substitui M6.
+
+-- `python3 -m unittest discover -s control -q`: 395 testes OK, 1 skip loopback.
+-- M12.5 + M12 + M11 + contratos: 116 testes OK, 1 skip loopback.
++- `python3 -m unittest discover -s control -p 'test_*.py' -q`: 396 testes OK,
++  1 skip loopback local.
++- M12.5 + M12 + M11 + contratos: 117 testes OK, 1 skip loopback local.
++- GitHub Actions `33807419247`: 399 testes OK em cada job Python 3.11
++  (213.130s), 3.12 (248.472s) e 3.13 (233.922s), sem skip reportado.
+ - `python3 -m py_compile ...`: OK.
+@@ -59,3 +65,3 @@ O runtime de inferência não finge ser um filho RLM nem substitui M6.
+ - `shellcheck`: ausente; não instalado.
+-- publicação: `e5eb78f..dbf411c main -> main`, sem force-push.
++- publicação corretiva: `3858f0b..49fad01 main -> main`, sem force-push.
+
+@@ -63,6 +69,4 @@ O runtime de inferência não finge ser um filho RLM nem substitui M6.
+
+-Antes de iniciar M13, executar somente o fixture loopback em ambiente que
+-autorize socket local e confirmar sucesso, erro HTTP, malformed, resposta
+-grande, conexão fechada, timeout, redirect bloqueado e usage ausente. Não
+-habilitar modelo, target pago ou Prime Agent sem nova autorização específica.
++M13 permanece não iniciado e exige solicitação própria. Não habilitar modelo,
++target pago ou Prime Agent sem nova autorização específica.
+
+@@ -77,2 +81,3 @@ testes passaram com 1 skip do fixture bloqueado, e o subconjunto M12.5/M12/M11/
+ contratos passou 117 testes com 1 skip. A matriz GitHub do commit corretivo
+-ainda deve ser consultada antes de considerar esta correção confirmada.
++foi concluída no run `33807419247`: Python 3.11, 3.12 e 3.13 passaram 399
++testes cada, confirmando a correção e o critério J.
 diff --git a/PLANS.md b/PLANS.md
-index 2d2bc73..f60072f 100644
+index 50a91f0..122de5f 100644
 --- a/PLANS.md
 +++ b/PLANS.md
-@@ -160,2 +160,8 @@ renumera nem substitui nenhum dos Prompts canônicos 01--13.
+@@ -45,6 +45,5 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
+ - M12 concluído e publicado no checkpoint de referência `e5eb78f`. M12.5 está
+-  implementado localmente como camada aditiva de routing/backend entre tarefas
+-  canônicas e o ledger, sem alterar M6, estados, ações, papéis ou iniciar M13;
+-  a aceitação integral aguarda apenas o smoke do fixture HTTP loopback em
+-  ambiente que permita abrir socket local.
++  concluído como camada aditiva de routing/backend entre tarefas canônicas e o
++  ledger, sem alterar M6, estados, ações, papéis ou iniciar M13. O fixture HTTP
++  loopback real passou na matriz GitHub Actions Python 3.11–3.13.
+ - Ferramentas auxiliares de handoff para IA concluídas: um gerador local de
+@@ -106,3 +105,3 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
+ | M12 | orçamento, observabilidade e execução prolongada | concluído localmente | ledger hash-bound, reservas atômicas, reconciliação conservadora, perfis opt-in, status/logs/alertas e retomada fail-closed; sem modelo, rede ou execução real |
+-| M12.5 | routing de inferência e integração de backends | implementado; aceitação loopback bloqueada pelo sandbox | registry/router determinísticos, política hash-bound, autorização multi-target compatível, receipts write-once e backend loopback testável offline, sem bypass de M6 nem target pago implícito |
++| M12.5 | routing de inferência e integração de backends | concluído localmente e na CI | registry/router determinísticos, política hash-bound, autorização multi-target compatível, receipts write-once e backend loopback validado na matriz Python 3.11–3.13, sem bypass de M6 nem target pago implícito |
+ | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
+@@ -160,2 +159,8 @@ renumera nem substitui nenhum dos Prompts canônicos 01--13.
 
-+- 2026-09-03 — A implementação M12.5 foi commitada como `dbf411c`
-+  (`feat(m12.5): add deterministic inference routing`) e publicada por
-+  fast-forward em `origin/main` (`e5eb78f..dbf411c`). O status técnico não foi
-+  inflado: o critério J continua pendente por bloqueio de socket loopback, M13
-+  não foi iniciado e inferência/targets pagos continuam desabilitados.
++- 2026-09-03 — Correção CI M12.5 confirmada no GitHub Actions pelo run
++  `33807419247` do commit `49fad01`: os três jobs passaram, cada um com 399
++  testes (`3.11`: 213.130s; `3.12`: 248.472s; `3.13`: 233.922s). O fixture
++  loopback real cobriu o caso de conexão fechada e encerrou o critério J sem
++  ativar modelo, target pago, Prime Agent ou M13.
 +
- - 2026-09-03 — M12.5 implementado e validado localmente, exceto pelo smoke
+ - 2026-09-03 — Correção local da CI M12.5 concluída. O backend passou a
+@@ -167,4 +172,4 @@ renumera nem substitui nenhum dos Prompts canônicos 01--13.
+   sucesso e 1 skip local do fixture loopback; as suítes M12.5/M12/M11/
+-  contratos executaram 117 testes com sucesso e 1 skip. A revalidação na
+-  matriz GitHub Python 3.11–3.13 permanece obrigatória antes de encerrar.
++  contratos executaram 117 testes com sucesso e 1 skip. A revalidação foi
++  posteriormente concluída no run `33807419247` da matriz Python 3.11–3.13.
+
+diff --git a/README.md b/README.md
+index 6d70b87..3109cd3 100644
+--- a/README.md
++++ b/README.md
+@@ -19,5 +19,5 @@
+ > **Implementation status:** M0–M12 are implemented and locally validated;
+-> M12.5 adds deterministic, fail-closed inference routing and is locally
+-> implemented, with the real loopback HTTP smoke still pending in an
+-> environment that permits sockets. M10
++> M12.5 adds deterministic, fail-closed inference routing and is validated
++> locally plus on GitHub Actions with its real loopback HTTP fixture across
++> Python 3.11–3.13. M10
+ > publishes a canonical, content-addressed `Decision`, revalidates it under a
+@@ -31,3 +31,4 @@
+ > They do not run an article, a model, or a paid API by themselves; the Prime
+-> Agent binary was not available for an M11 live smoke test.
++> Agent live smoke was not authorized or executed; the currently discovered
++> binary does not by itself enable model execution.
+
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (80718 bytes; SHA-256 `06581414305cb063`).
+- Fonte lida: `docs/AI_HISTORY.md` (83987 bytes; SHA-256 `099cba6164750b29`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -105,24 +190,24 @@ index 2d2bc73..f60072f 100644
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
-| M12.5 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| M12.5 | 2026-09-03 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 
-- Sessões estruturadas registradas: 21.
-- Índice recente: 2026-09-03T04:19:31Z — Publicado M10.1 no GitHub após commit e fast-forward normais em origin/main; nenhum código adicional foi alterado nesta…; 2026-09-03T05:00:04Z — Implementação local do M11 concluída: a camada operacional agora expõe as APIs existentes por uma ponte JSON-in/JSON-ou…; 2026-09-03T05:04:53Z — Commit e publicação da implementação local da M11 concluídos no repositório LOOP-PRIMER; a integração de comandos, temp…; 2026-09-03T05:18:47Z — Avaliada a prontidão para iniciar M12 após a publicação da M11; nenhum código, configuração, execução live, modelo, Pri…; 2026-09-03T06:08:39Z — M12 implementado localmente sobre a base M11: ledger de orçamento durável, observabilidade estruturada redigida, perfis…; 2026-09-03T19:09:00Z — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branc…; 2026-09-03T20:22:56Z — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem i…; 2026-09-03T20:28:25Z — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e se…. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 22.
+- Índice recente: 2026-09-03T05:00:04Z — Implementação local do M11 concluída: a camada operacional agora expõe as APIs existentes por uma ponte JSON-in/JSON-ou…; 2026-09-03T05:04:53Z — Commit e publicação da implementação local da M11 concluídos no repositório LOOP-PRIMER; a integração de comandos, temp…; 2026-09-03T05:18:47Z — Avaliada a prontidão para iniciar M12 após a publicação da M11; nenhum código, configuração, execução live, modelo, Pri…; 2026-09-03T06:08:39Z — M12 implementado localmente sobre a base M11: ledger de orçamento durável, observabilidade estruturada redigida, perfis…; 2026-09-03T19:09:00Z — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branc…; 2026-09-03T20:22:56Z — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem i…; 2026-09-03T20:28:25Z — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e se…; 2026-09-03T21:27:30Z — Corrigiu a falha da CI M12.5 causada por conexão HTTP fechada sem resposta, publicou a correção e confirmou a matriz Gi…. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-2dffb2bba91ea37f3f05` — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem iniciar M13; aceitação integral permanece aberta somente pelo smoke HTTP loopback bloqueado pelo sandbox.
-  - mudanças: Adicionados registry, router, request/result/receipt, store write-once e runtime transacional em inference.py.; Adicionados fake determinístico e backend local OpenAI-compatible limitado a loopback em inference_backends.py, além do schema de receipt.; Estendidos autorização routed hash-bound, status, preflight/check, observabilidade, documentação, testes e handoff 12_5_para_13.
-  - decisões: PrimeRLMAdapter.spawn(prompt, name) permaneceu intacto; seleção de modelo por filho foi registrada como unsupported_verified porque o Prime Agent não está instalado neste host.; Targets pagos permanecem recusados porque M12 não possui enforcement monetário duro pré-chamada; defaults inference/local/remote/paid permanecem falsos.; M12.5 não é executor de papel RLM: opera apenas pedidos derivados de AgentTask sem substituir handles, receipts ou hierarquia M6.
-  - validações: python3 -m unittest discover -s control -q: 395 testes aprovados, 1 skip do fixture HTTP loopback.; Suítes M12.5, M12, M11 e contratos: 116 testes aprovados, 1 skip do fixture HTTP loopback.; py_compile dos Python alterados/criados, bash -n bin/check.sh, bin/check.sh, json.tool do schema e git diff --check: aprovados.; bin/check.sh confirmou inference desabilitada, zero targets, paid_runtime_ready false, Prime não descoberto e policy hash estável.
-  - riscos: O sandbox recusou socket loopback e a elevação foi negada; o critério J não foi provado e M12.5 não foi marcado como integralmente aceito.; shellcheck não está instalado; não houve instalação global.
-  - próximos: Antes de M13, executar control.test_m125_inference_routing.M125LoopbackBackendTests em ambiente que permita socket local e confirmar todos os cenários HTTP.; Manter Prime, modelos, rede remota e targets pagos desabilitados até nova autorização específica.
 - `session-8099f5a97e6e063424d5` — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e sem iniciar M13.
   - mudanças: Atualizados PLANS.md e o handoff 12_5_para_13.md com o commit e a publicação efetivamente observados.
   - decisões: A implementação e o registro de publicação permanecem em commits separados para que o histórico final reflita fatos já confirmados.; Nenhum force-push, rebase, modelo, Prime Agent, target pago ou M13 foi executado.
   - validações: git fetch --prune origin e git rev-list confirmaram HEAD...origin/main em 0 0 antes do commit.; bin/check.sh passou e as suítes M12.5/M12/M11/contratos executaram 116 testes com sucesso e 1 skip de loopback antes da publicação.; Commit dbf411c publicado com sucesso: e5eb78f..dbf411c main -> main.
   - riscos: O critério J do M12.5 continua pendente porque o sandbox não permite abrir o fixture HTTP loopback.
   - próximos: Executar o fixture loopback em ambiente permitido antes de declarar aceitação integral do M12.5 ou iniciar M13.
+- `session-87ecd36b0d1ddca820bd` — Corrigiu a falha da CI M12.5 causada por conexão HTTP fechada sem resposta, publicou a correção e confirmou a matriz GitHub Actions Python 3.11–3.13 integralmente verde.
+  - mudanças: Inference backend agora normaliza RemoteDisconnected, ConnectionResetError e BrokenPipeError diretos como BACKEND_FAILURE pós-envio.; Cobertura socketless reproduz a exceção exata e testes M11 deixaram de depender da presença real do binário Prime no host.; README, PLANS, ADR-032, compatibilidade e handoff M12.5 foram sincronizados com a correção e a evidência da CI.
+  - decisões: Falhas de transporte após envio preservam sent=True e levam a reserva para UNCERTAIN; não há retry implícito nem ampliação de rede ou custo.; A presença de prime-agent no PATH é diagnóstico, não autorização para sessão, modelo ou API.
+  - validações: Suíte local completa: 396 testes passaram em 280.579s, com 1 skip explícito do fixture loopback bloqueado pelo sandbox.; Subconjunto M12.5/M12/M11/contratos: 117 testes passaram, com 1 skip local.; bin/check.sh passou com inference, execução de modelo e targets pagos desabilitados.; GitHub Actions run 33807419247 passou em Python 3.11, 3.12 e 3.13; 399 testes por job em 213.130s, 248.472s e 233.922s, respectivamente.; git diff --check passou após a sincronização documental.
+  - riscos: shellcheck permanece indisponível localmente e não foi instalado; o sandbox local continua sem socket loopback, mitigado pela matriz CI real.
+  - próximos: M13 permanece não iniciado e requer solicitação própria; Prime Agent, modelo e targets pagos exigem autorização específica.
 
 ## Marcos planejados
 
@@ -144,7 +229,7 @@ Detalhe das duas sessões mais recentes:
 | M10.1 | endurecimento de cobertura e gate final de M10 | concluído localmente |
 | M11 | comandos e configuração do Prime Agent | concluído localmente |
 | M12 | orçamento, observabilidade e execução prolongada | concluído localmente |
-| M12.5 | routing de inferência e integração de backends | implementado; aceitação loopback bloqueada pelo sandbox |
+| M12.5 | routing de inferência e integração de backends | concluído localmente e na CI |
 | M13 | testes de sistema e entrega | pendente |
 
 ## Topologia dos 21 papéis
@@ -244,14 +329,14 @@ Detalhe das duas sessões mais recentes:
 
 ## Cobertura estrutural de testes
 
-Total detectado por AST: **398 testes**.
+Total detectado por AST: **399 testes**.
 
 | Arquivo | Testes | Amostra de fronteiras cobertas |
 |---|---:|---|
 | `test_ai_handoff.py` | 8 | embedded previews are bounded and have no trailing whitespace; tracked generated context is portable and idempotent; repository trigger surfaces preserve start and end protocol; c… |
 | `test_contracts.py` | 52 | all yaml is parseable; canonical states and actions; eight evaluation dimensions; exact ids without duplicates; one plus five plus fifteen; parent child topology; exact schema cat… |
 | `test_m10_policy_finalization.py` | 24 | all policy rows and actions are closed; hard math gate and extra judgment limit have precedence; global plateau can finalize only with final gate evidence; pareto dominated candid… |
-| `test_m11_commands.py` | 15 | exact flat template discovery and frontmatter; append system is additive and has m11 guardrails; project settings are not invented; check reports safe local defaults; require live… |
+| `test_m11_commands.py` | 16 | exact flat template discovery and frontmatter; append system is additive and has m11 guardrails; project settings are not invented; check reports safe local defaults; check report… |
 | `test_m125_inference_routing.py` | 32 | project defaults are fail closed; disabled inference never calls backend; unknown target role duplicate and fallback cycle are rejected; duplicate target key in yaml is rejected b… |
 | `test_m12_budget_observability.py` | 20 | reserve admit reconcile is hash bound and reported; two reservations race cannot spend last balance twice; usage absent becomes uncertain and keeps reservation; release requires p… |
 | `test_m2_durable_state.py` | 30 | all valid transitions; all invalid transitions; full event log replay and snapshot reconstruction; duplicate event id and idempotency conflict; partially written file and truncate… |
@@ -280,15 +365,17 @@ Fonte: `.prime/handoffs/12_5_para_13.md`.
 
 M12.5 foi implementado sobre o checkpoint M12 `e5eb78f` e publicado em
 `origin/main` pelo commit `dbf411c` (`feat(m12.5): add deterministic inference
-routing`), por fast-forward normal.
+routing`). A correção de compatibilidade da CI foi publicada pelo commit
+`49fad01` (`fix(m12.5): normalize closed backend connections`), ambos por
+fast-forward normal.
 A camada é aditiva: não muda os 21 papéis, 16 estados, 9 ações, profundidade
 RLM, gates, júri, Decision, finalizador, champion ou autoridade de merge. M13
 não foi iniciado.
 
-A aceitação integral de M12.5 continua aberta somente no critério J. O teste
-com `ThreadingHTTPServer` foi implementado, mas este sandbox recusou a abertura
-de socket loopback; uma tentativa de executar fora do sandbox foi negada. O
-teste fica como skip explícito, sem alegar smoke real.
+A aceitação integral de M12.5 está concluída. Embora o sandbox local recuse a
+abertura do socket e mantenha um skip explícito, o fixture real com
+`ThreadingHTTPServer` passou no GitHub Actions em Python 3.11, 3.12 e 3.13 no
+run `33807419247`, incluindo conexão fechada, timeout e redirect bloqueado.
 
 ## Entregas
 
@@ -319,23 +406,18 @@ Targets pagos continuam recusados porque não existe enforcement monetário duro
 pré-chamada. Defaults versionados deixam inference/local/remote/paid falsos e
 nenhum target ativo.
 
-A auditoria não encontrou binário ou pacote Prime Agent neste host. Observar o
-modelo no handle histórico não prova seleção: `prime_child_model_routing` é
+A correção CI observou `prime-agent 0.9.1` no PATH deste host sem iniciar sessão
+ou consultar superfícies além de `--version`. Observar o modelo no handle
+histórico não prova seleção: `prime_child_model_routing` é
 `unsupported_verified`; `PrimeRLMAdapter.spawn(prompt, name)` ficou intacto.
 O runtime de inferência não finge ser um filho RLM nem substitui M6.
 
 ## Validação
 
-- `python3 -m unittest discover -s control -q`: 395 testes OK, 1 skip loopback.
-- M12.5 + M12 + M11 + contratos: 116 testes OK, 1 skip loopback.
-- `python3 -m py_compile ...`: OK.
-- `bash -n bin/check.sh`: OK.
-- `bin/check.sh`: OK; inference desabilitada, zero targets, paid false.
-- `git diff --check`: OK.
-- `shellcheck`: ausente; não instalado.
-- publicação: `e5eb78f..dbf411c main -> main`, sem force-push.
-
-## Próximo passo permitido
+- `python3 -m unittest discover -s control -p 'test_*.py' -q`: 396 testes OK,
+  1 skip loopback local.
+- M12.5 + M12 + M11 + contratos: 117 testes OK, 1 skip loopback local.
+- GitHub Actions `33807419247`: 399 testes OK em cada job Python 3.11
 
 ... [handoff truncado em 3000 caracteres; consulte o arquivo original]
 </latest_handoff>
@@ -345,7 +427,7 @@ O runtime de inferência não finge ser um filho RLM nem substitui M6.
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
 - Total: 191 arquivos; runtime=18, text=173.
-- Fingerprint canônico: `686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6`.
+- Fingerprint canônico: `c2a68d3819a2b48ec4e0c3ef4fe42fd337ec12dc6baef2f17ebdc48632fb61e8`.
 
 ## Roteamento para aprofundamento
 

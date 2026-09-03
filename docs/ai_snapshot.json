@@ -175,10 +175,10 @@
       "sha256": "2b6a50fad3ad1ab32b6a09bb391881784d9ac35d970266a2418eeb27459bc3fc"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference_backends.py": {
-      "bytes": 7839,
+      "bytes": 8075,
       "kind": "text",
-      "lines": 149,
-      "sha256": "7158723dfaa64ca5098c01c38124e4c95159c931921182a4b4647bde2aaad42a"
+      "lines": 152,
+      "sha256": "65c9818e9c4e20079491d716b3c3cc800e51c63105c07796f0751deebf195d9e"
     },
     ".prime/agent/skills/article-loop/src/article_loop/ingestion.py": {
       "bytes": 31068,
@@ -295,10 +295,10 @@
       "sha256": "3d11ea0dd239eb53758d72956d34b68ea2947f5bd29031b767cf92828ff38744"
     },
     ".prime/handoffs/12_5_para_13.md": {
-      "bytes": 3293,
+      "bytes": 4199,
       "kind": "text",
-      "lines": 67,
-      "sha256": "d1b564d69d81277b722c66923dad8bef4f82dd76421cbf9fdb4acfd2ce98ab36"
+      "lines": 83,
+      "sha256": "87908f4d39d0de7e0429cca623956c49b6bb7c380a80909982aa9673435c8964"
     },
     ".prime/handoffs/12_para_13.md": {
       "bytes": 2491,
@@ -337,16 +337,16 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 45571,
+      "bytes": 47255,
       "kind": "text",
-      "lines": 633,
-      "sha256": "3d5999659a313f7924590c82639dce7d89c1d86a5fc0ccabdbed74375223d9e8"
+      "lines": 659,
+      "sha256": "3debcefda2437ea5b2b0a71bb14f86746d5e14031e6a5a69ca28030cc73d7df7"
     },
     "README.md": {
-      "bytes": 17747,
+      "bytes": 17809,
       "kind": "text",
-      "lines": 321,
-      "sha256": "99310c8e1ff7b146c9737531887daa612328faec6756289adcdba8cf4c398a87"
+      "lines": 322,
+      "sha256": "1471a09b20659b531153ef4e878d82555b0d8149f2dad21b19d853368c0126b2"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -751,16 +751,16 @@
       "sha256": "3084e0cf69b9905f13052ef9c20cb6a8c6589db4a272ae9d33aaf49a2adb4238"
     },
     "control/test_m11_commands.py": {
-      "bytes": 8139,
+      "bytes": 8742,
       "kind": "text",
-      "lines": 187,
-      "sha256": "344693b92f05011918a10e08306d16e1aaf40d162183e3a4077a521ef8cf0104"
+      "lines": 197,
+      "sha256": "bccd8c0c21656776d3681dfcc2224e6376d83804f021218c417785c7db79f6bd"
     },
     "control/test_m125_inference_routing.py": {
-      "bytes": 31990,
+      "bytes": 32107,
       "kind": "text",
-      "lines": 673,
-      "sha256": "a580527f775b702701c95c2deb660d60cfa838afda6e0d5228fcc11994be3dce"
+      "lines": 675,
+      "sha256": "175fbc5fd34267fea6e1a2bc6f6c68306bf5c35053fe66471ee08255e3df8bce"
     },
     "control/test_m12_budget_observability.py": {
       "bytes": 16029,
@@ -823,16 +823,16 @@
       "sha256": "5dd2e60cd660e6ca3a0a2999dfd2dd535351d74e47c2fdc686db5744f28f0990"
     },
     "docs/compatibility.md": {
-      "bytes": 11650,
+      "bytes": 12336,
       "kind": "text",
-      "lines": 168,
-      "sha256": "0d9cefb2b7555ba4e4eaad1ababa9a57ef615dba5967c1c5b253148dd1c6e224"
+      "lines": 179,
+      "sha256": "f532eaf0a54a4ac8d030c504113339da3ea6dd3cb8ec3fb3d71b6815c73fa0b7"
     },
     "docs/decisions.md": {
-      "bytes": 66131,
+      "bytes": 66690,
       "kind": "text",
-      "lines": 1129,
-      "sha256": "eb992674718f2a4126deccb689d2c39afe166ae0677d75e73dcb9e9f1cddf9c0"
+      "lines": 1139,
+      "sha256": "b8a1c20354ac97d40d2d7a43bf2630e669ed995915e65f850bc9e6a98e74421e"
     },
     "docs/runbook.md": {
       "bytes": 11905,
@@ -1147,17 +1147,18 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "686362339e8f53fe7142b94031908e3133136fe3b8aadf602bdc362c273fa1f6",
+  "fingerprint": "c2a68d3819a2b48ec4e0c3ef4fe42fd337ec12dc6baef2f17ebdc48632fb61e8",
   "git": {
     "available": true,
     "branch": "main",
-    "head": "dbf411c80ae08ef761b64a90929b9e54d04bb3a9",
+    "head": "49fad01ca1a06ed8c034b9f8ca67b0b882b19461",
     "status": [
       " M .prime/handoffs/12_5_para_13.md",
-      " M PLANS.md"
+      " M PLANS.md",
+      " M README.md"
     ]
   },
-  "recorded_at": "2026-09-03T20:28:25Z",
+  "recorded_at": "2026-09-03T21:27:30Z",
   "schema_version": "1.0.0",
-  "session_id": "session-8099f5a97e6e063424d5"
+  "session_id": "session-87ecd36b0d1ddca820bd"
 }

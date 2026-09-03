@@ -43,10 +43,9 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   `PATH`; como o binário não foi encontrado e o orçamento atual é zero, nenhum
   processo Prime foi iniciado. M12--M13 permanecem fora de escopo.
 - M12 concluído e publicado no checkpoint de referência `e5eb78f`. M12.5 está
-  implementado localmente como camada aditiva de routing/backend entre tarefas
-  canônicas e o ledger, sem alterar M6, estados, ações, papéis ou iniciar M13;
-  a aceitação integral aguarda apenas o smoke do fixture HTTP loopback em
-  ambiente que permita abrir socket local.
+  concluído como camada aditiva de routing/backend entre tarefas canônicas e o
+  ledger, sem alterar M6, estados, ações, papéis ou iniciar M13. O fixture HTTP
+  loopback real passou na matriz GitHub Actions Python 3.11–3.13.
 - Ferramentas auxiliares de handoff para IA concluídas: um gerador local de
   contexto compacto e um registrador local de histórico de sessões. Elas não
   alteram a máquina de estados, candidatos, gates ou a autoridade dos scripts
@@ -104,7 +103,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M10.1 | endurecimento de cobertura e gate final de M10 | concluído localmente | pacote final hash-bound, rederivação de decisão, recuperação por fase, concorrência e Pareto verificados sem iniciar M11 |
 | M11 | comandos e configuração do Prime Agent | concluído localmente | ponte CLI, templates planos, guardrails aditivos, runbook e launcher fail-closed; `settings.json` omitido sem schema instalado confirmado |
 | M12 | orçamento, observabilidade e execução prolongada | concluído localmente | ledger hash-bound, reservas atômicas, reconciliação conservadora, perfis opt-in, status/logs/alertas e retomada fail-closed; sem modelo, rede ou execução real |
-| M12.5 | routing de inferência e integração de backends | implementado; aceitação loopback bloqueada pelo sandbox | registry/router determinísticos, política hash-bound, autorização multi-target compatível, receipts write-once e backend loopback testável offline, sem bypass de M6 nem target pago implícito |
+| M12.5 | routing de inferência e integração de backends | concluído localmente e na CI | registry/router determinísticos, política hash-bound, autorização multi-target compatível, receipts write-once e backend loopback validado na matriz Python 3.11–3.13, sem bypass de M6 nem target pago implícito |
 | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
 
 ## Sequência canônica dos Prompts 01–13
@@ -158,6 +157,12 @@ renumera nem substitui nenhum dos Prompts canônicos 01--13.
 
 ## Registro de progresso
 
+- 2026-09-03 — Correção CI M12.5 confirmada no GitHub Actions pelo run
+  `33807419247` do commit `49fad01`: os três jobs passaram, cada um com 399
+  testes (`3.11`: 213.130s; `3.12`: 248.472s; `3.13`: 233.922s). O fixture
+  loopback real cobriu o caso de conexão fechada e encerrou o critério J sem
+  ativar modelo, target pago, Prime Agent ou M13.
+
 - 2026-09-03 — Correção local da CI M12.5 concluída. O backend passou a
   normalizar `RemoteDisconnected`, `ConnectionResetError` e `BrokenPipeError`
   diretos como `BACKEND_FAILURE` pós-envio; o runtime continua marcando a
@@ -165,8 +170,8 @@ renumera nem substitui nenhum dos Prompts canônicos 01--13.
   runners, e o check M11 agora testa deterministicamente Prime presente e
   ausente sem depender do host. A suíte completa executou 396 testes com
   sucesso e 1 skip local do fixture loopback; as suítes M12.5/M12/M11/
-  contratos executaram 117 testes com sucesso e 1 skip. A revalidação na
-  matriz GitHub Python 3.11–3.13 permanece obrigatória antes de encerrar.
+  contratos executaram 117 testes com sucesso e 1 skip. A revalidação foi
+  posteriormente concluída no run `33807419247` da matriz Python 3.11–3.13.
 
 - 2026-09-03 — Correção CI M12.5 iniciada após os runs GitHub Actions
   `33802406129`, `33802521340` e `33802584988` falharem igualmente em Python
