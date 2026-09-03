@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
+import multiprocessing
 import os
 import shutil
 import sys
@@ -17,9 +19,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / ".prime/agent/skills/article-loop/src"))
 
 from article_loop import DurableStore, State, finalize
-from article_loop.diagnosis import diagnose_cycle
+from article_loop.diagnosis import diagnose_cycle, load_history_series
 from article_loop.finalization import FinalizationError, TransactionalFinalizer
-from article_loop.policy import PolicyError, choose_action, decide, load_policy, pareto_relation
+from article_loop.policy import PolicyError, _budget_exhausted, choose_action, decide, load_policy, pareto_relation, verify_finalization_evidence
 from control import test_m9_diagnosis as m9_tests
 
 
@@ -35,6 +37,25 @@ def _record(*, math=True, overall=True, eligible=True, outcome="challenger_favor
         overall_outcome=outcome, dimension_scores_challenger=scores_b,
         dimension_scores_champion=scores_a,
     )
+
+
+def _canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def _content_id(prefix, field, value):
+    body = dict(value)
+    body.pop(field, None)
+    return f"{prefix}-{hashlib.sha256(_canonical(body)).hexdigest()[:32]}"
+
+
+def _finalize_worker(root, run_id, barrier, results):
+    try:
+        barrier.wait(timeout=20)
+        receipt = TransactionalFinalizer(root).finalize(run_id, cycle_id=0)
+        results.put(("ok", receipt["receipt_id"]))
+    except Exception as exc:  # pragma: no cover - assertion occurs in parent
+        results.put(("error", f"{type(exc).__name__}: {exc}"))
 
 
 class M10PolicyTableTests(unittest.TestCase):
@@ -81,6 +102,25 @@ class M10PolicyTableTests(unittest.TestCase):
             frontier_relation={"dominated_by": ["candidate-existing"], "dominates": []},
         )
         self.assertEqual((action, reason), ("REJECT", "PARETO_DOMINATED"))
+
+    def test_budget_limit_is_safe_at_the_boundary_and_pauses_when_exceeded(self):
+        record = _record()
+        record.activation_map = {
+            "paused": False,
+            "budget": {
+                "limits": {"max_estimated_tokens": 10, "max_wall_time_seconds": 5},
+                "estimated_tokens": 10,
+                "wall_time_seconds": 5,
+            },
+        }
+        self.assertFalse(_budget_exhausted(record))
+        record.activation_map["budget"]["estimated_tokens"] = 11
+        self.assertTrue(_budget_exhausted(record))
+        self.assertEqual(
+            choose_action(record, {"classification": "EVOLVING"}, self.policy,
+                          prior_extra_judgments=0, final_gate_report_ids=[], budget_exhausted=True),
+            ("PAUSE", "BUDGET_EXHAUSTED"),
+        )
 
 
 class M10ParetoTests(unittest.TestCase):
@@ -177,6 +217,80 @@ class M10IntegrationTests(unittest.TestCase):
         self.assertEqual(diagnosis["classification"], "EVOLVING")
         return m8, diagnosis
 
+    def _diagnosed_with_scores(self, scores_a, scores_b, *, preferred_winner):
+        jurors = {
+            juror_id: m9_tests.DimensionScoresJurorAdapter(
+                juror_id=juror_id, specialty=specialty, preferred_winner=preferred_winner,
+                scores_a=scores_a, scores_b=scores_b,
+            )
+            for juror_id, specialty in (
+                ("juror-math", "correctness_math"),
+                ("juror-contrib", "scientific_contribution"),
+                ("juror-clarity", "clarity"),
+            )
+        }
+        m8 = self.fixture._setup_cycle_up_to_evaluated(
+            cycle_id=0, preferred_winner=preferred_winner, juror_adapters=jurors,
+        )
+        diagnosis = diagnose_cycle(
+            self.root, self.run_id, cycle_id=0,
+            candidate_id=m8["manifest"]["candidate_id"], window_size=1,
+        )
+        return m8, diagnosis
+
+    def _publish_final_gate_package(self):
+        """Create only immutable fixture evidence; production M10 never creates it."""
+        record = load_history_series(self.root, self.run_id, 0, store=DurableStore(self.root))[-1]
+        candidate_manifest = self.root / "versions/challengers" / record.candidate_id / "manifest.json"
+        manifest_hash = hashlib.sha256(candidate_manifest.read_bytes()).hexdigest()
+        rendered = self.root / "artifacts/rendered" / self.run_id / "c0000" / "final.pdf"
+        rendered.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(self.root / "input/inbox/artigo.pdf", rendered)
+        os.chmod(rendered, 0o444)
+        rendered_hash = hashlib.sha256(rendered.read_bytes()).hexdigest()
+        report_dir = self.root / "reports" / self.run_id / "c0000"
+        report_dir.mkdir(parents=True, exist_ok=True)
+        final_path = report_dir / "final-report.json"
+        final_report = {
+            "schema_version": "1.0.0", "run_id": self.run_id, "cycle_id": 0,
+            "candidate_id": record.candidate_id, "candidate_content_hash": record.candidate_content_hash,
+            "gate_report_id": record.gate_report["report_id"], "required_roles": ["W22", "W51", "W53"],
+            "candidate_manifest_hash": manifest_hash, "rendered_pdf_hash": rendered_hash, "overall_pass": True,
+        }
+        final_report["final_report_id"] = _content_id("fr", "final_report_id", final_report)
+        final_path.write_bytes(_canonical(final_report))
+        os.chmod(final_path, 0o444)
+        references = {
+            "candidate_manifest": {
+                "locator": f"versions/challengers/{record.candidate_id}/manifest.json", "sha256": manifest_hash,
+            },
+            "rendered_pdf": {
+                "locator": f"artifacts/rendered/{self.run_id}/c0000/final.pdf", "sha256": rendered_hash,
+            },
+            "final_report": {
+                "locator": f"reports/{self.run_id}/c0000/final-report.json",
+                "sha256": hashlib.sha256(final_path.read_bytes()).hexdigest(),
+            },
+        }
+        final_gate_dir = self.root / "state/final-gates" / self.run_id / "c0000"
+        final_gate_dir.mkdir(parents=True, exist_ok=True)
+        paths = {"rendered_pdf": rendered, "final_report": final_path, "candidate_manifest": candidate_manifest}
+        ids = []
+        for role_id, gate_id in (("W22", "correctness_math"), ("W51", "manifest_integrity"), ("W53", "pdf_valid")):
+            report = {
+                "schema_version": "1.0.0", "run_id": self.run_id, "cycle_id": 0,
+                "candidate_id": record.candidate_id, "candidate_content_hash": record.candidate_content_hash,
+                "gate_report_id": record.gate_report["report_id"], "role_id": role_id,
+                "gate_id": gate_id, "overall_pass": True, **references,
+            }
+            report["report_id"] = _content_id("fg", "report_id", report)
+            path = final_gate_dir / f"{role_id}.json"
+            path.write_bytes(_canonical(report))
+            os.chmod(path, 0o444)
+            paths[role_id] = path
+            ids.append(report["report_id"])
+        return record, sorted(ids), paths
+
     def test_policy_publishes_content_addressed_decision_and_is_idempotent(self):
         _, diagnosis = self._diagnosed_evolving_run()
         first = decide(self.root, self.run_id, cycle_id=0)
@@ -212,6 +326,94 @@ class M10IntegrationTests(unittest.TestCase):
         self.assertEqual(receipt["state_after"], State.CYCLE_COMPLETE)
         self.assertEqual(DurableStore(self.root).read_events(self.run_id)[-1]["state_to"], State.CYCLE_COMPLETE)
 
+    def test_local_plateau_and_inconclusive_publish_their_distinct_next_steps(self):
+        self.fixture._publish_diagnosis_fixture("LOCAL_PLATEAU")
+        decision = decide(self.root, self.run_id, cycle_id=0)
+        self.assertEqual(decision["action"], "REFOCUS_AND_CONTINUE")
+        receipt = TransactionalFinalizer(self.root).finalize(self.run_id, cycle_id=0)
+        self.assertTrue((self.root / receipt["destination"]).is_file())
+
+    def test_inconclusive_requests_one_extra_judgment(self):
+        self.fixture._publish_diagnosis_fixture("INCONCLUSIVE")
+        decision = decide(self.root, self.run_id, cycle_id=0)
+        self.assertEqual(decision["action"], "REQUEST_EXTRA_JUDGMENT")
+        receipt = TransactionalFinalizer(self.root).finalize(self.run_id, cycle_id=0)
+        self.assertTrue((self.root / receipt["destination"]).is_file())
+
+    def test_global_plateau_without_final_package_pauses(self):
+        self.fixture._publish_diagnosis_fixture("GLOBAL_PLATEAU")
+        decision = decide(self.root, self.run_id, cycle_id=0)
+        self.assertEqual((decision["action"], decision["reason_code"]), ("PAUSE", "TECHNICAL_BLOCK"))
+        receipt = TransactionalFinalizer(self.root).finalize(self.run_id, cycle_id=0)
+        self.assertEqual((receipt["action"], receipt["state_after"]), ("PAUSE", State.PAUSED))
+
+    def test_tradeoff_archives_with_an_immutable_pareto_reference(self):
+        champion = {dimension: 4 for dimension in m9_tests.DIMENSIONS}
+        tradeoff = {dimension: 5 for dimension in m9_tests.DIMENSIONS}
+        tradeoff["clarity"] = 3
+        _, diagnosis = self._diagnosed_with_scores(champion, tradeoff, preferred_winner="B")
+        self.assertEqual(diagnosis["classification"], "EVOLVING")
+        decision = decide(self.root, self.run_id, cycle_id=0)
+        self.assertEqual(decision["action"], "ARCHIVE_PARETO")
+        receipt = TransactionalFinalizer(self.root).finalize(self.run_id, cycle_id=0)
+        self.assertTrue((self.root / receipt["destination"] / "reference.json").is_file())
+
+    def test_regression_rejects_with_an_immutable_reference(self):
+        champion = {dimension: 4 for dimension in m9_tests.DIMENSIONS}
+        regressing = {dimension: 2 for dimension in m9_tests.DIMENSIONS}
+        _, diagnosis = self._diagnosed_with_scores(champion, regressing, preferred_winner="A")
+        self.assertEqual(diagnosis["classification"], "REGRESSING")
+        decision = decide(self.root, self.run_id, cycle_id=0)
+        self.assertEqual((decision["action"], decision["reason_code"]), ("REJECT", "JURY_UNFAVORABLE"))
+        receipt = TransactionalFinalizer(self.root).finalize(self.run_id, cycle_id=0)
+        self.assertTrue((self.root / receipt["destination"] / "reference.json").is_file())
+
+    def test_global_plateau_finalizes_only_after_complete_hash_bound_package(self):
+        self.fixture._publish_diagnosis_fixture("GLOBAL_PLATEAU")
+        record, report_ids, _ = self._publish_final_gate_package()
+        self.assertEqual(
+            verify_finalization_evidence(self.root, self.run_id, 0, record, ["W22", "W51", "W53"]), report_ids,
+        )
+        decision = decide(self.root, self.run_id, cycle_id=0)
+        self.assertEqual(decision["action"], "FINALIZE")
+        self.assertEqual(decision["final_gate_report_ids"], report_ids)
+        receipt = TransactionalFinalizer(self.root).finalize(self.run_id, cycle_id=0)
+        self.assertEqual((receipt["action"], receipt["state_after"]), ("FINALIZE", State.FINALIZED))
+
+    def test_final_gate_package_rejects_missing_or_mismatched_artifacts(self):
+        self.fixture._publish_diagnosis_fixture("GLOBAL_PLATEAU")
+        record, _, paths = self._publish_final_gate_package()
+        for name in ("rendered_pdf", "final_report"):
+            with self.subTest(name=name):
+                path = paths[name]
+                original = path.read_bytes()
+                os.chmod(path, 0o644)
+                path.unlink()
+                with self.assertRaisesRegex(PolicyError, "(unavailable|missing)"):
+                    verify_finalization_evidence(self.root, self.run_id, 0, record, ["W22", "W51", "W53"])
+                path.write_bytes(original)
+                os.chmod(path, 0o444)
+        report = paths["W51"]
+        body = json.loads(report.read_text(encoding="utf-8"))
+        os.chmod(report, 0o644)
+        body["gate_id"] = "pdf_valid"
+        body["report_id"] = _content_id("fg", "report_id", body)
+        report.write_bytes(_canonical(body))
+        os.chmod(report, 0o444)
+        with self.assertRaisesRegex(PolicyError, "role does not attest"):
+            verify_finalization_evidence(self.root, self.run_id, 0, record, ["W22", "W51", "W53"])
+
+    def test_decision_revalidation_blocks_final_artifact_mutation_after_decision(self):
+        self.fixture._publish_diagnosis_fixture("GLOBAL_PLATEAU")
+        _, _, paths = self._publish_final_gate_package()
+        decide(self.root, self.run_id, cycle_id=0)
+        target = paths["rendered_pdf"]
+        os.chmod(target, 0o644)
+        target.write_bytes(b"%PDF-tampered")
+        os.chmod(target, 0o444)
+        with self.assertRaisesRegex(FinalizationError, "closed policy"):
+            TransactionalFinalizer(self.root).finalize(self.run_id, cycle_id=0)
+
     def test_crash_after_destination_rename_recovers_without_second_champion(self):
         self._diagnosed_evolving_run()
         decide(self.root, self.run_id, cycle_id=0)
@@ -239,6 +441,81 @@ class M10IntegrationTests(unittest.TestCase):
             TransactionalFinalizer(self.root, fault=crash, clock=lambda: "2026-09-03T00:00:00Z").finalize(self.run_id, cycle_id=0)
         receipt = TransactionalFinalizer(self.root, clock=lambda: "2026-09-03T00:00:00Z").finalize(self.run_id, cycle_id=0)
         self.assertEqual(receipt["state_after"], State.CYCLE_COMPLETE)
+        self.assertEqual(
+            sorted(path.name for path in (self.root / "versions/champion").iterdir() if path.is_dir()),
+            ["v0000", "v0001"],
+        )
+
+    def test_every_durable_fault_boundary_recovers_exactly_once(self):
+        self._diagnosed_evolving_run()
+        decide(self.root, self.run_id, cycle_id=0)
+        snapshot = tempfile.TemporaryDirectory()
+        self.addCleanup(snapshot.cleanup)
+        source = Path(snapshot.name) / "source"
+        shutil.copytree(self.root, source)
+        stages = (
+            "after_file_fsync", "after_prepared", "after_hashes_revalidated",
+            "before_destination_rename", "after_destination_rename", "after_pointer_swap",
+            "after_destination_staged", "after_receipt", "after_checkpoint",
+        )
+        for stage in stages:
+            with self.subTest(stage=stage):
+                case = Path(snapshot.name) / stage
+                shutil.copytree(source, case)
+                tripped = False
+
+                def crash(observed):
+                    nonlocal tripped
+                    if observed == stage and not tripped:
+                        tripped = True
+                        raise RuntimeError(f"simulated crash at {stage}")
+
+                with self.assertRaisesRegex(RuntimeError, "simulated crash"):
+                    TransactionalFinalizer(case, fault=crash).finalize(self.run_id, cycle_id=0)
+                receipt = TransactionalFinalizer(case).finalize(self.run_id, cycle_id=0)
+                self.assertEqual(receipt["state_after"], State.CYCLE_COMPLETE)
+                self.assertEqual(
+                    sorted(path.name for path in (case / "versions/champion").iterdir() if path.is_dir()),
+                    ["v0000", "v0001"],
+                )
+
+    def test_two_processes_share_one_finalization_receipt(self):
+        self._diagnosed_evolving_run()
+        decide(self.root, self.run_id, cycle_id=0)
+        context = multiprocessing.get_context("fork")
+        barrier = context.Barrier(2)
+        results = context.Queue()
+        processes = [
+            context.Process(target=_finalize_worker, args=(str(self.root), self.run_id, barrier, results))
+            for _ in range(2)
+        ]
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join(timeout=30)
+            self.assertEqual(process.exitcode, 0)
+        outcomes = [results.get(timeout=5) for _ in processes]
+        self.assertEqual({outcome[0] for outcome in outcomes}, {"ok"})
+        self.assertEqual(len({outcome[1] for outcome in outcomes}), 1)
+        events = DurableStore(self.root).read_events(self.run_id)
+        self.assertEqual(sum(event["event_type"] == "FINALIZATION_APPLIED" for event in events), 1)
+
+    def test_adversarial_pointer_change_fails_closed_and_preserves_versions(self):
+        self._diagnosed_evolving_run()
+        decide(self.root, self.run_id, cycle_id=0)
+
+        def mutate(stage):
+            if stage == "after_destination_rename":
+                pointer = self.root / "versions/champion/current.json"
+                if pointer.exists():
+                    os.chmod(pointer, 0o644)
+                pointer.write_bytes(_canonical({"candidate_id": "v9999", "content_hash": "0" * 64}))
+                os.chmod(pointer, 0o444)
+
+        with self.assertRaisesRegex(FinalizationError, "pointer changed"):
+            TransactionalFinalizer(self.root, fault=mutate).finalize(self.run_id, cycle_id=0)
+        with self.assertRaisesRegex(FinalizationError, "compare-and-swap failed"):
+            TransactionalFinalizer(self.root).finalize(self.run_id, cycle_id=0)
         self.assertEqual(
             sorted(path.name for path in (self.root / "versions/champion").iterdir() if path.is_dir()),
             ["v0000", "v0001"],

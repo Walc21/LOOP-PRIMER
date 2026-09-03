@@ -18,9 +18,11 @@
 
 > **Implementation status:** M0–M10 are implemented and locally validated. M10
 > publishes a canonical, content-addressed `Decision`, revalidates it under a
-> per-run lock, and applies its authorized disposition atomically. M11–M13
-> remain pending. The M10 CLIs are operational but do not run an article, a
-> model, or a paid API by themselves.
+> per-run lock, and applies its authorized disposition atomically. `FINALIZE`
+> additionally requires immutable W22/W51/W53 attestations bound by SHA-256 to
+> the candidate manifest, rendered PDF, and final report. M11–M13 remain
+> pending. The M10 CLIs are operational but do not run an article, a model, or
+> a paid API by themselves.
 
 ---
 
@@ -53,6 +55,9 @@ Unlike conventional LLM wrappers, LOOP-PRIMER operates under **strict mathematic
 - **Hierarchical Depth Boundary (Max Depth 2)**: Strict 21-agent hierarchy preventing uncontrolled recursion or authority escalation.
 - **Blind External Jury**: Double-blind randomized evaluation with meta-reviewer consensus before candidate promotion.
 - **Transactional Finalizer**: Atomic champion upgrades and Pareto frontier tracking with signed audit receipts.
+- **Finalization Evidence Package**: W22/W51/W53 attestations bind the final
+  candidate manifest, rendered PDF and final report before `FINALIZE`; crash
+  recovery derives the same receipt instead of repeating an effect.
 
 ---
 
@@ -222,8 +227,9 @@ LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
   publishes one immutable M10 `Decision`; accepts `--root`, `--run-id`,
   `--cycle-id` or the equivalent bounded JSON input.
 - **`scripts/05_transactional_finalizer.py`**: Revalidates the published
-  `Decision`, candidate and evidence under a per-run lock, then records the
-  atomic disposition and immutable receipt.
+  `Decision`, candidate and evidence package under a per-run lock, then records
+  the atomic disposition and immutable receipt. A retry after a receipt-only
+  crash records only the pending event/checkpoint.
 - **`scripts/ai_context.py`**: Deterministic content-addressed session context snapshot generator.
 - **`scripts/ai_history.py`**: Session ledger and ADR history updater.
 
@@ -281,6 +287,7 @@ All core design choices are formally recorded in [`docs/decisions.md`](docs/deci
 | **ADR-021** | Double-Blind Jury & Randomized Presentation | `Accepted` | Evaluation |
 | **ADR-024** | Plateau & Oscillation Diagnostic Engine | `Accepted` | Adaptability |
 | **ADR-028** | Pure Decision Policy & Transactional Finalization | `Accepted` | M10 disposition |
+| **ADR-029** | Final Evidence Package & Phase-Covered Recovery | `Accepted` | M10.1 hardening |
 | **ADR-026** | Content-Addressed AI Handoff & Session Ledger | `Accepted` | AI Protocol |
 | **ADR-027** | Audience Separation & Publishable Git History | `Accepted` | Repository Integration |
 

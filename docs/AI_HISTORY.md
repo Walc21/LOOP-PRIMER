@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `921c248a2e2a15ed25f7429f73926349014d146386d22ad2e188e94e321b364c`
-- Registrado em: `2026-09-03T02:00:55Z`
-- Git: branch `main`, HEAD `051f969db75b`
-- Arquivos relevantes: 165
+- Fingerprint das fontes: `5c57df597e90c7bd2b9a43adefadf9951b65264fcc901b5f710a1300688fa299`
+- Registrado em: `2026-09-03T04:11:47Z`
+- Git: branch `main`, HEAD `35c1fa6f879e`
+- Arquivos relevantes: 167
 
 ## Evolução reconstruída do versionamento
 
@@ -29,6 +29,7 @@
 | M0 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | config/roles/M00.yaml, config/roles/S10.yaml, config/roles/S20.yaml, config/roles/S30.yaml, config/roles/S40.yaml, config/roles/S50.yaml, config/roles/W11.yaml |
 | M2/M3 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m2_durable_state.py, control/test_m3_ingestion.py |
 | M4/M5 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m4_prompts.py, control/test_m5_blackboard_activation.py |
+| M10 | 2026-09-02 | 1 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 
 ### Commits exatos
 
@@ -123,6 +124,7 @@
 | `929ad97f2` | 2026-09-02 | sem marco explícito | chore(git): publish local updates to GitHub repository |  |
 | `35e2f80be` | 2026-09-02 | sem marco explícito | fix(repo): separate GitHub and AI integration | .github/copilot-instructions.md, AI_CONTEXT.md, GEMINI.md, PLANS.md, README.md, control/test_ai_handoff.py |
 | `051f969db` | 2026-09-02 | sem marco explícito | fix(ci): restore GitHub Actions matrix | .github/workflows/ci.yml, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `35c1fa6f8` | 2026-09-02 | M10 | feat(m10): add deterministic decision finalizer | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 
 ## Decisões arquiteturais
 
@@ -154,6 +156,7 @@
 - ADR-026 — Handoff compacto e histórico de sessões para agentes de IA
 - ADR-027 — Separação de audiências e histórico Git publicável
 - ADR-028 — M10: política pura e finalização transacional por referência
+- ADR-029 — M10.1: pacote final canônico e recuperação coberta por fase
 
 ## Atualizações de sessão
 
@@ -626,3 +629,51 @@
 | modified | `docs/architecture.md` | `45f6cf230dd1` | `d6942938ab13` |
 | modified | `docs/decisions.md` | `a869cadf7e11` | `38c2a4b299e0` |
 | modified | `scripts/ai_context.py` | `26aa077994cc` | `3f7517e51d98` |
+
+### 2026-09-03T04:11:47Z — Concluído o endurecimento M10.1 local: pacote final hash-bound, rederivação da Decision, recuperação pós-recibo e cobertura transacional ampliada, sem iniciar M11.
+
+- Session ID: `session-m10.1-hardening-20260903`
+- Fingerprint final: `5c57df597e90c7bd2b9a43adefadf9951b65264fcc901b5f710a1300688fa299`
+- Git final: `35c1fa6f879e`; status relevante: 11 item(ns)
+- Delta factual: 2 adicionados, 9 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionados os schemas versionados FinalGateReport e FinalReport; FINALIZE valida W22/W51/W53, GateReport vigente, manifesto, PDF renderizado e relatório final pelos hashes SHA-256.
+- A política rederiva a única disposição permitida antes do efeito; o finalizador rejeita Decision divergente e recupera receipt pendente sem repetir a mutação.
+- Ampliados contratos, testes M10, README, arquitetura, skill, plano e ADR-029 para cobrir o protocolo final M10.1.
+
+**Decisões**
+
+- PDF renderizado e relatório final são somente evidência local publicada previamente; M10 revalida-os, não executa renderização, artigo, Prime Agent, modelo ou rede.
+- A recuperação de COMMITTING com receipt exige revalidação completa do recibo esperado antes de registrar exclusivamente o evento/checkpoint pendente.
+
+**Validações**
+
+- python3 -m unittest discover -s control -q: 331 testes aprovados em 245.441s; aviso Duplicate name a.tex pertence à fixture negativa de ZIP.
+- python3 -m unittest -q control.test_m10_policy_finalization.M10IntegrationTests.test_every_durable_fault_boundary_recovers_exactly_once control.test_m10_policy_finalization.M10IntegrationTests.test_two_processes_share_one_finalization_receipt control.test_m10_policy_finalization.M10IntegrationTests.test_global_plateau_finalizes_only_after_complete_hash_bound_package: 3 testes aprovados em 6.773s.
+- python3 -m py_compile policy.py finalization.py e git diff --check: aprovados.
+
+**Riscos/limites**
+
+- CONTINUE_UNCHANGED e ABORT_TECHNICAL permanecem cobertos pela tabela fechada e pelos checkpoints; a fixture integral não produz esses dois estados sem adulterar evidência imutável.
+
+**Próximos passos**
+
+- Somente com nova autorização: revisar/commitar/publicar M10.1; M11 continua pendente e fora de escopo.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `config/schemas/final-gate-report.schema.json` | `-` | `ede3c466919b` |
+| added | `config/schemas/final-report.schema.json` | `-` | `dd19b7227a10` |
+| modified | `.prime/agent/skills/article-loop/SKILL.md` | `a008817e7381` | `2daf907bd773` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/finalization.py` | `5ee4a6f5f90e` | `0a7f109e9e2e` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/policy.py` | `086d71ecf13b` | `cda534151c1c` |
+| modified | `PLANS.md` | `d92a85224cd5` | `ce451c209d1c` |
+| modified | `README.md` | `355f4a13d8af` | `44c335cc2acd` |
+| modified | `control/test_contracts.py` | `273fe28e215e` | `e14816e0f348` |
+| modified | `control/test_m10_policy_finalization.py` | `6bd8ac5a32e6` | `3084e0cf69b9` |
+| modified | `docs/architecture.md` | `d6942938ab13` | `71e182c75e53` |
+| modified | `docs/decisions.md` | `38c2a4b299e0` | `540ce5851b09` |

@@ -23,7 +23,7 @@ from typing import Any, Callable, Mapping
 import jsonschema
 
 from .diagnosis import load_history_series, verify_published_diagnosis
-from .policy import PolicyError, _candidate, _canonical, _contained, _read_canonical_json, _validate_schema, load_policy, pareto_relation
+from .policy import PolicyError, _candidate, _canonical, _contained, _read_canonical_json, _validate_schema, load_policy, pareto_relation, validate_decision_disposition, verify_finalization_evidence
 from .state_machine import State
 from .store import DurableStore, StoreError
 from .synthesis import _fsync, _fsync_tree_dirs, _inventory, _json, _sha, _walk, tree_hash
@@ -176,6 +176,10 @@ class TransactionalFinalizer:
             manifest, candidate_dir = _candidate(self.root, record.candidate_id, record.candidate_content_hash)
         except PolicyError as exc:
             raise FinalizationError("challenger bytes changed after evaluation") from exc
+        try:
+            validate_decision_disposition(self.root, decision, record, diagnosis)
+        except PolicyError as exc:
+            raise FinalizationError("Decision no longer matches the closed policy") from exc
         action = decision["action"]
         if action not in {"PAUSE", "ABORT_TECHNICAL"} and (
             decision.get("candidate_id") != record.candidate_id
@@ -208,20 +212,15 @@ class TransactionalFinalizer:
         ids = decision.get("final_gate_report_ids")
         if not isinstance(ids, list) or not ids or not record.gate_report.get("overall_pass"):
             return False
-        base = self.root / "state" / "final-gates" / decision["run_id"] / f"c{decision['cycle_id']:04d}"
-        if not base.is_dir() or base.is_symlink():
+        try:
+            required_roles = load_policy(self.root)[0]["finalization_required_roles"]
+            observed = verify_finalization_evidence(
+                self.root, decision["run_id"], decision["cycle_id"], record,
+                required_roles, expected_report_ids=ids,
+            )
+        except PolicyError:
             return False
-        roles: set[str] = set()
-        seen: set[str] = set()
-        for path in sorted(base.glob("*.json")):
-            try:
-                report = _read_canonical_json(path, "final gate report")
-            except PolicyError:
-                return False
-            if report.get("report_id") in ids and report.get("overall_pass") is True:
-                seen.add(report["report_id"])
-                roles.update(report.get("roles", []))
-        return set(ids) == seen and {"W22", "W51", "W53"}.issubset(roles) and candidate_dir.is_dir()
+        return observed == sorted(ids) and candidate_dir.is_dir()
 
     @staticmethod
     def _next_champion_id(base_candidate_id: str) -> str:
@@ -464,8 +463,31 @@ class TransactionalFinalizer:
             if receipt is not None:
                 if receipt.get("run_id") != run_id or receipt.get("cycle_id") != cycle_id:
                     raise FinalizationError("receipt identity differs")
-                if current is not State(receipt["state_after"]):
+                target = State(receipt["state_after"])
+                if current is target:
+                    return receipt
+                if current is not State.COMMITTING:
                     raise FinalizationError("receipt and durable state differ")
+                decision, _ = self._load_decision(run_id, cycle_id)
+                if receipt.get("decision_id") != decision.get("decision_id"):
+                    raise FinalizationError("receipt decision binding differs")
+                record, _, _ = self._revalidate_evidence(decision, run_id, cycle_id)
+                expected_receipt = self._receipt(
+                    decision, record, receipt["applied_at"], receipt["destination"], target,
+                )
+                if receipt != expected_receipt:
+                    raise FinalizationError("recovered receipt differs from revalidated evidence")
+                event = self.store.record(
+                    run_id, target, event_id=f"finalization:{decision['decision_id']}:complete",
+                    idempotency_key=f"finalization:{run_id}:c{cycle_id:04d}:complete", actor_id="M00",
+                    event_type="FINALIZATION_APPLIED", payload={
+                        "decision_id": decision["decision_id"], "receipt_id": receipt["receipt_id"],
+                        "action": decision["action"], "destination": receipt["destination"],
+                    }, artifact_hashes=[_sha(_canonical(receipt))],
+                )
+                if event["payload"].get("receipt_id") != receipt["receipt_id"]:
+                    raise FinalizationError("recovered finalization event binding differs")
+                self.store.checkpoint(run_id)
                 return receipt
             if current not in {State.DECIDED, State.COMMITTING} or events[-1]["cycle_id"] != cycle_id:
                 raise FinalizationError("finalizer requires DECIDED or recoverable COMMITTING state")

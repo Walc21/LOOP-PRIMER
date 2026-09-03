@@ -53,6 +53,7 @@ SCHEMA_FILES = {
     "refocus-plan.schema.json", "decision.schema.json",
     "finalization-receipt.schema.json", "math-evidence.schema.json",
     "math-issue.schema.json", "math-verification.schema.json",
+    "final-gate-report.schema.json", "final-report.schema.json",
 }
 
 
@@ -128,7 +129,7 @@ class SchemaContractTests(unittest.TestCase):
     def test_exact_schema_catalog_and_meta_validation(self):
         paths = sorted(SCHEMA_DIR.glob("*.schema.json"))
         self.assertEqual({path.name for path in paths}, SCHEMA_FILES)
-        self.assertEqual(len(paths), 20)
+        self.assertEqual(len(paths), 22)
         for path in paths:
             with self.subTest(path=path.name):
                 schema = load_json(path)

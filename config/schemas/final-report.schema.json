@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "final-report.schema.json",
+  "title": "FinalReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "final_report_id", "run_id", "cycle_id", "candidate_id", "candidate_content_hash", "gate_report_id", "required_roles", "candidate_manifest_hash", "rendered_pdf_hash", "overall_pass"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "final_report_id": {"type": "string", "pattern": "^fr-[a-f0-9]{32}$"},
+    "run_id": {"type": "string", "minLength": 1},
+    "cycle_id": {"type": "integer", "minimum": 0},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "candidate_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "gate_report_id": {"type": "string", "pattern": "^g-[a-f0-9]{32}$"},
+    "required_roles": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"enum": ["W22", "W51", "W53"]}},
+    "candidate_manifest_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "rendered_pdf_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "overall_pass": {"const": true}
+  }
+}

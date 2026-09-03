@@ -70,7 +70,10 @@ M10 também expõe `decide(root, run_id, cycle_id=...)`,
 `finalize_decision(root, run_id, cycle_id=...)`, `pareto_relation(...)` e
 `TransactionalFinalizer`. `finalize()` não usa mais o atalho histórico de M6:
 ele exige uma `Decision` M10 ativa e delega ao finalizador que revalida hashes,
-diagnóstico e precondições antes de qualquer efeito. A política é local e não
+diagnóstico e precondições antes de qualquer efeito. Para `FINALIZE`, as
+precondições incluem relatórios imutáveis de W22/W51/W53 vinculados por SHA-256
+ao manifesto completo, PDF renderizado e relatório final; uma retomada após o
+receipt só conclui o evento/checkpoint que faltava. A política é local e não
 inicia Prime Agent, modelos ou um artigo real.
 
 `PrimeRLMAdapter` encapsula somente a API instalada: admissão por

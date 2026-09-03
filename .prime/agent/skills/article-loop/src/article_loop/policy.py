@@ -29,6 +29,8 @@ from .synthesis import _inventory, _json, _sha, _walk, tree_hash
 
 POLICY_CONFIG = "config/decision-policy.yaml"
 DECISION_SCHEMA = "decision.schema.json"
+FINAL_GATE_SCHEMA = "final-gate-report.schema.json"
+FINAL_REPORT_SCHEMA = "final-report.schema.json"
 _ACTIONS = frozenset({
     "PROMOTE", "ARCHIVE_PARETO", "REJECT", "REFOCUS_AND_CONTINUE",
     "CONTINUE_UNCHANGED", "REQUEST_EXTRA_JUDGMENT", "PAUSE", "FINALIZE",
@@ -38,6 +40,11 @@ _CLASSIFICATIONS = frozenset({
     "EVOLVING", "LOCAL_PLATEAU", "GLOBAL_PLATEAU", "OSCILLATING",
     "REGRESSING", "INCONCLUSIVE", "TECHNICAL_FAILURE",
 })
+_FINAL_ROLE_GATES = {
+    "W22": "correctness_math",
+    "W51": "manifest_integrity",
+    "W53": "pdf_valid",
+}
 
 
 class PolicyError(RuntimeError):
@@ -157,7 +164,7 @@ def _candidate(root: Path, candidate_id: str, expected_hash: str) -> tuple[dict[
     return manifest, candidate_dir
 
 
-def _prior_extra_judgments(root: Path, run_id: str) -> int:
+def _prior_extra_judgments(root: Path, run_id: str, *, before_cycle_id: int | None = None) -> int:
     base = _contained(root, f"state/decisions/{run_id}")
     if not base.exists():
         return 0
@@ -166,12 +173,15 @@ def _prior_extra_judgments(root: Path, run_id: str) -> int:
     count = 0
     for path in sorted(base.glob("c*/decision.json")):
         decision = _read_canonical_json(path, "prior decision")
-        if decision.get("run_id") == run_id and decision.get("action") == "REQUEST_EXTRA_JUDGMENT":
+        if (
+            decision.get("run_id") == run_id and decision.get("action") == "REQUEST_EXTRA_JUDGMENT"
+            and (before_cycle_id is None or decision.get("cycle_id") < before_cycle_id)
+        ):
             count += 1
     return count
 
 
-def _prior_technical_failures(root: Path, run_id: str) -> int:
+def _prior_technical_failures(root: Path, run_id: str, *, before_cycle_id: int | None = None) -> int:
     """Count immutable technical checkpoints already requested for this run."""
     base = _contained(root, f"state/decisions/{run_id}")
     if not base.exists():
@@ -181,36 +191,186 @@ def _prior_technical_failures(root: Path, run_id: str) -> int:
     count = 0
     for path in sorted(base.glob("c*/decision.json")):
         decision = _read_canonical_json(path, "prior decision")
-        if decision.get("run_id") == run_id and decision.get("action") == "ABORT_TECHNICAL":
+        if (
+            decision.get("run_id") == run_id and decision.get("action") == "ABORT_TECHNICAL"
+            and (before_cycle_id is None or decision.get("cycle_id") < before_cycle_id)
+        ):
             count += 1
     return count
 
 
-def _finalization_ready(root: Path, run_id: str, cycle_id: int, candidate_id: str, required_roles: list[str]) -> list[str]:
-    """Return final-gate IDs only when every finalization prerequisite is local.
+def _content_addressed_id(prefix: str, field: str, value: Mapping[str, Any]) -> str:
+    body = dict(value)
+    body.pop(field, None)
+    return f"{prefix}-{_sha(_canonical(body))[:32]}"
 
-    M10 does not rerun a final gate.  A future authorized operation must first
-    publish the small final reports in this canonical, content-addressed path.
+
+def _artifact_bytes(root: Path, value: Mapping[str, Any], *, expected_locator: str | None = None,
+                    required_prefix: str | None = None, suffix: str | None = None, label: str) -> tuple[Path, bytes]:
+    locator = value.get("locator")
+    expected_hash = value.get("sha256")
+    if not isinstance(locator, str) or not isinstance(expected_hash, str):
+        raise PolicyError(f"{label} reference is invalid")
+    if expected_locator is not None and locator != expected_locator:
+        raise PolicyError(f"{label} locator is not canonical")
+    if required_prefix is not None and not locator.startswith(required_prefix):
+        raise PolicyError(f"{label} locator is outside its managed directory")
+    if suffix is not None and not locator.endswith(suffix):
+        raise PolicyError(f"{label} locator has the wrong type")
+    path = _contained(root, locator, exists=True)
+    try:
+        info = path.lstat()
+    except OSError as exc:
+        raise PolicyError(f"{label} is unavailable") from exc
+    if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) & 0o222:
+        raise PolicyError(f"{label} is not a regular file")
+    raw = path.read_bytes()
+    if _sha(raw) != expected_hash:
+        raise PolicyError(f"{label} hash differs")
+    return path, raw
+
+
+def _verify_final_report(
+    root: Path, reference: Mapping[str, Any], *, run_id: str, cycle_id: int,
+    candidate_id: str, candidate_content_hash: str, gate_report_id: str,
+    required_roles: list[str], manifest_hash: str, rendered_pdf_hash: str,
+) -> None:
+    _, raw = _artifact_bytes(
+        root, reference,
+        required_prefix=f"reports/{run_id}/c{cycle_id:04d}/", suffix=".json",
+        label="final report",
+    )
+    try:
+        report = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise PolicyError("final report is not JSON") from exc
+    if not isinstance(report, dict) or raw != _canonical(report):
+        raise PolicyError("final report bytes are not canonical")
+    _validate_schema(root, FINAL_REPORT_SCHEMA, report)
+    if report.get("final_report_id") != _content_addressed_id("fr", "final_report_id", report):
+        raise PolicyError("final report content address differs")
+    if (
+        report.get("run_id") != run_id or report.get("cycle_id") != cycle_id
+        or report.get("candidate_id") != candidate_id
+        or report.get("candidate_content_hash") != candidate_content_hash
+        or report.get("gate_report_id") != gate_report_id
+        or report.get("required_roles") != sorted(required_roles)
+        or report.get("candidate_manifest_hash") != manifest_hash
+        or report.get("rendered_pdf_hash") != rendered_pdf_hash
+        or report.get("overall_pass") is not True
+    ):
+        raise PolicyError("final report binding differs")
+
+
+def verify_finalization_evidence(
+    root: str | Path, run_id: str, cycle_id: int, record: Any,
+    required_roles: list[str], *, expected_report_ids: list[str] | None = None,
+) -> list[str]:
+    """Validate the complete, content-addressed local package required by FINALIZE.
+
+    This operation is verification only: it never reruns a gate, renders a PDF,
+    or creates a final report.  Missing packages are distinguishable from a
+    malformed package so policy can pause for absent evidence but reject forged
+    evidence closed.
     """
-    base = _contained(root, f"state/final-gates/{run_id}/c{cycle_id:04d}")
+    if sorted(required_roles) != sorted(_FINAL_ROLE_GATES) or len(set(required_roles)) != len(required_roles):
+        raise PolicyError("finalization roles are not canonical")
+    root_path = Path(root).resolve()
+    base = _contained(root_path, f"state/final-gates/{run_id}/c{cycle_id:04d}")
     if not base.exists() or not base.is_dir() or base.is_symlink():
+        return []
+    files = sorted(base.glob("*.json"))
+    if not files:
         return []
     reports: list[str] = []
     observed_roles: set[str] = set()
+    artifact_bindings: tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]] | None = None
+    gate_id_by_role = dict(_FINAL_ROLE_GATES)
+    gate_results = {gate.get("gate_id"): gate for gate in record.gate_report.get("gates", []) if isinstance(gate, Mapping)}
     for path in sorted(base.glob("*.json")):
+        if stat.S_IMODE(path.lstat().st_mode) & 0o222:
+            raise PolicyError("final gate report is not immutable")
         report = _read_canonical_json(path, "final gate report")
+        _validate_schema(root_path, FINAL_GATE_SCHEMA, report)
+        if report.get("report_id") != _content_addressed_id("fg", "report_id", report):
+            raise PolicyError("final gate report content address differs")
         if (
             report.get("run_id") != run_id or report.get("cycle_id") != cycle_id
-            or report.get("candidate_id") != candidate_id or report.get("overall_pass") is not True
-            or not isinstance(report.get("report_id"), str) or not report["report_id"]
-            or not isinstance(report.get("roles"), list)
+            or report.get("candidate_id") != record.candidate_id
+            or report.get("candidate_content_hash") != record.candidate_content_hash
+            or report.get("gate_report_id") != record.gate_report.get("report_id")
+            or report.get("overall_pass") is not True
         ):
             raise PolicyError("final gate report is invalid")
-        observed_roles.update(report["roles"])
+        role = report.get("role_id")
+        if role not in gate_id_by_role or report.get("gate_id") != gate_id_by_role[role]:
+            raise PolicyError("final gate role does not attest its required gate")
+        gate = gate_results.get(report["gate_id"])
+        if not isinstance(gate, Mapping) or gate.get("passed") is not True:
+            raise PolicyError("required final gate is not currently passing")
+        manifest_reference = report["candidate_manifest"]
+        rendered_reference = report["rendered_pdf"]
+        final_reference = report["final_report"]
+        _, manifest_raw = _artifact_bytes(
+            root_path, manifest_reference,
+            expected_locator=f"versions/challengers/{record.candidate_id}/manifest.json",
+            label="candidate manifest",
+        )
+        pdf_path, pdf_raw = _artifact_bytes(
+            root_path, rendered_reference,
+            required_prefix=f"artifacts/rendered/{run_id}/c{cycle_id:04d}/", suffix=".pdf",
+            label="rendered PDF",
+        )
+        if not pdf_raw.startswith(b"%PDF-") or pdf_path.stat().st_size == 0:
+            raise PolicyError("rendered PDF is invalid")
+        _verify_final_report(
+            root_path, final_reference, run_id=run_id, cycle_id=cycle_id,
+            candidate_id=record.candidate_id,
+            candidate_content_hash=record.candidate_content_hash,
+            gate_report_id=record.gate_report["report_id"], required_roles=required_roles,
+            manifest_hash=_sha(manifest_raw), rendered_pdf_hash=_sha(pdf_raw),
+        )
+        binding = (dict(manifest_reference), dict(rendered_reference), dict(final_reference))
+        if artifact_bindings is None:
+            artifact_bindings = binding
+        elif artifact_bindings != binding:
+            raise PolicyError("final gate reports attest different artifacts")
+        observed_roles.add(role)
         reports.append(report["report_id"])
-    if not set(required_roles).issubset(observed_roles):
+    if observed_roles != set(required_roles) or len(reports) != len(set(reports)):
+        raise PolicyError("final gate reports are incomplete or duplicated")
+    reports.sort()
+    if expected_report_ids is not None and reports != sorted(expected_report_ids):
+        raise PolicyError("Decision final gate report binding differs")
+    if not record.gate_report.get("overall_pass"):
         return []
     return reports
+
+
+def _finalization_ready(root: Path, run_id: str, cycle_id: int, record: Any, required_roles: list[str]) -> list[str]:
+    return verify_finalization_evidence(root, run_id, cycle_id, record, required_roles)
+
+
+def _budget_exhausted(record: Any) -> bool:
+    """Recheck the M5 activation budget before authorizing more work or finality."""
+    activation = record.activation_map
+    if activation is None:
+        return False
+    if not isinstance(activation, Mapping) or type(activation.get("paused")) is not bool:
+        raise PolicyError("activation budget is invalid")
+    budget = activation.get("budget")
+    if not isinstance(budget, Mapping) or set(budget) != {"limits", "estimated_tokens", "wall_time_seconds"}:
+        raise PolicyError("activation budget is invalid")
+    limits = budget.get("limits")
+    if not isinstance(limits, Mapping):
+        raise PolicyError("activation budget limits are invalid")
+    token_limit = limits.get("max_estimated_tokens")
+    wall_limit = limits.get("max_wall_time_seconds")
+    estimated = budget.get("estimated_tokens")
+    wall = budget.get("wall_time_seconds")
+    if any(type(value) is not int or value < 0 for value in (token_limit, wall_limit, estimated, wall)):
+        raise PolicyError("activation budget values are invalid")
+    return activation["paused"] or estimated > token_limit or wall > wall_limit
 
 
 def _dominates(record: Any) -> bool:
@@ -292,11 +452,16 @@ def choose_action(
     prior_extra_judgments: int,
     final_gate_report_ids: list[str],
     frontier_relation: Mapping[str, Any] | None = None,
+    budget_exhausted: bool = False,
 ) -> tuple[str, str | None]:
     """Pure closed disposition table over already revalidated evidence."""
     classification = diagnosis.get("classification")
     if classification not in _CLASSIFICATIONS:
         raise PolicyError("diagnosis classification is not canonical")
+    if type(budget_exhausted) is not bool:
+        raise PolicyError("budget exhaustion flag is invalid")
+    if budget_exhausted:
+        return "PAUSE", "BUDGET_EXHAUSTED"
     if classification == "TECHNICAL_FAILURE":
         return "ABORT_TECHNICAL", "TECHNICAL_FAILURE"
     if not record.gate_report.get("correctness_math_pass") or not record.correctness_math_pass:
@@ -392,6 +557,59 @@ def _decision_for(
     return value
 
 
+def _expected_disposition(
+    root: Path, run_id: str, cycle_id: int, record: Any, diagnosis: Mapping[str, Any],
+    policy: Mapping[str, Any],
+) -> tuple[str, str | None, list[str], dict[str, list[str]] | None, dict[str, Any] | None]:
+    """Derive the only M10 disposition permitted by the revalidated evidence."""
+    final_gates = _finalization_ready(root, run_id, cycle_id, record, policy["finalization_required_roles"])
+    budget_exhausted = _budget_exhausted(record)
+    action, reason = choose_action(
+        record, diagnosis, policy,
+        prior_extra_judgments=_prior_extra_judgments(root, run_id, before_cycle_id=cycle_id),
+        final_gate_report_ids=final_gates, budget_exhausted=budget_exhausted,
+    )
+    relation: dict[str, list[str]] | None = None
+    if action == "ARCHIVE_PARETO":
+        relation = pareto_relation(root, record)
+        action, reason = choose_action(
+            record, diagnosis, policy,
+            prior_extra_judgments=_prior_extra_judgments(root, run_id, before_cycle_id=cycle_id),
+            final_gate_report_ids=final_gates, frontier_relation=relation,
+            budget_exhausted=budget_exhausted,
+        )
+    technical_checkpoint: dict[str, Any] | None = None
+    if action == "ABORT_TECHNICAL":
+        prior = _prior_technical_failures(root, run_id, before_cycle_id=cycle_id)
+        technical_checkpoint = {
+            "attempt": prior + 1,
+            "limit": policy["technical_retry_limit"],
+            "retry_allowed": prior < policy["technical_retry_limit"],
+            "backoff_seconds": 0,
+        }
+    return action, reason, final_gates, relation, technical_checkpoint
+
+
+def validate_decision_disposition(
+    root: str | Path, decision: Mapping[str, Any], record: Any, diagnosis: Mapping[str, Any],
+) -> None:
+    """Prove that an already published Decision still equals the closed policy."""
+    root_path = Path(root).resolve()
+    policy, policy_hash = load_policy(root_path)
+    if decision.get("policy_config_hash") != policy_hash:
+        raise PolicyError("Decision policy binding differs")
+    action, reason, final_gates, relation, checkpoint = _expected_disposition(
+        root_path, decision["run_id"], decision["cycle_id"], record, diagnosis, policy,
+    )
+    if (
+        decision.get("action") != action or decision.get("reason_code") != reason
+        or decision.get("final_gate_report_ids") != (final_gates if action == "FINALIZE" else [])
+        or decision.get("pareto_relation") != relation
+        or decision.get("technical_checkpoint") != checkpoint
+    ):
+        raise PolicyError("Decision disposition differs from current evidence")
+
+
 def _atomic_write(path: Path, data: bytes) -> None:
     descriptor, temporary_name = tempfile.mkstemp(prefix=".m10-", dir=path.parent)
     temporary = Path(temporary_name)
@@ -461,31 +679,9 @@ def decide(root: str | Path, run_id: str, *, cycle_id: int | None = None) -> dic
         raise PolicyError("diagnosis candidate binding differs")
     _candidate(root_path, record.candidate_id, record.candidate_content_hash)
     policy, policy_hash = load_policy(root_path)
-    final_gates = _finalization_ready(
-        root_path, run_id, cycle_id, record.candidate_id, policy["finalization_required_roles"],
+    action, reason, final_gates, relation, technical_checkpoint = _expected_disposition(
+        root_path, run_id, cycle_id, record, diagnosis, policy,
     )
-    action, reason = choose_action(
-        record, diagnosis, policy,
-        prior_extra_judgments=_prior_extra_judgments(root_path, run_id),
-        final_gate_report_ids=final_gates,
-    )
-    relation: dict[str, list[str]] | None = None
-    if action == "ARCHIVE_PARETO":
-        relation = pareto_relation(root_path, record)
-        action, reason = choose_action(
-            record, diagnosis, policy,
-            prior_extra_judgments=_prior_extra_judgments(root_path, run_id),
-            final_gate_report_ids=final_gates, frontier_relation=relation,
-        )
-    technical_checkpoint: dict[str, Any] | None = None
-    if action == "ABORT_TECHNICAL":
-        prior = _prior_technical_failures(root_path, run_id)
-        technical_checkpoint = {
-            "attempt": prior + 1,
-            "limit": policy["technical_retry_limit"],
-            "retry_allowed": prior < policy["technical_retry_limit"],
-            "backoff_seconds": 0,
-        }
     decision = _decision_for(
         run_id=run_id, cycle_id=cycle_id, record=record, diagnosis=diagnosis,
         policy_hash=policy_hash, action=action, reason_code=reason,
@@ -537,4 +733,5 @@ def load_published_decision(root: str | Path, run_id: str, cycle_id: int) -> tup
 
 __all__ = [
     "PolicyError", "choose_action", "decide", "load_policy", "load_published_decision", "pareto_relation",
+    "validate_decision_disposition", "verify_finalization_evidence",
 ]

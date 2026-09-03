@@ -283,6 +283,16 @@ aplicável. `scripts/05_transactional_finalizer.py` é o único escritor de
 disposição: usa lock por execução, journal sincronizado, `fsync`, `os.replace`
 e CAS de `versions/champion/current.json` antes de publicar o receipt.
 
+`FINALIZE` é uma exceção deliberadamente mais estrita: além de GateReport,
+diagnóstico, candidato e policy hash, exige três `FinalGateReport` imutáveis,
+um por W22, W51 e W53. Eles atestam respectivamente `correctness_math`,
+`manifest_integrity` e `pdf_valid`, e todos apontam pelos hashes SHA-256 ao
+mesmo manifesto de challenger, PDF em `artifacts/rendered/` e `FinalReport`
+canônico. A política e o finalizador revalidam esse pacote; evidência ausente,
+mutável, não canônica ou divergente bloqueia a finalização. Depois de um crash
+após o receipt e antes do evento, a retomada rederiva o mesmo receipt e só
+publica evento/checkpoint pendentes, sem reaplicar o efeito.
+
 ### Ferramentas auxiliares de handoff para IA
 
 `scripts/ai_context.py`, `scripts/ai_history.py` e o módulo compartilhado

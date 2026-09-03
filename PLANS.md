@@ -31,11 +31,11 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - M5 corrigido cirurgicamente: memória operacional append-only, grafo de impacto, views
   fechadas e planejador determinístico foram validados sem chamada a agentes ou
   modelos.
-- M9 concluído; M10 concluído localmente com política determinística, decisão
-  canônica e finalizador transacional. A revisão de integração M10 também
-  exige que a fronteira Pareto seja revalidada na aplicação, que checkpoints
-  técnicos limitados sejam duráveis e que a fachada pública não contorne a
-  `Decision`. M11--M13 permanecem fora de escopo.
+- M9 concluído; M10.1 concluído localmente como endurecimento de cobertura de
+  M10. A rodada valida os nove efeitos da tabela fechada, todas as fases de
+  recuperação, concorrência real, Pareto completo e o gate de finalização
+  vinculado a PDF, manifesto, hashes e relatório final. M11--M13 permanecem
+  fora de escopo.
 - Ferramentas auxiliares de handoff para IA concluídas: um gerador local de
   contexto compacto e um registrador local de histórico de sessões. Elas não
   alteram a máquina de estados, candidatos, gates ou a autoridade dos scripts
@@ -90,6 +90,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M8 | avaliador externo cego em júri | concluído | avaliação cega externa por júri e meta-revisão com separação de test doubles e publicação transacional write-once |
 | M9 | detecção de progresso e refoco | concluído | diagnóstico determinístico em 7 classificações canônicas, transição EVALUATED -> DIAGNOSED e refoco reversível com overlays imutáveis sob CAS |
 | M10 | política de compensação e finalizador | concluído localmente | política pura emite uma `Decision` fechada; finalizador revalida hashes e aplica a disposição atômica sem modificar o challenger avaliado |
+| M10.1 | endurecimento de cobertura e gate final de M10 | concluído localmente | pacote final hash-bound, rederivação de decisão, recuperação por fase, concorrência e Pareto verificados sem iniciar M11 |
 | M11 | comandos e configuração do Prime Agent | pendente | recursos `.prime/agent/` seguem a compatibilidade instalada |
 | M12 | orçamento, observabilidade e execução prolongada | pendente | limites, custos e recuperação são observáveis sem alterar globais |
 | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
@@ -141,6 +142,27 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
 ## Registro de progresso
+
+- 2026-09-03 — M10.1 concluído localmente. Foram adicionados os schemas de
+  relatório de gate final e relatório final; `FINALIZE` agora exige as
+  atestações imutáveis W22/W51/W53, GateReport vigente, manifesto completo,
+  PDF em `artifacts/rendered/` e relatório final, todos vinculados por SHA-256.
+  O finalizador rederiva a disposição fechada e, se a queda ocorre depois do
+  recibo, revalida o recibo antes de registrar somente o evento/checkpoint
+  pendente. A cobertura inclui Pareto real, rejeição, refoco, julgamento extra,
+  pausa, promoção, finalização, nove fronteiras de crash/retry, CAS adversarial
+  e duas finalizações concorrentes. `python3 -m unittest discover -s control
+  -q` aprovou 331 testes em 245.441s; o único aviso foi `Duplicate name:
+  'a.tex'` da fixture negativa. Não houve artigo, modelo, Prime Agent, rede,
+  instalação, commit ou GitHub; M11--M13 continuam fora de escopo.
+
+- 2026-09-02 — M10.1 iniciado sobre árvore limpa e checkpoint M9 ancestral.
+  A regressão integral pré-alteração foi executada localmente, sem artigo,
+  modelo, Prime Agent, rede, instalação ou GitHub. O escopo é estritamente
+  complementar a M10: validar os nove efeitos, cada fase transacional e a
+  recuperação idempotente, concorrência por processo, CAS adversarial, Pareto
+  em fluxo real, limites de julgamento/técnicos/orçamento e o pacote completo
+  de evidência para `FINALIZE`. M11--M13 continuam explicitamente excluídos.
 
 - 2026-09-02 — M10 concluído localmente: `policy.py` revalida os artefatos
   M7--M9 e deriva uma `Decision` content-addressed com tabela fechada em

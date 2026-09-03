@@ -941,3 +941,34 @@ finalizador M10.
 **Motivo:** separar a avaliação de qualidade do efeito de filesystem impede que
 um retry, concorrência ou crash promova bytes não avaliados, crie dois champions
 atuais ou apague evidência necessária para auditoria.
+
+## ADR-029 — M10.1: pacote final canônico e recuperação coberta por fase
+
+**Data:** 2026-09-02
+
+**Status:** Aceito
+
+### Decisão
+
+`FINALIZE` só poderá ser escolhido e aplicado quando os relatórios finais
+canônicos vincularem a mesma execução, ciclo, candidato e hash de conteúdo a:
+o gate matemático W22, os gates de reprodutibilidade/formatação W51 e W53, o
+manifesto completo, o PDF renderizado e um relatório final. Cada relatório
+carrega os hashes SHA-256 exatos dos artefatos que atesta; a política e o
+finalizador validam novamente tanto o contrato quanto os bytes locais.
+
+O finalizador continuará com um único lock por execução e journal idempotente,
+mas a suíte passará a injetar falhas em todas as fases duráveis e a tentar uma
+recuperação nova após cada uma. Também cobrirá duas finalizações em processos
+distintos, mutação adversarial do pointer antes do CAS, as nove disposições,
+Pareto dominado/trade-off/empate e os limites persistidos de julgamento,
+falha técnica e orçamento. Falha de qualquer vínculo ou de limite será fechada
+ou seguirá para `PAUSE`; nunca produzirá uma promoção ou finalização implícita.
+
+### Consequências
+
+- O pacote final é uma evidência local e versionada; não reexecuta PDF, modelo,
+  Prime Agent ou qualquer API durante M10.
+- O relatório final só afirma o que os hashes e gates presentes conseguem
+  comprovar; um gate aprovado não prova propriedades fora de seu verificador.
+- M11--M13 não são introduzidos por esta decisão.
