@@ -5,8 +5,8 @@
 ## Baseline registrado
 
 - Fingerprint das fontes: `769f42631f2e59ed03609f618d6a2a3713c2f4e640d109ce57d98ed945e37dde`
-- Registrado em: `2026-09-03T05:00:04Z`
-- Git: branch `main`, HEAD `1fec40893496`
+- Registrado em: `2026-09-03T05:04:53Z`
+- Git: branch `main`, HEAD `87c26ae37330`
 - Arquivos relevantes: 180
 
 ## Evolução reconstruída do versionamento
@@ -31,6 +31,7 @@
 | M4/M5 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m4_prompts.py, control/test_m5_blackboard_activation.py |
 | M10 | 2026-09-02..2026-09-03 | 2 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| M11 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 
 ### Commits exatos
 
@@ -128,6 +129,7 @@
 | `35c1fa6f8` | 2026-09-02 | M10 | feat(m10): add deterministic decision finalizer | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 | `9c598ba8a` | 2026-09-03 | M10 | feat(m10): harden finalization evidence and recovery | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/finalization.py, .prime/agent/skills/article-loop/src/article_loop/policy.py, AI_CONTE… |
 | `1fec40893` | 2026-09-03 | M10.1 | chore(history): record M10.1 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `87c26ae37` | 2026-09-03 | M11 | feat(m11): add local Prime Agent command integration | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 
 ## Decisões arquiteturais
 
@@ -770,3 +772,32 @@
 | modified | `docs/architecture.md` | `71e182c75e53` | `5cdd7fde951e` |
 | modified | `docs/compatibility.md` | `03174c609124` | `545e2ce3590f` |
 | modified | `docs/decisions.md` | `540ce5851b09` | `bc0718acbe4e` |
+
+### 2026-09-03T05:04:53Z — Commit e publicação da implementação local da M11 concluídos no repositório LOOP-PRIMER; a integração de comandos, templates, runbook, testes e guardrails foi enviada para origin/main sem iniciar execução científica, Prime Agent ou modelos.
+
+- Session ID: `session-m11-publish-20260903`
+- Fingerprint final: `769f42631f2e59ed03609f618d6a2a3713c2f4e640d109ce57d98ed945e37dde`
+- Git final: `87c26ae37330`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Criado o commit 87c26ae (feat(m11): add local Prime Agent command integration) com os 26 arquivos preparados da M11.
+- Publicado main para https://github.com/Walc21/LOOP-PRIMER.git via git push origin main, sem force push.
+
+**Decisões**
+
+- Manter o histórico de encerramento e o snapshot AI versionados junto do trabalho, conforme AGENTS.md, e registrar a publicação em uma sessão própria.
+
+**Validações**
+
+- git fetch --prune origin concluído; git rev-list --left-right --count HEAD...origin/main retornou 0 0 após o push; HEAD e origin/main apontam para 87c26ae.
+- As validações locais da M11 permanecem registradas na sessão anterior: regressão completa 346 testes OK, testes dedicados 15/15 OK, py_compile, bash -n, git diff --check e smoke checks locais.
+
+**Riscos/limites**
+
+- A execução live permanece bloqueada por padrão e não foi iniciada; Prime Agent, modelos, APIs pagas e rede de execução científica não foram usados.
+
+**Próximos passos**
+
+- M12 permanece como próximo marco, sem ação adicional nesta sessão.

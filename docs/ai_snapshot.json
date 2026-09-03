@@ -1085,33 +1085,10 @@
   "git": {
     "available": true,
     "branch": "main",
-    "head": "1fec408934962f87bdedc3fce05e263a8f7c9f76",
-    "status": [
-      " M .prime/agent/APPEND_SYSTEM.md",
-      " M .prime/agent/skills/article-loop/SKILL.md",
-      " M PLANS.md",
-      " M README.md",
-      " M bin/check.sh",
-      " M bin/start-prime.sh",
-      " M docs/architecture.md",
-      " M docs/compatibility.md",
-      " M docs/decisions.md",
-      "?? .prime/agent/prompts/article-bootstrap.md",
-      "?? .prime/agent/prompts/article-checkpoint.md",
-      "?? .prime/agent/prompts/article-finalize.md",
-      "?? .prime/agent/prompts/article-pause.md",
-      "?? .prime/agent/prompts/article-preflight.md",
-      "?? .prime/agent/prompts/article-resume.md",
-      "?? .prime/agent/prompts/article-run.md",
-      "?? .prime/agent/prompts/article-status.md",
-      "?? .prime/agent/prompts/article-stop.md",
-      "?? .prime/handoffs/11_para_12.md",
-      "?? control/test_m11_commands.py",
-      "?? docs/runbook.md",
-      "?? scripts/article_loop_command.py"
-    ]
+    "head": "87c26ae373309df2991eb758d1204d43fbfb1168",
+    "status": []
   },
-  "recorded_at": "2026-09-03T05:00:04Z",
+  "recorded_at": "2026-09-03T05:04:53Z",
   "schema_version": "1.0.0",
-  "session_id": "session-m11-local-20260903"
+  "session_id": "session-m11-publish-20260903"
 }
