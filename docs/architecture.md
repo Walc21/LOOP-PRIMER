@@ -293,6 +293,26 @@ mutável, não canônica ou divergente bloqueia a finalização. Depois de um cr
 após o receipt e antes do evento, a retomada rederiva o mesmo receipt e só
 publica evento/checkpoint pendentes, sem reaplicar o efeito.
 
+### Comandos operacionais M11
+
+M11 expõe as APIs locais por uma única ponte
+`scripts/article_loop_command.py`, em JSON-in/JSON-out, para bootstrap,
+preflight, ciclo, status, checkpoint, pausa, retomada, parada e finalização.
+Cada comando aceita somente seus campos fechados, valida raiz e identificadores
+e delega a uma API já existente; nenhum payload escolhe `FakeRLMAdapter` ou
+altera a configuração global do Prime Agent.
+
+Os nove templates Markdown vivem diretamente em `.prime/agent/prompts/`, pois a
+descoberta de templates não é recursiva. `bin/check.sh` valida as superfícies
+locais sem rede. `bin/start-prime.sh` é dry-run por padrão; no modo live exige
+autorização explícita, configuração/limites locais, ausência de `control/STOP`,
+preflight M3 e `prime-agent` no `PATH`, encaminhando somente `--skill` e
+`--prompt-template`, opções confirmadas na compatibilidade registrada. Como o
+binário não está disponível nesta sessão e o orçamento versionado é
+fail-closed, o launcher não inicia Prime Agent nem modelo. Nenhum
+`.prime/agent/settings.json` é criado sem confirmação direta do formato da
+versão instalada.
+
 ### Ferramentas auxiliares de handoff para IA
 
 `scripts/ai_context.py`, `scripts/ai_history.py` e o módulo compartilhado

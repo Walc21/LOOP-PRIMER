@@ -972,3 +972,55 @@ ou seguirá para `PAUSE`; nunca produzirá uma promoção ou finalização impl�
 - O relatório final só afirma o que os hashes e gates presentes conseguem
   comprovar; um gate aprovado não prova propriedades fora de seu verificador.
 - M11--M13 não são introduzidos por esta decisão.
+
+## ADR-030 — M11: comandos locais e integração Prime Agent fail-closed
+
+**Data:** 2026-09-03
+
+**Status:** Aceito
+
+### Contexto
+
+M0--M10 já expõem uma fachada Python assíncrona e adaptadores compatíveis com
+as superfícies observadas do Prime Agent `0.7.1`, mas o projeto ainda não
+possui comandos operacionais, templates descobríveis ou um launcher que
+impeça uma inicialização acidental. O executável registrado na auditoria não
+está disponível nesta sessão, e a documentação versionada não fixa um schema
+de settings que possa ser usado com segurança.
+
+### Decisão
+
+1. M11 terá uma ponte local única, JSON-in/JSON-out, para `bootstrap`,
+   `preflight`, `run`, `status`, `checkpoint`, `pause`, `resume`, `stop` e
+   `finalize`. Ela roteará cada comando para exatamente uma API já existente,
+   recusará campos desconhecidos e não aceitará seleção de test doubles pelo
+   payload.
+2. Os nove templates serão arquivos Markdown diretamente em
+   `.prime/agent/prompts/`, com apenas o frontmatter documentado
+   (`description` e `argument-hint`). Eles apontarão para a API e para o
+   comando local, validando raiz, identidade, estado e argumentos sem criar
+   lógica paralela, loop textual infinito ou autorização implícita.
+3. `bin/check.sh` será local, rápido e determinístico. `bin/start-prime.sh`
+   executará o check, verificará STOP, preflight, configuração fail-closed,
+   autorização explícita e orçamento local antes de usar somente as flags
+   confirmadas do CLI Prime Agent. Seu modo padrão será dry-run; autonomia,
+   refine, instalação e configuração global ficarão fora do launcher.
+4. `.prime/agent/APPEND_SYSTEM.md` receberá somente um bloco aditivo curto que
+   remeta a `AGENTS.md`, à skill e à máquina de estados, sem substituir ou
+   duplicar o apêndice existente. Nenhum `settings.json` será criado até que o
+   formato de projeto da versão instalada seja observado diretamente.
+
+### Motivo e limites
+
+Essa camada dá uma entrada operacional reproduzível sem mudar a semântica do
+pipeline ou permitir que a indisponibilidade do Prime Agent pareça sucesso.
+Como o binário não foi encontrado nesta execução, a descoberta/smoke test do
+launcher real permanece pendente; nenhum modelo, sessão, rede, credencial ou
+instalação será usado para compensar essa ausência.
+
+### Resultado da implementação local
+
+A ponte, os templates, os scripts, o runbook e os testes M11 foram adicionados
+sem modificar as APIs científicas M0--M10. A regressão final de 346 testes
+passou; a disponibilidade do binário Prime Agent e a operação live continuam
+explicitamente não verificadas.

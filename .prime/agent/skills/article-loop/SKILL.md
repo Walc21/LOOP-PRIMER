@@ -130,6 +130,27 @@ Os marcos futuros devem preservar os contratos em `config/schemas/` e só podem
 executar integração Prime Agent após o preflight previsto em
 `docs/compatibility.md`.
 
+## Comandos locais M11
+
+`scripts/article_loop_command.py` é uma ponte fina JSON-in/JSON-out para as
+APIs públicas existentes: `bootstrap`, `preflight`, `run`, `status`,
+`checkpoint`, `pause`, `resume`, `stop` e `finalize`. Ela valida a raiz, IDs,
+tipos e campos permitidos, rejeita `settings.json` não confirmado e nunca
+seleciona `FakeRLMAdapter` a partir de entrada externa. `run` é dry-run por
+default; um processo fora de uma sessão Prime não pode fabricar o
+`PrimeRLMAdapter`, portanto uma execução live sem adaptador explícito falha
+fechada como definido no M6.
+
+Os templates são arquivos diretos em `.prime/agent/prompts/`, com frontmatter
+limitado a `description` e `argument-hint`. `bin/check.sh` valida localmente
+essas superfícies, os contratos de profundidade e os defaults de orçamento sem
+rede. `bin/start-prime.sh` roda o check e só pode encaminhar as flags
+confirmadas `--skill` e `--prompt-template` ao executável Prime Agent depois de
+autorização explícita, STOP ausente, configuração live e preflight aprovados;
+se o binário ou alguma precondição faltar, falha sem iniciar sessão. Nenhum
+template faz polling infinito: admissão/espera é reportada por receipt e o
+turno termina.
+
 ## Complemento corretivo M6 (segundo)
 
 O adaptador Prime só aceita handles documentados com `rlm_child_id`, `name`,

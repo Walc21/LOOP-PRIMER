@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `5c57df597e90c7bd2b9a43adefadf9951b65264fcc901b5f710a1300688fa299`
-- Registrado em: `2026-09-03T04:19:31Z`
-- Git: branch `main`, HEAD `9c598ba8a373`
-- Arquivos relevantes: 167
+- Fingerprint das fontes: `769f42631f2e59ed03609f618d6a2a3713c2f4e640d109ce57d98ed945e37dde`
+- Registrado em: `2026-09-03T05:00:04Z`
+- Git: branch `main`, HEAD `1fec40893496`
+- Arquivos relevantes: 180
 
 ## Evolução reconstruída do versionamento
 
@@ -30,6 +30,7 @@
 | M2/M3 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m2_durable_state.py, control/test_m3_ingestion.py |
 | M4/M5 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | control/test_m4_prompts.py, control/test_m5_blackboard_activation.py |
 | M10 | 2026-09-02..2026-09-03 | 2 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
+| M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 
 ### Commits exatos
 
@@ -126,6 +127,7 @@
 | `051f969db` | 2026-09-02 | sem marco explícito | fix(ci): restore GitHub Actions matrix | .github/workflows/ci.yml, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `35c1fa6f8` | 2026-09-02 | M10 | feat(m10): add deterministic decision finalizer | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 | `9c598ba8a` | 2026-09-03 | M10 | feat(m10): harden finalization evidence and recovery | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/finalization.py, .prime/agent/skills/article-loop/src/article_loop/policy.py, AI_CONTE… |
+| `1fec40893` | 2026-09-03 | M10.1 | chore(history): record M10.1 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 
 ## Decisões arquiteturais
 
@@ -158,6 +160,7 @@
 - ADR-027 — Separação de audiências e histórico Git publicável
 - ADR-028 — M10: política pura e finalização transacional por referência
 - ADR-029 — M10.1: pacote final canônico e recuperação coberta por fase
+- ADR-030 — M11: comandos locais e integração Prime Agent fail-closed
 
 ## Atualizações de sessão
 
@@ -705,3 +708,65 @@
 **Próximos passos**
 
 - Nenhum passo pendente para M10.1; iniciar M11 somente sob autorização específica e com nova árvore limpa.
+
+### 2026-09-03T05:00:04Z — Implementação local do M11 concluída: a camada operacional agora expõe as APIs existentes por uma ponte JSON-in/JSON-out, nove templates planos, check local e launcher Prime fail-closed; documentação, runbook, compatibilidade e handoff foram sincronizados sem iniciar M12.
+
+- Session ID: `session-m11-local-20260903`
+- Fingerprint final: `769f42631f2e59ed03609f618d6a2a3713c2f4e640d109ce57d98ed945e37dde`
+- Git final: `1fec40893496`; status relevante: 22 item(ns)
+- Delta factual: 13 adicionados, 9 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionada scripts/article_loop_command.py como ponte única para bootstrap, preflight, run, status, checkpoint, pause, resume, stop e finalize, com validação de raiz/IDs/envelopes e dry-run padrão.
+- Adicionados nove templates diretamente em .prime/agent/prompts/, guardrails M11 aditivos no APPEND_SYSTEM.md, check.sh, start-prime.sh e docs/runbook.md.
+- Atualizados skill, arquitetura, compatibilidade, README, PLANS, ADR-030, testes M11 e handoff 11_para_12; settings.json foi deliberadamente omitido por ausência de schema confirmado.
+
+**Decisões**
+
+- O launcher só encaminha --skill e --prompt-template, após autorização/configuração explícitas, STOP ausente, preflight M3 e orçamento aprovados; defaults atuais continuam sem modelo e sem API paga.
+- A ausência local do binário prime-agent não é compensada por instalação, opção global, sessão fake, credencial, rede, autonomous ou refine; o smoke test live fica pendente.
+
+**Validações**
+
+- python3 -m unittest discover -s control -q: 346 testes aprovados em 267.946s; o único aviso foi Duplicate name: a.tex da fixture negativa M3.
+- python3 -m unittest -q control.test_contracts control.test_ai_handoff control.test_m11_commands: 75 testes aprovados.
+- python3 -m py_compile scripts/article_loop_command.py control/test_m11_commands.py; bash -n bin/check.sh bin/start-prime.sh; git diff --check: aprovados.
+- bash bin/check.sh e bash bin/start-prime.sh --dry-run --template article-run: aprovados, com prime_started=false e model_called=false; caminho live parou no orçamento fail-closed.
+- HEAD permaneceu 1fec408934962f87bdedc3fce05e263a8f7c9f76 e não houve commit ou publicação.
+
+**Riscos/limites**
+
+- prime-agent não foi encontrado no PATH nem no caminho histórico documentado; shellcheck também não está disponível, portanto o smoke test real e essa análise permanecem pendentes.
+- A integração live continua exigindo sessão Prime autorizada, PrimeRLMAdapter explícito, /rlm-max-depth 2 por sessão e configuração de orçamento/autorização futura.
+
+**Próximos passos**
+
+- Manter M12 e qualquer execução live fora desta árvore até nova autorização específica; quando houver instalação compatível, fazer somente o smoke test operacional autorizado.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/prompts/article-bootstrap.md` | `-` | `e2c6a78b7ba5` |
+| added | `.prime/agent/prompts/article-checkpoint.md` | `-` | `6281a032e06a` |
+| added | `.prime/agent/prompts/article-finalize.md` | `-` | `4809390c52a0` |
+| added | `.prime/agent/prompts/article-pause.md` | `-` | `48e6bd2a31e3` |
+| added | `.prime/agent/prompts/article-preflight.md` | `-` | `17cdeb2c563e` |
+| added | `.prime/agent/prompts/article-resume.md` | `-` | `933189537ff5` |
+| added | `.prime/agent/prompts/article-run.md` | `-` | `2c71b663c2f5` |
+| added | `.prime/agent/prompts/article-status.md` | `-` | `7e8853e4e29f` |
+| added | `.prime/agent/prompts/article-stop.md` | `-` | `7d9a74a1302a` |
+| added | `.prime/handoffs/11_para_12.md` | `-` | `3d11ea0dd239` |
+| added | `control/test_m11_commands.py` | `-` | `041e9cc2ebf9` |
+| added | `docs/runbook.md` | `-` | `081ced68a389` |
+| added | `scripts/article_loop_command.py` | `-` | `626e29247e77` |
+| modified | `.prime/agent/APPEND_SYSTEM.md` | `09f65d8308cc` | `00651a431820` |
+| modified | `.prime/agent/skills/article-loop/SKILL.md` | `2daf907bd773` | `030bc8b30701` |
+| modified | `PLANS.md` | `ce451c209d1c` | `8ffcb5c9ec6c` |
+| modified | `README.md` | `44c335cc2acd` | `9319ca1f60dd` |
+| modified | `bin/check.sh` | `cebf4561239f` | `53cf8c2e4765` |
+| modified | `bin/start-prime.sh` | `cebf4561239f` | `5805e1b6f491` |
+| modified | `docs/architecture.md` | `71e182c75e53` | `5cdd7fde951e` |
+| modified | `docs/compatibility.md` | `03174c609124` | `545e2ce3590f` |
+| modified | `docs/decisions.md` | `540ce5851b09` | `bc0718acbe4e` |

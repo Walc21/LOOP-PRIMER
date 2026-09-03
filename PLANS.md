@@ -12,7 +12,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
-- Atualizado em 2026-09-02.
+- Atualizado em 2026-09-03.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
 - M2 — máquina de estados, event log e recuperação: concluído após correção contratual final.
@@ -36,6 +36,12 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   recuperação, concorrência real, Pareto completo e o gate de finalização
   vinculado a PDF, manifesto, hashes e relatório final. M11--M13 permanecem
   fora de escopo.
+- M11 concluído localmente nesta sessão: ponte CLI JSON-in/JSON-out para as
+  nove APIs existentes, nove templates planos descobríveis, guardrails
+  aditivos, `check.sh`, launcher dry-run por padrão e runbook. O launcher live
+  exige autorização/configuração fail-closed, preflight M3 e `prime-agent` no
+  `PATH`; como o binário não foi encontrado e o orçamento atual é zero, nenhum
+  processo Prime foi iniciado. M12--M13 permanecem fora de escopo.
 - Ferramentas auxiliares de handoff para IA concluídas: um gerador local de
   contexto compacto e um registrador local de histórico de sessões. Elas não
   alteram a máquina de estados, candidatos, gates ou a autoridade dos scripts
@@ -91,7 +97,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M9 | detecção de progresso e refoco | concluído | diagnóstico determinístico em 7 classificações canônicas, transição EVALUATED -> DIAGNOSED e refoco reversível com overlays imutáveis sob CAS |
 | M10 | política de compensação e finalizador | concluído localmente | política pura emite uma `Decision` fechada; finalizador revalida hashes e aplica a disposição atômica sem modificar o challenger avaliado |
 | M10.1 | endurecimento de cobertura e gate final de M10 | concluído localmente | pacote final hash-bound, rederivação de decisão, recuperação por fase, concorrência e Pareto verificados sem iniciar M11 |
-| M11 | comandos e configuração do Prime Agent | pendente | recursos `.prime/agent/` seguem a compatibilidade instalada |
+| M11 | comandos e configuração do Prime Agent | concluído localmente | ponte CLI, templates planos, guardrails aditivos, runbook e launcher fail-closed; `settings.json` omitido sem schema instalado confirmado |
 | M12 | orçamento, observabilidade e execução prolongada | pendente | limites, custos e recuperação são observáveis sem alterar globais |
 | M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
 
@@ -142,6 +148,36 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | ativação excessiva multiplica custo/ruído | grafo de impacto e FREEZE impedem chamadas não justificadas |
 
 ## Registro de progresso
+
+- 2026-09-03 — M11 planejado para esta sessão sobre árvore limpa e checkpoint
+  M10 ancestral. O escopo é estritamente expor as APIs locais existentes por
+  uma ponte JSON-in/JSON-out, nove templates Markdown planos, `check.sh`, um
+  `start-prime.sh` fail-closed, guardrails aditivos e runbook. A configuração
+  `.prime/agent/settings.json` será omitida porque o executável Prime Agent não
+  está disponível nesta sessão e `docs/compatibility.md` não confirma o
+  formato/chaves instalados. Não haverá sessão Prime, modelo, rede, segredo,
+  instalação, commit ou publicação. O `README.md` será apenas sincronizado
+  com o status e a referência dos comandos M11.
+
+- 2026-09-03 — M11 concluído localmente sem iniciar Prime Agent, modelo, rede,
+  credencial, instalação, commit ou publicação. A ponte
+  `scripts/article_loop_command.py` valida envelopes e IDs, rejeita campos de
+  test double, e delega bootstrap/preflight/run/status/checkpoint/pause/resume/
+  stop/finalize às APIs existentes; `run` permanece dry-run por padrão. Os
+  nove templates planos foram descobertos e validados por frontmatter; o
+  launcher verifica STOP, profundidade 2, configuração/orçamento e
+  autorização antes de encaminhar somente `--skill` e `--prompt-template`.
+  `bin/check.sh` e o launcher dry-run passaram; o caminho live parou no
+  orçamento fail-closed antes do binário ausente. Passaram `python3 -m
+  unittest -q control.test_m11_commands` (15 testes), `python3 -m unittest -q
+  control.test_ai_handoff control.test_m11_commands` (23 testes),
+  `python3 -m unittest discover -s control -q` (346 testes em 249.459s),
+  `python3 -m py_compile scripts/article_loop_command.py
+  control/test_m11_commands.py`, `bash -n` nos dois scripts e `git diff
+  --check`. `shellcheck` não está disponível nesta máquina. O formato de
+  `.prime/agent/settings.json` continua deliberadamente não inventado; smoke
+  test live permanece pendente até uma instalação compatível e autorização
+  separada.
 
 - 2026-09-03 — M10.1 concluído localmente. Foram adicionados os schemas de
   relatório de gate final e relatório final; `FINALIZE` agora exige as

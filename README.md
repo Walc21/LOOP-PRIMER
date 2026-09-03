@@ -16,13 +16,14 @@
 
 </div>
 
-> **Implementation status:** M0–M10 are implemented and locally validated. M10
+> **Implementation status:** M0–M11 are implemented and locally validated. M10
 > publishes a canonical, content-addressed `Decision`, revalidates it under a
 > per-run lock, and applies its authorized disposition atomically. `FINALIZE`
 > additionally requires immutable W22/W51/W53 attestations bound by SHA-256 to
-> the candidate manifest, rendered PDF, and final report. M11–M13 remain
-> pending. The M10 CLIs are operational but do not run an article, a model, or
-> a paid API by themselves.
+> the candidate manifest, rendered PDF, and final report. M12–M13 remain
+> pending. M10 CLIs are operational; M11 adds local commands and templates.
+> They do not run an article, a model, or a paid API by themselves; the Prime
+> Agent binary was not available for an M11 live smoke test.
 
 ---
 
@@ -35,6 +36,7 @@
 - [Deterministic Gates & Security](#-deterministic-gates--security)
 - [Quick Start](#-quick-start)
 - [CLI Reference](#-cli-reference)
+- [Runbook](docs/runbook.md)
 - [Repository Structure](#-repository-structure)
 - [Architecture Decision Records (ADRs)](#-architecture-decision-records-adrs)
 - [Contributing & License](#-contributing--license)
@@ -201,7 +203,7 @@ pip install -r requirements-dev.txt
 # Run AI context and handoff tests
 .venv/bin/python -m unittest control.test_ai_handoff
 
-# Run the complete M0-M10 regression suite
+# Run the complete M0-M11 regression suite
 .venv/bin/python -m unittest discover -s control -p 'test_*.py' -q
 ```
 
@@ -220,6 +222,13 @@ bash bin/preflight.sh
 LOOP-PRIMER provides modular, JSON-in / JSON-out CLI entrypoints:
 
 - **`bin/preflight.sh`**: Ingestion, validation, and `SOURCE_READY` gate verifier.
+- **`bin/check.sh`**: Fast local M11 surface and fail-closed configuration check.
+- **`bin/start-prime.sh`**: Dry-run-by-default launcher; live mode requires
+  explicit authorization, budget/configuration, preflight, STOP clearance and
+  a discovered Prime Agent binary.
+- **`scripts/article_loop_command.py`**: Thin JSON-in / JSON-out bridge for
+  the existing bootstrap, preflight, cycle, status, checkpoint, pause, resume,
+  stop and finalization APIs. See [`docs/runbook.md`](docs/runbook.md).
 - **`scripts/01_external_evaluator.py`**: Double-blind jury evaluator CLI (Milestone 8).
 - **`scripts/02_stagnation_detector.py`**: Plateau, oscillation, and diagnostic detector (Milestone 9).
 - **`scripts/03_refocus_generator.py`**: Adaptive prompt and parameter refocusing generator (Milestone 9).
@@ -246,15 +255,16 @@ LOOP-PRIMER/
 │   └── ISSUE_TEMPLATE/           # Bug report & feature request schemas
 ├── .prime/                       # Prime Agent integration layer & skills
 │   └── agent/skills/article-loop/src/article_loop/ # Core framework, including M10 policy/finalizer
-├── bin/                          # Shell entrypoints (bootstrap, preflight, check)
+├── bin/                          # Shell entrypoints (bootstrap, preflight, check, Prime launcher)
 ├── config/                       # Declarative budgets, gates, roles, policy, and JSON schemas
 │   ├── roles/                    # 21 YAML definitions for M00, S10-S50, W11-W53
 │   ├── rubrics/                  # Evaluation rubrics for blind jury
 │   └── schemas/                  # 20 JSON Schema definitions for strict validation
-├── control/                      # Contract and milestone test suites (M1 through M10)
+├── control/                      # Contract and milestone test suites (M1 through M11)
 ├── docs/                         # Architecture, ADRs, compatibility, and AI history
 │   ├── architecture.md           # Canonical system architecture
-│   ├── decisions.md              # 27 Architectural Decision Records (ADRs)
+│   ├── decisions.md              # Architectural Decision Records (ADRs)
+│   ├── runbook.md                # Local M11 operation and recovery guide
 │   └── AI_HISTORY.md             # Chronological ledger of system evolution
 ├── prompts/                      # Immutable system prompts and role overlays
 ├── scripts/                      # Independent, deterministically tested CLI modules
@@ -288,6 +298,7 @@ All core design choices are formally recorded in [`docs/decisions.md`](docs/deci
 | **ADR-024** | Plateau & Oscillation Diagnostic Engine | `Accepted` | Adaptability |
 | **ADR-028** | Pure Decision Policy & Transactional Finalization | `Accepted` | M10 disposition |
 | **ADR-029** | Final Evidence Package & Phase-Covered Recovery | `Accepted` | M10.1 hardening |
+| **ADR-030** | Local Commands & Fail-Closed Prime Integration | `Accepted` | M11 operations |
 | **ADR-026** | Content-Addressed AI Handoff & Session Ledger | `Accepted` | AI Protocol |
 | **ADR-027** | Audience Separation & Publishable Git History | `Accepted` | Repository Integration |
 

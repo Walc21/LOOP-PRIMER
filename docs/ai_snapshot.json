@@ -37,10 +37,10 @@
       "sha256": "1d23a95bcdb4dfb2b33fc2581d598f04bf439a996393f98df061a5fe39baa6cf"
     },
     ".prime/agent/APPEND_SYSTEM.md": {
-      "bytes": 807,
+      "bytes": 1563,
       "kind": "text",
-      "lines": 14,
-      "sha256": "09f65d8308cccb68845df639d3b1e32671d64e3c373eefb282bc82ece65eb9d1"
+      "lines": 27,
+      "sha256": "00651a4318201af239610cf687bed087fe161953afe5e2a46aaee10645cf2a57"
     },
     ".prime/agent/prompts/.gitkeep": {
       "bytes": 1,
@@ -48,11 +48,65 @@
       "lines": 1,
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     },
-    ".prime/agent/skills/article-loop/SKILL.md": {
-      "bytes": 8511,
+    ".prime/agent/prompts/article-bootstrap.md": {
+      "bytes": 899,
       "kind": "text",
-      "lines": 143,
-      "sha256": "2daf907bd7733fccbf35d7666d333bd24f32ebdca9119d8aa72f14323c8c90d1"
+      "lines": 19,
+      "sha256": "e2c6a78b7ba58a41c7d01880960984afb36382b70b0d8553b1da2fdaddc1979b"
+    },
+    ".prime/agent/prompts/article-checkpoint.md": {
+      "bytes": 710,
+      "kind": "text",
+      "lines": 16,
+      "sha256": "6281a032e06a62d1a532a9e68ba6651b38c0a8924fa8e426da8a8d99bc55601f"
+    },
+    ".prime/agent/prompts/article-finalize.md": {
+      "bytes": 819,
+      "kind": "text",
+      "lines": 17,
+      "sha256": "4809390c52a060ab378b7df5477ce8585a39af9cd3e968b9ef57a9a50d92a1bf"
+    },
+    ".prime/agent/prompts/article-pause.md": {
+      "bytes": 640,
+      "kind": "text",
+      "lines": 15,
+      "sha256": "48e6bd2a31e3e0b33d8d23021e92e8c537824438ac29d4f5b8888d787b47c738"
+    },
+    ".prime/agent/prompts/article-preflight.md": {
+      "bytes": 725,
+      "kind": "text",
+      "lines": 16,
+      "sha256": "17cdeb2c563e3baf353c81a2f748a8bc53a92804f18817dd1bfded03c7a8cdc8"
+    },
+    ".prime/agent/prompts/article-resume.md": {
+      "bytes": 679,
+      "kind": "text",
+      "lines": 16,
+      "sha256": "933189537ff5447466d6be0e4113ebbe21e37cbc43c70ed8edad39ff79d2ccb5"
+    },
+    ".prime/agent/prompts/article-run.md": {
+      "bytes": 1162,
+      "kind": "text",
+      "lines": 22,
+      "sha256": "2c71b663c2f5b1ce504d666352026de9b237336f14b2ea649ff145e1bd3599bb"
+    },
+    ".prime/agent/prompts/article-status.md": {
+      "bytes": 685,
+      "kind": "text",
+      "lines": 15,
+      "sha256": "7e8853e4e29fee56a76848fdcccf6b3433f193b767c61feaf6df626f02dd61f4"
+    },
+    ".prime/agent/prompts/article-stop.md": {
+      "bytes": 657,
+      "kind": "text",
+      "lines": 16,
+      "sha256": "7d9a74a1302a597798556a0c8a79d9efbb658a13b854dcb08162bbf5e441dbd1"
+    },
+    ".prime/agent/skills/article-loop/SKILL.md": {
+      "bytes": 9734,
+      "kind": "text",
+      "lines": 164,
+      "sha256": "030bc8b30701f3f9e8ecfd75a3dd019d9fd9ca158ad2ba20ae97f8149fa075ce"
     },
     ".prime/agent/skills/article-loop/pyproject.toml": {
       "bytes": 304,
@@ -210,6 +264,12 @@
       "lines": 89,
       "sha256": "780be8a5c4d11eb59e458c25b45c33351b41de32f0017fd2125aa8c02ef4eabe"
     },
+    ".prime/handoffs/11_para_12.md": {
+      "bytes": 4421,
+      "kind": "text",
+      "lines": 82,
+      "sha256": "3d11ea0dd239eb53758d72956d34b68ea2947f5bd29031b767cf92828ff38744"
+    },
     "AGENTS.md": {
       "bytes": 8116,
       "kind": "text",
@@ -241,16 +301,16 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 39083,
+      "bytes": 41659,
       "kind": "text",
-      "lines": 543,
-      "sha256": "ce451c209d1c85587bcc8e2ca3eba0255300729376bad1bf35adae6b9d745568"
+      "lines": 579,
+      "sha256": "8ffcb5c9ec6ca7ee2fec7d870cfcc2097f673c245775a7ff471fc294c12043c4"
     },
     "README.md": {
-      "bytes": 16324,
+      "bytes": 17150,
       "kind": "text",
-      "lines": 302,
-      "sha256": "44c335cc2acd095f2180f03afe6a7c4a8f30cc794e2ed9101a8dc0f919613990"
+      "lines": 313,
+      "sha256": "9319ca1f60dddac36e3e52d659edcdf44a6d3c4262bb57e15c2f43b2b741c700"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -283,10 +343,10 @@
       "sha256": "663e5a0a596c91f5fef6b33b14e01fb632c451455a029693405dc278c0299c20"
     },
     "bin/check.sh": {
-      "bytes": 90,
+      "bytes": 421,
       "kind": "text",
-      "lines": 2,
-      "sha256": "cebf4561239f89b03ae5ae8a8976aa412507ce12e2f217fb8e18d1507ee564df"
+      "lines": 14,
+      "sha256": "53cf8c2e47651ac2f2ebfd38b12e7bbf978ce9183fee27259eea55bb6bfcf5ee"
     },
     "bin/preflight.sh": {
       "bytes": 384,
@@ -295,10 +355,10 @@
       "sha256": "b2d8b23273e2827f3f9399f4db176666bbb7dc4bfcc7c4078c74e97561736785"
     },
     "bin/start-prime.sh": {
-      "bytes": 90,
+      "bytes": 3893,
       "kind": "text",
-      "lines": 2,
-      "sha256": "cebf4561239f89b03ae5ae8a8976aa412507ce12e2f217fb8e18d1507ee564df"
+      "lines": 143,
+      "sha256": "5805e1b6f491b0ff0ba8b12dd27e2f9b611d89da255ebc2bc4c6cd5acd646463"
     },
     "config/budgets.yaml": {
       "bytes": 787,
@@ -636,6 +696,12 @@
       "lines": 548,
       "sha256": "3084e0cf69b9905f13052ef9c20cb6a8c6589db4a272ae9d33aaf49a2adb4238"
     },
+    "control/test_m11_commands.py": {
+      "bytes": 7967,
+      "kind": "text",
+      "lines": 185,
+      "sha256": "041e9cc2ebf927fd3426d91b13001863f66a8cd63f3f51ed6421a9cb81f3a9db"
+    },
     "control/test_m2_durable_state.py": {
       "bytes": 17437,
       "kind": "text",
@@ -685,22 +751,28 @@
       "sha256": "0de4b64409e0ed7d0345a965c2aedb841ce7c8be4135128dc0ae6adee4b12e0f"
     },
     "docs/architecture.md": {
-      "bytes": 16948,
+      "bytes": 18103,
       "kind": "text",
-      "lines": 366,
-      "sha256": "71e182c75e534edced7c755adc0fa7c902290b93293f284eab4646099ad96ac9"
+      "lines": 386,
+      "sha256": "5cdd7fde951e90e83691971ae481904ab35454270a9f995e22d9d639ee91d06b"
     },
     "docs/compatibility.md": {
-      "bytes": 9921,
+      "bytes": 10505,
       "kind": "text",
-      "lines": 140,
-      "sha256": "03174c609124f510d4af8a6ab0e276057d48cde229e8f3dfd5c6ced15b6b74e8"
+      "lines": 150,
+      "sha256": "545e2ce3590f77cc59d55e5916525026576fd5d7f683cd7ec715bf5565173397"
     },
     "docs/decisions.md": {
-      "bytes": 57906,
+      "bytes": 60574,
       "kind": "text",
-      "lines": 974,
-      "sha256": "540ce5851b097776f75445501b082c6dd84973a8b37d27979650304544068a91"
+      "lines": 1026,
+      "sha256": "bc0718acbe4eea0b01982ea62f266d8f3b33e968191d19108f84eae7168dfe94"
+    },
+    "docs/runbook.md": {
+      "bytes": 6986,
+      "kind": "text",
+      "lines": 148,
+      "sha256": "081ced68a3899e09c710e7368a69f83f4765d375f25e78f08c6e60581ae456bf"
     },
     "input/inbox/.gitkeep": {
       "bytes": 1,
@@ -930,6 +1002,12 @@
       "lines": 451,
       "sha256": "3486b7e1f10232c7a4ac5942659770c2e453625e76eca435ab5cd937894e14b8"
     },
+    "scripts/article_loop_command.py": {
+      "bytes": 17178,
+      "kind": "text",
+      "lines": 423,
+      "sha256": "626e29247e77d620c6f52dc7103e2d7d079ed80902ca9b230f417d241b5bcb01"
+    },
     "state/checkpoints/.gitkeep": {
       "bytes": 1,
       "kind": "runtime",
@@ -1003,14 +1081,37 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "5c57df597e90c7bd2b9a43adefadf9951b65264fcc901b5f710a1300688fa299",
+  "fingerprint": "769f42631f2e59ed03609f618d6a2a3713c2f4e640d109ce57d98ed945e37dde",
   "git": {
     "available": true,
     "branch": "main",
-    "head": "9c598ba8a373aff8596609ad0634cd20690ed52c",
-    "status": []
+    "head": "1fec408934962f87bdedc3fce05e263a8f7c9f76",
+    "status": [
+      " M .prime/agent/APPEND_SYSTEM.md",
+      " M .prime/agent/skills/article-loop/SKILL.md",
+      " M PLANS.md",
+      " M README.md",
+      " M bin/check.sh",
+      " M bin/start-prime.sh",
+      " M docs/architecture.md",
+      " M docs/compatibility.md",
+      " M docs/decisions.md",
+      "?? .prime/agent/prompts/article-bootstrap.md",
+      "?? .prime/agent/prompts/article-checkpoint.md",
+      "?? .prime/agent/prompts/article-finalize.md",
+      "?? .prime/agent/prompts/article-pause.md",
+      "?? .prime/agent/prompts/article-preflight.md",
+      "?? .prime/agent/prompts/article-resume.md",
+      "?? .prime/agent/prompts/article-run.md",
+      "?? .prime/agent/prompts/article-status.md",
+      "?? .prime/agent/prompts/article-stop.md",
+      "?? .prime/handoffs/11_para_12.md",
+      "?? control/test_m11_commands.py",
+      "?? docs/runbook.md",
+      "?? scripts/article_loop_command.py"
+    ]
   },
-  "recorded_at": "2026-09-03T04:19:31Z",
+  "recorded_at": "2026-09-03T05:00:04Z",
   "schema_version": "1.0.0",
-  "session_id": "session-m10.1-publish-20260903"
+  "session_id": "session-m11-local-20260903"
 }

@@ -46,6 +46,16 @@ Foram ainda verificados:
 
 Nenhum desses subcomandos foi executado além de `help`.
 
+### Revalidação operacional M11 — 2026-09-03
+
+O caminho absoluto registrado acima e o comando `prime-agent` não estão
+disponíveis nesta sessão (`command -v prime-agent` não encontrou executável).
+A tabela histórica de superfícies continua sendo a referência compatível, mas
+não houve smoke test live, `/reload`, sessão Prime ou leitura de settings.
+M11, portanto, não cria `.prime/agent/settings.json` nem presume chaves da
+documentação de `main`; o launcher falha fechado até que uma instalação
+compatível seja encontrada e uma autorização separada exista.
+
 ## Documentação oficial consultada
 
 O repositório oficial é
