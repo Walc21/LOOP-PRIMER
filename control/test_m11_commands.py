@@ -39,7 +39,9 @@ class M11TemplateTests(unittest.TestCase):
 
     def test_append_system_is_additive_and_has_m11_guardrails(self):
         append = (ROOT / ".prime/agent/APPEND_SYSTEM.md").read_text(encoding="utf-8")
-        self.assertIn("python3 scripts/ai_context.py", append)
+        self.assertIn("python3 scripts/ai_context.py --check", append)
+        self.assertIn("checkpoint stale", append)
+        self.assertIn("Nunca execute o gerador sem flags", append)
         self.assertIn("## Guardrails operacionais M11", append)
         self.assertIn("AGENTS.md", append)
         self.assertIn("article-loop/SKILL.md", append)

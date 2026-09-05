@@ -8,17 +8,21 @@ científico, Prime Agent, modelos, rede ou APIs pagas.
 
 ### No início, antes de analisar ou alterar qualquer arquivo
 
-1. Na raiz do repositório, execute exatamente
-   `python3 scripts/ai_context.py`.
-2. Leia `AI_CONTEXT.md` integralmente antes de planejar, diagnosticar ou editar.
-3. Se o gerador falhar, pare e relate a falha; não substitua o contexto por uma
-   varredura improvisada nem alegue que o snapshot está atual.
+1. Leia `AI_CONTEXT.md` integralmente como o último checkpoint publicado antes
+   de planejar, diagnosticar ou editar.
+2. A inspeção opcional `python3 scripts/ai_context.py --check` é estritamente
+   read-only. Saída `1` significa apenas checkpoint *stale*; registre o sinal,
+   mas não regenere nem publique contexto automaticamente.
+3. Nunca execute o comando mutável sem flags (`python3 scripts/ai_context.py`)
+   no início ou durante o trabalho normal. Início de sessão é inspeção, não
+   publicação.
 4. **Não execute `scripts/ai_history.py` no início.** Ele registra o estado
-   final e só pertence ao encerramento da sessão.
+   final e só pertence a um checkpoint explícito.
 
 ### No fim, somente depois de concluir trabalho e validações
 
-1. Execute `python3 scripts/ai_history.py` com um `--summary` substantivo e
+1. Em um checkpoint explícito, execute `python3 scripts/ai_history.py` uma vez
+   com um `--summary` substantivo e
    quantos `--change`, `--decision`, `--validation`, `--risk` e `--next-step`
    forem necessários. Registre comandos e resultados reais; não invente
    validações ou decisões. Para conteúdo longo, use `--entry-file` ou
@@ -26,8 +30,10 @@ científico, Prime Agent, modelos, rede ou APIs pagas.
 2. Mesmo que a sessão seja apenas diagnóstica, registre a conclusão e declare
    explicitamente que não houve alteração quando aplicável. `--auto` é somente
    fallback factual e não substitui um resumo de qualidade.
-3. Depois do histórico, execute novamente `python3 scripts/ai_context.py` para
-   que `AI_CONTEXT.md` incorpore o estado e o encerramento recém-registrados.
+3. Depois do histórico, execute uma vez `python3 scripts/ai_context.py` para
+   publicar `AI_CONTEXT.md` com o estado e o encerramento recém-registrados.
+   O commit desses artefatos gerados também é explícito e pertence somente ao
+   checkpoint.
 4. Não registre o encerramento antes da última edição/teste: isso faria o
    snapshot esconder mudanças ainda não documentadas.
 

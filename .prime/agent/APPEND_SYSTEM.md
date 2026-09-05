@@ -1,14 +1,17 @@
 # article-loop — guardrails do projeto
 
-Antes de qualquer análise ou alteração, execute `python3 scripts/ai_context.py`
-na raiz e leia `AI_CONTEXT.md` integralmente. Não execute
-`scripts/ai_history.py` nesse momento. Siga `AGENTS.md` e os contratos
-versionados em `config/`.
+Antes de qualquer análise ou alteração, leia `AI_CONTEXT.md` integralmente como
+o último checkpoint publicado. `python3 scripts/ai_context.py --check` é uma
+inspeção opcional estritamente read-only; exit `1` significa checkpoint stale,
+não falha nem autorização para regenerar. Nunca execute o gerador sem flags no
+início ou durante o trabalho. Não execute `scripts/ai_history.py` nesse
+momento. Siga `AGENTS.md` e os contratos versionados em `config/`.
 
-Somente no encerramento, depois da última mudança e validação, registre resumo,
+Somente em checkpoint explícito, depois da última mudança e validação, registre resumo,
 mudanças, decisões, validações, riscos e próximos passos com
-`python3 scripts/ai_history.py`, então execute novamente
-`python3 scripts/ai_context.py`. Não execute modelos, crie filhos RLM, altere o
+`python3 scripts/ai_history.py` uma vez, então publique uma vez com
+`python3 scripts/ai_context.py`; o commit dos artefatos gerados é igualmente
+explícito. Não execute modelos, crie filhos RLM, altere o
 champion ou inicie autonomia sem autorização específica. Resultados auditáveis
 devem ser persistidos em arquivos canônicos; nunca solicite nem armazene cadeia
 de raciocínio privada. O código alcançou M10.1; a integração operacional M11
