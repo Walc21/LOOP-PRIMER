@@ -53,6 +53,7 @@ from .execution import (
     DualExecutionController, ExecutionError, ExecutionPolicy,
     MaterializedContext, RoutedControlAdapter, execution_readiness,
 )
+from .delivery import DeliveryError, verify_delivery
 
 __version__ = "0.7.0"
 
@@ -70,7 +71,7 @@ async def run(*args, **kwargs): return await run_cycle(*args, **kwargs)
 __all__ = [
     "ActivationEntry", "ActivationMode", "ActivationPlan", "ActivationPlanner",
     "Blackboard", "BlackboardError", "BlindComparisonBundle", "ChildHandle",
-    "CompiledPrompt", "DiagnosisError", "DurableStore", "EvaluationError",
+    "CompiledPrompt", "DeliveryError", "DiagnosisError", "DurableStore", "EvaluationError",
     "FakeJurorAdapter", "FakeMetaReviewerAdapter", "FakeRLMAdapter",
     "INTERNAL_SCHEMAS", "Impact", "ImpactGraph", "IngestionError",
     "IntegrityError", "M7Pipeline", "OUTPUT_SCHEMAS", "Orchestrator",
@@ -104,5 +105,5 @@ __all__ = [
     "manager_view", "pause", "preflight", "register_overlay_cas", "resume",
     "run", "run_cycle", "run_gates", "specialist_view", "stable_claim_id",
     "status", "stop", "submanager_view", "tree_hash", "validate_output",
-    "verify_published_diagnosis",
+    "verify_delivery", "verify_published_diagnosis",
 ]

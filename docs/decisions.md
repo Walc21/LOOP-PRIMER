@@ -1,5 +1,22 @@
 # Decisões arquiteturais
 
+## ADR-034 — M13: aceitação offline e auditoria independente da entrega
+
+**Status:** Aceito para implementação local. **Data:** 2026-09-05.
+
+Compor APIs reais em um ciclo sintético temporário, sem segundo orquestrador.
+Dublês determinísticos representam somente Prime, inferência e julgamento.
+O verificador reutiliza validadores M3/M7/M8/M9/M10 e confere também o efeito
+publicado e seu evento: replay do finalizador não substitui auditoria posterior.
+
+A aceitação cobre disposição de ciclo, original imutável, evidência hash-bound,
+recuperação e defaults fechados. Não afirma correção matemática geral nem
+integração live. M8 mantém suas interfaces; adaptadores operacionais routed de
+júri/meta-revisão são posteriores. Independência por modelo será exercitada
+no router com identidades fictícias distintas. Reprodutibilidade semântica e
+replay são exigidos; timestamps e metadados das ferramentas não implicam PDFs
+byte-idênticos entre hosts. Schemas e contratos científicos permanecem intactos.
+
 ## ADR-001 — O repositório possui estado durável próprio
 
 **Estado:** aceito em 2026-08-12.

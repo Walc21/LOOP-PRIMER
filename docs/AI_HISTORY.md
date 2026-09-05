@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `6312949b3a5dc49eb7a85f20f7dddf5b430c000a16b25b9e25be917cc663b8c7`
-- Registrado em: `2026-09-05T02:05:18Z`
-- Git: branch `main`, HEAD `007edeee5b5c`
-- Arquivos relevantes: 197
+- Fingerprint das fontes: `d935abdefc074d8bf3c6a6eaa9c67f0f0d51ca454592bc74a3d358e607f11879`
+- Registrado em: `2026-09-05T02:45:32Z`
+- Git: branch `m13-system-delivery`, HEAD `b15526ef4aca`
+- Arquivos relevantes: 203
 
 ## Evolução reconstruída do versionamento
 
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
-| sem marco explícito | 2026-08-13..2026-09-02 | 44 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
+| sem marco explícito | 2026-08-13..2026-09-04 | 45 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -143,9 +143,11 @@
 | `e238b8891` | 2026-09-03 | M12.5 | feat(m12.5.1): add dual execution phase A | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 | `562cbbf28` | 2026-09-03 | M12.5 | chore(history): record M12.5.1 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `007edeee5` | 2026-09-04 | M12.5 | feat(m12.5.1): promote proven routed inference path | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/execution.py, .prime/agent/skills/article-loop/src/art… |
+| `b15526ef4` | 2026-09-04 | sem marco explícito | docs(ai): restore omitted security review session | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 
 ## Decisões arquiteturais
 
+- ADR-034 — M13: aceitação offline e auditoria independente da entrega
 - ADR-001 — O repositório possui estado durável próprio
 - ADR-002 — Topologia lógica 1 + 5 + 15 e profundidade RLM 2
 - ADR-003 — Mensagem curta, arquivo canônico
@@ -1348,3 +1350,69 @@
 **Próximos passos**
 
 - O agente principal deve verificar os fatos materiais e incorporar o threatModel e as divergências documentais ao resultado da varredura.
+
+### 2026-09-05T02:45:32Z — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até promoção, Pareto e rejeição, com preservação do PDF original e checkpoint local revisável sobre b15526e.
+
+- Session ID: `session-89af3d3114afa07a3873`
+- Fingerprint final: `d935abdefc074d8bf3c6a6eaa9c67f0f0d51ca454592bc74a3d358e607f11879`
+- Git final: `b15526ef4aca`; status relevante: 16 item(ns)
+- Delta factual: 6 adicionados, 10 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionados control/m13_fixture.py, control/test_m13_system_delivery.py e scripts/m13_system_check.py: 25 cenários de aceitação e CLI com conservação opcional de evidência ou auditoria somente leitura.
+- Adicionado article_loop.delivery.verify_delivery, exportado pela fachada: revalidação composta M3/M7/M8/M9/M10, manifesto/ponteiro/receipt/evento final e cadeia budget/route/output/inference receipt/M6.
+- Estendida somente a revalidação explícita M9 para FINALIZATION_APPLIED do mesmo ciclo, sem autorizar refoco normal depois de conclusão.
+- Atualizados PLANS, ADR-034, arquitetura, README, runbook, skill, handoff 13_final, descoberta do handoff final no gerador de contexto e rótulos da CI para M13.
+
+**Decisões**
+
+- Manter os schemas, 21 papéis, 16 estados e 9 ações intactos. Nenhuma dependência nova, configuração live, modelo, Prime Agent ou provedor remoto executado.
+- Usar dublês apenas nas fronteiras externas e modelos fictícios distintos para provar independência no router. Adaptadores operacionais routed de júri/meta-review M8 permanecem posteriores.
+- Auditoria cobre disposições PROMOTE/ARCHIVE_PARETO/REJECT em workspace quiescente e no caminho original; não fabrica o pacote terminal FINALIZE de M10.1.
+- Encerrar com um único commit local na branch m13-system-delivery, sem push nem merge para main.
+
+**Validações**
+
+- python3 -m unittest control.test_m13_system_delivery -q: 25 testes OK, 0 skips.
+- python3 scripts/m13_system_check.py --keep-workspace (novo caminho externo): PASS, 25 testes, 0 erros/falhas/skips, seguido de ciclo routed conservado com 3 chamadas fake reconciliadas.
+- CLI --verify-root em processo independente: relatório idêntico ao conservado e inventário completo de bytes/modos inalterado.
+- python3 -m unittest control.test_m9_diagnosis control.test_m10_policy_finalization control.test_ai_handoff -q: 82 testes OK em 141.514s.
+- python3 -m unittest discover -s control -q: 445 testes OK, 0 skips, em 362.995s no Python 3.14.4; apenas fixtures HTTP loopback legados, sem rede externa.
+- python3 -m unittest control.test_ai_handoff -q depois da sincronização documental: 8 testes OK.
+- python3 -m py_compile scripts/*.py control/*.py .prime/agent/skills/article-loop/src/article_loop/*.py: OK. AST com feature_version=(3,11): 50 arquivos OK.
+- git diff --check, git diff --cached --check e bin/check.sh: OK. Configuração segue execution/inference/local/remote/paid desabilitada e sem targets.
+- git diff b15526e em config/system.yaml, budgets.yaml, schemas e roles: nenhum delta. Auditoria dos caminhos runtime rastreados encontrou somente .gitkeep; pesquisa contextual de segredos novos encontrou apenas api_key_env=None e nomes de arquivos proibidos em testes.
+- PDF sintético original: 644 bytes; SHA-256 antes/depois 1a491e111064f6daae4011f46337a188de4e91337d692b3cc74b4b221d17501f, com modo e tamanho preservados.
+
+**Riscos/limites**
+
+- Aceitação offline não prova qualidade científica geral, júri routed live, Prime Agent live, provedor remoto ou pagamento. Nenhum artigo real executado.
+- Python 3.11 local não possui jsonschema; nenhuma instalação foi feita. A matriz CI 3.11/3.12/3.13 não foi executada nesta sessão sem publicação.
+- Receipts M6 preservam locators absolutos pelo contrato existente; não se promete migração por cópia nem igualdade byte a byte entre hosts. Relatório m13-delivery.json é derivado e a CLI recompõe a evidência autoritativa.
+
+**Próximos passos**
+
+- Revisar o commit local e executar a matriz CI somente quando houver autorização para publicação.
+- Configuração de provedor, inferência live e adaptadores routed de júri/meta-review exigem trabalho e autorização separados.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/src/article_loop/delivery.py` | `-` | `a02991dcb9ea` |
+| added | `.prime/handoffs/13_final.md` | `-` | `7f905635a87c` |
+| added | `control/m13_fixture.py` | `-` | `ae2eb464e2f7` |
+| added | `control/test_m13_system_delivery.py` | `-` | `4da13c01f8dd` |
+| added | `docs/m13-system-acceptance.md` | `-` | `da913ee40db2` |
+| added | `scripts/m13_system_check.py` | `-` | `5522dba9bbd4` |
+| modified | `.github/workflows/ci.yml` | `61350e140d71` | `bf1d737ea098` |
+| modified | `.prime/agent/skills/article-loop/SKILL.md` | `cf254794a433` | `7177a152fcde` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `186ba528897d` | `2aa366464002` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/diagnosis.py` | `5c60264a38c7` | `fcb74adb4501` |
+| modified | `PLANS.md` | `bf3ba60f6e1a` | `9308c5ab2da1` |
+| modified | `README.md` | `d796aa3ec6e7` | `bf2c1e350275` |
+| modified | `docs/architecture.md` | `018f518aebba` | `95593b17c02d` |
+| modified | `docs/decisions.md` | `7c9ca1da4295` | `ac0e6d647793` |
+| modified | `docs/runbook.md` | `881f74e79ed6` | `36e8d856a1aa` |
+| modified | `scripts/ai_context.py` | `030ac491a33d` | `49f09af19c29` |

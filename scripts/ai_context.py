@@ -46,6 +46,7 @@ MODULE_PURPOSES = {
     "refocus.py": "planos/overlays reversíveis sob CAS para plateau/oscilação",
     "policy.py": "política M10 fechada, Decision content-addressed, Pareto e checkpoints técnicos",
     "finalization.py": "finalizador M10 com lock, journal, fsync, CAS e receipt imutável",
+    "delivery.py": "auditoria M13 somente leitura da cadeia de evidência e disposição publicada",
     "inference.py": "registry/router M12.5, runtime transacional e rotas/receipts write-once",
     "inference_backends.py": "backends fake explícito e OpenAI-compatible restrito a loopback",
     "__init__.py": "fachada pública assíncrona e exportações do pacote article_loop",
@@ -164,7 +165,7 @@ def _tests(root: Path) -> list[dict[str, Any]]:
 
 
 def _handoff_order(path: Path) -> tuple[int, int, str]:
-    match = re.match(r"^(\d+)(?:_(\d+))?_para_", path.name)
+    match = re.match(r"^(\d+)(?:_(\d+))?_(?:para_|final\.md$)", path.name)
     if not match:
         return (-1, -1, path.name)
     return (int(match.group(1)), int(match.group(2) or 0), path.name)
@@ -287,7 +288,9 @@ def render_context(root: Path, *, diff_limit: int = 8_000) -> str:
         "## Resumo executivo atual",
         "",
         "O `article-loop` é uma integração local, auditável e fail-closed para revisão iterativa de artigos matemáticos. Separa PDF original, baseline/champion, propostas de 21 papéis, challenger imutável, gates locais, júri cego, diagnóstico, Decision M10 e finalização transacional.",
-        f"O marco implementado mais recente é **{current['id'] if current else 'indeterminado'}** ({current['delivery'] if current else 'consulte PLANS.md'}). O próximo marco é **{next_pending['id'] if next_pending else 'indeterminado'}** ({next_pending['delivery'] if next_pending else 'consulte PLANS.md'}).",
+        f"O marco implementado mais recente é **{current['id'] if current else 'indeterminado'}** ({current['delivery'] if current else 'consulte PLANS.md'}). "
+        + (f"O próximo marco é **{next_pending['id']}** ({next_pending['delivery']})." if next_pending
+           else "Nenhum marco canônico pendente está listado; configuração e validação live permanecem separadas."),
         "",
         "Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (introdutório e não normativo).",
         "",
