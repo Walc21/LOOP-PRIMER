@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,12 +15,55 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from ai_context import _bounded_excerpt, _normalize_diff_preview, _truncate_diff_preview, render_context
+from ai_context import _bounded_excerpt, _normalize_diff_preview, _truncate_diff_preview, main as context_main, render_context
 from ai_handoff_common import build_inventory, inventory_delta, inventory_fingerprint
 from ai_history import infer_milestone, load_entries, update_history
 
 
 class AIHandoffTests(unittest.TestCase):
+    GENERATED = (
+        "AI_CONTEXT.md",
+        "docs/AI_HISTORY.md",
+        "docs/ai_sessions.jsonl",
+        "docs/ai_snapshot.json",
+    )
+
+    def _context_command(self, root: Path, *args: str) -> tuple[int, dict[str, object], str]:
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(sys, "stdout", stdout), patch.object(sys, "stderr", stderr):
+            code = context_main(["--root", str(root), *args])
+        return code, json.loads(stdout.getvalue()), stderr.getvalue()
+
+    def _checkpoint_root(self, temporary: str) -> Path:
+        root = Path(temporary)
+        (root / "docs").mkdir()
+        (root / "config").mkdir()
+        (root / "README.md").write_text("# Demo\n", encoding="utf-8")
+        (root / "PLANS.md").write_text(
+            "# Plano\n\n| Marco | Entrega | Estado | Critério |\n|---|---|---|---|\n| M1 | base | concluído | ok |\n",
+            encoding="utf-8",
+        )
+        (root / "AGENTS.md").write_text("# Regras\n", encoding="utf-8")
+        (root / "config/system.yaml").write_text("states:\n  - NEW\nactions:\n  - STOP\n", encoding="utf-8")
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(["git", "config", "user.name", "AI Handoff Test"], cwd=root, check=True)
+        subprocess.run(["git", "config", "user.email", "handoff@example.invalid"], cwd=root, check=True)
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-q", "-m", "baseline"], cwd=root, check=True)
+        update_history(
+            root,
+            {"summary": "Checkpoint de fixture.", "changes": [], "decisions": [], "validations": [], "risks": [], "next_steps": []},
+            timestamp="2026-09-05T12:00:00Z",
+            session_id="session-fixture-0001",
+        )
+        code, result, stderr = self._context_command(root)
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(result["status"], "updated")
+        return root
+
+    def _generated_bytes(self, root: Path) -> dict[str, bytes]:
+        return {relative: (root / relative).read_bytes() for relative in self.GENERATED}
+
     def test_embedded_previews_are_bounded_and_have_no_trailing_whitespace(self) -> None:
         normalized = _normalize_diff_preview("+line with spaces  \n+\t\n context\t\n")
         self.assertEqual(normalized, "+line with spaces\n+\n context")
@@ -34,7 +79,7 @@ class AIHandoffTests(unittest.TestCase):
         self.assertNotIn("+linha com ", truncated_diff)
         self.assertIn("diff truncado", truncated_diff)
 
-    def test_tracked_generated_context_is_portable_and_idempotent(self) -> None:
+    def test_explicit_publication_is_portable_and_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "README.md").write_text("# Demo\n", encoding="utf-8")
@@ -47,26 +92,33 @@ class AIHandoffTests(unittest.TestCase):
             subprocess.run(["git", "add", "."], cwd=root, check=True)
             subprocess.run(["git", "commit", "-q", "-m", "baseline"], cwd=root, check=True)
 
-            first = render_context(root, diff_limit=5_000)
-            (root / "AI_CONTEXT.md").write_text(first, encoding="utf-8")
-            second = render_context(root, diff_limit=5_000)
+            code, first_result, stderr = self._context_command(root, "--diff-limit", "5000")
+            self.assertEqual(code, 0, stderr)
+            first = (root / "AI_CONTEXT.md").read_text(encoding="utf-8")
+            code, second_result, stderr = self._context_command(root, "--diff-limit", "5000")
+            self.assertEqual(code, 0, stderr)
+            second = (root / "AI_CONTEXT.md").read_text(encoding="utf-8")
 
             self.assertEqual(first, second)
-            self.assertNotIn("diff --git a/AI_CONTEXT.md", second)
+            self.assertEqual(first_result["status"], "updated")
+            self.assertEqual(second_result["status"], "current")
+            self.assertNotIn("diff --git", second)
             self.assertNotIn(str(root), second)
             self.assertNotRegex(second, r"HEAD `[0-9a-f]{7,40}`")
 
-    def test_repository_trigger_surfaces_preserve_start_and_end_protocol(self) -> None:
+    def test_repository_trigger_surfaces_require_read_only_startup_and_explicit_checkpoint(self) -> None:
         required = {
-            "AGENTS.md": ("python3 scripts/ai_context.py", "scripts/ai_history.py", "AI_CONTEXT.md"),
-            "CLAUDE.md": ("python3 scripts/ai_context.py", "scripts/ai_history.py", "AI_CONTEXT.md"),
+            "AGENTS.md": ("python3 scripts/ai_context.py --check", "stale", "Nunca execute", "scripts/ai_history.py", "AI_CONTEXT.md"),
+            "CLAUDE.md": ("python3 scripts/ai_context.py --check", "stale", "Nunca execute", "scripts/ai_history.py", "AI_CONTEXT.md"),
             ".prime/agent/APPEND_SYSTEM.md": (
-                "python3 scripts/ai_context.py",
+                "python3 scripts/ai_context.py --check",
+                "stale",
+                "Nunca execute",
                 "scripts/ai_history.py",
                 "AI_CONTEXT.md",
             ),
-            "GEMINI.md": ("AGENTS.md", "python3 scripts/ai_context.py", "AI_CONTEXT.md"),
-            ".github/copilot-instructions.md": ("AGENTS.md", "python3 scripts/ai_context.py", "AI_CONTEXT.md"),
+            "GEMINI.md": ("AGENTS.md", "python3 scripts/ai_context.py --check", "stale", "Nunca execute", "AI_CONTEXT.md"),
+            ".github/copilot-instructions.md": ("AGENTS.md", "python3 scripts/ai_context.py --check", "stale", "Nunca execute", "AI_CONTEXT.md"),
         }
         for relative, markers in required.items():
             with self.subTest(path=relative):
@@ -80,6 +132,71 @@ class AIHandoffTests(unittest.TestCase):
         self.assertIn("M10", readme)
         self.assertIn("canonical, content-addressed `Decision`", readme)
         self.assertIn("M10 CLIs are operational", readme)
+
+    def test_read_only_check_is_byte_preserving_current_and_never_creates_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._checkpoint_root(temporary)
+            before = self._generated_bytes(root)
+            lock = root / "docs/ai_history.lock"
+            lock.unlink()
+
+            code, result, stderr = self._context_command(root, "--check")
+
+            self.assertEqual(code, 0, stderr)
+            self.assertEqual(result["status"], "current")
+            self.assertFalse(result["stale"])
+            self.assertEqual(result["current_fingerprint"], result["stored_fingerprint"])
+            self.assertEqual(result["current_fingerprint"], result["checkpoint_fingerprint"])
+            self.assertEqual(result["changed_inputs"], {"added": 0, "modified": 0, "deleted": 0})
+            self.assertEqual(before, self._generated_bytes(root))
+            self.assertFalse(lock.exists())
+
+    def test_read_only_check_reports_source_staleness_without_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._checkpoint_root(temporary)
+            (root / "README.md").write_text("# Changed\n", encoding="utf-8")
+            before = self._generated_bytes(root)
+            (root / "docs/ai_history.lock").unlink()
+
+            code, result, stderr = self._context_command(root, "--check")
+
+            self.assertEqual(code, 1, stderr)
+            self.assertEqual(result["status"], "stale")
+            self.assertTrue(result["stale"])
+            self.assertNotEqual(result["current_fingerprint"], result["stored_fingerprint"])
+            self.assertNotEqual(result["current_fingerprint"], result["checkpoint_fingerprint"])
+            self.assertEqual(result["changed_inputs"], {"added": 0, "modified": 1, "deleted": 0})
+            self.assertEqual(before, self._generated_bytes(root))
+            self.assertFalse((root / "docs/ai_history.lock").exists())
+
+    def test_generated_artifact_change_is_not_a_functional_source_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._checkpoint_root(temporary)
+            (root / "docs/AI_HISTORY.md").write_text("externally changed generated history\n", encoding="utf-8")
+            before = self._generated_bytes(root)
+
+            code, result, stderr = self._context_command(root, "--check")
+
+            self.assertEqual(code, 1, stderr)
+            self.assertTrue(result["stale"])
+            self.assertEqual(result["current_fingerprint"], result["checkpoint_fingerprint"])
+            self.assertEqual(result["changed_inputs"], {"added": 0, "modified": 0, "deleted": 0})
+            self.assertEqual(before, self._generated_bytes(root))
+
+    def test_completed_checkpoint_stays_current_after_git_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._checkpoint_root(temporary)
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-q", "-m", "checkpoint"], cwd=root, check=True)
+            before = self._generated_bytes(root)
+
+            code, result, stderr = self._context_command(root, "--check")
+
+            self.assertEqual(code, 0, stderr)
+            self.assertEqual(result["status"], "current")
+            self.assertFalse(result["stale"])
+            self.assertEqual(before, self._generated_bytes(root))
+            self.assertEqual(subprocess.run(["git", "status", "--porcelain"], cwd=root, text=True, stdout=subprocess.PIPE, check=True).stdout, "")
 
     def test_context_points_to_ai_sources_without_embedding_human_docs_or_full_inventory(self) -> None:
         context = render_context(ROOT, diff_limit=0)

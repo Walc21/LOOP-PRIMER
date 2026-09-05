@@ -12,6 +12,14 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
+- Redesenho do ciclo de contexto de IA em `chore/ai-context-lifecycle`:
+  início lê o checkpoint `AI_CONTEXT.md` e pode executar somente a inspeção
+  read-only `ai_context.py --check`; trabalho normal não publica artefatos;
+  checkpoint explícito executa histórico uma vez e contexto uma vez. O check
+  mantém stale como exit 1 detectável por máquina, com fingerprint/delta
+  determinísticos, sem escrever arquivos ou locks. O preview Git vivo foi
+  removido para que um commit sem mutação de fontes não deixe o contexto stale.
+  Validação focada inicial: 28 testes handoff/M11, `py_compile` e diff check.
 - M13.1 concluído e validado no checkpoint local `ac49084`:
   adaptadores routed de júri e meta-review usam o runtime existente sem criar
   papéis RLM. Avaliadores têm `role_id: null`, identidade explícita de ator e

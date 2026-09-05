@@ -1294,3 +1294,43 @@ O harness B1 que realizou a prova local não integra a promoção: era vinculado
 evidência histórica permanece fora da árvore promovida; qualquer diagnóstico
 futuro deverá ser construído com autorização live explícita e configuração
 local não rastreada.
+
+## ADR-034 — Ciclo de contexto de IA: início read-only e checkpoint explícito
+
+**Data:** 2026-09-05
+
+**Status:** Aceito e implementado localmente
+
+### Contexto
+
+O contrato anterior exigia que toda sessão executasse o publicador
+`ai_context.py` no início. Embora o inventário excluísse artefatos gerados, o
+documento incorporava um preview do patch Git vivo. Logo, iniciar uma sessão ou
+commitar um checkpoint podia reescrever o `AI_CONTEXT.md` rastreado e exigir um
+ciclo documental adicional sem alterar fontes funcionais.
+
+### Decisão
+
+1. Início lê o `AI_CONTEXT.md` rastreado como último checkpoint publicado. A
+   inspeção opcional `ai_context.py --check` é estritamente read-only; exit 1
+   significa checkpoint stale, não falha operacional nem autorização para
+   regenerar.
+2. O check emite JSON com fingerprint canônico atual, fingerprint declarado no
+   contexto publicado, fingerprint do último snapshot e contagens de delta. O
+   fingerprint atual é o inventário observado; o armazenado é o último contexto;
+   o de checkpoint vem de `ai_history.py`. Conceitos distintos podem coincidir.
+3. O comando sem flags continua publicando por compatibilidade, mas só é usado
+   uma vez após `ai_history.py` em checkpoint explícito. Trabalho normal não
+   publica artefatos gerados; o commit deles também é explícito.
+4. O contexto não incorpora patches ou outro texto dependente do estado vivo do
+   Git. O delta content-addressed do snapshot é a evidência determinística de
+   alterações. Uma transição Git sem mutação de fonte não altera frescor.
+
+### Consequências e limites
+
+O ledger append-only, snapshot, exclusão de artefatos gerados, SHA-256 e
+publicação atômica permanecem inalterados. Um contexto de formato anterior pode
+ficar stale até o próximo checkpoint explícito. Consumidores que executavam o
+comando sem flags no início devem migrar para leitura e, opcionalmente,
+`--check`. Uma mudança restrita aos quatro artefatos gerados exige validação de
+ciclo de vida, não repetição automática da regressão funcional já evidenciada.

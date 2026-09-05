@@ -479,15 +479,24 @@ não scripts científicos externos. Eles não pertencem à máquina de estados, 
 emitem ações canônicas e não possuem autoridade sobre PDF, champion,
 challengers, gates, júri ou finalização.
 
-O primeiro publica `AI_CONTEXT.md` a partir do inventário atual e do histórico.
-O documento é portável entre clones: não persiste caminho absoluto, branch ou
-commit do checkout. Ele resume o inventário e referencia
-`docs/ai_snapshot.json` para o detalhe content-addressed, sem incorporar o
-README público nem duplicar integralmente `AGENTS.md`.
+O primeiro tem duas operações separadas: `--check` inspeciona o checkpoint
+estritamente em modo read-only e preserva `stale` como exit 1 detectável por
+máquina; a invocação sem flags publica `AI_CONTEXT.md` somente em checkpoint
+explícito. A inspeção informa fingerprint atual, fingerprint armazenado,
+fingerprint do snapshot e delta do inventário, mas não cria arquivos ou locks.
+O documento é portável entre clones: não persiste caminho absoluto, branch,
+commit, status ou patch Git vivo do checkout. Ele resume o inventário e
+referencia `docs/ai_snapshot.json` para o detalhe content-addressed, sem
+incorporar o README público nem duplicar integralmente `AGENTS.md`. Assim,
+apenas uma transição Git não torna stale um checkpoint cujas fontes não mudaram.
 O segundo mantém `docs/AI_HISTORY.md`, apoiado pelo ledger
 `docs/ai_sessions.jsonl` e pelo snapshot `docs/ai_snapshot.json`. Esses
 artefatos ficam deliberadamente fora do fingerprint de fontes para impedir
 recursão, mas são lidos e identificados por hash no documento de contexto.
+Logo, início de sessão é inspeção, trabalho normal não publica contexto, e
+histórico/contexto/commit ocorrem somente no checkpoint explícito. Uma alteração
+somente nesses artefatos gerados não substitui nem exige repetir a regressão
+funcional cuja evidência pertence ao checkpoint funcional precedente.
 
 ## Fluxo de dados e resultados de agentes
 
