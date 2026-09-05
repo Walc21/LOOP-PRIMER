@@ -54,6 +54,7 @@ from .execution import (
     MaterializedContext, RoutedControlAdapter, execution_readiness,
 )
 from .delivery import DeliveryError, verify_delivery
+from .routed_evaluation import RoutedJurorAdapter, RoutedMetaReviewerAdapter
 
 __version__ = "0.7.0"
 
@@ -106,4 +107,5 @@ __all__ = [
     "run", "run_cycle", "run_gates", "specialist_view", "stable_claim_id",
     "status", "stop", "submanager_view", "tree_hash", "validate_output",
     "verify_delivery", "verify_published_diagnosis",
+    "RoutedJurorAdapter", "RoutedMetaReviewerAdapter",
 ]

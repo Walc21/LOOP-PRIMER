@@ -480,7 +480,7 @@ class InferenceRequest:
     run_id: str
     cycle_id: int
     task_id: str
-    role_id: str
+    role_id: str | None
     department_id: str
     activation_mode: str
     prompt_hash: str
@@ -501,11 +501,24 @@ class InferenceRequest:
     context_hash: str | None = None
     privacy_mode: str = "deny_remote"
     producer_model: str | None = None
+    judgment_context: str | None = None
+    routing_role_id: str | None = None
+    actor_kind: str | None = None
+    actor_id: str | None = None
 
     def __post_init__(self) -> None:
         _safe_id(self.run_id, "request.run_id")
         _safe_id(self.task_id, "request.task_id")
-        if self.role_id not in ROLE_IDS:
+        evaluator = self.actor_kind is not None or self.actor_id is not None or self.routing_role_id is not None
+        if evaluator:
+            if (
+                self.role_id is not None
+                or self.actor_kind != "evaluator"
+                or self.actor_id not in {"juror-math", "juror-contrib", "juror-clarity", "meta-reviewer"}
+                or self.routing_role_id not in ROLE_IDS
+            ):
+                raise InferenceConfigError("evaluator identity or routing authority is invalid")
+        elif self.role_id not in ROLE_IDS:
             raise InferenceConfigError("request role_id is invalid")
         if self.department_id not in {"M00", *{f"S{item}0" for item in range(1, 6)}}:
             raise InferenceConfigError("request department_id is invalid")
@@ -525,8 +538,25 @@ class InferenceRequest:
             raise InferenceConfigError("request prompt_version is invalid")
         if not isinstance(self.base_hash, str) or _SHA.fullmatch(self.base_hash) is None:
             raise InferenceConfigError("request base_hash is invalid")
-        if self.requested_output_schema not in {"department-packet.schema.json", "agent-proposal.schema.json"}:
+        judgment_schema = self.requested_output_schema in {"jury-verdict.schema.json", "meta-verdict.schema.json"}
+        if self.requested_output_schema not in {"department-packet.schema.json", "agent-proposal.schema.json", "jury-verdict.schema.json", "meta-verdict.schema.json"}:
             raise InferenceConfigError("request output schema is invalid")
+        if judgment_schema:
+            expected_actors = ({"juror-math", "juror-contrib", "juror-clarity"}
+                               if self.requested_output_schema == "jury-verdict.schema.json"
+                               else {"meta-reviewer"})
+            if (not self.jury or not evaluator or self.actor_id not in expected_actors
+                    or not isinstance(self.judgment_context, str)
+                    or len(self.judgment_context.encode()) > 16384):
+                raise InferenceConfigError("judgment requires bounded trusted protocol context")
+            try:
+                context = json.loads(self.judgment_context)
+                if canonical_bytes(context).decode() != self.judgment_context:
+                    raise ValueError("noncanonical context")
+            except (ValueError, TypeError) as error:
+                raise InferenceConfigError("judgment protocol context is invalid") from error
+        elif self.judgment_context is not None or evaluator:
+            raise InferenceConfigError("unexpected judgment context")
         if not isinstance(self.required_capabilities, tuple) or len(self.required_capabilities) != len(set(self.required_capabilities)) or any(item not in CAPABILITIES for item in self.required_capabilities):
             raise InferenceConfigError("request capabilities are invalid")
         if self.producer_target is not None:
@@ -611,7 +641,7 @@ class InferenceRequest:
         )
 
     def identity(self) -> dict[str, Any]:
-        return {
+        identity = {
             "run_id": self.run_id, "cycle_id": self.cycle_id,
             "task_id": self.task_id, "role_id": self.role_id,
             "department_id": self.department_id,
@@ -630,7 +660,24 @@ class InferenceRequest:
             "privacy_mode": self.privacy_mode,
             "escalation_from": self.escalation_from,
             "escalation_reason": self.escalation_reason,
+            **({"judgment_context_sha256": sha256(self.judgment_context.encode())}
+               if self.judgment_context is not None else {}),
         }
+        if self.actor_kind is not None:
+            identity.update({
+                "routing_role_id": self.routing_role_id,
+                "actor_kind": self.actor_kind,
+                "actor_id": self.actor_id,
+            })
+        return identity
+
+    @property
+    def effective_routing_role_id(self) -> str:
+        """Return a policy selector without changing legacy serialized identity."""
+        value = self.routing_role_id if self.routing_role_id is not None else self.role_id
+        if value not in ROLE_IDS:
+            raise InferenceConfigError("request has no valid routing authority")
+        return value
 
     @property
     def request_hash(self) -> str:
@@ -738,6 +785,9 @@ def model_output_schema(root: str | Path, request: InferenceRequest) -> dict[str
     canonical = load_requested_output_schema(root, request.requested_output_schema)
     if request.requested_output_schema == "agent-proposal.schema.json":
         return agent_proposal_payload_schema(canonical)
+    if request.judgment_context is not None:
+        from .routed_evaluation import judgment_payload_schema
+        return judgment_payload_schema(canonical)
     return canonical
 
 
@@ -872,7 +922,7 @@ class ModelRouter:
             raise InferenceRoutingError("inference is disabled")
         if budget_status is not None and budget_status.get("state") in {"PAUSED", "STOPPED"}:
             raise InferenceRoutingError("budget state does not permit routing")
-        route = self.registry.role_routes.get(request.role_id)
+        route = self.registry.role_routes.get(request.effective_routing_role_id)
         if route is None:
             raise InferenceRoutingError("role has no inference route")
         required = tuple(sorted(set(request.required_capabilities) | set(route["required_capabilities"])))
@@ -961,7 +1011,7 @@ class InferenceReceipt:
     run_id: str
     cycle_id: int
     task_id: str
-    role_id: str
+    role_id: str | None
     call_id: str
     reservation_id: str
     route_decision_hash: str
@@ -990,9 +1040,17 @@ class InferenceReceipt:
     output_locator: str | None = None
     context_hash: str | None = None
     privacy_mode: str = "deny_remote"
+    routing_role_id: str | None = None
+    actor_kind: str | None = None
+    actor_id: str | None = None
 
     def public(self) -> dict[str, Any]:
-        return {"schema_version": RECEIPT_SCHEMA_VERSION, **self.__dict__}
+        value = dict(self.__dict__)
+        evaluator = self.actor_kind is not None
+        if not evaluator:
+            for field in ("routing_role_id", "actor_kind", "actor_id"):
+                value.pop(field)
+        return {"schema_version": "1.2.0" if evaluator else RECEIPT_SCHEMA_VERSION, **value}
 
 
 class InferenceStore:
@@ -1131,8 +1189,11 @@ class InferenceStore:
         output_bytes = canonical_bytes(document) + b"\n"
         output_sha = sha256(output_bytes)
         locator = f"state/inference/{self.run_id}/outputs/{call_id}/{output_sha}.json"
+        metadata_version = metadata.get("schema_version")
+        if metadata_version not in {"1.1.0", "1.2.0"}:
+            raise InferenceIntegrityError("output metadata schema version is invalid")
         manifest = {
-            **dict(metadata), "schema_version": RECEIPT_SCHEMA_VERSION,
+            **dict(metadata), "schema_version": metadata_version,
             "run_id": self.run_id, "call_id": call_id,
             "output_sha256": output_sha, "output_locator": locator,
             "output_size_bytes": len(output_bytes),
@@ -1317,6 +1378,9 @@ class InferenceRuntime:
             value = json.loads(response)
             if request.requested_output_schema == "agent-proposal.schema.json":
                 return compose_agent_proposal(self.root, request, value)
+            if request.judgment_context is not None:
+                from .routed_evaluation import compose_judgment
+                return compose_judgment(self.root, request, value)
             schema = load_requested_output_schema(self.root, request.requested_output_schema)
             jsonschema.Draft202012Validator(
                 schema, format_checker=jsonschema.FormatChecker(),
@@ -1334,7 +1398,7 @@ class InferenceRuntime:
     def _receipt_from_manifest(manifest: Mapping[str, Any]) -> InferenceReceipt:
         names = InferenceReceipt.__dataclass_fields__
         try:
-            return InferenceReceipt(**{name: manifest[name] for name in names})
+            return InferenceReceipt(**{name: manifest[name] for name in names if name in manifest})
         except (KeyError, TypeError) as error:
             raise InferenceIntegrityError("durable output lacks receipt reconstruction metadata") from error
 
@@ -1376,6 +1440,11 @@ class InferenceRuntime:
         decision = self.router.route(request, self.ledger.status(current_cycle=request.cycle_id))
         if decision.reason_code == "NO_INFERENCE_REQUIRED":
             return {"decision": decision.identity(), "result": None, "receipt": None, "replayed": False}
+        target = self.registry.target(str(decision.target_id))
+        registered_backend = self.backends.get(target.backend_type)
+        if target.backend_type == "fake" or getattr(registered_backend, "is_test_double", False):
+            if live or not allow_test_doubles:
+                raise InferenceBackendError("BACKEND_FAILURE", "test double is not authorized, including replay", sent=False)
         persisted_route = self.store.persist_route(decision)
         call_id = self.call_id(request, decision)
         existing = self.store.receipt_for_call(call_id)
@@ -1433,6 +1502,7 @@ class InferenceRuntime:
         reservation = self.ledger.reserve(
             call_id, request.estimate_tokens, cycle_id=request.cycle_id,
             department_id=request.department_id, role_id=request.role_id,
+            routing_role_id=request.routing_role_id,
             attempt=request.attempt, provider=target.provider, model=target.model,
             estimated_wall_time_seconds=target.timeout_seconds,
             estimated_cost_microunits=estimated_cost,
@@ -1492,6 +1562,7 @@ class InferenceRuntime:
                 finish_reason, request.attempt, request.escalation_from,
                 request.escalation_reason, created_at,
                 None, None, request.context_hash, request.privacy_mode,
+                request.routing_role_id, request.actor_kind, request.actor_id,
             )
             if document is not None:
                 output_manifest = self.store.persist_output(

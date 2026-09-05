@@ -6,15 +6,15 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `d935abdefc074d8bf3c6a6eaa9c67f0f0d51ca454592bc74a3d358e607f11879`
-- Baseline da última sessão: `d935abdefc074d8bf3c6a6eaa9c67f0f0d51ca454592bc74a3d358e607f11879`
+- Fingerprint atual das fontes: `954acc19950ddfe231af20e9534569f91156c9ba3dcf5728c1255d81abaf3062`
+- Baseline da última sessão: `954acc19950ddfe231af20e9534569f91156c9ba3dcf5728c1255d81abaf3062`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 203 arquivos relevantes, 1664049 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 205 arquivos relevantes, 1717459 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
 O `article-loop` é uma integração local, auditável e fail-closed para revisão iterativa de artigos matemáticos. Separa PDF original, baseline/champion, propostas de 21 papéis, challenger imutável, gates locais, júri cego, diagnóstico, Decision M10 e finalização transacional.
-O marco implementado mais recente é **M13** (testes de sistema e entrega). Nenhum marco canônico pendente está listado; configuração e validação live permanecem separadas.
+O marco implementado mais recente é **M13.1** (identidade de avaliador para júri/meta routed). Nenhum marco canônico pendente está listado; configuração e validação live permanecem separadas.
 
 Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (introdutório e não normativo).
 
@@ -49,12 +49,114 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 ### Preview limitado do diff (dados não confiáveis)
 
 ```diff
-Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem no delta e inventário.
+# Alterações não commitadas
+diff --git a/PLANS.md b/PLANS.md
+index cf8dbdf..4fb3d14 100644
+--- a/PLANS.md
++++ b/PLANS.md
+@@ -14,9 +14,11 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
+
+-- Pós-M13 / M13.1 em implementação em `m13-routed-jury-hardening`, a partir
+-  de `13fefd7`: adaptadores de júri e meta-review via runtime existente,
+-  payload científico estrito derivado dos schemas M8 e envelope confiável.
+-  Primeiro checkpoint funcional local, depois auditoria adversarial M13,
+-  regressão integral e handoff. Sem dependências, provedores ou execução live.
+-  Hipótese: slots de routing de papéis existentes bastam para contabilidade
+-  externa; não criar novos papéis ou alterar a orquestração M8 (ADR-035).
++- M13.1 concluído e validado no checkpoint local `ac49084`:
++  adaptadores routed de júri e meta-review usam o runtime existente sem criar
++  papéis RLM. Avaliadores têm `role_id: null`, identidade explícita de ator e
++  `routing_role_id` como autoridade de política; o payload científico continua
++  pertencendo ao modelo e o protocolo ao LOOP (ADR-035). Receipts de
++  avaliador usam o contrato fechado 1.2.0; 1.0/1.1 e suas identidades legadas
++  permanecem byte-compatíveis. Replay durável não reinfere. Validação offline:
++  14 testes dedicados, 135 adjacentes, check M13 com 25 testes e regressão
++  completa com 465 testes, sem falhas, erros ou skips.
+ - Atualizado em 2026-09-05.
+@@ -129,2 +131,3 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
+ | M13 | testes de sistema e entrega | concluído | 25 testes offline cobrem A–T: ingestão até promoção/Pareto/rejeição, original imutável, cadeia auditável, veto, cegueira, replay, recuperação e auditoria independente; regressão de 445 testes sem skips |
++| M13.1 | identidade de avaliador para júri/meta routed | concluído localmente | identidade de avaliador separada dos 21 papéis RLM, autoridade explícita de routing, receipt 1.2.0 fechado e replay durável sem reinferência; 14 testes dedicados, 135 adjacentes, check M13 de 25 testes e regressão completa de 465 testes aprovados offline |
+
+diff --git a/docs/architecture.md b/docs/architecture.md
+index bbf324b..78f2282 100644
+--- a/docs/architecture.md
++++ b/docs/architecture.md
+@@ -456,2 +456,19 @@ das superfícies model-driven e da fronteira M8 está em
+
++### M13.1 — Identidade de avaliador routed
++
++Jurors e meta-reviewers routed não são adicionados aos 21 papéis lógicos RLM.
++Uma chamada de avaliação usa `role_id: null` e declara
++`actor_kind: "evaluator"`, `actor_id` canônico e `routing_role_id` de um papel
++existente. `actor_id` identifica quem avalia; `routing_role_id` é somente a
++autoridade que seleciona a política e a rota. Assim, a topologia RLM e a conta
++por papel não são alteradas, enquanto os limites globais, de ciclo,
++departamento, modelo, chamadas, tempo e custo permanecem aplicáveis.
++
++A identidade do avaliador e sua autoridade de routing entram na requisição,
++decisão e receipt. Receipts de avaliador seguem o schema fechado `1.2.0`; os
++schemas `1.0.0` e `1.1.0` mantêm exatamente a forma legada quando os campos de
++avaliador não existem. O modelo emite apenas o payload científico de jury/meta;
++o LOOP compõe e valida a identidade e o envelope de protocolo. Output durável
++e receipt permitem reexecutar um julgamento já reconciliado sem nova inferência.
++
+ ### Ferramentas auxiliares de handoff para IA
+diff --git a/docs/decisions.md b/docs/decisions.md
+index ea979f6..8cdebe6 100644
+--- a/docs/decisions.md
++++ b/docs/decisions.md
+@@ -2,5 +2,5 @@
+
+-## ADR-035 — Pós-M13: julgamento routed com protocolo pertencente ao LOOP
++## ADR-035 — M13.1: julgamento routed com identidade de avaliador separada
+
+-**Status:** Aceito para implementação offline. **Data:** 2026-09-05.
++**Status:** Implementado e validado offline. **Data:** 2026-09-05.
+
+@@ -22,12 +22,28 @@ evidence_locators. Validadores semânticos M8 continuam obrigatórios.
+
+-Seleção/contabilidade usa um routing_role_id canônico explícito (default M00),
+-sem criar filhos ou equiparar jurados aos autores. Independência é resolvida
+-pelo router a partir do target produtor; language e structured_output são as
+-capacidades mínimas. Contexto do modelo contém somente dados cegos delimitados
+-como não confiáveis; metadados internos permanecem fora do prompt. Adaptadores
+-operacionais não podem ocultar um backend fake ou reutilizá-lo em modo live.
+-
+-Validar primeiro a publicação M8 com runtime real e backend falso, preservar
+-checkpoint local e então auditar a entrega M13. Qualquer achado precisa de
+-reprodução concreta. Configuração e autorização live permanecem ausentes.
++Avaliadores não são papéis RLM: os 21 IDs canônicos e sua topologia permanecem
++inalterados. Uma requisição de avaliador usa `role_id: null`,
++`actor_kind: "evaluator"`, `actor_id` canônico de jurado ou meta-reviewer e um
++`routing_role_id` existente. Este último é somente a autoridade de roteamento e
++o seletor de política/contabilidade; não é identidade do ator nem cria um novo
++slot lógico. A autorização live consulta o `routing_role_id`; a conta por papel
++permanece vazia para avaliadores, enquanto os demais limites continuam sendo
++aplicados.
++
++As identidades de ator e de routing participam do hash de requisição e da
++decisão de rota. Quando esses campos estão ausentes, a serialização, hashes,
++call ID, payload de reserva, receipt e manifesto legados preservam seus bytes.
++Receipts de avaliador são exclusivamente `1.2.0` e exigem `role_id: null`,
++identidade de ator, autoridade de routing e schema jury/meta compatível. Os
++contratos fechados `1.0.0` e `1.1.0` continuam sem esses campos.
++
++Independência é resolvida pelo router a partir do target produtor; language e
++structured_output são as capacidades mínimas. Contexto do modelo contém somente
++dados cegos delimitados como não confiáveis; metadados internos permanecem fora
++do prompt. Adaptadores operacionais não podem ocultar um backend fake ou
++reutilizá-lo em modo live. A receipt e o output durável permitem replay de
++júri/meta sem nova inferência.
++
++A validação offline aprovou 14 testes dedicados M13.1, 135 adjacentes, o check
++M13 com 25 testes e 465 testes na regressão completa, sem falhas, erros ou
++skips. Configuração e autorização live permanecem ausentes.
+
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (108987 bytes; SHA-256 `6898695920edc4fe`).
+- Fonte lida: `docs/AI_HISTORY.md` (112669 bytes; SHA-256 `50c9baf248b1740d`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -78,24 +180,25 @@ Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem n
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 | M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
-| M13 | 2026-09-04 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
+| M13 | 2026-09-04..2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
+| M13.1 | 2026-09-05 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
 
-- Sessões estruturadas registradas: 31.
-- Índice recente: 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prom…; 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.; 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato execu…; 2026-09-05T01:41:08Z — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.; 2026-09-05T01:42:06Z — M12.5.1 clean promotion committed locally on m1251-promote-local.; 2026-09-05T00:02:51Z — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos …; 2026-09-05T02:45:32Z — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até pro…; 2026-09-05T02:47:51Z — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final do…. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 32.
+- Índice recente: 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.; 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato execu…; 2026-09-05T01:41:08Z — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.; 2026-09-05T01:42:06Z — M12.5.1 clean promotion committed locally on m1251-promote-local.; 2026-09-05T00:02:51Z — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos …; 2026-09-05T02:45:32Z — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até pro…; 2026-09-05T02:47:51Z — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final do…; 2026-09-05T04:26:25Z — M13.1 encerrado: identidade de avaliador routed foi separada dos 21 papeis RLM e a documentacao final foi reconciliada.. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-89af3d3114afa07a3873` — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até promoção, Pareto e rejeição, com preservação do PDF original e checkpoint local revisável sobre b15526e.
-  - mudanças: Adicionados control/m13_fixture.py, control/test_m13_system_delivery.py e scripts/m13_system_check.py: 25 cenários de aceitação e CLI com conservação opcional de evidência ou auditoria somente leitura.; Adicionado article_loop.delivery.verify_delivery, exportado pela fachada: revalidação composta M3/M7/M8/M9/M10, manifesto/ponteiro/receipt/evento final e cadeia budget/route/output/inference receipt/M6.; Estendida somente a revalidação explícita M9 para FINALIZATION_APPLIED do mesmo ciclo, sem a…
-  - decisões: Manter os schemas, 21 papéis, 16 estados e 9 ações intactos. Nenhuma dependência nova, configuração live, modelo, Prime Agent ou provedor remoto executado.; Usar dublês apenas nas fronteiras externas e modelos fictícios distintos para provar independência no router. Adaptadores operacionais routed de júri/meta-review M8 permanecem posteriores.; Auditoria cobre disposições PROMOTE/ARCHIVE_PARETO/REJECT em workspace quiescente e no caminho original; não fabrica o pacote terminal FINALIZE de M10.1…
-  - validações: python3 -m unittest control.test_m13_system_delivery -q: 25 testes OK, 0 skips.; python3 scripts/m13_system_check.py --keep-workspace (novo caminho externo): PASS, 25 testes, 0 erros/falhas/skips, seguido de ciclo routed conservado com 3 chamadas fake reconciliadas.; CLI --verify-root em processo independente: relatório idêntico ao conservado e inventário completo de bytes/modos inalterado.; python3 -m unittest control.test_m9_diagnosis control.test_m10_policy_finalization control.test_ai_hando…
-  - riscos: Aceitação offline não prova qualidade científica geral, júri routed live, Prime Agent live, provedor remoto ou pagamento. Nenhum artigo real executado.; Python 3.11 local não possui jsonschema; nenhuma instalação foi feita. A matriz CI 3.11/3.12/3.13 não foi executada nesta sessão sem publicação.; Receipts M6 preservam locators absolutos pelo contrato existente; não se promete migração por cópia nem igualdade byte a byte entre hosts. Relatório m13-delivery.json é derivado e a CLI recompõe a evi…
-  - próximos: Revisar o commit local e executar a matriz CI somente quando houver autorização para publicação.; Configuração de provedor, inferência live e adaptadores routed de júri/meta-review exigem trabalho e autorização separados.
 - `session-00f1ff5cffdb3d788812` — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final dos artefatos gerados de handoff.
   - mudanças: O commit e9cb259 (feat(m13): prove offline system and delivery path) preservou a implementação validada e os 20 arquivos da entrega; nenhum código ou configuração de produto foi alterado depois dele.; Atualização somente de docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json e AI_CONTEXT.md para incorporar o checkpoint Git real.
   - decisões: Usar um segundo commit exclusivamente de histórico/contexto: a verificação pós-commit confirmou que o preview Git gerado torna o snapshot textual anterior stale. Isso mantém o handoff atual sem reescrever ou emendar commits.; Preservar main/origin/main em b15526e; nenhum push, merge para main ou execução live.
   - validações: Após e9cb259, git status --short estava vazio.; python3 scripts/ai_context.py --check após o commit identificou stale no preview Git; fontes e fingerprint científico permaneceram os mesmos.; Validação consolidada do código de e9cb259: aceitação M13 25 testes, adjacentes 82 testes, regressão completa 445 testes, 0 skips; py_compile, diff checks e bin/check.sh OK.; Auditoria independente da evidência externa preservada: relatório idêntico e bytes/modos inalterados; PDF sintético de 644 bytes mant…
   - riscos: Validação live e matriz CI remota permanecem não executadas; o checkpoint é exclusivamente local.
   - próximos: Revisar o checkpoint local. Publicação e validação live dependem de autorização separada.
+- `session-c26899f255e8b0ba8569` — M13.1 encerrado: identidade de avaliador routed foi separada dos 21 papeis RLM e a documentacao final foi reconciliada.
+  - mudanças: InferenceRequest e InferenceReceipt distinguem actor evaluator de routing_role_id; receipts de avaliador usam o contrato 1.2.0.; PLANS.md, ADR-035 e arquitetura registram compatibilidade legada, propriedade do protocolo pelo LOOP e replay duravel sem reinferencia.
+  - decisões: routing_role_id e autoridade de politica, enquanto actor_id identifica juror ou meta-reviewer; avaliadores nao sao papeis canonicos.
+  - validações: M13.1 14/14, regressao adjacente 135/135, check M13 25/25 offline e regressao completa 465/465 sem falhas, erros ou skips.; control.test_ai_handoff: 8 testes passaram; git diff --check passou.
+  - riscos: Configuracao, autorizacao e chamadas live permanecem ausentes; nenhuma chamada externa, de modelo ou paga ocorreu.
+  - próximos: Revisar o commit final local antes de qualquer publicacao; push, merge e PR permanecem fora do escopo.
 
 ## Marcos planejados
 
@@ -119,6 +222,7 @@ Detalhe das duas sessões mais recentes:
 | M12 | orçamento, observabilidade e execução prolongada | concluído localmente |
 | M12.5 | routing de inferência e integração de backends | concluído localmente e na CI |
 | M13 | testes de sistema e entrega | concluído |
+| M13.1 | identidade de avaliador para júri/meta routed | concluído localmente |
 
 ## Topologia dos 21 papéis
 
@@ -159,7 +263,7 @@ Detalhe das duas sessões mais recentes:
 - `.prime/agent/skills/article-loop/src/article_loop/execution.py` — módulo ainda não classificado; examine antes de usar. API/símbolos: class ExecutionError; class ExecutionPolicy [from_mapping, from_project, layer]; class ContextItem [public]; class MaterializedContext [prompt_fragment]; class ContextMaterializer [materialize, enforce_remote_policy]; class RoutedControlAdapter [spawn, list_subagents, send_parent, delete_subagent, preflight, for_child]; class DualExecutionAdapter [spawn, list_subagents, delete_subagent, preflight, department_adapter]; class DualExecutionController [execute_routed_department]; execution_readiness()
 - `.prime/agent/skills/article-loop/src/article_loop/finalization.py` — finalizador M10 com lock, journal, fsync, CAS e receipt imutável. API/símbolos: class FinalizationError; class TransactionalFinalizer [finalize]; finalize_decision()
 - `.prime/agent/skills/article-loop/src/article_loop/gates.py` — 13 verificadores locais, evidência matemática e GateReport canônico. API/símbolos: record_math_verification(); verify_gate_report(); run_gates(); compare()
-- `.prime/agent/skills/article-loop/src/article_loop/inference.py` — registry/router M12.5, runtime transacional e rotas/receipts write-once. API/símbolos: class InferenceError; class InferenceConfigError; class InferenceRoutingError; class InferenceIntegrityError; class InferenceBackendError; class InferenceOutputError; canonical_bytes(); sha256(); routing_policy_hash(); load_requested_output_schema(); class TargetPricing [cost]; class InferenceTarget [public]; class ModelRegistry [from_project, validate_enabled_policy, target, status]; class InferenceRequest [from_agent_task, identity, request_hash, escalated]; output_identity_values(); agent_proposal_payload_schema(); model_output_schema(); trusted_protocol_envelope(); compose_agent_proposal(…
+- `.prime/agent/skills/article-loop/src/article_loop/inference.py` — registry/router M12.5, runtime transacional e rotas/receipts write-once. API/símbolos: class InferenceError; class InferenceConfigError; class InferenceRoutingError; class InferenceIntegrityError; class InferenceBackendError; class InferenceOutputError; canonical_bytes(); sha256(); routing_policy_hash(); load_requested_output_schema(); class TargetPricing [cost]; class InferenceTarget [public]; class ModelRegistry [from_project, validate_enabled_policy, target, status]; class InferenceRequest [from_agent_task, identity, effective_routing_role_id, request_hash, escalated]; output_identity_values(); agent_proposal_payload_schema(); model_output_schema(); trusted_protocol_envelope…
 - `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` — backends fake explícito e OpenAI-compatible restrito a loopback. API/símbolos: class FakeInferenceBackend [preflight, complete]; class LocalOpenAICompatibleBackend [preflight, complete]; class RemoteOpenAICompatibleBackend [preflight]
 - `.prime/agent/skills/article-loop/src/article_loop/ingestion.py` — congelamento de PDF/ZIP, derivados e publicação do baseline v0000. API/símbolos: class IngestionError; class SourceReadyError; ingest()
 - `.prime/agent/skills/article-loop/src/article_loop/observability.py` — módulo ainda não classificado; examine antes de usar. API/símbolos: class ObservabilityError; redact_payload(); class StructuredLogger [path, lock_path, read_events, emit, status]
@@ -167,6 +271,7 @@ Detalhe das duas sessões mais recentes:
 - `.prime/agent/skills/article-loop/src/article_loop/policy.py` — política M10 fechada, Decision content-addressed, Pareto e checkpoints técnicos. API/símbolos: class PolicyError; load_policy(); verify_finalization_evidence(); pareto_relation(); choose_action(); validate_decision_disposition(); decide(); load_published_decision()
 - `.prime/agent/skills/article-loop/src/article_loop/prompts.py` — registro content-addressed, overlays, composição e validação de prompts. API/símbolos: class PromptIntegrityError; class PromptContractError; class CompiledPrompt; class PromptRegistry [immutable, overlay]; expected_prompt_version(); validate_output(); compile_prompt(); compile_manager_prompt()
 - `.prime/agent/skills/article-loop/src/article_loop/refocus.py` — planos/overlays reversíveis sob CAS para plateau/oscilação. API/símbolos: class RefocusError; register_overlay_cas(); generate_refocus_plan()
+- `.prime/agent/skills/article-loop/src/article_loop/routed_evaluation.py` — módulo ainda não classificado; examine antes de usar. API/símbolos: judgment_payload_schema(); judgment_envelope(); compose_judgment(); class RoutedJurorAdapter [evaluate]; class RoutedMetaReviewerAdapter [review]
 - `.prime/agent/skills/article-loop/src/article_loop/state_machine.py` — grafo fechado dos 16 estados e validação de transições. API/símbolos: class State; class TransitionError; is_valid_transition(); require_transition()
 - `.prime/agent/skills/article-loop/src/article_loop/store.py` — event log JSONL encadeado, snapshots derivados, locks e replay. API/símbolos: class StoreError; class IntegrityError; class StopRequested; class DurableStore [read_events, rebuild_snapshot, snapshot, create_run, record, pause, resume, checkpoint]
 - `.prime/agent/skills/article-loop/src/article_loop/synthesis.py` — congelamento de propostas, merge isolado e challenger write-once. API/símbolos: class SynthesisError; tree_hash(); class M7Pipeline [synthesize, freeze_synthesis, build, record_synthesis, record_candidate, record_gates, execute_and_record_gates]
@@ -207,7 +312,7 @@ Detalhe das duas sessões mais recentes:
 | `final-report.schema.json` | FinalReport | 11 | schema_version, final_report_id, run_id, cycle_id, candidate_id, candidate_content_hash, gate_report_id, required_roles, candidate_manifest_hash, rendered_pdf_hash, overall_pass |
 | `finalization-receipt.schema.json` | FinalizationReceipt | 16 | schema_version, receipt_id, run_id, cycle_id, decision_id, candidate_id, action, applied_at, state_before, state_after, content_hash_before, content_hash_after, hash_revalidated, … |
 | `gate-report.schema.json` | GateReport | 13 | schema_version, report_id, report_hash, report_locator, run_id, cycle_id, candidate_id, candidate_content_hash, candidate_hash, generated_at, overall_pass, correctness_math_pass, … |
-| `inference-receipt.schema.json` | InferenceReceipt | 31 | schema_version, receipt_id, run_id, cycle_id, task_id, role_id, call_id, reservation_id, route_decision_hash, routing_policy_hash, provider, model, target_id, backend_type, indepe… |
+| `inference-receipt.schema.json` | InferenceReceipt | 31 | schema_version, receipt_id, run_id, cycle_id, task_id, role_id, routing_role_id, actor_kind, actor_id, call_id, reservation_id, route_decision_hash, routing_policy_hash, provider,… |
 | `jury-verdict.schema.json` | JuryVerdict | 15 | schema_version, verdict_id, comparison_id, juror_id, candidate_neutral_ids, content_hashes, presentation_order, order_seed, rubric_version, dimension_scores, outcome, winner_neutr… |
 | `math-evidence.schema.json` | math-evidence.schema.json | 12 | schema_version, run_id, cycle_id, base_hash, candidate_id, candidate_content_hash, claim_id, proposal_id, request_receipt_sha256, method, conclusion, summary |
 | `math-issue.schema.json` | math-issue.schema.json | 11 | record_id, issue_type, run_id, cycle_id, base_hash, candidate_id, claim_id, severity, status, summary, evidence_locators |
@@ -220,7 +325,7 @@ Detalhe das duas sessões mais recentes:
 
 ## Cobertura estrutural de testes
 
-Total detectado por AST: **445 testes**.
+Total detectado por AST: **465 testes**.
 
 | Arquivo | Testes | Amostra de fronteiras cobertas |
 |---|---:|---|
@@ -229,8 +334,9 @@ Total detectado por AST: **445 testes**.
 | `test_m10_policy_finalization.py` | 24 | all policy rows and actions are closed; hard math gate and extra judgment limit have precedence; global plateau can finalize only with final gate evidence; pareto dominated candid… |
 | `test_m11_commands.py` | 16 | exact flat template discovery and frontmatter; append system is additive and has m11 guardrails; project settings are not invented; check reports safe local defaults; check report… |
 | `test_m1251_dual_execution.py` | 14 | project defaults distinguish implementation configuration and live; materializer is closed hash bound and does not load pdf; materializer rejects traversal symlink unlisted locato… |
-| `test_m125_inference_routing.py` | 39 | project defaults are fail closed; disabled inference never calls backend; unknown target role duplicate and fallback cycle are rejected; duplicate target key in yaml is rejected b… |
+| `test_m125_inference_routing.py` | 45 | evaluator identity is explicit hash bound and uses route authority; evaluator cannot claim routing authority as executing role; project defaults are fail closed; disabled inferenc… |
 | `test_m12_budget_observability.py` | 20 | reserve admit reconcile is hash bound and reported; two reservations race cannot spend last balance twice; usage absent becomes uncertain and keeps reservation; release requires p… |
+| `test_m131_routed_evaluation.py` | 14 | full m8 publication through seven routed calls; juror replay survives new adapter and no backend call; model protocol fields are rejected including gate identity; missing scientif… |
 | `test_m13_system_delivery.py` | 25 | golden ingestion to verified promotion; math gate failure stops before jury or decision; jury math veto beats excellent scores and is rejected; blind presentations invert without … |
 | `test_m2_durable_state.py` | 30 | all valid transitions; all invalid transitions; full event log replay and snapshot reconstruction; duplicate event id and idempotency conflict; partially written file and truncate… |
 | `test_m3_ingestion.py` | 22 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash di… |
@@ -316,8 +422,8 @@ A prova é de sistema offline e de disposição de ciclo. Não certifica matemá
 
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
-- Total: 203 arquivos; runtime=18, text=185.
-- Fingerprint canônico: `d935abdefc074d8bf3c6a6eaa9c67f0f0d51ca454592bc74a3d358e607f11879`.
+- Total: 205 arquivos; runtime=18, text=187.
+- Fingerprint canônico: `954acc19950ddfe231af20e9534569f91156c9ba3dcf5728c1255d81abaf3062`.
 
 ## Roteamento para aprofundamento
 

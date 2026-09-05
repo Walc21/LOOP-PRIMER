@@ -1245,11 +1245,11 @@ def evaluate_candidate(
 
         if not allow_test_doubles:
             for jid, adapter in juror_adapters.items():
-                if getattr(adapter, "is_test_double", False):
+                if getattr(adapter, "is_test_double", False) or getattr(adapter, "requires_test_mode", False):
                     raise EvaluationError(
                         f"test double detected for juror adapter '{jid}'; test doubles require allow_test_doubles=True"
                     )
-            if getattr(meta_adapter, "is_test_double", False):
+            if getattr(meta_adapter, "is_test_double", False) or getattr(meta_adapter, "requires_test_mode", False):
                 raise EvaluationError(
                     "test double detected for meta-reviewer adapter; test doubles require allow_test_doubles=True"
                 )
