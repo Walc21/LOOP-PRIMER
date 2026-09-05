@@ -12,6 +12,13 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
+- Pós-M13 / M13.1 em implementação em `m13-routed-jury-hardening`, a partir
+  de `13fefd7`: adaptadores de júri e meta-review via runtime existente,
+  payload científico estrito derivado dos schemas M8 e envelope confiável.
+  Primeiro checkpoint funcional local, depois auditoria adversarial M13,
+  regressão integral e handoff. Sem dependências, provedores ou execução live.
+  Hipótese: slots de routing de papéis existentes bastam para contabilidade
+  externa; não criar novos papéis ou alterar a orquestração M8 (ADR-035).
 - Atualizado em 2026-09-05.
 - M13 concluído na aceitação offline: 25 testes de sistema, 82 testes adjacentes
   de M9/M10/handoff e 445 testes na regressão completa passaram sem skips em

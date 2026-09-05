@@ -86,7 +86,7 @@ class RecordingJuror(FakeJurorAdapter):
 class SyntheticCycle:
     """Compose the public stages; never assign a state snapshot or gate result."""
 
-    def __init__(self, root, *, routed=False):
+    def __init__(self, root, *, routed=False, inference_policy=None):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=False)
         for relative in ("input/inbox", "artifacts/original", "artifacts/extracted", "artifacts/rendered", "versions/champion", "workspaces", "state", "reports"):
@@ -99,7 +99,7 @@ class SyntheticCycle:
             from article_loop.budget import BudgetLimits
             path = self.root / "config/budgets.yaml"
             config = yaml.safe_load(path.read_text())
-            config["inference"] = fake_policy()
+            config["inference"] = inference_policy if inference_policy is not None else fake_policy()
             config["execution"].update(enabled=True, departments={d: ("routed" if d == "S40" else "prime") for d in DEPARTMENTS})
             config["budget"]["limits"] = asdict(BudgetLimits(total_tokens=1000000, max_calls=20))
             path.write_text(yaml.safe_dump(config), encoding="utf-8")
@@ -179,8 +179,7 @@ class SyntheticCycle:
         from article_loop.budget import BudgetLedger, BudgetLimits
         from article_loop.execution import DualExecutionController
         from article_loop.inference import InferenceRuntime, ModelRegistry
-        self.routing = fake_policy()
-        self.registry = ModelRegistry(self.routing)
+        self.registry = ModelRegistry.from_project(self.root)
         self.ledger = BudgetLedger.from_project(self.root, self.run_id)
         self.backend = PayloadBackend(self)
         self.runtime = InferenceRuntime(self.root, self.ledger, self.registry, {"fake": self.backend})

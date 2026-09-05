@@ -501,6 +501,7 @@ class InferenceRequest:
     context_hash: str | None = None
     privacy_mode: str = "deny_remote"
     producer_model: str | None = None
+    judgment_context: str | None = None
 
     def __post_init__(self) -> None:
         _safe_id(self.run_id, "request.run_id")
@@ -525,8 +526,21 @@ class InferenceRequest:
             raise InferenceConfigError("request prompt_version is invalid")
         if not isinstance(self.base_hash, str) or _SHA.fullmatch(self.base_hash) is None:
             raise InferenceConfigError("request base_hash is invalid")
-        if self.requested_output_schema not in {"department-packet.schema.json", "agent-proposal.schema.json"}:
+        judgment_schema = self.requested_output_schema in {"jury-verdict.schema.json", "meta-verdict.schema.json"}
+        if self.requested_output_schema not in {"department-packet.schema.json", "agent-proposal.schema.json", "jury-verdict.schema.json", "meta-verdict.schema.json"}:
             raise InferenceConfigError("request output schema is invalid")
+        if judgment_schema:
+            if (not self.jury or not isinstance(self.judgment_context, str)
+                    or len(self.judgment_context.encode()) > 16384):
+                raise InferenceConfigError("judgment requires bounded trusted protocol context")
+            try:
+                context = json.loads(self.judgment_context)
+                if canonical_bytes(context).decode() != self.judgment_context:
+                    raise ValueError("noncanonical context")
+            except (ValueError, TypeError) as error:
+                raise InferenceConfigError("judgment protocol context is invalid") from error
+        elif self.judgment_context is not None:
+            raise InferenceConfigError("unexpected judgment context")
         if not isinstance(self.required_capabilities, tuple) or len(self.required_capabilities) != len(set(self.required_capabilities)) or any(item not in CAPABILITIES for item in self.required_capabilities):
             raise InferenceConfigError("request capabilities are invalid")
         if self.producer_target is not None:
@@ -630,6 +644,8 @@ class InferenceRequest:
             "privacy_mode": self.privacy_mode,
             "escalation_from": self.escalation_from,
             "escalation_reason": self.escalation_reason,
+            **({"judgment_context_sha256": sha256(self.judgment_context.encode())}
+               if self.judgment_context is not None else {}),
         }
 
     @property
@@ -738,6 +754,9 @@ def model_output_schema(root: str | Path, request: InferenceRequest) -> dict[str
     canonical = load_requested_output_schema(root, request.requested_output_schema)
     if request.requested_output_schema == "agent-proposal.schema.json":
         return agent_proposal_payload_schema(canonical)
+    if request.judgment_context is not None:
+        from .routed_evaluation import judgment_payload_schema
+        return judgment_payload_schema(canonical)
     return canonical
 
 
@@ -1317,6 +1336,9 @@ class InferenceRuntime:
             value = json.loads(response)
             if request.requested_output_schema == "agent-proposal.schema.json":
                 return compose_agent_proposal(self.root, request, value)
+            if request.judgment_context is not None:
+                from .routed_evaluation import compose_judgment
+                return compose_judgment(self.root, request, value)
             schema = load_requested_output_schema(self.root, request.requested_output_schema)
             jsonschema.Draft202012Validator(
                 schema, format_checker=jsonschema.FormatChecker(),
@@ -1376,6 +1398,11 @@ class InferenceRuntime:
         decision = self.router.route(request, self.ledger.status(current_cycle=request.cycle_id))
         if decision.reason_code == "NO_INFERENCE_REQUIRED":
             return {"decision": decision.identity(), "result": None, "receipt": None, "replayed": False}
+        target = self.registry.target(str(decision.target_id))
+        registered_backend = self.backends.get(target.backend_type)
+        if target.backend_type == "fake" or getattr(registered_backend, "is_test_double", False):
+            if live or not allow_test_doubles:
+                raise InferenceBackendError("BACKEND_FAILURE", "test double is not authorized, including replay", sent=False)
         persisted_route = self.store.persist_route(decision)
         call_id = self.call_id(request, decision)
         existing = self.store.receipt_for_call(call_id)

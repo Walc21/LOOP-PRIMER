@@ -1,5 +1,36 @@
 # Decisões arquiteturais
 
+## ADR-035 — Pós-M13: julgamento routed com protocolo pertencente ao LOOP
+
+**Status:** Aceito para implementação offline. **Data:** 2026-09-05.
+
+Implementar adaptadores das interfaces M8 existentes, usando InferenceRuntime,
+ModelRouter, InferenceStore e BudgetLedger. Projeções internas dos schemas M8
+preservam propriedades, definições locais e condicionais científicos; rejeitam
+referências externas e campos sem classificação. Nenhum schema canônico muda.
+O contexto de protocolo imutável participa da identidade da requisição; o
+output canônico é composto e validado antes da publicação no inference store.
+
+Júri: LOOP fornece schema_version, verdict_id, comparison_id, juror_id,
+candidate_neutral_ids, content_hashes, presentation_order, order_seed,
+rubric_version e submitted_at. Modelo fornece dimension_scores, outcome,
+winner_neutral_id, correctness_math_pass e evidence_locators.
+Meta: LOOP fornece schema_version, meta_verdict_id, meta_reviewer_id,
+comparison_id, gate_report_id, consistent_verdict_count, divergence_count e
+reviewed_at. Modelo fornece confirmed, vetoed, veto_reason, explanation e
+evidence_locators. Validadores semânticos M8 continuam obrigatórios.
+
+Seleção/contabilidade usa um routing_role_id canônico explícito (default M00),
+sem criar filhos ou equiparar jurados aos autores. Independência é resolvida
+pelo router a partir do target produtor; language e structured_output são as
+capacidades mínimas. Contexto do modelo contém somente dados cegos delimitados
+como não confiáveis; metadados internos permanecem fora do prompt. Adaptadores
+operacionais não podem ocultar um backend fake ou reutilizá-lo em modo live.
+
+Validar primeiro a publicação M8 com runtime real e backend falso, preservar
+checkpoint local e então auditar a entrega M13. Qualquer achado precisa de
+reprodução concreta. Configuração e autorização live permanecem ausentes.
+
 ## ADR-034 — M13: aceitação offline e auditoria independente da entrega
 
 **Status:** Aceito para implementação local. **Data:** 2026-09-05.
