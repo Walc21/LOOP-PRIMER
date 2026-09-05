@@ -810,8 +810,9 @@ def verify_published_diagnosis(
 
     ``allow_m10_successor`` is a narrow revalidation mode for the M10
     finalizer: it accepts only the same cycle after the recorded `DECIDED` or
-    recoverable `COMMITTING` transition, while still binding every field to the
-    earlier immutable DIAGNOSED event.
+    recoverable `COMMITTING` transition, or an applied finalization in that
+    cycle for read-only M13 audit. It still binds every field to the earlier
+    immutable DIAGNOSED event and does not authorize refocus after completion.
     """
     if not isinstance(run_id, str) or not run_id:
         raise DiagnosisError("run_id must be a non-empty string")
@@ -825,8 +826,15 @@ def verify_published_diagnosis(
     event = events[-1]
     diagnosis_index = len(events) - 1
     if allow_m10_successor:
-        if event.get("state_to") not in {State.DECIDED.value, State.COMMITTING.value} or event.get("cycle_id") != cycle_id:
-            raise DiagnosisError("M10 revalidation requires active DECIDED or COMMITTING for this cycle")
+        completed = (
+            event.get("event_type") == "FINALIZATION_APPLIED"
+            and event.get("state_to") in {
+                State.CYCLE_COMPLETE.value, State.PAUSED.value,
+                State.FINALIZED.value, State.TECHNICAL_FAILURE.value,
+            }
+        )
+        if (event.get("state_to") not in {State.DECIDED.value, State.COMMITTING.value} and not completed) or event.get("cycle_id") != cycle_id:
+            raise DiagnosisError("M10 revalidation requires DECIDED, COMMITTING or applied finalization for this cycle")
         for index in range(len(events) - 1, -1, -1):
             candidate = events[index]
             if candidate.get("event_type") == "DIAGNOSED" and candidate.get("cycle_id") == cycle_id:

@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: M0-M12.5.1 Contract & Architecture Tests (Python ${{ matrix.python-version }})
+    name: M0-M13 Contract & System Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -41,5 +41,5 @@ jobs:
           bash -n bin/check.sh bin/start-prime.sh
           bin/check.sh
 
-      - name: Run complete M0-M12.5.1 regression suite
+      - name: Run complete M0-M13 regression suite
         run: python -m unittest discover -s control -p 'test_*.py' -q

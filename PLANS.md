@@ -12,7 +12,12 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
-- Atualizado em 2026-09-03.
+- Atualizado em 2026-09-05.
+- M13 concluído na aceitação offline: 25 testes de sistema, 82 testes adjacentes
+  de M9/M10/handoff e 445 testes na regressão completa passaram sem skips em
+  Python 3.14.4. A CLI conservou uma execução sintética e a auditoria independente
+  confirmou a mesma entrega sem modificar seus arquivos. Provedores live e júri
+  routed operacional permanecem separados desta aceitação.
 - M0 — compatibilidade, segurança e documentação-base: concluído.
 - M0.5 — alinhamento da arquitetura canônica: concluído.
 - M2 — máquina de estados, event log e recuperação: concluído após correção contratual final.
@@ -114,7 +119,25 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M12 | orçamento, observabilidade e execução prolongada | concluído localmente | ledger hash-bound, reservas atômicas, reconciliação conservadora, perfis opt-in, status/logs/alertas e retomada fail-closed; sem modelo, rede ou execução real |
 | M12.5 | routing de inferência e integração de backends | concluído localmente e na CI | registry/router determinísticos, política hash-bound, autorização multi-target compatível, receipts write-once e backend loopback validado na matriz Python 3.11–3.13, sem bypass de M6 nem target pago implícito |
 | M12.5.1 | ligação end-to-end de execução dual — Phase A | concluído localmente | seleção Prime/Routed por departamento, ator de controle routed persistente, contexto mínimo hash-bound, privacidade fail-closed, teto monetário inteiro, saída científica durável e retomada sem reinferência; defaults disabled e nenhum smoke live |
-| M13 | testes de sistema e entrega | pendente | sistema é reproduzível, auditável e entrega sem alterar o PDF original |
+| M13 | testes de sistema e entrega | concluído | 25 testes offline cobrem A–T: ingestão até promoção/Pareto/rejeição, original imutável, cadeia auditável, veto, cegueira, replay, recuperação e auditoria independente; regressão de 445 testes sem skips |
+
+### Aceitação M13
+
+Compor APIs reais M2–M12.5.1 em fixtures temporárias; dublês somente nas
+fronteiras Prime, inferência e júri. Acrescentar auditoria local da entrega,
+veto matemático, cegueira/inversão, adulteração, replay e recuperação concorrente.
+Nenhuma dependência nova, relaxamento de schema ou configuração live.
+O adaptador operacional routed M8 permanece posterior; a independência por
+modelo foi testada no router e o júri offline nas interfaces M8 existentes.
+
+Aceitação executada por `python3 scripts/m13_system_check.py`; matriz e limites
+em `docs/m13-system-acceptance.md`. `--verify-root` recompõe a evidência local
+de uma disposição concluída. O pacote promovido contém a fonte revisada e
+preserva `baseline.pdf` como proveniência; não substitui o pacote terminal
+`FINALIZE` de M10.1. Nenhuma dependência foi instalada, nenhum modelo foi
+chamado e nenhum push foi realizado. A matriz CI 3.11–3.13 fica configurada
+para a futura publicação; somente a gramática 3.11 foi verificada adicionalmente
+no host, pois esse interpretador não tem `jsonschema` instalado.
 
 ## Sequência canônica dos Prompts 01–13
 

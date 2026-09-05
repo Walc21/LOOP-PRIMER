@@ -30,13 +30,23 @@
 > the candidate manifest, rendered PDF, and final report. M12 adds a durable,
 > hash-bound budget ledger, conservative reconciliation, operational status and
 > redacted structured logs; M12.5 adds write-once route decisions and inference
-> receipts without changing M6 topology; M13 remains pending. M10 CLIs are operational; M11
+> receipts without changing M6 topology. M13 adds offline system acceptance and
+> independent delivery verification. M10 CLIs are operational; M11
 > adds local commands and templates.
 > They do not run an article, a model, or a paid API by themselves; the Prime
 > Agent live smoke was not authorized or executed; the currently discovered
 > binary does not by itself enable model execution.
 
 ---
+
+### Offline system acceptance
+
+Run `python3 scripts/m13_system_check.py` to verify synthetic cycles from
+immutable ingestion through promotion, Pareto archival or rejection, including
+tamper detection, recovery and replay. It uses deterministic external test
+adapters and requires no model, credentials or network. To retain evidence and
+audit a completed delivery separately, see
+[M13 acceptance and verification](docs/m13-system-acceptance.md).
 
 ## 📌 Table of Contents
 

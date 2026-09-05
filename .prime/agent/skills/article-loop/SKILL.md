@@ -237,3 +237,17 @@ a capacidade do código, não autorização: `execution.enabled`, inferência,
 targets, rotas e paid/live continuam desabilitados. `execution_readiness()`
 separa `implementation_ready`, `configuration_ready` e `live_ready` sem ler
 credenciais.
+
+## Aceitação e entrega M13
+
+`python3 scripts/m13_system_check.py` executa a aceitação sintética offline.
+`article_loop.verify_delivery(root, run_id, cycle_id=0)` audita evidência de
+uma disposição de ciclo concluída sem executar ou reparar o pipeline.
+`--verify-root` expõe a mesma auditoria pela CLI; `--keep-workspace` conserva
+uma execução sintética em caminho novo. Não aplicar fixtures sobre estado real.
+
+O verificador cobre promoção/Pareto/rejeição, hashes e ordem da cadeia, original
+imutável e ligações de inferência quando presentes. O relatório é derivado;
+gates/Decision/receipts continuam autoritativos. Conserve os locators originais
+de M6. Consulte `docs/m13-system-acceptance.md` antes de afirmar aceitação live,
+reprodutibilidade byte a byte entre hosts ou produção de PDF final terminal.

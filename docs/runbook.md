@@ -287,3 +287,14 @@ python3 scripts/article_loop_command.py preflight --root .
 
 O exemplo estrutural fica em `docs/examples/m1251-human-configuration.yaml` e
 não é configuração ativa.
+
+## Aceitação e auditoria M13
+
+Execute `python3 scripts/m13_system_check.py` para a suíte offline completa de
+aceitação M13. `--keep-workspace CAMINHO_NOVO` conserva evidência sintética fora
+do Git. Para auditar somente a evidência existente, use `--verify-root CAMINHO
+--run-id ID` (opcionalmente `--cycle-id N`), em workspace quiescente e no caminho
+original. Nenhum desses comandos habilita configuração live no repositório.
+
+Consulte `docs/m13-system-acceptance.md` para a matriz A–T, estrutura da entrega,
+limites do verificador e distinção entre artefato promovido e PDF final terminal.

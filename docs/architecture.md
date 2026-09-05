@@ -1,5 +1,25 @@
 # Arquitetura canônica — article-loop
 
+## Aceitação de sistema M13
+
+`control/m13_fixture.py` compõe as APIs canônicas em diretórios sintéticos
+temporários. Não é um segundo orquestrador de produção. A entrada tem bytes
+fixos e só as fronteiras externas Prime/inferência/júri são substituídas.
+`control/test_m13_system_delivery.py` cobre a cadeia até disposição, veto duro,
+cegueira, recuperação, replay, concorrência e adulteração.
+
+`article_loop.delivery.verify_delivery` é a fronteira independente de auditoria
+somente leitura. Reutiliza validadores de ingestão, síntese/receipts, gates,
+avaliação, diagnóstico e decisão; confere a publicação do finalizador e a
+ligação budget/route/output/receipt M6 quando routed. Não cria decisões nem
+reexecuta inferência. A revalidação M9 aceita explicitamente um evento
+`FINALIZATION_APPLIED` do mesmo ciclo para essa auditoria; a autorização de
+refoco continua limitada a `DIAGNOSED`.
+
+O comando é `python3 scripts/m13_system_check.py`; detalhes, matriz de aceitação
+e limites estão em `docs/m13-system-acceptance.md`. Os 21 papéis, 16 estados,
+9 ações e schemas científicos permanecem os mesmos.
+
 ## Escopo e imutabilidade do contrato
 
 O article-loop revisará iterativamente um artigo matemático com evidência
