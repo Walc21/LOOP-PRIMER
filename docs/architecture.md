@@ -454,6 +454,23 @@ legacy por `independence_group` permanece interpretável. O inventário completo
 das superfícies model-driven e da fronteira M8 está em
 `docs/model-driven-surfaces.md`.
 
+### M13.1 — Identidade de avaliador routed
+
+Jurors e meta-reviewers routed não são adicionados aos 21 papéis lógicos RLM.
+Uma chamada de avaliação usa `role_id: null` e declara
+`actor_kind: "evaluator"`, `actor_id` canônico e `routing_role_id` de um papel
+existente. `actor_id` identifica quem avalia; `routing_role_id` é somente a
+autoridade que seleciona a política e a rota. Assim, a topologia RLM e a conta
+por papel não são alteradas, enquanto os limites globais, de ciclo,
+departamento, modelo, chamadas, tempo e custo permanecem aplicáveis.
+
+A identidade do avaliador e sua autoridade de routing entram na requisição,
+decisão e receipt. Receipts de avaliador seguem o schema fechado `1.2.0`; os
+schemas `1.0.0` e `1.1.0` mantêm exatamente a forma legada quando os campos de
+avaliador não existem. O modelo emite apenas o payload científico de jury/meta;
+o LOOP compõe e valida a identidade e o envelope de protocolo. Output durável
+e receipt permitem reexecutar um julgamento já reconciliado sem nova inferência.
+
 ### Ferramentas auxiliares de handoff para IA
 
 `scripts/ai_context.py`, `scripts/ai_history.py` e o módulo compartilhado

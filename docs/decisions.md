@@ -1,8 +1,8 @@
 # Decisões arquiteturais
 
-## ADR-035 — Pós-M13: julgamento routed com protocolo pertencente ao LOOP
+## ADR-035 — M13.1: julgamento routed com identidade de avaliador separada
 
-**Status:** Aceito para implementação offline. **Data:** 2026-09-05.
+**Status:** Implementado e validado offline. **Data:** 2026-09-05.
 
 Implementar adaptadores das interfaces M8 existentes, usando InferenceRuntime,
 ModelRouter, InferenceStore e BudgetLedger. Projeções internas dos schemas M8
@@ -20,16 +20,32 @@ comparison_id, gate_report_id, consistent_verdict_count, divergence_count e
 reviewed_at. Modelo fornece confirmed, vetoed, veto_reason, explanation e
 evidence_locators. Validadores semânticos M8 continuam obrigatórios.
 
-Seleção/contabilidade usa um routing_role_id canônico explícito (default M00),
-sem criar filhos ou equiparar jurados aos autores. Independência é resolvida
-pelo router a partir do target produtor; language e structured_output são as
-capacidades mínimas. Contexto do modelo contém somente dados cegos delimitados
-como não confiáveis; metadados internos permanecem fora do prompt. Adaptadores
-operacionais não podem ocultar um backend fake ou reutilizá-lo em modo live.
+Avaliadores não são papéis RLM: os 21 IDs canônicos e sua topologia permanecem
+inalterados. Uma requisição de avaliador usa `role_id: null`,
+`actor_kind: "evaluator"`, `actor_id` canônico de jurado ou meta-reviewer e um
+`routing_role_id` existente. Este último é somente a autoridade de roteamento e
+o seletor de política/contabilidade; não é identidade do ator nem cria um novo
+slot lógico. A autorização live consulta o `routing_role_id`; a conta por papel
+permanece vazia para avaliadores, enquanto os demais limites continuam sendo
+aplicados.
 
-Validar primeiro a publicação M8 com runtime real e backend falso, preservar
-checkpoint local e então auditar a entrega M13. Qualquer achado precisa de
-reprodução concreta. Configuração e autorização live permanecem ausentes.
+As identidades de ator e de routing participam do hash de requisição e da
+decisão de rota. Quando esses campos estão ausentes, a serialização, hashes,
+call ID, payload de reserva, receipt e manifesto legados preservam seus bytes.
+Receipts de avaliador são exclusivamente `1.2.0` e exigem `role_id: null`,
+identidade de ator, autoridade de routing e schema jury/meta compatível. Os
+contratos fechados `1.0.0` e `1.1.0` continuam sem esses campos.
+
+Independência é resolvida pelo router a partir do target produtor; language e
+structured_output são as capacidades mínimas. Contexto do modelo contém somente
+dados cegos delimitados como não confiáveis; metadados internos permanecem fora
+do prompt. Adaptadores operacionais não podem ocultar um backend fake ou
+reutilizá-lo em modo live. A receipt e o output durável permitem replay de
+júri/meta sem nova inferência.
+
+A validação offline aprovou 14 testes dedicados M13.1, 135 adjacentes, o check
+M13 com 25 testes e 465 testes na regressão completa, sem falhas, erros ou
+skips. Configuração e autorização live permanecem ausentes.
 
 ## ADR-034 — M13: aceitação offline e auditoria independente da entrega
 

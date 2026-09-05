@@ -12,13 +12,15 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 
 ## Estado atual
 
-- Pós-M13 / M13.1 em implementação em `m13-routed-jury-hardening`, a partir
-  de `13fefd7`: adaptadores de júri e meta-review via runtime existente,
-  payload científico estrito derivado dos schemas M8 e envelope confiável.
-  Primeiro checkpoint funcional local, depois auditoria adversarial M13,
-  regressão integral e handoff. Sem dependências, provedores ou execução live.
-  Hipótese: slots de routing de papéis existentes bastam para contabilidade
-  externa; não criar novos papéis ou alterar a orquestração M8 (ADR-035).
+- M13.1 concluído e validado no checkpoint local `ac49084`:
+  adaptadores routed de júri e meta-review usam o runtime existente sem criar
+  papéis RLM. Avaliadores têm `role_id: null`, identidade explícita de ator e
+  `routing_role_id` como autoridade de política; o payload científico continua
+  pertencendo ao modelo e o protocolo ao LOOP (ADR-035). Receipts de
+  avaliador usam o contrato fechado 1.2.0; 1.0/1.1 e suas identidades legadas
+  permanecem byte-compatíveis. Replay durável não reinfere. Validação offline:
+  14 testes dedicados, 135 adjacentes, check M13 com 25 testes e regressão
+  completa com 465 testes, sem falhas, erros ou skips.
 - Atualizado em 2026-09-05.
 - M13 concluído na aceitação offline: 25 testes de sistema, 82 testes adjacentes
   de M9/M10/handoff e 445 testes na regressão completa passaram sem skips em
@@ -127,6 +129,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M12.5 | routing de inferência e integração de backends | concluído localmente e na CI | registry/router determinísticos, política hash-bound, autorização multi-target compatível, receipts write-once e backend loopback validado na matriz Python 3.11–3.13, sem bypass de M6 nem target pago implícito |
 | M12.5.1 | ligação end-to-end de execução dual — Phase A | concluído localmente | seleção Prime/Routed por departamento, ator de controle routed persistente, contexto mínimo hash-bound, privacidade fail-closed, teto monetário inteiro, saída científica durável e retomada sem reinferência; defaults disabled e nenhum smoke live |
 | M13 | testes de sistema e entrega | concluído | 25 testes offline cobrem A–T: ingestão até promoção/Pareto/rejeição, original imutável, cadeia auditável, veto, cegueira, replay, recuperação e auditoria independente; regressão de 445 testes sem skips |
+| M13.1 | identidade de avaliador para júri/meta routed | concluído localmente | identidade de avaliador separada dos 21 papéis RLM, autoridade explícita de routing, receipt 1.2.0 fechado e replay durável sem reinferência; 14 testes dedicados, 135 adjacentes, check M13 de 25 testes e regressão completa de 465 testes aprovados offline |
 
 ### Aceitação M13
 

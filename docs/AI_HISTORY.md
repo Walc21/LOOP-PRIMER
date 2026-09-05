@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `d935abdefc074d8bf3c6a6eaa9c67f0f0d51ca454592bc74a3d358e607f11879`
-- Registrado em: `2026-09-05T02:47:51Z`
-- Git: branch `m13-system-delivery`, HEAD `e9cb259b5325`
-- Arquivos relevantes: 203
+- Fingerprint das fontes: `954acc19950ddfe231af20e9534569f91156c9ba3dcf5728c1255d81abaf3062`
+- Registrado em: `2026-09-05T04:26:25Z`
+- Git: branch `m13-routed-jury-hardening`, HEAD `ac49084f1fe0`
+- Arquivos relevantes: 205
 
 ## Evolução reconstruída do versionamento
 
@@ -34,7 +34,8 @@
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 | M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
-| M13 | 2026-09-04 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
+| M13 | 2026-09-04..2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
+| M13.1 | 2026-09-05 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
 
 ### Commits exatos
 
@@ -146,9 +147,14 @@
 | `007edeee5` | 2026-09-04 | M12.5 | feat(m12.5.1): promote proven routed inference path | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/execution.py, .prime/agent/skills/article-loop/src/art… |
 | `b15526ef4` | 2026-09-04 | sem marco explícito | docs(ai): restore omitted security review session | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `e9cb259b5` | 2026-09-04 | M13 | feat(m13): prove offline system and delivery path | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
+| `13fefd702` | 2026-09-04 | M13 | chore(context): finalize M13 local handoff | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `3d298da4a` | 2026-09-05 | M13 | Merge pull request #2 from Walc21/m13-system-delivery |  |
+| `cadfafb88` | 2026-09-05 | M13.1 | wip(m13.1): preserve routed jury integration | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/i… |
+| `ac49084f1` | 2026-09-05 | M13.1 | feat(m13.1): separate evaluator inference identity | .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/inference.py, .prime/agent/skills/article-loop/src/article_loop/rout… |
 
 ## Decisões arquiteturais
 
+- ADR-035 — M13.1: julgamento routed com identidade de avaliador separada
 - ADR-034 — M13: aceitação offline e auditoria independente da entrega
 - ADR-001 — O repositório possui estado durável próprio
 - ADR-002 — Topologia lógica 1 + 5 + 15 e profundidade RLM 2
@@ -1450,3 +1456,49 @@
 **Próximos passos**
 
 - Revisar o checkpoint local. Publicação e validação live dependem de autorização separada.
+
+### 2026-09-05T04:26:25Z — M13.1 encerrado: identidade de avaliador routed foi separada dos 21 papeis RLM e a documentacao final foi reconciliada.
+
+- Session ID: `session-c26899f255e8b0ba8569`
+- Fingerprint final: `954acc19950ddfe231af20e9534569f91156c9ba3dcf5728c1255d81abaf3062`
+- Git final: `ac49084f1fe0`; status relevante: 3 item(ns)
+- Delta factual: 2 adicionados, 10 modificados, 0 removidos
+
+**Mudanças**
+
+- InferenceRequest e InferenceReceipt distinguem actor evaluator de routing_role_id; receipts de avaliador usam o contrato 1.2.0.
+- PLANS.md, ADR-035 e arquitetura registram compatibilidade legada, propriedade do protocolo pelo LOOP e replay duravel sem reinferencia.
+
+**Decisões**
+
+- routing_role_id e autoridade de politica, enquanto actor_id identifica juror ou meta-reviewer; avaliadores nao sao papeis canonicos.
+
+**Validações**
+
+- M13.1 14/14, regressao adjacente 135/135, check M13 25/25 offline e regressao completa 465/465 sem falhas, erros ou skips.
+- control.test_ai_handoff: 8 testes passaram; git diff --check passou.
+
+**Riscos/limites**
+
+- Configuracao, autorizacao e chamadas live permanecem ausentes; nenhuma chamada externa, de modelo ou paga ocorreu.
+
+**Próximos passos**
+
+- Revisar o commit final local antes de qualquer publicacao; push, merge e PR permanecem fora do escopo.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/src/article_loop/routed_evaluation.py` | `-` | `6e0534886bc9` |
+| added | `control/test_m131_routed_evaluation.py` | `-` | `3cf7058ec230` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `2aa366464002` | `aec1d2b67a19` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/budget.py` | `f4fc7767d6ba` | `1fa4c6dfc435` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/evaluation.py` | `8babd430c3b6` | `1c2da4a593f4` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference.py` | `ab4a01e90de4` | `7eb77ab24667` |
+| modified | `PLANS.md` | `9308c5ab2da1` | `04b1bef26303` |
+| modified | `config/schemas/inference-receipt.schema.json` | `76f33221f512` | `04326435eee4` |
+| modified | `control/m13_fixture.py` | `ae2eb464e2f7` | `da4d3cd326d8` |
+| modified | `control/test_m125_inference_routing.py` | `2a700ab8ead2` | `d8430f7f3acf` |
+| modified | `docs/architecture.md` | `95593b17c02d` | `a68d45758893` |
+| modified | `docs/decisions.md` | `ac0e6d647793` | `550ec38b4882` |
