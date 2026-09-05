@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766`
-- Registrado em: `2026-09-03T23:22:24Z`
-- Git: branch `main`, HEAD `e238b8891baa`
+- Fingerprint das fontes: `6312949b3a5dc49eb7a85f20f7dddf5b430c000a16b25b9e25be917cc663b8c7`
+- Registrado em: `2026-09-05T01:42:06Z`
+- Git: branch `m1251-promote-local`, HEAD `973d0d46e74f`
 - Arquivos relevantes: 197
 
 ## Evolução reconstruída do versionamento
@@ -33,7 +33,7 @@
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
-| M12.5 | 2026-09-03 | 7 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
+| M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
 
 ### Commits exatos
 
@@ -141,6 +141,8 @@
 | `90c1e27b7` | 2026-09-03 | M12.5 | docs(m12.5): record green CI validation | .prime/handoffs/12_5_para_13.md, AI_CONTEXT.md, PLANS.md, README.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl |
 | `ba316b50a` | 2026-09-03 | M12.5 | chore(context): refresh M12.5 CI snapshot | AI_CONTEXT.md |
 | `e238b8891` | 2026-09-03 | M12.5 | feat(m12.5.1): add dual execution phase A | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
+| `562cbbf28` | 2026-09-03 | M12.5 | chore(history): record M12.5.1 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `973d0d46e` | 2026-09-04 | M12.5 | feat(m12.5.1): promote proven routed inference path | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/execution.py, .prime/agent/skills/article-loop/src/art… |
 
 ## Decisões arquiteturais
 
@@ -1245,3 +1247,77 @@
 | modified | `PLANS.md` | `cfc7ee23f0f9` | `c5f7127e3b7d` |
 | modified | `control/test_contracts.py` | `00fa5c6c2444` | `aa3d80791b67` |
 | modified | `docs/decisions.md` | `5f708176ecd7` | `83b3f1f550c5` |
+
+### 2026-09-05T01:41:08Z — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.
+
+- Session ID: `session-3ec0ef358b1a25a76f99`
+- Fingerprint final: `6312949b3a5dc49eb7a85f20f7dddf5b430c000a16b25b9e25be917cc663b8c7`
+- Git final: `562cbbf28447`; status relevante: 10 item(ns)
+- Delta factual: 0 adicionados, 10 modificados, 0 removidos
+
+**Mudanças**
+
+- Promoted the final model-scientific-payload and LOOP-trusted-envelope composition with generic structured output and canonical downstream AgentProposal validation.
+- Excluded the B1 branch-bound live smoke harness from the promotion because it was not a reusable fail-closed diagnostic.
+- Updated PLANS.md and ADR-033 with the promoted ownership boundary and configuration limits.
+
+**Decisões**
+
+- Keep canonical AgentTask and AgentProposal schemas, M6 receipt identity validation, and inert budgets configuration unchanged.
+- Do not retain an alternate model-supplied identity-constant path or an implicit-live diagnostic harness.
+
+**Validações**
+
+- Focused tests passed: test_m125_inference_routing 36 tests with 1 loopback skip; test_m1251_dual_execution 14; test_m6_orchestration 43.
+- Full regression passed: python3 -m unittest discover -s control -q, 417 tests with 1 loopback skip.
+- py_compile, git diff --check, bin/check.sh, schema/config diff, and tracked-artifact scan passed.
+
+**Riscos/limites**
+
+- No live model, provider, network call, remote target, paid API, or M13 execution occurred; human configuration is still required for any future live smoke.
+
+**Próximos passos**
+
+- Review and merge this one promotion commit only after separate authorization; do not configure or execute inference.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.gitignore` | `1d23a95bcdb4` | `293dc90f4e63` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `36a0327810c3` | `186ba528897d` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/execution.py` | `6f8d86ccf803` | `c777f1e7d74f` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference.py` | `5cfc2e6cd444` | `ab4a01e90de4` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` | `395c005c5cb7` | `a538afb419e9` |
+| modified | `PLANS.md` | `c5f7127e3b7d` | `bf3ba60f6e1a` |
+| modified | `control/test_m1251_dual_execution.py` | `35ee4e9c290a` | `4a4206f336c4` |
+| modified | `control/test_m125_inference_routing.py` | `d6c8ab02fb27` | `2a700ab8ead2` |
+| modified | `control/test_m6_orchestration.py` | `748aab32dc74` | `c8a90dee0e45` |
+| modified | `docs/decisions.md` | `83b3f1f550c5` | `7c9ca1da4295` |
+
+### 2026-09-05T01:42:06Z — M12.5.1 clean promotion committed locally on m1251-promote-local.
+
+- Session ID: `session-f63fe2314358a393aae7`
+- Fingerprint final: `6312949b3a5dc49eb7a85f20f7dddf5b430c000a16b25b9e25be917cc663b8c7`
+- Git final: `973d0d46e74f`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Created the single clean promotion commit 973d0d46e74fc9a9110669fab86ff3a5e89bc43e from baseline 562cbbf.
+
+**Decisões**
+
+- Keep the promotion local only: no push, no merge to main, no live configuration.
+
+**Validações**
+
+- Post-commit working tree was clean; the committed candidate had already passed focused tests, full 417-test regression, py_compile, git diff --check, bin/check.sh, schema/config invariants, and artifact scan.
+
+**Riscos/limites**
+
+- Remote providers, paid inference, and live smoke remain disabled; M13 remains unstarted.
+
+**Próximos passos**
+
+- A separately authorized reviewer may inspect or merge the single promotion commit; do not run inference without explicit human configuration and authorization.

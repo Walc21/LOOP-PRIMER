@@ -9,6 +9,7 @@ and reconciliation.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 import fcntl
@@ -100,6 +101,43 @@ def routing_policy_hash(policy: Mapping[str, Any]) -> str:
     if not isinstance(policy, Mapping):
         raise InferenceConfigError("inference policy must be an object")
     return sha256(canonical_bytes(policy))
+
+
+def load_requested_output_schema(
+    root: str | Path, schema_name: str,
+) -> dict[str, Any]:
+    """Load one canonical project-local output schema, failing closed."""
+    if (
+        not isinstance(schema_name, str)
+        or not schema_name
+        or Path(schema_name).is_absolute()
+        or Path(schema_name).name != schema_name
+    ):
+        raise InferenceIntegrityError("requested output schema name is unsafe")
+    raw_root = Path(root)
+    schema_dir = raw_root / "config" / "schemas"
+    if schema_dir.is_symlink() or not schema_dir.is_dir():
+        raise InferenceIntegrityError("canonical schema directory is missing or unsafe")
+    canonical_dir = schema_dir.resolve()
+    candidate = schema_dir / schema_name
+    if candidate.is_symlink() or not candidate.is_file():
+        raise InferenceIntegrityError("requested output schema is missing or unsafe")
+    try:
+        resolved = candidate.resolve(strict=True)
+    except OSError as error:
+        raise InferenceIntegrityError("requested output schema is missing or unsafe") from error
+    if resolved.parent != canonical_dir:
+        raise InferenceIntegrityError("requested output schema escapes canonical directory")
+    try:
+        schema = json.loads(resolved.read_text(encoding="utf-8"))
+        if not isinstance(schema, dict):
+            raise InferenceIntegrityError("requested output schema must be an object")
+        if schema.get("$id") != schema_name:
+            raise InferenceIntegrityError("requested output schema identity differs from task contract")
+        jsonschema.Draft202012Validator.check_schema(schema)
+    except (OSError, json.JSONDecodeError, jsonschema.SchemaError) as error:
+        raise InferenceIntegrityError("requested output schema is malformed") from error
+    return schema
 
 
 def _now() -> str:
@@ -607,6 +645,162 @@ class InferenceRequest:
             self, attempt=self.attempt + 1, escalation_from=previous_route_hash,
             escalation_reason=reason_code,
         )
+
+
+# M6 compares role, cycle and base for AgentProposal receipts.  The other
+# fields below are also protocol-owned because they identify the canonical
+# contract or are deterministically derived by LOOP, never the model.
+_OUTPUT_IDENTITY_FIELDS = {
+    "agent-proposal.schema.json": (
+        ("role_id", "role_id"),
+        ("cycle_id", "cycle_id"),
+        ("base_hash", "base_hash"),
+        ("prompt_version", "prompt_version"),
+    ),
+    "department-packet.schema.json": (
+        ("run_id", "run_id"),
+        ("department_id", "role_id"),
+        ("cycle_id", "cycle_id"),
+        ("base_hash", "base_hash"),
+    ),
+}
+
+_AGENT_PROPOSAL_PROTOCOL_FIELDS = frozenset({
+    "schema_version", "proposal_id", "role_id", "cycle_id", "base_hash",
+    "prompt_version",
+})
+_AGENT_PROPOSAL_MODEL_FIELDS = frozenset({
+    "scope", "evidence_locators", "patch_or_operations", "affected_claims",
+    "dependencies", "risk", "confidence", "requested_validations",
+})
+
+
+def output_identity_values(request: InferenceRequest) -> dict[str, Any]:
+    """Return only the AgentTask-derived identity M6 already requires."""
+    try:
+        bindings = _OUTPUT_IDENTITY_FIELDS[request.requested_output_schema]
+    except KeyError as error:
+        raise InferenceIntegrityError("output schema has no closed identity binding") from error
+    return {field: getattr(request, request_field) for field, request_field in bindings}
+
+
+def agent_proposal_payload_schema(
+    canonical_schema: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Project canonical constraints onto model-owned scientific fields only."""
+    if not isinstance(canonical_schema, Mapping):
+        raise InferenceIntegrityError("canonical output schema must be an object")
+    if canonical_schema.get("$id") != "agent-proposal.schema.json":
+        raise InferenceIntegrityError("canonical AgentProposal schema identity differs")
+    def contains_reference(value: Any) -> bool:
+        if isinstance(value, Mapping):
+            return "$ref" in value or any(contains_reference(item) for item in value.values())
+        if isinstance(value, list):
+            return any(contains_reference(item) for item in value)
+        return False
+
+    if contains_reference(canonical_schema):
+        raise InferenceIntegrityError("canonical output schema contains unsupported reference")
+    schema = deepcopy(dict(canonical_schema))
+    properties = schema.get("properties")
+    required = schema.get("required")
+    if not isinstance(properties, dict) or not isinstance(required, list):
+        raise InferenceIntegrityError("canonical output schema properties are missing")
+    fields = set(properties)
+    if fields != _AGENT_PROPOSAL_PROTOCOL_FIELDS | _AGENT_PROPOSAL_MODEL_FIELDS:
+        raise InferenceIntegrityError("AgentProposal field ownership is incomplete")
+    if any(not isinstance(properties[field], dict) or "$ref" in properties[field]
+           for field in fields):
+        raise InferenceIntegrityError("AgentProposal property is unsafe")
+    if set(required) != fields or any(not isinstance(field, str) for field in required):
+        raise InferenceIntegrityError("AgentProposal required fields differ from ownership")
+    payload = {
+        "$schema": schema.get("$schema"),
+        "$id": "agent-proposal-payload.schema.json",
+        "title": "AgentProposalScientificPayload",
+        "type": "object",
+        "additionalProperties": False,
+        "required": sorted(_AGENT_PROPOSAL_MODEL_FIELDS),
+        "properties": {
+            field: deepcopy(properties[field])
+            for field in sorted(_AGENT_PROPOSAL_MODEL_FIELDS)
+        },
+    }
+    try:
+        jsonschema.Draft202012Validator.check_schema(payload)
+    except jsonschema.SchemaError as error:
+        raise InferenceIntegrityError("AgentProposal payload schema is malformed") from error
+    return payload
+
+
+def model_output_schema(root: str | Path, request: InferenceRequest) -> dict[str, Any]:
+    """Select the strict model contract without changing the final contract."""
+    canonical = load_requested_output_schema(root, request.requested_output_schema)
+    if request.requested_output_schema == "agent-proposal.schema.json":
+        return agent_proposal_payload_schema(canonical)
+    return canonical
+
+
+def trusted_protocol_envelope(
+    root: str | Path, request: InferenceRequest, payload: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Create the non-model portion of an AgentProposal deterministically."""
+    if request.requested_output_schema != "agent-proposal.schema.json":
+        raise InferenceIntegrityError("trusted AgentProposal envelope requires AgentProposal request")
+    if not isinstance(payload, Mapping) or set(payload) & _AGENT_PROPOSAL_PROTOCOL_FIELDS:
+        raise InferenceIntegrityError("model payload overlaps trusted protocol fields")
+    canonical = load_requested_output_schema(root, request.requested_output_schema)
+    schema_version = canonical.get("properties", {}).get("schema_version", {}).get("const")
+    if not isinstance(schema_version, str):
+        raise InferenceIntegrityError("canonical AgentProposal schema_version is unsafe")
+    proposal_id = "p-" + sha256(canonical_bytes({
+        "task_id": request.task_id,
+        "payload_sha256": sha256(canonical_bytes(payload)),
+    }))[:48]
+    return {
+        "schema_version": schema_version, "proposal_id": proposal_id,
+        "role_id": request.role_id, "cycle_id": request.cycle_id,
+        "base_hash": request.base_hash, "prompt_version": request.prompt_version,
+    }
+
+
+def compose_agent_proposal(
+    root: str | Path, request: InferenceRequest, payload: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate payload, compose trusted fields, then revalidate canonically."""
+    canonical = load_requested_output_schema(root, request.requested_output_schema)
+    if request.requested_output_schema != "agent-proposal.schema.json":
+        raise InferenceIntegrityError("AgentProposal composition requested for another schema")
+    if not isinstance(payload, Mapping):
+        raise InferenceOutputError("model payload must be an object")
+    try:
+        jsonschema.Draft202012Validator(
+            agent_proposal_payload_schema(canonical),
+            format_checker=jsonschema.FormatChecker(),
+        ).validate(payload)
+    except jsonschema.ValidationError as error:
+        raise InferenceOutputError("model payload violates scientific payload schema") from error
+    envelope = trusted_protocol_envelope(root, request, payload)
+    proposal = {**envelope, **deepcopy(dict(payload))}
+    try:
+        jsonschema.Draft202012Validator(
+            canonical, format_checker=jsonschema.FormatChecker(),
+        ).validate(proposal)
+    except jsonschema.ValidationError as error:
+        raise InferenceIntegrityError("composed AgentProposal violates canonical schema") from error
+    if not output_identity_matches(request, proposal):
+        raise InferenceIntegrityError("composed AgentProposal identity differs from AgentTask")
+    return proposal
+
+
+def output_identity_matches(request: InferenceRequest, document: Mapping[str, Any]) -> bool:
+    """Check model bytes against the same authority independently of decoding."""
+    if not isinstance(document, Mapping):
+        return False
+    return all(
+        canonical_bytes(document.get(field)) == canonical_bytes(expected)
+        for field, expected in output_identity_values(request).items()
+    )
 
 
 @dataclass(frozen=True)
@@ -1119,16 +1313,19 @@ class InferenceRuntime:
         return decision
 
     def _validated_document(self, request: InferenceRequest, response: str) -> dict[str, Any] | None:
-        schema_path = self.root / "config" / "schemas" / request.requested_output_schema
-        if schema_path.is_symlink() or not schema_path.is_file():
-            raise InferenceIntegrityError("requested output schema is missing or unsafe")
         try:
-            schema = json.loads(schema_path.read_text(encoding="utf-8"))
             value = json.loads(response)
-            jsonschema.Draft202012Validator(schema, format_checker=jsonschema.FormatChecker()).validate(value)
-        except (OSError, json.JSONDecodeError, jsonschema.ValidationError):
+            if request.requested_output_schema == "agent-proposal.schema.json":
+                return compose_agent_proposal(self.root, request, value)
+            schema = load_requested_output_schema(self.root, request.requested_output_schema)
+            jsonschema.Draft202012Validator(
+                schema, format_checker=jsonschema.FormatChecker(),
+            ).validate(value)
+        except (json.JSONDecodeError, jsonschema.ValidationError, InferenceOutputError):
             return None
-        return value if isinstance(value, dict) else None
+        if not isinstance(value, dict) or not output_identity_matches(request, value):
+            return None
+        return value
 
     def _validate_response_schema(self, request: InferenceRequest, response: str) -> bool:
         return self._validated_document(request, response) is not None
@@ -1198,6 +1395,10 @@ class InferenceRuntime:
             reconciled = self._reconcile_receipt(existing)
             return {"decision": persisted_route, "result": None, "receipt": existing, "reconciled": reconciled, "replayed": True}
         target = self.registry.target(str(decision.target_id))
+        if "structured_output" in target.capabilities:
+            # Validate the exact project-local schema before reserve/admit so
+            # an unsafe generation contract can never consume a backend call.
+            model_output_schema(self.root, request)
         if not target.local and request.context_hash is None:
             raise InferenceRoutingError("remote routing requires a hash-bound materialized context")
         if target.paid and (

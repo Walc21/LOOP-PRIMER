@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766`
-- Baseline da última sessão: `8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766`
+- Fingerprint atual das fontes: `6312949b3a5dc49eb7a85f20f7dddf5b430c000a16b25b9e25be917cc663b8c7`
+- Baseline da última sessão: `6312949b3a5dc49eb7a85f20f7dddf5b430c000a16b25b9e25be917cc663b8c7`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 197 arquivos relevantes, 1565551 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 197 arquivos relevantes, 1588814 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -54,7 +54,7 @@ Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem n
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (94921 bytes; SHA-256 `02273b6ef6d37097`).
+- Fonte lida: `docs/AI_HISTORY.md` (99183 bytes; SHA-256 `e5550bb7f65ba865`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -77,24 +77,24 @@ Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem n
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
-| M12.5 | 2026-09-03 | 7 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
+| M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
 
-- Sessões estruturadas registradas: 26.
-- Índice recente: 2026-09-03T19:09:00Z — Avaliação diagnóstica do estado atual após a publicação do M12: integridade local e regressão completa aprovadas, branc…; 2026-09-03T20:22:56Z — M12.5 implementado como camada aditiva de routing de inferência governada pelo BudgetLedger M12, sem alterar M6 e sem i…; 2026-09-03T20:28:25Z — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e se…; 2026-09-03T21:27:30Z — Corrigiu a falha da CI M12.5 causada por conexão HTTP fechada sem resposta, publicou a correção e confirmou a matriz Gi…; 2026-09-03T22:46:53Z — M12.5.1 Phase A implementada e validada localmente como ligação dual end-to-end por departamento, com contexto autoriza…; 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prom…; 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.; 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato execu…. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 28.
+- Índice recente: 2026-09-03T20:28:25Z — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e se…; 2026-09-03T21:27:30Z — Corrigiu a falha da CI M12.5 causada por conexão HTTP fechada sem resposta, publicou a correção e confirmou a matriz Gi…; 2026-09-03T22:46:53Z — M12.5.1 Phase A implementada e validada localmente como ligação dual end-to-end por departamento, com contexto autoriza…; 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prom…; 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.; 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato execu…; 2026-09-05T01:41:08Z — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.; 2026-09-05T01:42:06Z — M12.5.1 clean promotion committed locally on m1251-promote-local.. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-6cd6a464487f4b67221c` — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.
-  - mudanças: Workflow CI renomeado para M0-M12.5.1 e passou a executar sintaxe shell e bin/check.sh antes da regressão descoberta automaticamente.
-  - decisões: Preservar a matriz Python 3.11, 3.12 e 3.13 e o unittest discover completo; testes M12.5.1 permanecem offline e o backend remoto é mockado.
-  - validações: YAML do workflow foi carregado por PyYAML; bash -n, bin/check.sh e git diff --check passaram.
-  - riscos: O workflow atualizado não foi disparado no GitHub nesta sessão; validação de CI remota ocorrerá somente após publicação futura.
-  - próximos: Ao publicar futuramente, observar os três jobs 3.11-3.13 sem habilitar modelo, API ou target.
-- `session-709c7c983dca0c4e1fcc` — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato executável de bin/check.sh e validação local/remota integral.
-  - mudanças: Commit e238b88 (feat(m12.5.1): add dual execution phase A) publicou os 28 arquivos de implementação, contratos, testes, documentação e handoff em origin/main.; O teste de scaffold passou a exigir bin/check.sh executável, preservando bin/start-prime.sh não executável e bin/preflight.sh executável, conforme a invocação literal da Phase A e da CI.
-  - decisões: Publicar somente por push normal fast-forward, sem force-push ou reescrita; manter execução, modelos, targets remotos e APIs pagas desabilitados.
-  - validações: git fetch --prune origin e git rev-list --left-right --count HEAD...origin/main confirmaram alinhamento 0 0 antes da publicação.; python3 -m unittest discover -s control -p test_*.py -q passou com 410 testes e 1 skip em 255.130 s após a correção contratual.; py_compile dos Python alterados, git diff --check, bash -n bin/check.sh bin/start-prime.sh, bin/check.sh e varredura de padrões óbvios de credenciais passaram.; GitHub Actions run 33816899914 concluiu com sucesso a matriz Python 3.11, 3.12 …
-  - riscos: Configuração humana, endpoints, modelos, preços, credencial via ambiente e autorização live continuam ausentes; configuration_ready e live_ready permanecem false.
-  - próximos: Preencher .prime/handoffs/12_5_1_human_configuration.md em uma fase humana posterior antes de qualquer smoke live; M13 permanece não iniciado.
+- `session-3ec0ef358b1a25a76f99` — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.
+  - mudanças: Promoted the final model-scientific-payload and LOOP-trusted-envelope composition with generic structured output and canonical downstream AgentProposal validation.; Excluded the B1 branch-bound live smoke harness from the promotion because it was not a reusable fail-closed diagnostic.; Updated PLANS.md and ADR-033 with the promoted ownership boundary and configuration limits.
+  - decisões: Keep canonical AgentTask and AgentProposal schemas, M6 receipt identity validation, and inert budgets configuration unchanged.; Do not retain an alternate model-supplied identity-constant path or an implicit-live diagnostic harness.
+  - validações: Focused tests passed: test_m125_inference_routing 36 tests with 1 loopback skip; test_m1251_dual_execution 14; test_m6_orchestration 43.; Full regression passed: python3 -m unittest discover -s control -q, 417 tests with 1 loopback skip.; py_compile, git diff --check, bin/check.sh, schema/config diff, and tracked-artifact scan passed.
+  - riscos: No live model, provider, network call, remote target, paid API, or M13 execution occurred; human configuration is still required for any future live smoke.
+  - próximos: Review and merge this one promotion commit only after separate authorization; do not configure or execute inference.
+- `session-f63fe2314358a393aae7` — M12.5.1 clean promotion committed locally on m1251-promote-local.
+  - mudanças: Created the single clean promotion commit 973d0d46e74fc9a9110669fab86ff3a5e89bc43e from baseline 562cbbf.
+  - decisões: Keep the promotion local only: no push, no merge to main, no live configuration.
+  - validações: Post-commit working tree was clean; the committed candidate had already passed focused tests, full 417-test regression, py_compile, git diff --check, bin/check.sh, schema/config invariants, and artifact scan.
+  - riscos: Remote providers, paid inference, and live smoke remain disabled; M13 remains unstarted.
+  - próximos: A separately authorized reviewer may inspect or merge the single promotion commit; do not run inference without explicit human configuration and authorization.
 
 ## Marcos planejados
 
@@ -157,7 +157,7 @@ Detalhe das duas sessões mais recentes:
 - `.prime/agent/skills/article-loop/src/article_loop/execution.py` — módulo ainda não classificado; examine antes de usar. API/símbolos: class ExecutionError; class ExecutionPolicy [from_mapping, from_project, layer]; class ContextItem [public]; class MaterializedContext [prompt_fragment]; class ContextMaterializer [materialize, enforce_remote_policy]; class RoutedControlAdapter [spawn, list_subagents, send_parent, delete_subagent, preflight, for_child]; class DualExecutionAdapter [spawn, list_subagents, delete_subagent, preflight, department_adapter]; class DualExecutionController [execute_routed_department]; execution_readiness()
 - `.prime/agent/skills/article-loop/src/article_loop/finalization.py` — finalizador M10 com lock, journal, fsync, CAS e receipt imutável. API/símbolos: class FinalizationError; class TransactionalFinalizer [finalize]; finalize_decision()
 - `.prime/agent/skills/article-loop/src/article_loop/gates.py` — 13 verificadores locais, evidência matemática e GateReport canônico. API/símbolos: record_math_verification(); verify_gate_report(); run_gates(); compare()
-- `.prime/agent/skills/article-loop/src/article_loop/inference.py` — registry/router M12.5, runtime transacional e rotas/receipts write-once. API/símbolos: class InferenceError; class InferenceConfigError; class InferenceRoutingError; class InferenceIntegrityError; class InferenceBackendError; class InferenceOutputError; canonical_bytes(); sha256(); routing_policy_hash(); class TargetPricing [cost]; class InferenceTarget [public]; class ModelRegistry [from_project, validate_enabled_policy, target, status]; class InferenceRequest [from_agent_task, identity, request_hash, escalated]; class RouteDecision [identity, decision_hash]; class ModelRouter [route]; class InferenceResult; class InferenceBackend [preflight, complete]; class InferenceReceipt …
+- `.prime/agent/skills/article-loop/src/article_loop/inference.py` — registry/router M12.5, runtime transacional e rotas/receipts write-once. API/símbolos: class InferenceError; class InferenceConfigError; class InferenceRoutingError; class InferenceIntegrityError; class InferenceBackendError; class InferenceOutputError; canonical_bytes(); sha256(); routing_policy_hash(); load_requested_output_schema(); class TargetPricing [cost]; class InferenceTarget [public]; class ModelRegistry [from_project, validate_enabled_policy, target, status]; class InferenceRequest [from_agent_task, identity, request_hash, escalated]; output_identity_values(); agent_proposal_payload_schema(); model_output_schema(); trusted_protocol_envelope(); compose_agent_proposal(…
 - `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` — backends fake explícito e OpenAI-compatible restrito a loopback. API/símbolos: class FakeInferenceBackend [preflight, complete]; class LocalOpenAICompatibleBackend [preflight, complete]; class RemoteOpenAICompatibleBackend [preflight]
 - `.prime/agent/skills/article-loop/src/article_loop/ingestion.py` — congelamento de PDF/ZIP, derivados e publicação do baseline v0000. API/símbolos: class IngestionError; class SourceReadyError; ingest()
 - `.prime/agent/skills/article-loop/src/article_loop/observability.py` — módulo ainda não classificado; examine antes de usar. API/símbolos: class ObservabilityError; redact_payload(); class StructuredLogger [path, lock_path, read_events, emit, status]
@@ -217,7 +217,7 @@ Detalhe das duas sessões mais recentes:
 
 ## Cobertura estrutural de testes
 
-Total detectado por AST: **413 testes**.
+Total detectado por AST: **420 testes**.
 
 | Arquivo | Testes | Amostra de fronteiras cobertas |
 |---|---:|---|
@@ -226,7 +226,7 @@ Total detectado por AST: **413 testes**.
 | `test_m10_policy_finalization.py` | 24 | all policy rows and actions are closed; hard math gate and extra judgment limit have precedence; global plateau can finalize only with final gate evidence; pareto dominated candid… |
 | `test_m11_commands.py` | 16 | exact flat template discovery and frontmatter; append system is additive and has m11 guardrails; project settings are not invented; check reports safe local defaults; check report… |
 | `test_m1251_dual_execution.py` | 14 | project defaults distinguish implementation configuration and live; materializer is closed hash bound and does not load pdf; materializer rejects traversal symlink unlisted locato… |
-| `test_m125_inference_routing.py` | 32 | project defaults are fail closed; disabled inference never calls backend; unknown target role duplicate and fallback cycle are rejected; duplicate target key in yaml is rejected b… |
+| `test_m125_inference_routing.py` | 39 | project defaults are fail closed; disabled inference never calls backend; unknown target role duplicate and fallback cycle are rejected; duplicate target key in yaml is rejected b… |
 | `test_m12_budget_observability.py` | 20 | reserve admit reconcile is hash bound and reported; two reservations race cannot spend last balance twice; usage absent becomes uncertain and keeps reservation; release requires p… |
 | `test_m2_durable_state.py` | 30 | all valid transitions; all invalid transitions; full event log replay and snapshot reconstruction; duplicate event id and idempotency conflict; partially written file and truncate… |
 | `test_m3_ingestion.py` | 22 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash di… |
@@ -316,7 +316,7 @@ O runtime de inferência não finge ser um filho RLM nem substitui M6.
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
 - Total: 197 arquivos; runtime=18, text=179.
-- Fingerprint canônico: `8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766`.
+- Fingerprint canônico: `6312949b3a5dc49eb7a85f20f7dddf5b430c000a16b25b9e25be917cc663b8c7`.
 
 ## Roteamento para aprofundamento
 

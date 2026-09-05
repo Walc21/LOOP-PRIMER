@@ -132,6 +132,8 @@ class M6OrchestrationTests(unittest.TestCase):
         self.cycle(); self.admit_workers("S10"); out, digest = self.write_proposal("W11")
         changed = self.proposal("W11"); changed["cycle_id"] = 9; out.write_text(json.dumps(changed)); digest = hashlib.sha256(out.read_bytes()).hexdigest()
         with self.assertRaises(OrchestrationError): asyncio.run(self.o.receipt(self.run, sender_role="W11", parent_role="S10", path=out, sha256=digest))
+        changed = self.proposal("W11"); changed["base_hash"] = "b" * 64; out.write_text(json.dumps(changed)); digest = hashlib.sha256(out.read_bytes()).hexdigest()
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.receipt(self.run, sender_role="W11", parent_role="S10", path=out, sha256=digest))
         out.unlink(); out.symlink_to(self.pdf)
         with self.assertRaises(OrchestrationError): asyncio.run(self.o.receipt(self.run, sender_role="W11", parent_role="S10", path=out, sha256="0" * 64))
 

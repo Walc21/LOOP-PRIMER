@@ -49,7 +49,10 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 - M12.5.1 Phase A concluída localmente sobre o checkpoint inicial `ba316b5`:
   execução dual por departamento converge no contrato M6, contexto autorizado
   é materializado e hash-bound, saída científica precede o receipt, privacidade
-  é vinculada ao run e o ledger impõe teto inteiro de USD 10. A configuração
+  é vinculada ao run e o ledger impõe teto inteiro de USD 10. A promoção limpa
+  mantém o modelo restrito ao payload científico e o LOOP como único emissor do
+  envelope de protocolo/identidade antes da validação canônica; o W41 foi
+  aceito por M6 e o S40 consolidado no caminho local comprovado. A configuração
   final permanece desabilitada, sem targets, rotas, modelos ou credenciais;
   configuração humana e qualquer smoke live continuam fora desta fase.
 - Ferramentas auxiliares de handoff para IA concluídas: um gerador local de

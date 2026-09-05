@@ -43,7 +43,9 @@ from .inference import (
     InferenceIntegrityError, InferenceOutputError, InferenceReceipt,
     InferenceRequest, InferenceResult, InferenceRuntime, InferenceStore,
     InferenceTarget, ModelRegistry, ModelRouter, RouteDecision,
-    TargetPricing, inference_preflight, routing_policy_hash,
+    TargetPricing, agent_proposal_payload_schema, compose_agent_proposal,
+    inference_preflight, model_output_schema, output_identity_matches,
+    output_identity_values, routing_policy_hash, trusted_protocol_envelope,
 )
 from .inference_backends import FakeInferenceBackend, LocalOpenAICompatibleBackend, RemoteOpenAICompatibleBackend
 from .execution import (
@@ -92,7 +94,9 @@ __all__ = [
     "DualExecutionController", "ExecutionError", "ExecutionPolicy",
     "MaterializedContext", "RoutedControlAdapter", "execution_readiness",
     "inference_preflight",
-    "routing_policy_hash",
+    "agent_proposal_payload_schema", "compose_agent_proposal",
+    "model_output_schema", "output_identity_matches", "output_identity_values",
+    "routing_policy_hash", "trusted_protocol_envelope",
     "check_inversion_consistency", "classify_cycle_progress", "compare",
     "choose_action", "compile_manager_prompt", "compile_prompt", "decide", "diagnose_cycle",
     "evaluate_candidate", "expected_prompt_version", "finalize", "finalize_decision",

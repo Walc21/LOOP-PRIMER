@@ -31,10 +31,10 @@
       "sha256": "61350e140d71435bf8cc84acbec9fab01cfca8a10ec0f348f969cae6de9a98e8"
     },
     ".gitignore": {
-      "bytes": 983,
+      "bytes": 1089,
       "kind": "text",
-      "lines": 59,
-      "sha256": "1d23a95bcdb4dfb2b33fc2581d598f04bf439a996393f98df061a5fe39baa6cf"
+      "lines": 63,
+      "sha256": "293dc90f4e63ba972439af7a30c5e1d48045c96f9527bd878aed8732ea4875a8"
     },
     ".prime/agent/APPEND_SYSTEM.md": {
       "bytes": 1563,
@@ -115,10 +115,10 @@
       "sha256": "3a6e28296b26a6724897df658b0eba77add92e9f10bc228644f48f1d89d12bf3"
     },
     ".prime/agent/skills/article-loop/src/article_loop/__init__.py": {
-      "bytes": 6002,
+      "bytes": 6334,
       "kind": "text",
-      "lines": 104,
-      "sha256": "36a0327810c3429b6a53b65ec4ec4ab84d4e6ea6952c246404e4ef9e1daa936f"
+      "lines": 108,
+      "sha256": "186ba528897df69d743d27cac8203c8d12625901933791f78f7f79481ee2db12"
     },
     ".prime/agent/skills/article-loop/src/article_loop/activation.py": {
       "bytes": 11504,
@@ -157,10 +157,10 @@
       "sha256": "8babd430c3b629abf9c37e4551743c9997526c3e56d827ad4822a3c1c333bda5"
     },
     ".prime/agent/skills/article-loop/src/article_loop/execution.py": {
-      "bytes": 28440,
+      "bytes": 28951,
       "kind": "text",
-      "lines": 595,
-      "sha256": "6f8d86ccf803c2e9e572bd1226081b79f8f8af4ee3240aa9e9f83bc08e3455fd"
+      "lines": 603,
+      "sha256": "c777f1e7d74f40278ff18b34695dd009c188de81fe50ee20167509c08f350ee5"
     },
     ".prime/agent/skills/article-loop/src/article_loop/finalization.py": {
       "bytes": 29899,
@@ -175,16 +175,16 @@
       "sha256": "0f7376d992db558f17460b08c2d501cb84ed7b2479938bcf37ef06c917010bac"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference.py": {
-      "bytes": 70929,
+      "bytes": 80473,
       "kind": "text",
-      "lines": 1401,
-      "sha256": "5cfc2e6cd4442e97abff5a615c65447d4f18bc54d715072bee1855ec46ee609f"
+      "lines": 1602,
+      "sha256": "ab4a01e90de4ac1a0991715594637753e5f572714f0c8d9f5ac72d8d495b5e55"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference_backends.py": {
-      "bytes": 9498,
+      "bytes": 11300,
       "kind": "text",
-      "lines": 181,
-      "sha256": "395c005c5cb7b5c371187cfada7d3a4228fa4ea341a95db1c7237b007a506492"
+      "lines": 226,
+      "sha256": "a538afb419e91decacd1f84fff2e7ecb8b4516229160f4ff77739b32a1532abf"
     },
     ".prime/agent/skills/article-loop/src/article_loop/ingestion.py": {
       "bytes": 31068,
@@ -349,10 +349,10 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 51071,
+      "bytes": 51315,
       "kind": "text",
-      "lines": 709,
-      "sha256": "c5f7127e3b7d8587a599b30cdd88c1f7f12280f8fc1c8703f0775749c08d20a3"
+      "lines": 712,
+      "sha256": "bf3ba60f6e1ae8f36a7e3a044870800bab94109eef88452224ea2cdfb9db79dc"
     },
     "README.md": {
       "bytes": 18273,
@@ -769,16 +769,16 @@
       "sha256": "bccd8c0c21656776d3681dfcc2224e6376d83804f021218c417785c7db79f6bd"
     },
     "control/test_m1251_dual_execution.py": {
-      "bytes": 26443,
+      "bytes": 26885,
       "kind": "text",
-      "lines": 524,
-      "sha256": "35ee4e9c290acf994e95c482e7ea335e113b46319a4f9b8bae4baf480a247ee3"
+      "lines": 537,
+      "sha256": "4a4206f336c4c1aaaaafecbbba9d7598813009de9e775407131e94e9c8311a56"
     },
     "control/test_m125_inference_routing.py": {
-      "bytes": 32373,
+      "bytes": 41341,
       "kind": "text",
-      "lines": 681,
-      "sha256": "d6c8ab02fb272e3de1c2a10bcef84270c054941e8a652deeaec500a56af1baf0"
+      "lines": 869,
+      "sha256": "2a700ab8ead281cfb0202766ba8335d86c761207f7b62c53660c09cad58f3f4e"
     },
     "control/test_m12_budget_observability.py": {
       "bytes": 16029,
@@ -811,10 +811,10 @@
       "sha256": "318f74718d236119a551707012d2451c1a18bf7b002f083038968aae5e98f027"
     },
     "control/test_m6_orchestration.py": {
-      "bytes": 38765,
+      "bytes": 39082,
       "kind": "text",
-      "lines": 508,
-      "sha256": "748aab32dc741ab200a6e900d45b431a3bc0be8d3f376694a81c9451db7b6018"
+      "lines": 510,
+      "sha256": "c8a90dee0e451b4f7893532b2ff28b43f9caad291c9e7cf7919aa83e740dd43f"
     },
     "control/test_m7_synthesis_gates.py": {
       "bytes": 23980,
@@ -847,10 +847,10 @@
       "sha256": "be929550d830cb3203e13cbde156a8f5fe73e904a6145c7c9a2b346b9c17ced8"
     },
     "docs/decisions.md": {
-      "bytes": 71470,
+      "bytes": 72467,
       "kind": "text",
-      "lines": 1217,
-      "sha256": "83b3f1f550c584eaba7c436fdf0b64f62b10389cc2af6a504abfe5c97a33103f"
+      "lines": 1232,
+      "sha256": "7c9ca1da429597697c5a374b9325d3a2d563cd4f8362907d254962a3f9040b04"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -1183,14 +1183,14 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "8126b4d30eb36acca6affdaa8c270321c31ba9c2c75ba77befd116ed0340f766",
+  "fingerprint": "6312949b3a5dc49eb7a85f20f7dddf5b430c000a16b25b9e25be917cc663b8c7",
   "git": {
     "available": true,
-    "branch": "main",
-    "head": "e238b8891baad2bab18126691a6d24df899a377a",
+    "branch": "m1251-promote-local",
+    "head": "973d0d46e74fc9a9110669fab86ff3a5e89bc43e",
     "status": []
   },
-  "recorded_at": "2026-09-03T23:22:24Z",
+  "recorded_at": "2026-09-05T01:42:06Z",
   "schema_version": "1.0.0",
-  "session_id": "session-709c7c983dca0c4e1fcc"
+  "session_id": "session-f63fe2314358a393aae7"
 }

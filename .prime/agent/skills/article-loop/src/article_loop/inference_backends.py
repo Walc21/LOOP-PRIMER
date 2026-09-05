@@ -8,15 +8,18 @@ import math
 import os
 import socket
 import time
+from pathlib import Path
 from typing import Any, Mapping
 import urllib.error
 import urllib.request
 
 from .inference import (
     InferenceBackendError,
+    InferenceIntegrityError,
     InferenceRequest,
     InferenceResult,
     InferenceTarget,
+    model_output_schema,
 )
 
 
@@ -63,10 +66,14 @@ class LocalOpenAICompatibleBackend:
 
     is_test_double = False
 
-    def __init__(self, *, max_response_bytes: int = 1_048_576):
+    def __init__(
+        self, *, project_root: str | Path | None = None,
+        max_response_bytes: int = 1_048_576,
+    ):
         if type(max_response_bytes) is not int or max_response_bytes < 1024:
             raise ValueError("max_response_bytes must be an integer >= 1024")
         self.max_response_bytes = max_response_bytes
+        self.project_root = None if project_root is None else Path(project_root).resolve()
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
     def preflight(self, target: InferenceTarget) -> Mapping[str, Any]:
@@ -90,12 +97,50 @@ class LocalOpenAICompatibleBackend:
         self.preflight(target)
         if len(request.prompt.encode("utf-8")) > max(4096, target.context_limit * 16):
             raise InferenceBackendError("BACKEND_FAILURE", "prompt exceeds the target request bound", sent=False)
-        body = json.dumps({
+        request_body: dict[str, Any] = {
             "model": target.model,
             "messages": [{"role": "user", "content": request.prompt}],
             "max_tokens": min(request.max_output_tokens, target.max_output_tokens),
             "stream": False,
-        }, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        }
+        if "structured_output" in target.capabilities:
+            if self.project_root is None:
+                raise InferenceBackendError(
+                    "BACKEND_FAILURE",
+                    "structured output requires an explicit project root",
+                    sent=False,
+                )
+            try:
+                schema = model_output_schema(self.project_root, request)
+            except InferenceIntegrityError as error:
+                raise InferenceBackendError(
+                    "BACKEND_FAILURE", "structured output schema is unavailable or unsafe",
+                    sent=False,
+                ) from error
+            suffix = ".schema.json"
+            raw_name = request.requested_output_schema
+            schema_name = (
+                raw_name[:-len(suffix)] if raw_name.endswith(suffix)
+                else Path(raw_name).stem
+            ).replace("-", "_")
+            request_body["temperature"] = 0
+            request_body["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "strict": True,
+                    "schema": schema,
+                },
+            }
+        elif "structured_output" in request.required_capabilities:
+            raise InferenceBackendError(
+                "ROUTE_CAPABILITY_INSUFFICIENT",
+                "target does not support the requested structured output",
+                sent=False,
+            )
+        body = json.dumps(
+            request_body, ensure_ascii=False, separators=(",", ":"),
+        ).encode("utf-8")
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         if target.api_key_env is not None:
             secret = os.environ.get(target.api_key_env)

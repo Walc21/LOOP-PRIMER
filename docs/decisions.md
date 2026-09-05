@@ -1206,6 +1206,15 @@ seleção de modelo por filho.
    CI o invocam diretamente. O contrato de scaffold distinguirá esse check
    local de `bin/start-prime.sh`, que permanece não executável e só deve ser
    iniciado de forma explícita pelo operador.
+10. Na promoção limpa do caminho local comprovado, o modelo emitirá somente os
+    oito campos científicos do `AgentProposal`. O LOOP carregará o schema local
+    de forma contida, projetará esse contrato estrito para structured output,
+    validará o payload sem campos extras e comporá, sem mutá-lo, o envelope
+    confiável (`schema_version`, `proposal_id`, `role_id`, `cycle_id`,
+    `base_hash`, `prompt_version`) derivado da `AgentTask` validada. A proposta
+    composta será então revalidada pelo schema canônico e pela identidade M6;
+    não haverá caminho alternativo que aceite constantes de identidade vindas
+    do modelo.
 
 ### Consequências e limites
 
@@ -1215,3 +1224,9 @@ científico. Nenhuma API nova do Prime é inventada, nenhum segredo é lido, e o
 inalterados. Configuração humana e smoke live ficam explicitamente posteriores
 e exigirão autorização própria, provider/modelo, preço, endpoint local ou
 remoto, rotas, credencial via ambiente e orçamento confirmados pelo usuário.
+
+O harness B1 que realizou a prova local não integra a promoção: era vinculado
+à branch experimental e permitia executar uma chamada local por invocação. A
+evidência histórica permanece fora da árvore promovida; qualquer diagnóstico
+futuro deverá ser construído com autorização live explícita e configuração
+local não rastreada.

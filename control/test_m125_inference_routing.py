@@ -13,8 +13,11 @@ import sys
 import tempfile
 import threading
 import time
+from types import SimpleNamespace
 import unittest
 import urllib.error
+
+import jsonschema
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,6 +48,13 @@ from article_loop.inference import (  # noqa: E402
     ModelRegistry,
     ModelRouter,
     PRIME_PER_CHILD_MODEL_SELECTION,
+    agent_proposal_payload_schema,
+    compose_agent_proposal,
+    load_requested_output_schema,
+    model_output_schema,
+    output_identity_matches,
+    output_identity_values,
+    trusted_protocol_envelope,
 )
 from article_loop.inference_backends import (  # noqa: E402
     FakeInferenceBackend,
@@ -57,6 +67,7 @@ def target(
     paid: bool = False, tier: str = "mid", group: str | None = None,
     endpoint: str | None = None, enabled: bool = True,
     fallback_target: str | None = None,
+    capabilities: list[str] | None = None,
 ) -> dict:
     return {
         "target_id": target_id,
@@ -67,7 +78,7 @@ def target(
         "local": local,
         "paid": paid,
         "tier": tier,
-        "capabilities": ["language", "structured_output", "math_high_assurance"],
+        "capabilities": capabilities or ["language", "structured_output", "math_high_assurance"],
         "context_limit": 8192,
         "max_output_tokens": 2048,
         "independence_group": group or "group-" + target_id,
@@ -111,6 +122,16 @@ def proposal() -> dict:
     }
 
 
+def scientific_payload() -> dict:
+    value = proposal()
+    for field in (
+        "schema_version", "proposal_id", "role_id", "cycle_id", "base_hash",
+        "prompt_version",
+    ):
+        del value[field]
+    return value
+
+
 class M125Base(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -135,10 +156,15 @@ class M125Base(unittest.TestCase):
             "prompt_version": "test", "constraints": ["receipt_only"],
         }
 
-    def request(self, mode: str = "RUN", **kwargs) -> InferenceRequest:
+    def request(
+        self, mode: str = "RUN", *, capabilities=None, **kwargs,
+    ) -> InferenceRequest:
         return InferenceRequest.from_agent_task(
             self.root, self.task(mode), prompt="review the bounded fixture",
-            required_capabilities=["language", "structured_output"],
+            required_capabilities=(
+                ["language", "structured_output"]
+                if capabilities is None else capabilities
+            ),
             estimate_tokens=20, max_output_tokens=100, **kwargs,
         )
 
@@ -326,7 +352,7 @@ class M125BudgetCompatibilityTests(M125Base):
 
     def test_changed_run_binding_fails_and_selected_model_is_accounted(self):
         route_policy = policy(target("small"))
-        backend = FakeInferenceBackend(result=InferenceResult(json.dumps(proposal()), 3, 4, 1, True, wall_time_seconds=1, finish_reason="stop"))
+        backend = FakeInferenceBackend(result=InferenceResult(json.dumps(scientific_payload()), 3, 4, 1, True, wall_time_seconds=1, finish_reason="stop"))
         runtime = self.runtime(route_policy, backend)
         runtime.execute(self.request(), allow_test_doubles=True)
         self.assertEqual(runtime.ledger.status()["usage_by_limit"]["per_model_tokens"]["model-small"]["confirmed"], 8)
@@ -360,7 +386,7 @@ class M125TransactionTests(M125Base):
                 route_files = list((self.root / "state/inference/run-1/routes").glob("*.json"))
                 reservations = ledger.status()["reservations"]
                 seen.update(route=bool(route_files), status=reservations[0]["status"])
-                return InferenceResult(json.dumps(proposal()), 2, 2, 0, True, wall_time_seconds=1, finish_reason="stop")
+                return InferenceResult(json.dumps(scientific_payload()), 2, 2, 0, True, wall_time_seconds=1, finish_reason="stop")
 
         runtime = InferenceRuntime(self.root, ledger, registry, {"fake": OrderedBackend()}, clock=self.clock)
         outcome = runtime.execute(self.request(), allow_test_doubles=True)
@@ -370,7 +396,7 @@ class M125TransactionTests(M125Base):
 
     def test_crash_after_receipt_recovers_without_second_backend_call(self):
         route_policy = policy(target("recover"))
-        backend = FakeInferenceBackend(result=InferenceResult(json.dumps(proposal()), 2, 2, 0, True, wall_time_seconds=1, finish_reason="stop"))
+        backend = FakeInferenceBackend(result=InferenceResult(json.dumps(scientific_payload()), 2, 2, 0, True, wall_time_seconds=1, finish_reason="stop"))
         raised = False
 
         def fault(stage):
@@ -427,7 +453,7 @@ class M125TransactionTests(M125Base):
 
     def test_duplicate_call_is_idempotent_and_conflicting_receipt_rejected(self):
         route_policy = policy(target("repeat"))
-        backend = FakeInferenceBackend(result=InferenceResult(json.dumps(proposal()), 1, 1, 0, True, wall_time_seconds=1, finish_reason="stop"))
+        backend = FakeInferenceBackend(result=InferenceResult(json.dumps(scientific_payload()), 1, 1, 0, True, wall_time_seconds=1, finish_reason="stop"))
         runtime = self.runtime(route_policy, backend)
         first = runtime.execute(self.request(), allow_test_doubles=True)
         second = runtime.execute(self.request(), allow_test_doubles=True)
@@ -470,7 +496,7 @@ class M125TransactionTests(M125Base):
     def test_receipt_and_logs_never_persist_prompt_or_scientific_output(self):
         route_policy = policy(target("redacted"))
         sensitive_prompt = "PROMPT-SHOULD-NOT-PERSIST"
-        response = proposal()
+        response = scientific_payload()
         response["patch_or_operations"]["operations"][0]["value"] = "RESPONSE-SHOULD-NOT-PERSIST"
         backend = FakeInferenceBackend(result=InferenceResult(json.dumps(response), 1, 1, 0, True, wall_time_seconds=1, finish_reason="stop"))
         runtime = self.runtime(route_policy, backend)
@@ -496,6 +522,86 @@ class M125TransactionTests(M125Base):
         (self.root / "state/inference").symlink_to(outside)
         with self.assertRaises(InferenceIntegrityError):
             InferenceStore(self.root, "run-1")
+
+
+class M125SchemaIdentityBindingTests(M125Base):
+    def test_payload_schema_projects_exact_scientific_constraints_immutably(self):
+        request = self.request()
+        canonical = load_requested_output_schema(self.root, request.requested_output_schema)
+        before = json.dumps(canonical, sort_keys=True, separators=(",", ":"))
+        payload_schema = agent_proposal_payload_schema(canonical)
+        self.assertEqual(payload_schema["additionalProperties"], False)
+        self.assertEqual(set(payload_schema["required"]), set(scientific_payload()))
+        self.assertFalse(set(payload_schema["properties"]) & {
+            "schema_version", "proposal_id", "role_id", "cycle_id", "base_hash", "prompt_version",
+        })
+        for field in scientific_payload():
+            self.assertEqual(payload_schema["properties"][field], canonical["properties"][field])
+        unsafe = json.loads(json.dumps(canonical))
+        unsafe["properties"]["risk"]["$ref"] = "#/definitions/untrusted"
+        with self.assertRaises(InferenceIntegrityError):
+            agent_proposal_payload_schema(unsafe)
+        self.assertEqual(json.dumps(canonical, sort_keys=True, separators=(",", ":")), before)
+        self.assertEqual(
+            (self.root / "config/schemas/agent-proposal.schema.json").read_text(),
+            (ROOT / "config/schemas/agent-proposal.schema.json").read_text(),
+        )
+
+    def test_payload_schema_is_strict_for_missing_extra_and_protocol_fields(self):
+        schema = agent_proposal_payload_schema(load_requested_output_schema(
+            self.root, self.request().requested_output_schema,
+        ))
+        validator = jsonschema.Draft202012Validator(schema)
+        validator.validate(scientific_payload())
+        missing = scientific_payload()
+        del missing["scope"]
+        with self.assertRaises(jsonschema.ValidationError):
+            validator.validate(missing)
+        injected = scientific_payload()
+        injected["base_hash"] = "b" * 64
+        with self.assertRaises(jsonschema.ValidationError):
+            validator.validate(injected)
+
+    def test_composition_owns_identity_and_is_deterministic(self):
+        request = self.request()
+        payload = scientific_payload()
+        original = json.loads(json.dumps(payload))
+        first = compose_agent_proposal(self.root, request, payload)
+        second = compose_agent_proposal(self.root, request, payload)
+        self.assertEqual(payload, original)
+        self.assertEqual(first, second)
+        self.assertEqual(first["schema_version"], "1.1.0")
+        self.assertEqual(first["role_id"], request.role_id)
+        self.assertEqual(first["cycle_id"], request.cycle_id)
+        self.assertEqual(first["base_hash"], request.base_hash)
+        self.assertEqual(first["prompt_version"], request.prompt_version)
+        self.assertTrue(first["proposal_id"].startswith("p-"))
+        self.assertEqual(first["proposal_id"], trusted_protocol_envelope(self.root, request, payload)["proposal_id"])
+        self.assertTrue(output_identity_matches(request, first))
+        jsonschema.Draft202012Validator(load_requested_output_schema(
+            self.root, request.requested_output_schema,
+        )).validate(first)
+
+    def test_runtime_fails_closed_for_protocol_injection_and_invalid_science(self):
+        request = self.request()
+        injected = scientific_payload()
+        injected["role_id"] = "S40"
+        runtime = SimpleNamespace(root=self.root)
+        self.assertIsNone(InferenceRuntime._validated_document(runtime, request, json.dumps(injected)))
+        malformed = scientific_payload()
+        malformed["scope"] = []
+        self.assertIsNone(InferenceRuntime._validated_document(runtime, request, json.dumps(malformed)))
+
+    def test_non_agent_schema_remains_canonical_and_backward_compatible(self):
+        task = self.task()
+        task.update({"role_id": "S40", "task_id": "run-1-S40-c0000", "requested_output_schema": "department-packet.schema.json"})
+        shutil.copy(ROOT / "config/schemas/department-packet.schema.json", self.root / "config/schemas/department-packet.schema.json")
+        request = InferenceRequest.from_agent_task(
+            self.root, task, prompt="review the bounded fixture",
+            required_capabilities=["language", "structured_output"], estimate_tokens=20, max_output_tokens=100,
+        )
+        canonical = load_requested_output_schema(self.root, request.requested_output_schema)
+        self.assertEqual(model_output_schema(self.root, request), canonical)
 
 
 class _FixtureHandler(BaseHTTPRequestHandler):
@@ -530,7 +636,7 @@ class _FixtureHandler(BaseHTTPRequestHandler):
         elif self.path == "/oversize":
             raw = b"x" * 2048
         else:
-            envelope = {"choices": [{"message": {"content": json.dumps(proposal())}, "finish_reason": "stop"}]}
+            envelope = {"choices": [{"message": {"content": json.dumps(scientific_payload())}, "finish_reason": "stop"}]}
             if self.path == "/valid":
                 envelope["usage"] = {"prompt_tokens": 3, "completion_tokens": 4, "prompt_tokens_details": {"cached_tokens": 1}}
             raw = json.dumps(envelope).encode()
@@ -566,7 +672,9 @@ class M125LoopbackBackendTests(M125Base):
         return ModelRegistry(policy(value)).target("http")
 
     def test_request_valid_response_and_usage(self):
-        backend = LocalOpenAICompatibleBackend(max_response_bytes=4096)
+        backend = LocalOpenAICompatibleBackend(
+            project_root=self.root, max_response_bytes=4096,
+        )
         result = backend.complete(self.request(), self.local_target("/valid"))
         self.assertTrue(result.usage_available)
         self.assertEqual((result.input_tokens, result.output_tokens, result.cache_tokens), (3, 4, 1))
@@ -575,7 +683,9 @@ class M125LoopbackBackendTests(M125Base):
         self.assertEqual(sent["messages"][0]["content"], self.request().prompt)
 
     def test_usage_absent_remains_unknown(self):
-        result = LocalOpenAICompatibleBackend().complete(self.request(), self.local_target("/usage-absent"))
+        result = LocalOpenAICompatibleBackend(project_root=self.root).complete(
+            self.request(), self.local_target("/usage-absent"),
+        )
         self.assertFalse(result.usage_available)
         self.assertIsNone(result.input_tokens)
 
@@ -590,7 +700,9 @@ class M125LoopbackBackendTests(M125Base):
         }
         for path, reason in cases.items():
             with self.subTest(path=path):
-                backend = LocalOpenAICompatibleBackend(max_response_bytes=1024)
+                backend = LocalOpenAICompatibleBackend(
+                    project_root=self.root, max_response_bytes=1024,
+                )
                 with self.assertRaises(InferenceBackendError) as caught:
                     backend.complete(self.request(), self.local_target(path))
                 self.assertEqual(caught.exception.reason_code, reason)
@@ -623,26 +735,100 @@ class M125BackendUnitTests(M125Base):
                 raise self.error
             return self.response
 
-    def local_target(self):
-        value = target("unit", backend_type="local_openai_compatible", endpoint="http://127.0.0.1:9999/v1/chat/completions")
+    def local_target(self, *, capabilities=None):
+        value = target(
+            "unit", backend_type="local_openai_compatible",
+            endpoint="http://127.0.0.1:9999/v1/chat/completions",
+            capabilities=capabilities,
+        )
         return ModelRegistry(policy(value)).target("unit")
 
     def test_openai_request_and_response_parse_without_persisting_content(self):
         envelope = {
-            "choices": [{"message": {"content": json.dumps(proposal())}, "finish_reason": "stop"}],
+            "choices": [{"message": {"content": json.dumps(scientific_payload())}, "finish_reason": "stop"}],
             "usage": {"prompt_tokens": 3, "completion_tokens": 4, "prompt_tokens_details": {"cached_tokens": 1}},
         }
         opener = self.Opener(self.Response(json.dumps(envelope).encode()))
-        backend = LocalOpenAICompatibleBackend(max_response_bytes=4096)
+        backend = LocalOpenAICompatibleBackend(
+            project_root=self.root, max_response_bytes=4096,
+        )
         backend._opener = opener
         result = backend.complete(self.request(), self.local_target())
         sent = json.loads(opener.request.data)
         self.assertEqual(sent["messages"][0]["content"], self.request().prompt)
+        schema = json.loads(
+            (self.root / "config/schemas/agent-proposal.schema.json")
+            .read_text(encoding="utf-8")
+        )
+        payload_schema = model_output_schema(self.root, self.request())
+        self.assertEqual(sent["temperature"], 0)
+        self.assertEqual(sent["response_format"], {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "agent_proposal", "strict": True, "schema": payload_schema,
+            },
+        })
         self.assertEqual((result.input_tokens, result.output_tokens, result.cache_tokens), (3, 4, 1))
 
-    def test_unknown_usage_malformed_oversize_redirect_and_timeout_fail_closed(self):
-        no_usage = {"choices": [{"message": {"content": json.dumps(proposal())}, "finish_reason": "stop"}]}
+    def test_non_structured_target_is_backward_compatible_but_cannot_fake_capability(self):
+        envelope = {"choices": [{"message": {"content": json.dumps(scientific_payload())}, "finish_reason": "stop"}]}
+        opener = self.Opener(self.Response(json.dumps(envelope).encode()))
         backend = LocalOpenAICompatibleBackend(max_response_bytes=4096)
+        backend._opener = opener
+        plain_target = self.local_target(capabilities=["language"])
+        backend.complete(
+            self.request(capabilities=["language"]), plain_target,
+        )
+        sent = json.loads(opener.request.data)
+        self.assertNotIn("response_format", sent)
+        self.assertNotIn("temperature", sent)
+        refusing = self.Opener(self.Response(json.dumps(envelope).encode()))
+        backend._opener = refusing
+        with self.assertRaises(InferenceBackendError) as caught:
+            backend.complete(self.request(), plain_target)
+        self.assertEqual(caught.exception.reason_code, "ROUTE_CAPABILITY_INSUFFICIENT")
+        self.assertIsNone(refusing.request)
+
+    def test_structured_schema_path_and_document_fail_closed_before_send(self):
+        outside = self.root / "outside.schema.json"
+        outside.write_text('{"$id":"agent-proposal.schema.json","type":"object"}', encoding="utf-8")
+        schema_path = self.root / "config/schemas/agent-proposal.schema.json"
+        with self.assertRaises(InferenceIntegrityError):
+            load_requested_output_schema(self.root, "../outside.schema.json")
+        with self.assertRaises(InferenceIntegrityError):
+            load_requested_output_schema(self.root, str(outside))
+        schema_path.unlink()
+        schema_path.symlink_to(outside)
+        with self.assertRaises(InferenceIntegrityError):
+            load_requested_output_schema(self.root, "agent-proposal.schema.json")
+        schema_path.unlink()
+
+        backend = LocalOpenAICompatibleBackend(
+            project_root=self.root, max_response_bytes=4096,
+        )
+        for raw in (
+            None,
+            "not-json",
+            '{"$id":"agent-proposal.schema.json","type":7}',
+            '{"$id":"different.schema.json","type":"object"}',
+        ):
+            with self.subTest(raw=raw):
+                if raw is not None:
+                    schema_path.write_text(raw, encoding="utf-8")
+                opener = self.Opener(self.Response(b"{}"))
+                backend._opener = opener
+                with self.assertRaises(InferenceBackendError) as caught:
+                    backend.complete(self.request(), self.local_target())
+                self.assertFalse(caught.exception.sent)
+                self.assertIsNone(opener.request)
+                if schema_path.exists():
+                    schema_path.unlink()
+
+    def test_unknown_usage_malformed_oversize_redirect_and_timeout_fail_closed(self):
+        no_usage = {"choices": [{"message": {"content": json.dumps(scientific_payload())}, "finish_reason": "stop"}]}
+        backend = LocalOpenAICompatibleBackend(
+            project_root=self.root, max_response_bytes=4096,
+        )
         backend._opener = self.Opener(self.Response(json.dumps(no_usage).encode()))
         self.assertFalse(backend.complete(self.request(), self.local_target()).usage_available)
         cases = [
@@ -655,7 +841,9 @@ class M125BackendUnitTests(M125Base):
         ]
         for response, error, reason in cases:
             with self.subTest(reason=reason, error=type(error).__name__ if error else "response"):
-                candidate = LocalOpenAICompatibleBackend(max_response_bytes=1024)
+                candidate = LocalOpenAICompatibleBackend(
+                    project_root=self.root, max_response_bytes=1024,
+                )
                 candidate._opener = self.Opener(response, error)
                 try:
                     with self.assertRaises(InferenceBackendError) as caught:

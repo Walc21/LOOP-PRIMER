@@ -30,6 +30,10 @@ logs/*
 !**/.gitkeep
 !**/*.example.*
 
+# Worktree-local live smoke configuration and evidence
+local-smoke/runs/
+local-smoke/config/*.local.json
+
 # Secrets and local overrides
 .env
 .env.*

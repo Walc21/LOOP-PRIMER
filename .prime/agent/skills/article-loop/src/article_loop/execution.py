@@ -533,6 +533,14 @@ class DualExecutionController:
                 context_limit=context_limit, max_output_tokens=max_output,
             )
             prompt = compiled_prompt + "\n\n# Materialized authorized context\n" + context.prompt_fragment()
+            if task["requested_output_schema"] == "agent-proposal.schema.json":
+                prompt += (
+                    "\n\n# Routed model output contract\n"
+                    "Emit only the scientific proposal payload. Do not emit protocol "
+                    "metadata: schema_version, proposal_id, role_id, cycle_id, "
+                    "base_hash, or prompt_version. LOOP derives those fields from "
+                    "the validated AgentTask after payload validation.\n"
+                )
             estimate_tokens = (len(prompt.encode("utf-8")) + 3) // 4
             if estimate_tokens + max_output > context_limit:
                 raise ExecutionError("compiled prompt and context exceed target context limit")

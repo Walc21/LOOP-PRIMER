@@ -112,6 +112,16 @@ def proposal(role="W11", *, base_hash="a" * 64, cycle=0):
     }
 
 
+def scientific_payload(role="W11", *, base_hash="a" * 64, cycle=0):
+    value = proposal(role, base_hash=base_hash, cycle=cycle)
+    for field in (
+        "schema_version", "proposal_id", "role_id", "cycle_id", "base_hash",
+        "prompt_version",
+    ):
+        del value[field]
+    return value
+
+
 class ContextAndConfigurationTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -279,7 +289,7 @@ class RuntimeRecoveryTests(unittest.TestCase):
         for name in ("agent-task.schema.json", "agent-proposal.schema.json", "inference-receipt.schema.json"):
             shutil.copy(ROOT / "config/schemas" / name, self.root / "config/schemas" / name)
         self.policy = routing_policy([target("local")], {"W11": ["local"]}, allow_remote=False)
-        self.backend = FakeInferenceBackend(result=InferenceResult(json.dumps(proposal()), 10, 5, 0, True, wall_time_seconds=1, finish_reason="stop"))
+        self.backend = FakeInferenceBackend(result=InferenceResult(json.dumps(scientific_payload()), 10, 5, 0, True, wall_time_seconds=1, finish_reason="stop"))
 
     def tearDown(self):
         self.temp.cleanup()
@@ -403,7 +413,7 @@ class RoleAwareBackend:
     def complete(self, request, target):
         self.calls.append({"role": request.role_id, "target": target.target_id, "prompt": request.prompt})
         return InferenceResult(
-            json.dumps(proposal(request.role_id, base_hash=request.base_hash, cycle=request.cycle_id)),
+            json.dumps(scientific_payload(request.role_id, base_hash=request.base_hash, cycle=request.cycle_id)),
             10, 5, 0, True, wall_time_seconds=1, finish_reason="stop",
         )
 
@@ -411,7 +421,7 @@ class RoleAwareBackend:
 class RemoteBackendContractTests(unittest.TestCase):
     def test_https_backend_disables_proxy_redirect_and_parses_bounded_usage(self):
         raw = json.dumps({
-            "choices": [{"message": {"content": json.dumps(proposal())}, "finish_reason": "stop"}],
+            "choices": [{"message": {"content": json.dumps(scientific_payload())}, "finish_reason": "stop"}],
             "usage": {"prompt_tokens": 7, "completion_tokens": 5, "prompt_tokens_details": {"cached_tokens": 2}},
         }).encode()
         class Response:
@@ -425,7 +435,9 @@ class RemoteBackendContractTests(unittest.TestCase):
             "api_key_env": "M1251_TEST_API_KEY",
         })
         selected = ModelRegistry(routing_policy([remote], {"W11": ["https"]})).target("https")
-        backend = RemoteOpenAICompatibleBackend(max_response_bytes=100_000)
+        backend = RemoteOpenAICompatibleBackend(
+            project_root=ROOT, max_response_bytes=100_000,
+        )
         current = task(ROOT)
         request = InferenceRequest.from_agent_task(ROOT, current, prompt="bounded", required_capabilities=["language"], estimate_tokens=1, max_output_tokens=1, context_hash="d" * 64, privacy_mode="scoped_remote")
         with mock.patch.dict(os.environ, {"M1251_TEST_API_KEY": "unit-test-only"}, clear=False):
@@ -517,7 +529,8 @@ class EndToEndDualExecutionTests(unittest.TestCase):
         self.assertNotIn("DO_NOT_EXFILTRATE_12345", remote_prompt)
         packet = json.loads(Path(final["receipts"]["S10"]["path"]).read_text())
         self.assertEqual(packet["department_id"], "S10")
-        self.assertEqual(packet["proposal_ids"], ["p-W11", "p-W12", "p-W13"])
+        self.assertEqual(len(packet["proposal_ids"]), 3)
+        self.assertTrue(all(value.startswith("p-") for value in packet["proposal_ids"]))
 
 
 if __name__ == "__main__":
