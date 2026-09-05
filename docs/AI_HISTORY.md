@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `954acc19950ddfe231af20e9534569f91156c9ba3dcf5728c1255d81abaf3062`
-- Registrado em: `2026-09-05T04:26:25Z`
-- Git: branch `m13-routed-jury-hardening`, HEAD `ac49084f1fe0`
+- Fingerprint das fontes: `673811e8640f901cd6579e3b09ed7e1133a9003f07c76870aa39ca17faf8fbc5`
+- Registrado em: `2026-09-05T05:00:25Z`
+- Git: branch `chore/ai-context-lifecycle`, HEAD `27b83658659e`
 - Arquivos relevantes: 205
 
 ## Evolução reconstruída do versionamento
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
-| sem marco explícito | 2026-08-13..2026-09-04 | 45 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
+| sem marco explícito | 2026-08-13..2026-09-05 | 46 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -34,8 +34,8 @@
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 | M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
-| M13 | 2026-09-04..2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
-| M13.1 | 2026-09-05 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
+| M13 | 2026-09-04..2026-09-05 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
+| M13.1 | 2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
 
 ### Commits exatos
 
@@ -151,6 +151,9 @@
 | `3d298da4a` | 2026-09-05 | M13 | Merge pull request #2 from Walc21/m13-system-delivery |  |
 | `cadfafb88` | 2026-09-05 | M13.1 | wip(m13.1): preserve routed jury integration | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/i… |
 | `ac49084f1` | 2026-09-05 | M13.1 | feat(m13.1): separate evaluator inference identity | .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/inference.py, .prime/agent/skills/article-loop/src/article_loop/rout… |
+| `f08e1d2dc` | 2026-09-05 | M13.1 | docs(m13.1): close routed jury integration | AI_CONTEXT.md, PLANS.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json, docs/architecture.md |
+| `ea2057cca` | 2026-09-05 | M13 | Merge pull request #3 from Walc21/m13-routed-jury-hardening |  |
+| `27b836586` | 2026-09-05 | sem marco explícito | fix(ai-context): make session startup read-only | .github/copilot-instructions.md, .prime/agent/APPEND_SYSTEM.md, AGENTS.md, CLAUDE.md, GEMINI.md, PLANS.md |
 
 ## Decisões arquiteturais
 
@@ -189,6 +192,7 @@
 - ADR-031 — M12: orçamento durável e observabilidade fail-closed
 - ADR-032 — M12.5: routing determinístico governado pelo ledger M12
 - ADR-033 — M12.5.1 Phase A: execução dual ligada ao contrato M6
+- ADR-034 — Ciclo de contexto de IA: início read-only e checkpoint explícito
 
 ## Atualizações de sessão
 
@@ -1502,3 +1506,48 @@
 | modified | `control/test_m125_inference_routing.py` | `2a700ab8ead2` | `d8430f7f3acf` |
 | modified | `docs/architecture.md` | `95593b17c02d` | `a68d45758893` |
 | modified | `docs/decisions.md` | `ac0e6d647793` | `550ec38b4882` |
+
+### 2026-09-05T05:00:25Z — Ciclo de contexto de IA redesenhado: início read-only e publicação somente em checkpoint explícito.
+
+- Session ID: `session-7cd5dccaedab1ffa7fb9`
+- Fingerprint final: `673811e8640f901cd6579e3b09ed7e1133a9003f07c76870aa39ca17faf8fbc5`
+- Git final: `27b83658659e`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 11 modificados, 0 removidos
+
+**Mudanças**
+
+- As cinco superfícies de entrada agora leem AI_CONTEXT.md e usam ai_context.py --check apenas como inspeção read-only.
+- O check agora informa fingerprints atual/armazenado/checkpoint e delta determinístico, sem escrever artefatos ou locks.
+- O preview Git vivo foi removido de AI_CONTEXT.md para impedir o loop stale após commit.
+
+**Decisões**
+
+- Preservar publicação sem flags para compatibilidade, restringindo-a por contrato ao checkpoint explícito.
+
+**Validações**
+
+- 28 testes focados control.test_ai_handoff/control.test_m11_commands passaram; py_compile de scripts/ai_context.py e git diff --check passaram antes do checkpoint.
+
+**Riscos/limites**
+
+- Consumidores que invocam o gerador sem flags no início devem migrar para leitura e --check opcional; o contexto anterior pode ficar stale até esta publicação.
+
+**Próximos passos**
+
+- Executar inspeção read-only e regressões após publicar e revisar os quatro artefatos gerados.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.github/copilot-instructions.md` | `c72d16e8330e` | `e330cf49a962` |
+| modified | `.prime/agent/APPEND_SYSTEM.md` | `00651a431820` | `42fa8e1fbf01` |
+| modified | `AGENTS.md` | `0c65e46ff94b` | `735bc4d248b8` |
+| modified | `CLAUDE.md` | `277d35ab7a04` | `2eb0ae4ce37a` |
+| modified | `GEMINI.md` | `e2cbfe965d39` | `058ce9fdb605` |
+| modified | `PLANS.md` | `04b1bef26303` | `a11255b690d3` |
+| modified | `control/test_ai_handoff.py` | `7eeb838fe65e` | `406f7e0298ef` |
+| modified | `control/test_m11_commands.py` | `bccd8c0c2165` | `2d3fae206b85` |
+| modified | `docs/architecture.md` | `a68d45758893` | `4b52226603de` |
+| modified | `docs/decisions.md` | `550ec38b4882` | `96a76105f4e3` |
+| modified | `scripts/ai_context.py` | `49f09af19c29` | `827ba6692584` |
