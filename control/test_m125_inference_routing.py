@@ -49,11 +49,13 @@ from article_loop.inference import (  # noqa: E402
     ModelRouter,
     PRIME_PER_CHILD_MODEL_SELECTION,
     agent_proposal_payload_schema,
+    canonical_bytes,
     compose_agent_proposal,
     load_requested_output_schema,
     model_output_schema,
     output_identity_matches,
     output_identity_values,
+    sha256,
     trusted_protocol_envelope,
 )
 from article_loop.inference_backends import (  # noqa: E402
@@ -168,6 +170,21 @@ class M125Base(unittest.TestCase):
             estimate_tokens=20, max_output_tokens=100, **kwargs,
         )
 
+    def evaluator_request(self, *, actor_id="juror-math", routing_role_id="M00"):
+        prompt = "review bounded blind evidence"
+        return InferenceRequest(
+            run_id="run-1", cycle_id=0, task_id="review-fixed", role_id=None,
+            department_id="M00", activation_mode="RUN",
+            prompt_hash=sha256(prompt.encode()), prompt_version="routed-m8-v1",
+            base_hash="b" * 64, requested_output_schema="jury-verdict.schema.json",
+            required_capabilities=("language", "structured_output"),
+            estimate_tokens=20, max_output_tokens=100, attempt=0,
+            extra_judgment=False, jury=True, producer_target="producer",
+            producer_group="producer-group", producer_model="producer-model",
+            prompt=prompt, judgment_context='{"envelope":{},"input_sha256":"' + "c" * 64 + '"}',
+            routing_role_id=routing_role_id, actor_kind="evaluator", actor_id=actor_id,
+        )
+
     def ledger(self, route_policy: dict, **kwargs) -> BudgetLedger:
         return BudgetLedger(
             self.root, "run-1",
@@ -182,6 +199,25 @@ class M125Base(unittest.TestCase):
 
 
 class M125ConfigurationAndRoutingTests(M125Base):
+    def test_evaluator_identity_is_explicit_hash_bound_and_uses_route_authority(self):
+        judge = target("judge")
+        route_policy = policy(judge)
+        route_policy["role_routes"]["M00"] = route_policy["role_routes"].pop("W41")
+        first = self.evaluator_request()
+        second = self.evaluator_request(actor_id="juror-clarity")
+        self.assertIsNone(first.role_id)
+        self.assertEqual(first.effective_routing_role_id, "M00")
+        self.assertEqual(ModelRouter(ModelRegistry(route_policy)).route(first).target_id, "judge")
+        self.assertNotEqual(first.request_hash, second.request_hash)
+        self.assertEqual(first.identity()["actor_id"], "juror-math")
+        self.assertEqual(first.identity()["routing_role_id"], "M00")
+
+    def test_evaluator_cannot_claim_routing_authority_as_executing_role(self):
+        values = dict(self.evaluator_request().__dict__)
+        values["role_id"] = "M00"
+        with self.assertRaises(InferenceConfigError):
+            InferenceRequest(**values)
+
     def test_project_defaults_are_fail_closed(self):
         registry = ModelRegistry.from_project(ROOT)
         status = registry.status()
@@ -313,7 +349,55 @@ class M125BudgetCompatibilityTests(M125Base):
         })
         self.assertNotIn("routing_policy_hash", authorization.public())
         ledger.authorize(authorization)
-        self.assertEqual(ledger.reserve("legacy-call", 10, role_id="W41", provider="provider-legacy", model="model-legacy", live=True)["status"], "reserved")
+        reservation = ledger.reserve("legacy-call", 10, role_id="W41", provider="provider-legacy", model="model-legacy", live=True)
+        self.assertEqual(reservation["status"], "reserved")
+        self.assertNotIn("routing_role_id", reservation)
+
+    def test_evaluator_budget_uses_route_authority_without_role_bucket(self):
+        routed = target("eval")
+        route_policy = policy(routed)
+        route_policy["role_routes"]["M00"] = route_policy["role_routes"].pop("W41")
+        limits = BudgetLimits(total_tokens=100, per_cycle_tokens=100,
+            per_department_tokens=100, per_role_tokens=1, per_model_tokens=100,
+            max_calls=2, max_wall_time_seconds=10)
+        ledger = BudgetLedger(self.root, "run-1", limits=limits, clock=self.clock,
+                              inference_policy=route_policy)
+        reservation = ledger.reserve("eval-call", 10, cycle_id=0,
+            department_id="M00", role_id=None, routing_role_id="M00",
+            provider="provider-eval", model="model-eval", estimated_wall_time_seconds=2)
+        ledger.admit(reservation["reservation_id"], "eval-receipt")
+        ledger.reconcile(reservation["reservation_id"], receipt_id="eval-receipt",
+                         input_tokens=3, output_tokens=4, cache_tokens=0,
+                         wall_time_seconds=2, usage_available=True)
+        status = ledger.status()
+        usage = status["usage_by_limit"]
+        self.assertEqual(usage["per_role_tokens"], {})
+        self.assertEqual(usage["total_tokens"]["confirmed"], 7)
+        self.assertEqual(usage["per_cycle_tokens"]["0"]["confirmed"], 7)
+        self.assertEqual(usage["per_department_tokens"]["M00"]["confirmed"], 7)
+        self.assertEqual(usage["per_model_tokens"]["model-eval"]["confirmed"], 7)
+        self.assertEqual(usage["max_calls"]["confirmed"], 1)
+        self.assertEqual(usage["max_wall_time_seconds"]["confirmed"], 2)
+
+    def test_evaluator_live_authorization_uses_routing_role(self):
+        routed = target("eval")
+        route_policy = policy(routed)
+        route_policy["role_routes"]["M00"] = route_policy["role_routes"].pop("W41")
+        registry = ModelRegistry(route_policy)
+        ledger = self.ledger(route_policy, config_hash="9" * 64,
+                             profile="calibration", live_enabled=True)
+        ledger.authorize({
+            "run_id": "run-1", "profile": "calibration", "config_hash": "9" * 64,
+            "provider": None, "model": None, "routing_policy_hash": registry.policy_hash,
+            "token_limit": 50, "approved_at": self.clock.now_utc(),
+            "approval_reference": "approval-evaluator",
+        })
+        accepted = ledger.reserve("eval-live", 10, department_id="M00", role_id=None,
+            routing_role_id="M00", provider="provider-eval", model="model-eval", live=True)
+        self.assertEqual(accepted["routing_role_id"], "M00")
+        with self.assertRaises(BudgetAuthorizationError):
+            ledger.reserve("eval-wrong-route", 1, department_id="M00", role_id=None,
+                routing_role_id="S10", provider="provider-eval", model="model-eval", live=True)
 
     def test_routed_authorization_accepts_only_bound_enabled_role_target(self):
         route_policy = policy(target("routed"))
@@ -525,6 +609,29 @@ class M125TransactionTests(M125Base):
 
 
 class M125SchemaIdentityBindingTests(M125Base):
+    def test_legacy_request_identity_hash_route_and_call_id_are_byte_stable(self):
+        request = self.request()
+        decision = ModelRouter(ModelRegistry(policy(target("primary")))).route(request)
+        self.assertEqual(canonical_bytes(request.identity()).decode(),
+            '{"activation_mode":"RUN","attempt":0,"base_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","context_hash":null,"cycle_id":0,"department_id":"S40","escalation_from":null,"escalation_reason":null,"estimate_tokens":20,"extra_judgment":false,"jury":false,"max_output_tokens":100,"privacy_mode":"deny_remote","producer_group":null,"producer_model":null,"producer_target":null,"prompt_hash":"4c967d71332e53b7e6673a13c2844856955d3d6aa2274ab46fb0d97b60138c2a","prompt_version":"test","requested_output_schema":"agent-proposal.schema.json","required_capabilities":["language","structured_output"],"role_id":"W41","run_id":"run-1","task_id":"run-1-W41-c0000"}')
+        self.assertEqual(request.request_hash, "3c903c2963f110af6a3f30a5d156334f1b8047c9e92e0bf71b96a43940c968d2")
+        self.assertEqual(decision.decision_hash, "f4da7b11fbf0822d6e0a1666aa6724af15c66ac0ac6314d8b432c9d8afc7b385")
+        self.assertEqual(InferenceRuntime.call_id(request, decision), "ic-e7203ba223ea6d676da070aeb364e3c59c34fa1dd5d4732f")
+
+    def test_legacy_receipt_versions_remain_closed(self):
+        route_policy = policy(target("closed"))
+        backend = FakeInferenceBackend(result=InferenceResult(json.dumps(scientific_payload()), 1, 1, 0, True, wall_time_seconds=1, finish_reason="stop"))
+        receipt = self.runtime(route_policy, backend).execute(self.request(), allow_test_doubles=True)["receipt"]
+        schema = load_requested_output_schema(self.root, "inference-receipt.schema.json")
+        validator = jsonschema.Draft202012Validator(schema)
+        validator.validate(receipt)
+        for change in ({"routing_role_id": "M00"}, {"actor_kind": "evaluator"},
+                       {"actor_id": "juror-math"}, {"role_id": "M00"},
+                       {"requested_output_schema": "jury-verdict.schema.json"}):
+            forged = {**receipt, **change}
+            with self.subTest(change=change), self.assertRaises(jsonschema.ValidationError):
+                validator.validate(forged)
+
     def test_payload_schema_projects_exact_scientific_constraints_immutably(self):
         request = self.request()
         canonical = load_requested_output_schema(self.root, request.requested_output_schema)

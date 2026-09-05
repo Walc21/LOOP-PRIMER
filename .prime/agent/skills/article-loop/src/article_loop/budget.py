@@ -1000,6 +1000,7 @@ class BudgetLedger:
         cycle_id: int = 0,
         department_id: str | None = None,
         role_id: str | None = None,
+        routing_role_id: str | None = None,
         attempt: int = 0,
         provider: str | None = None,
         model: str | None = None,
@@ -1020,6 +1021,8 @@ class BudgetLedger:
         attempt = _integer(attempt, "attempt")
         department_id = _safe_id(department_id, "department_id", allow_none=True)
         role_id = _safe_id(role_id, "role_id", allow_none=True)
+        routing_role_id = _safe_id(routing_role_id, "routing_role_id", allow_none=True)
+        effective_routing_role_id = routing_role_id if routing_role_id is not None else role_id
         provider = _safe_id(provider, "provider", allow_none=True)
         model = _safe_id(model, "model", allow_none=True)
         estimated_wall_time_seconds = _integer(estimated_wall_time_seconds, "estimated_wall_time_seconds")
@@ -1054,6 +1057,8 @@ class BudgetLedger:
                     "children": children, "extra_judgment": extra_judgment,
                     "live": live,
                 }
+                if routing_role_id is not None:
+                    expected["routing_role_id"] = routing_role_id
                 if any(
                     prior.get(key, 0 if key == "estimated_cost_microunits" else None) != value
                     for key, value in expected.items()
@@ -1070,7 +1075,7 @@ class BudgetLedger:
             )
             if live:
                 self._authorization_valid(
-                    state, provider=provider, model=model, role_id=role_id,
+                    state, provider=provider, model=model, role_id=effective_routing_role_id,
                     estimate_tokens=estimate_tokens,
                     estimated_cost_microunits=estimated_cost_microunits,
                 )
@@ -1088,6 +1093,8 @@ class BudgetLedger:
                 "budget_max_integer": self.max_integer,
                 "budget_currency": self.currency,
             }
+            if routing_role_id is not None:
+                payload["routing_role_id"] = routing_role_id
             if self.max_run_cost_microunits is not None:
                 payload["budget_max_run_cost_microunits"] = self.max_run_cost_microunits
             event = self._append_locked(

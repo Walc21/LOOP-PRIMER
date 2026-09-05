@@ -192,9 +192,10 @@ class _RoutedReview:
         prompt = PROMPT_CONTRACT + "\noutput_contract=" + _bounded_json(schema) + "\nUNTRUSTED_DATA=" + data_json + "\nEND_UNTRUSTED_DATA"
         trusted = _bounded_json({"envelope": envelope, "input_sha256": sha256(_bounded_json(authority).encode())})
         task_hash = sha256(canonical_bytes([schema_name, trusted, sha256(prompt.encode())]))
+        actor_id = envelope["juror_id"] if schema_name == JURY_SCHEMA else envelope["meta_reviewer_id"]
         request = InferenceRequest(
             run_id=self.run_id, cycle_id=self.cycle_id, task_id="review-" + task_hash[:48],
-            role_id=self.routing_role_id,
+            role_id=None,
             department_id=(self.routing_role_id if self.routing_role_id == "M00" or self.routing_role_id.startswith("S") else "S" + self.routing_role_id[1] + "0"),
             activation_mode="RUN", prompt_hash=sha256(prompt.encode()),
             prompt_version="routed-m8-v1-" + sha256(canonical_bytes(schema))[:32],
@@ -205,6 +206,7 @@ class _RoutedReview:
             producer_target=self.producer.target_id, producer_group=self.producer.independence_group,
             producer_model=self.producer.model, prompt=prompt, context_hash=sha256(data_json.encode()),
             privacy_mode=self.privacy_mode, judgment_context=trusted,
+            routing_role_id=self.routing_role_id, actor_kind="evaluator", actor_id=actor_id,
         )
         result = self.runtime.execute(request, live=self.live, allow_test_doubles=self.allow_test_doubles)
         receipt = result["receipt"]
@@ -273,8 +275,8 @@ class RoutedMetaReviewerAdapter(_RoutedReview):
 
     def __init__(self, *args, meta_reviewer_id="meta-reviewer", **kwargs):
         super().__init__(*args, **kwargs)
-        if not isinstance(meta_reviewer_id, str) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", meta_reviewer_id):
-            raise InferenceConfigError("invalid meta reviewer identity")
+        if meta_reviewer_id != "meta-reviewer":
+            raise InferenceConfigError("meta reviewer must use the canonical M8 identity")
         self.meta_reviewer_id = meta_reviewer_id
 
     def review(self, *, comparison_id, consistent_verdicts, divergences, gate_report_summary):

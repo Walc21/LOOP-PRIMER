@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import jsonschema
+
 from control.m13_fixture import SyntheticCycle, fake_policy, remove_fixture
 from article_loop.budget import BudgetLedger
 from article_loop.evaluation import BlindComparisonBundle, DIMENSIONS, EvaluationError, evaluate_candidate
@@ -120,6 +122,21 @@ class RoutedEvaluationTests(unittest.TestCase):
         self.assertEqual(len(self.backend.calls), 1)
         self.assertEqual(verdict["content_hashes"], p["content_hashes"])
         self.assertEqual(verdict["juror_id"], "juror-math")
+        evaluator_receipts = [item for item in self.runtime.store.receipts()
+                              if item.get("actor_kind") == "evaluator"]
+        self.assertEqual(len(evaluator_receipts), 1)
+        receipt = evaluator_receipts[0]
+        self.assertEqual(receipt["schema_version"], "1.2.0")
+        self.assertIsNone(receipt["role_id"])
+        self.assertEqual(receipt["routing_role_id"], "M00")
+        self.assertEqual(receipt["actor_kind"], "evaluator")
+        self.assertEqual(receipt["actor_id"], "juror-math")
+        schema = load_requested_output_schema(self.f.root, "inference-receipt.schema.json")
+        jsonschema.Draft202012Validator(schema).validate(receipt)
+        for change in ({"role_id": "M00"}, {"routing_role_id": "juror-math"},
+                       {"actor_id": "W41"}, {"requested_output_schema": "agent-proposal.schema.json"}):
+            with self.subTest(change=change), self.assertRaises(jsonschema.ValidationError):
+                jsonschema.Draft202012Validator(schema).validate({**receipt, **change})
 
     def test_model_protocol_fields_are_rejected_including_gate_identity(self):
         self.fixture()
