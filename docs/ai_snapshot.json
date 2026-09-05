@@ -1186,11 +1186,11 @@
   "fingerprint": "6312949b3a5dc49eb7a85f20f7dddf5b430c000a16b25b9e25be917cc663b8c7",
   "git": {
     "available": true,
-    "branch": "m1251-promote-local",
-    "head": "973d0d46e74fc9a9110669fab86ff3a5e89bc43e",
+    "branch": "main",
+    "head": "007edeee5b5cb1e519cc5fb888cf181030d1709d",
     "status": []
   },
-  "recorded_at": "2026-09-05T01:42:06Z",
+  "recorded_at": "2026-09-05T02:05:18Z",
   "schema_version": "1.0.0",
   "session_id": "session-f63fe2314358a393aae7"
 }

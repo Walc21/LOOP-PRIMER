@@ -54,7 +54,7 @@ Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem n
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (99183 bytes; SHA-256 `e5550bb7f65ba865`).
+- Fonte lida: `docs/AI_HISTORY.md` (100572 bytes; SHA-256 `4386476c1fbe7f89`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -79,22 +79,22 @@ Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem n
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 | M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
 
-- Sessões estruturadas registradas: 28.
-- Índice recente: 2026-09-03T20:28:25Z — Publicação do M12.5 concluída no GitHub por fast-forward, preservando a limitação declarada do smoke HTTP loopback e se…; 2026-09-03T21:27:30Z — Corrigiu a falha da CI M12.5 causada por conexão HTTP fechada sem resposta, publicou a correção e confirmou a matriz Gi…; 2026-09-03T22:46:53Z — M12.5.1 Phase A implementada e validada localmente como ligação dual end-to-end por departamento, com contexto autoriza…; 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prom…; 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.; 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato execu…; 2026-09-05T01:41:08Z — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.; 2026-09-05T01:42:06Z — M12.5.1 clean promotion committed locally on m1251-promote-local.. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 29.
+- Índice recente: 2026-09-03T21:27:30Z — Corrigiu a falha da CI M12.5 causada por conexão HTTP fechada sem resposta, publicou a correção e confirmou a matriz Gi…; 2026-09-03T22:46:53Z — M12.5.1 Phase A implementada e validada localmente como ligação dual end-to-end por departamento, com contexto autoriza…; 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prom…; 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.; 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato execu…; 2026-09-05T01:41:08Z — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.; 2026-09-05T01:42:06Z — M12.5.1 clean promotion committed locally on m1251-promote-local.; 2026-09-05T00:02:51Z — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos …. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-3ec0ef358b1a25a76f99` — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.
-  - mudanças: Promoted the final model-scientific-payload and LOOP-trusted-envelope composition with generic structured output and canonical downstream AgentProposal validation.; Excluded the B1 branch-bound live smoke harness from the promotion because it was not a reusable fail-closed diagnostic.; Updated PLANS.md and ADR-033 with the promoted ownership boundary and configuration limits.
-  - decisões: Keep canonical AgentTask and AgentProposal schemas, M6 receipt identity validation, and inert budgets configuration unchanged.; Do not retain an alternate model-supplied identity-constant path or an implicit-live diagnostic harness.
-  - validações: Focused tests passed: test_m125_inference_routing 36 tests with 1 loopback skip; test_m1251_dual_execution 14; test_m6_orchestration 43.; Full regression passed: python3 -m unittest discover -s control -q, 417 tests with 1 loopback skip.; py_compile, git diff --check, bin/check.sh, schema/config diff, and tracked-artifact scan passed.
-  - riscos: No live model, provider, network call, remote target, paid API, or M13 execution occurred; human configuration is still required for any future live smoke.
-  - próximos: Review and merge this one promotion commit only after separate authorization; do not configure or execute inference.
 - `session-f63fe2314358a393aae7` — M12.5.1 clean promotion committed locally on m1251-promote-local.
   - mudanças: Created the single clean promotion commit 973d0d46e74fc9a9110669fab86ff3a5e89bc43e from baseline 562cbbf.
   - decisões: Keep the promotion local only: no push, no merge to main, no live configuration.
   - validações: Post-commit working tree was clean; the committed candidate had already passed focused tests, full 417-test regression, py_compile, git diff --check, bin/check.sh, schema/config invariants, and artifact scan.
   - riscos: Remote providers, paid inference, and live smoke remain disabled; M13 remains unstarted.
   - próximos: A separately authorized reviewer may inspect or merge the single promotion commit; do not run inference without explicit human configuration and authorization.
+- `session-5bc7ce151a9d498d5175` — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos Prime e routed, recursos efetivos, fluxos privilegiados e controles por componente.
+  - mudanças: Nenhum código-fonte, configuração ou artefato científico foi alterado; somente o histórico/contexto obrigatório de handoff foi atualizado.
+  - decisões: Manter separados os caminhos Prime, inferência local e inferência remota, além das autoridades independentes de ingestão, estado, síntese, júri e finalização.
+  - validações: Inspeção estática offline com rg, nl e sed; HEAD confirmado como 562cbbf28447b6c4b3a4002aabedfd0a22a4bdcf; nenhum código da aplicação, modelo, Prime Agent ou serviço externo foi executado.
+  - riscos: Implementação externa do Prime Agent, permissões efetivas do host e serviço remoto/TLS não estão no repositório e permanecem pré-requisitos não verificados.
+  - próximos: O agente principal deve verificar os fatos materiais e incorporar o threatModel e as divergências documentais ao resultado da varredura.
 
 ## Marcos planejados
 
