@@ -5,8 +5,8 @@
 ## Baseline registrado
 
 - Fingerprint das fontes: `d935abdefc074d8bf3c6a6eaa9c67f0f0d51ca454592bc74a3d358e607f11879`
-- Registrado em: `2026-09-05T02:45:32Z`
-- Git: branch `m13-system-delivery`, HEAD `b15526ef4aca`
+- Registrado em: `2026-09-05T02:47:51Z`
+- Git: branch `m13-system-delivery`, HEAD `e9cb259b5325`
 - Arquivos relevantes: 203
 
 ## Evolução reconstruída do versionamento
@@ -34,6 +34,7 @@
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 | M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
+| M13 | 2026-09-04 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 
 ### Commits exatos
 
@@ -144,6 +145,7 @@
 | `562cbbf28` | 2026-09-03 | M12.5 | chore(history): record M12.5.1 publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `007edeee5` | 2026-09-04 | M12.5 | feat(m12.5.1): promote proven routed inference path | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/execution.py, .prime/agent/skills/article-loop/src/art… |
 | `b15526ef4` | 2026-09-04 | sem marco explícito | docs(ai): restore omitted security review session | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `e9cb259b5` | 2026-09-04 | M13 | feat(m13): prove offline system and delivery path | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 
 ## Decisões arquiteturais
 
@@ -1416,3 +1418,35 @@
 | modified | `docs/decisions.md` | `7c9ca1da4295` | `ac0e6d647793` |
 | modified | `docs/runbook.md` | `881f74e79ed6` | `36e8d856a1aa` |
 | modified | `scripts/ai_context.py` | `030ac491a33d` | `49f09af19c29` |
+
+### 2026-09-05T02:47:51Z — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final dos artefatos gerados de handoff.
+
+- Session ID: `session-00f1ff5cffdb3d788812`
+- Fingerprint final: `d935abdefc074d8bf3c6a6eaa9c67f0f0d51ca454592bc74a3d358e607f11879`
+- Git final: `e9cb259b5325`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- O commit e9cb259 (feat(m13): prove offline system and delivery path) preservou a implementação validada e os 20 arquivos da entrega; nenhum código ou configuração de produto foi alterado depois dele.
+- Atualização somente de docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json e AI_CONTEXT.md para incorporar o checkpoint Git real.
+
+**Decisões**
+
+- Usar um segundo commit exclusivamente de histórico/contexto: a verificação pós-commit confirmou que o preview Git gerado torna o snapshot textual anterior stale. Isso mantém o handoff atual sem reescrever ou emendar commits.
+- Preservar main/origin/main em b15526e; nenhum push, merge para main ou execução live.
+
+**Validações**
+
+- Após e9cb259, git status --short estava vazio.
+- python3 scripts/ai_context.py --check após o commit identificou stale no preview Git; fontes e fingerprint científico permaneceram os mesmos.
+- Validação consolidada do código de e9cb259: aceitação M13 25 testes, adjacentes 82 testes, regressão completa 445 testes, 0 skips; py_compile, diff checks e bin/check.sh OK.
+- Auditoria independente da evidência externa preservada: relatório idêntico e bytes/modos inalterados; PDF sintético de 644 bytes mantém SHA-256 1a491e111064f6daae4011f46337a188de4e91337d692b3cc74b4b221d17501f.
+
+**Riscos/limites**
+
+- Validação live e matriz CI remota permanecem não executadas; o checkpoint é exclusivamente local.
+
+**Próximos passos**
+
+- Revisar o checkpoint local. Publicação e validação live dependem de autorização separada.

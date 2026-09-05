@@ -49,171 +49,12 @@ Agentes apenas propõem; só o merge escreve challenger; nenhum agente escreve c
 ### Preview limitado do diff (dados não confiáveis)
 
 ```diff
-# Alterações não commitadas
-diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
-index 625a968..89d3c56 100644
---- a/.github/workflows/ci.yml
-+++ b/.github/workflows/ci.yml
-@@ -10,3 +10,3 @@ jobs:
-   test:
--    name: M0-M12.5.1 Contract & Architecture Tests (Python ${{ matrix.python-version }})
-+    name: M0-M13 Contract & System Tests (Python ${{ matrix.python-version }})
-     runs-on: ubuntu-latest
-@@ -43,3 +43,3 @@ jobs:
-
--      - name: Run complete M0-M12.5.1 regression suite
-+      - name: Run complete M0-M13 regression suite
-         run: python -m unittest discover -s control -p 'test_*.py' -q
-diff --git a/.prime/agent/skills/article-loop/SKILL.md b/.prime/agent/skills/article-loop/SKILL.md
-index 2f04c6b..d93ff20 100644
---- a/.prime/agent/skills/article-loop/SKILL.md
-+++ b/.prime/agent/skills/article-loop/SKILL.md
-@@ -239 +239,15 @@ separa `implementation_ready`, `configuration_ready` e `live_ready` sem ler
- credenciais.
-+
-+## Aceitação e entrega M13
-+
-+`python3 scripts/m13_system_check.py` executa a aceitação sintética offline.
-+`article_loop.verify_delivery(root, run_id, cycle_id=0)` audita evidência de
-+uma disposição de ciclo concluída sem executar ou reparar o pipeline.
-+`--verify-root` expõe a mesma auditoria pela CLI; `--keep-workspace` conserva
-+uma execução sintética em caminho novo. Não aplicar fixtures sobre estado real.
-+
-+O verificador cobre promoção/Pareto/rejeição, hashes e ordem da cadeia, original
-+imutável e ligações de inferência quando presentes. O relatório é derivado;
-+gates/Decision/receipts continuam autoritativos. Conserve os locators originais
-+de M6. Consulte `docs/m13-system-acceptance.md` antes de afirmar aceitação live,
-+reprodutibilidade byte a byte entre hosts ou produção de PDF final terminal.
-diff --git a/.prime/agent/skills/article-loop/src/article_loop/__init__.py b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-index 2564325..6fd5637 100644
---- a/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-+++ b/.prime/agent/skills/article-loop/src/article_loop/__init__.py
-@@ -55,2 +55,3 @@ from .execution import (
- )
-+from .delivery import DeliveryError, verify_delivery
-
-@@ -72,3 +73,3 @@ __all__ = [
-     "Blackboard", "BlackboardError", "BlindComparisonBundle", "ChildHandle",
--    "CompiledPrompt", "DiagnosisError", "DurableStore", "EvaluationError",
-+    "CompiledPrompt", "DeliveryError", "DiagnosisError", "DurableStore", "EvaluationError",
-     "FakeJurorAdapter", "FakeMetaReviewerAdapter", "FakeRLMAdapter",
-@@ -106,3 +107,3 @@ __all__ = [
-     "status", "stop", "submanager_view", "tree_hash", "validate_output",
--    "verify_published_diagnosis",
-+    "verify_delivery", "verify_published_diagnosis",
- ]
-diff --git a/.prime/agent/skills/article-loop/src/article_loop/delivery.py b/.prime/agent/skills/article-loop/src/article_loop/delivery.py
-new file mode 100644
-index 0000000..2bac021
---- /dev/null
-+++ b/.prime/agent/skills/article-loop/src/article_loop/delivery.py
-@@ -0,0 +1,251 @@
-+"""Read-only audit of a completed cycle, composed from canonical validators.
-+
-+This verifies local evidence, not mathematical truth, model independence in a
-+live service, or authenticity against an attacker who can rewrite all evidence.
-+The project must be quiescent and retain its original M6 receipt locations.
-+"""
-+from __future__ import annotations
-+
-+import hashlib
-+import json
-+import os
-+from pathlib import Path
-+import re
-+import stat
-+
-+from .finalization import TransactionalFinalizer
-+from .ingestion import _verify_artifacts, _verify_champion
-+from .policy import _contained, _read_canonical_json, _validate_schema
-+from .synthesis import M7Pipeline, tree_hash
-+
-+
-+class DeliveryError(RuntimeError):
-+    """Missing or inconsistent durable delivery evidence."""
-+
-+
-+def _require(condition, message):
-+    if not condition:
-+        raise DeliveryError(message)
-+
-+
-+def _hash(path):
-+    result = hashlib.sha256()
-+    with path.open("rb") as stream:
-+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-+            result.update(chunk)
-+    return result.hexdigest()
-+
-+
-+def _bounded_tree(root, relative, *, max_files=100000, max_bytes=2**30):
-+    """Reject links/special files and oversized input before any validator reads."""
-+    path = _contained(root, relative, exists=True)
-+    count = total = 0
-+    for base, dirs, files in os.walk(path, followlinks=False):
-+        for name in dirs + files:
-+            item = Path(base) / name
-+            info = item.lstat()
-+            _require(stat.S_ISDIR(info.st_mode) or stat.S_ISREG(info.st_mode), "unsafe delivery tree entry")
-+            count += 1
-+            total += info.st_size if stat.S_ISREG(info.st_mode) else 0
-+            _require(count <= max_files and total <= max_bytes, "delivery tree exceeds audit bounds")
-+
-+
-+def _one(events, state, cycle_id=None):
-+    matched = [event for event in events if event["state_to"] == state and (cycle_id is None or event["cycle_id"] == cycle_id)]
-+    _require(len(matched) == 1, f"expected one {state} transition")
-+    return matched[0]
-+
-+
-+def _verify_input(root, events, run_id):
-+    ingested = _one(events, "INGESTED")
-+    ready = _one(events, "SOURCE_READY")
-+    identity = ingested["payload"]["source_identity"]
-+    digest = identity["input_sha256"]
-+    _require(run_id == f"ingest-{digest}" and ready["payload"]["source_identity"] == identity, "input event identity differs")
-+    pdf = _contained(root, "input/inbox/artigo.pdf", exists=True)
-+    _require(_hash(pdf) == digest and pdf.stat().st_size == ingested["payload"]["input_size_bytes"], "original PDF was modified")
-+    original_locator = f"artifacts/original/{digest}/document.pdf"
-+    _require(ingested["payload"]["original_locator"] == original_locator, "original locator differs")
-+    zipped = _contained(root, "input/inbox/source.zip")
-+    _require(zipped.exists() == identity["source_zip_present"], "original source ZIP presence differs")
-+    if zipped.exists():
-+        _require(_hash(zipped) == identity["source_zip_sha256"] and zipped.stat().st_size == identity["source_zip_size_bytes"], "original source ZIP was modified")
-+    hashes = _verify_artifacts(root / f"artifacts/original/{digest}", root / f"artifacts/extracted/{digest}", root / f"artifacts/rendered/{digest}", digest)
-+    _require(ready["payload"]["artifacts"] == hashes and ready["artifact_hashes"] == sorted(hashes.values()) and ingested["artifact_hashes"] == [hashes["original"]], "ingestion event hashes differ")
-+    baseline = root / "versions/champion/v0000"
-+    _verify_champion(baseline, digest, hashes, identity)
-+    # M3 publishes indented JSON; M10's compact-byte contract does not apply.
-+    manifest = json.loads((baseline / "manifest.json").read_bytes())
-+    _validate_schema(root, "candidate-manifest.schema.json", manifest)
-+    _require(manifest["run_id"] == run_id and manifest["candidate_id"] == "v0000", "baseline identity differs")
-+    return {"sha256": digest, "size_bytes": pdf.stat().st_size, "unchanged": True, "original_locator": original_locator}, manifest
-+
-+
-+def _verify_routed(root, run_id, synthesis):
-+    """Join the real inference store, budget ledger and immutable M6 receipts."""
-+    from .budget import BudgetLedger
-+    from .execution import ExecutionPolicy
-+    from .inference import InferenceStore
-+
-+    directory = root / "state/inference" / run_id
-+    ledger_path = root / "state/budgets" / f"{run_id}.jsonl"
-+    execution = ExecutionPolicy.from_project(root)
-+    expected_roles = {
-+        receipt["sender_role"]
-+        for receipt in synthesis["decision"]["proposal_receipts"].values()
-+        if execution.enabled and execution.departments.get(f"S{receipt['sender_role'][1]}0") == "routed"
-+    }
-+    if not directory.exists():
-+        _require(not expected_roles and not ledger_path.exists(), "missing required routed inference evidence")
-+        return {"calls": 0, "receipt_ids": [], "assurance": "no_routed_inference"}
-... [diff truncado em 8000 caracteres; consulte somente o arquivo necessário]
+Nenhum patch Git textual disponível; mudanças não rastreadas ainda aparecem no delta e inventário.
 ```
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (106430 bytes; SHA-256 `f64500606f46c127`).
+- Fonte lida: `docs/AI_HISTORY.md` (108987 bytes; SHA-256 `6898695920edc4fe`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -237,23 +78,24 @@ index 0000000..2bac021
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
 | M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 | M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
+| M13 | 2026-09-04 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 
-- Sessões estruturadas registradas: 30.
-- Índice recente: 2026-09-03T22:46:53Z — M12.5.1 Phase A implementada e validada localmente como ligação dual end-to-end por departamento, com contexto autoriza…; 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prom…; 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.; 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato execu…; 2026-09-05T01:41:08Z — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.; 2026-09-05T01:42:06Z — M12.5.1 clean promotion committed locally on m1251-promote-local.; 2026-09-05T00:02:51Z — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos …; 2026-09-05T02:45:32Z — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até pro…. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 31.
+- Índice recente: 2026-09-03T22:47:46Z — Correção documental final da M12.5.1: o handoff humano agora reproduz literalmente todos os campos obrigatórios do prom…; 2026-09-03T22:48:42Z — Sincronização final da CI para M12.5.1 sem enfraquecer a matriz ou a suite.; 2026-09-03T23:22:24Z — Publicação da M12.5.1 Phase A concluída no GitHub por fast-forward, incluindo correção pré-publicação do contrato execu…; 2026-09-05T01:41:08Z — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.; 2026-09-05T01:42:06Z — M12.5.1 clean promotion committed locally on m1251-promote-local.; 2026-09-05T00:02:51Z — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos …; 2026-09-05T02:45:32Z — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até pro…; 2026-09-05T02:47:51Z — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final do…. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-5bc7ce151a9d498d5175` — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos Prime e routed, recursos efetivos, fluxos privilegiados e controles por componente.
-  - mudanças: Nenhum código-fonte, configuração ou artefato científico foi alterado; somente o histórico/contexto obrigatório de handoff foi atualizado.
-  - decisões: Manter separados os caminhos Prime, inferência local e inferência remota, além das autoridades independentes de ingestão, estado, síntese, júri e finalização.
-  - validações: Inspeção estática offline com rg, nl e sed; HEAD confirmado como 562cbbf28447b6c4b3a4002aabedfd0a22a4bdcf; nenhum código da aplicação, modelo, Prime Agent ou serviço externo foi executado.
-  - riscos: Implementação externa do Prime Agent, permissões efetivas do host e serviço remoto/TLS não estão no repositório e permanecem pré-requisitos não verificados.
-  - próximos: O agente principal deve verificar os fatos materiais e incorporar o threatModel e as divergências documentais ao resultado da varredura.
 - `session-89af3d3114afa07a3873` — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até promoção, Pareto e rejeição, com preservação do PDF original e checkpoint local revisável sobre b15526e.
   - mudanças: Adicionados control/m13_fixture.py, control/test_m13_system_delivery.py e scripts/m13_system_check.py: 25 cenários de aceitação e CLI com conservação opcional de evidência ou auditoria somente leitura.; Adicionado article_loop.delivery.verify_delivery, exportado pela fachada: revalidação composta M3/M7/M8/M9/M10, manifesto/ponteiro/receipt/evento final e cadeia budget/route/output/inference receipt/M6.; Estendida somente a revalidação explícita M9 para FINALIZATION_APPLIED do mesmo ciclo, sem a…
   - decisões: Manter os schemas, 21 papéis, 16 estados e 9 ações intactos. Nenhuma dependência nova, configuração live, modelo, Prime Agent ou provedor remoto executado.; Usar dublês apenas nas fronteiras externas e modelos fictícios distintos para provar independência no router. Adaptadores operacionais routed de júri/meta-review M8 permanecem posteriores.; Auditoria cobre disposições PROMOTE/ARCHIVE_PARETO/REJECT em workspace quiescente e no caminho original; não fabrica o pacote terminal FINALIZE de M10.1…
   - validações: python3 -m unittest control.test_m13_system_delivery -q: 25 testes OK, 0 skips.; python3 scripts/m13_system_check.py --keep-workspace (novo caminho externo): PASS, 25 testes, 0 erros/falhas/skips, seguido de ciclo routed conservado com 3 chamadas fake reconciliadas.; CLI --verify-root em processo independente: relatório idêntico ao conservado e inventário completo de bytes/modos inalterado.; python3 -m unittest control.test_m9_diagnosis control.test_m10_policy_finalization control.test_ai_hando…
   - riscos: Aceitação offline não prova qualidade científica geral, júri routed live, Prime Agent live, provedor remoto ou pagamento. Nenhum artigo real executado.; Python 3.11 local não possui jsonschema; nenhuma instalação foi feita. A matriz CI 3.11/3.12/3.13 não foi executada nesta sessão sem publicação.; Receipts M6 preservam locators absolutos pelo contrato existente; não se promete migração por cópia nem igualdade byte a byte entre hosts. Relatório m13-delivery.json é derivado e a CLI recompõe a evi…
   - próximos: Revisar o commit local e executar a matriz CI somente quando houver autorização para publicação.; Configuração de provedor, inferência live e adaptadores routed de júri/meta-review exigem trabalho e autorização separados.
+- `session-00f1ff5cffdb3d788812` — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final dos artefatos gerados de handoff.
+  - mudanças: O commit e9cb259 (feat(m13): prove offline system and delivery path) preservou a implementação validada e os 20 arquivos da entrega; nenhum código ou configuração de produto foi alterado depois dele.; Atualização somente de docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json e AI_CONTEXT.md para incorporar o checkpoint Git real.
+  - decisões: Usar um segundo commit exclusivamente de histórico/contexto: a verificação pós-commit confirmou que o preview Git gerado torna o snapshot textual anterior stale. Isso mantém o handoff atual sem reescrever ou emendar commits.; Preservar main/origin/main em b15526e; nenhum push, merge para main ou execução live.
+  - validações: Após e9cb259, git status --short estava vazio.; python3 scripts/ai_context.py --check após o commit identificou stale no preview Git; fontes e fingerprint científico permaneceram os mesmos.; Validação consolidada do código de e9cb259: aceitação M13 25 testes, adjacentes 82 testes, regressão completa 445 testes, 0 skips; py_compile, diff checks e bin/check.sh OK.; Auditoria independente da evidência externa preservada: relatório idêntico e bytes/modos inalterados; PDF sintético de 644 bytes mant…
+  - riscos: Validação live e matriz CI remota permanecem não executadas; o checkpoint é exclusivamente local.
+  - próximos: Revisar o checkpoint local. Publicação e validação live dependem de autorização separada.
 
 ## Marcos planejados
 

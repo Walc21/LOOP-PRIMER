@@ -1223,27 +1223,10 @@
   "git": {
     "available": true,
     "branch": "m13-system-delivery",
-    "head": "b15526ef4aca2e618fe77dff92dc754c2285f2d8",
-    "status": [
-      "M  .github/workflows/ci.yml",
-      "M  .prime/agent/skills/article-loop/SKILL.md",
-      "M  .prime/agent/skills/article-loop/src/article_loop/__init__.py",
-      "A  .prime/agent/skills/article-loop/src/article_loop/delivery.py",
-      "M  .prime/agent/skills/article-loop/src/article_loop/diagnosis.py",
-      "A  .prime/handoffs/13_final.md",
-      "M  PLANS.md",
-      "M  README.md",
-      "A  control/m13_fixture.py",
-      "A  control/test_m13_system_delivery.py",
-      "M  docs/architecture.md",
-      "M  docs/decisions.md",
-      "A  docs/m13-system-acceptance.md",
-      "M  docs/runbook.md",
-      "M  scripts/ai_context.py",
-      "A  scripts/m13_system_check.py"
-    ]
+    "head": "e9cb259b5325bb9c5c2262b168e09a4704bf65d0",
+    "status": []
   },
-  "recorded_at": "2026-09-05T02:45:32Z",
+  "recorded_at": "2026-09-05T02:47:51Z",
   "schema_version": "1.0.0",
-  "session_id": "session-89af3d3114afa07a3873"
+  "session_id": "session-00f1ff5cffdb3d788812"
 }
