@@ -33,7 +33,7 @@ class M6OrchestrationTests(unittest.TestCase):
         encoded=json.dumps(plan, sort_keys=True, separators=(",", ":"))
         (directory / f"activation-c{plan['cycle_id']:04d}.json").write_text(encoded)
         if plan["cycle_id"] == 0: (directory / "activation_map.json").write_text(encoded)
-    def cycle(self): return asyncio.run(self.o.run_cycle(run_id=self.run, plan=self.plan))
+    def cycle(self): return asyncio.run(self.o.run_cycle(run_id=self.run, plan=self.plan, allow_test_doubles=True))
     def manager(self, department):
         child = asyncio.run(self.o.status(self.run))["children"][department]
         return self.fake.for_child(child["child_id"], actor_role=department)
@@ -107,7 +107,7 @@ class M6OrchestrationTests(unittest.TestCase):
         asyncio.run(self.o.run_cycle(run_id=self.run, plan=self.plan, dry_run=True)); self.assertEqual(self.fake.calls, [])
         self.cycle(); self.assertEqual(len(self.fake.calls), 5)
         next_plan = ActivationPlanner().plan(cycle_id=1, impact=Impact((), (), (), (), ("W11",), 1)).activation_map(); self.persist_plan(next_plan)
-        with self.assertRaises(OrchestrationError): asyncio.run(self.o.run_cycle(run_id=self.run, plan=next_plan))
+        with self.assertRaises(OrchestrationError): asyncio.run(self.o.run_cycle(run_id=self.run, plan=next_plan, allow_test_doubles=True))
 
     def test_actor_topology_depth_and_reconciliation(self):
         self.cycle(); s10 = asyncio.run(self.o.status(self.run))["children"]["S10"]
@@ -157,6 +157,54 @@ class M6OrchestrationTests(unittest.TestCase):
     def test_public_live_requires_explicit_real_adapter(self):
         self.cycle()
         with self.assertRaises(OrchestrationError): asyncio.run(run_cycle(root=self.root, cycle_id=0))
+
+    def test_non_dry_test_double_requires_explicit_boolean_api_authorization(self):
+        journal = self.root / "state/orchestration" / self.run / "journal.jsonl"
+        before = journal.read_bytes()
+        workspace_root = self.root / "workspaces" / self.run
+        with self.assertRaisesRegex(OrchestrationError, "test double requires"):
+            asyncio.run(self.o.run_cycle(run_id=self.run, plan=self.plan))
+        self.assertEqual(journal.read_bytes(), before)
+        self.assertEqual(self.fake.calls, [])
+        self.assertFalse(workspace_root.exists())
+
+        for value in ("true", 1, None, [], {}):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(OrchestrationError, "strictly boolean"):
+                    asyncio.run(self.o.run_cycle(
+                        run_id=self.run, plan=self.plan, allow_test_doubles=value,
+                    ))
+                self.assertEqual(journal.read_bytes(), before)
+                self.assertEqual(self.fake.calls, [])
+                self.assertFalse(workspace_root.exists())
+
+        state = asyncio.run(self.o.run_cycle(
+            run_id=self.run, plan=self.plan, allow_test_doubles=True,
+        ))
+        self.assertEqual(len(state["children"]), 5)
+        self.assertEqual(len(self.fake.calls), 5)
+
+    def test_non_prime_unmarked_adapter_is_rejected_before_publication(self):
+        class UnmarkedAdapter:
+            actor_role = "M00"
+            actor_id = "unmarked"
+            depth = 0
+
+            async def spawn(self, prompt, *, name):
+                raise AssertionError("must not be called")
+
+            async def list_subagents(self):
+                raise AssertionError("must not be called")
+
+        journal = self.root / "state/orchestration" / self.run / "journal.jsonl"
+        before = journal.read_bytes()
+        candidate = Orchestrator(self.root, UnmarkedAdapter())
+        with self.assertRaisesRegex(OrchestrationError, "authorized M6 adapter"):
+            asyncio.run(candidate.run_cycle(
+                run_id=self.run, plan=self.plan, allow_test_doubles=True,
+            ))
+        self.assertEqual(journal.read_bytes(), before)
+        self.assertFalse((self.root / "workspaces" / self.run).exists())
 
     def test_prime_documented_handle_and_preflight_are_closed(self):
         class Handle:
@@ -229,7 +277,7 @@ class M6OrchestrationTests(unittest.TestCase):
         paused=ActivationPlanner(limits=PlanningLimits(max_estimated_tokens=1)).plan(cycle_id=0,impact=impact).activation_map()
         self.assertTrue(paused["paused"]); self.assertIsInstance(paused["checkpoint"],dict)
         self.persist_plan(paused)
-        state=asyncio.run(self.o.run_cycle(run_id=self.run,plan=paused))
+        state=asyncio.run(self.o.run_cycle(run_id=self.run,plan=paused,allow_test_doubles=True))
         self.assertTrue(state["paused"]); self.assertEqual(state["children"],{}); self.assertEqual(self.fake.calls,[])
 
     def test_paused_checkpoint_is_closed_against_forgery(self):
@@ -275,7 +323,11 @@ class M6OrchestrationTests(unittest.TestCase):
         def rejects(mutator):
             forged = json.loads(json.dumps(self.plan)); mutator(forged)
             with self.assertRaises(OrchestrationError): self.o._plan(forged)
-            with self.assertRaises(OrchestrationError): asyncio.run(self.o.run_cycle(run_id=self.run, plan=forged))
+            with self.assertRaises(OrchestrationError): asyncio.run(
+                self.o.run_cycle(
+                    run_id=self.run, plan=forged, allow_test_doubles=True,
+                )
+            )
             self.assertEqual(durable_bytes(), before_store)
             self.assertEqual(self.o._events(self.run), before_events)
             self.assertEqual(sorted((self.root / "workspaces").rglob("*")), before_workspaces)

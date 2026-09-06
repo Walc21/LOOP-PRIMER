@@ -153,7 +153,9 @@ class SyntheticCycle:
         return self.adapter.department_adapter(child) if self.routed and department == "S40" else self.fake.for_child(child["child_id"], actor_role=department)
 
     def workers(self):
-        asyncio.run(self.orchestrator.run_cycle(run_id=self.run_id, plan=self.plan))
+        asyncio.run(self.orchestrator.run_cycle(
+            run_id=self.run_id, plan=self.plan, allow_test_doubles=True,
+        ))
         for department in DEPARTMENTS:
             if self.routed and department == "S40":
                 continue

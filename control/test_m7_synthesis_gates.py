@@ -93,7 +93,9 @@ class M7ReceiptIntegrationTests(unittest.TestCase):
         }
 
     def _m6_state(self):
-        asyncio.run(self.orchestrator.run_cycle(run_id=self.run_id, plan=self.plan))
+        asyncio.run(self.orchestrator.run_cycle(
+            run_id=self.run_id, plan=self.plan, allow_test_doubles=True,
+        ))
         for department in ("S10", "S20", "S30", "S40", "S50"):
             asyncio.run(self.orchestrator.advance_department(self.run_id, department, adapter=self._manager(department)))
         for number in range(1, 6):

@@ -16,12 +16,13 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import tempfile
 from typing import Any, Mapping, Sequence
 
 import jsonschema
 
-from .adapters import ChildHandle
+from .adapters import ChildHandle, M6OperationalAdapter, PrimeRLMAdapter
 from .budget import load_budget_config
 from .inference import (
     InferenceConfigError, InferenceIntegrityError, InferenceRequest,
@@ -434,19 +435,40 @@ class RoutedControlAdapter:
         )
 
 
-class DualExecutionAdapter:
+class DualExecutionAdapter(M6OperationalAdapter):
     """Root M6 adapter choosing Prime or routed control per department."""
 
     actor_role = "M00"
     actor_id = "root"
     depth = 0
+    # This is a project-owned control adapter selected by ExecutionPolicy, not
+    # a test double.  Its M6OperationalAdapter base is the non-Prime boundary.
 
     def __init__(self, root: str | Path, run_id: str, policy: ExecutionPolicy, *, prime_adapter: Any | None = None):
+        # The outer adapter is operational, but an injected adapter can still
+        # service a ``prime`` department.  Do not let that nested boundary hide
+        # a test double from Orchestrator.run_cycle().
+        self._prime_adapter_is_test_double = (
+            getattr(prime_adapter, "is_test_double", False) is True
+        )
+        if (
+            prime_adapter is not None
+            and not self._prime_adapter_is_test_double
+            and not isinstance(prime_adapter, PrimeRLMAdapter)
+        ):
+            raise ExecutionError(
+                "Prime layer adapter must be PrimeRLMAdapter or a marked test double"
+            )
         self.root = Path(root).resolve()
         self.run_id = run_id
         self.policy = policy
         self.prime_adapter = prime_adapter
         self.routed = RoutedControlAdapter(self.root, run_id, actor_role="M00", actor_id="root", depth=0)
+
+    @property
+    def is_test_double(self) -> bool:
+        """Expose a nested Prime test double to the M6 root authorization."""
+        return self._prime_adapter_is_test_double
 
     async def spawn(self, prompt: str, *, name: str) -> ChildHandle:
         department = RoutedControlAdapter._role(name)
@@ -499,6 +521,62 @@ class DualExecutionController:
         self.registry = registry
         self.materializer = ContextMaterializer(self.root)
 
+    def _workspace_inputs(
+        self, run_id: str, role: str, child: Mapping[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, Any], str]:
+        """Read the three M6 workspace inputs once and rebind their hashes.
+
+        The child HANDLE is the existing M6 hash contract.  Rechecking it here
+        closes the interval between M6 admission and routed inference without
+        creating a second workspace-hash protocol.
+        """
+        cycle_id = child.get("cycle_id")
+        if not isinstance(cycle_id, int) or cycle_id < 0:
+            raise ExecutionError("M6 child cycle is invalid")
+        expected_workspace = self.root / "workspaces" / run_id / f"cycle-{cycle_id:04d}" / role
+        if child.get("workspace") != str(expected_workspace):
+            raise ExecutionError("M6 workspace differs from its authorized path")
+        current = self.root
+        for component in ("workspaces", run_id, f"cycle-{cycle_id:04d}", role):
+            current = current / component
+            try:
+                info = current.lstat()
+            except OSError as error:
+                raise ExecutionError("M6 workspace is unreadable") from error
+            if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
+                raise ExecutionError("M6 workspace contains a symlink or non-directory")
+
+        contents: dict[str, bytes] = {}
+        for name, hash_name in (
+            ("task.json", "task_hash"),
+            ("view.json", "view_hash"),
+            ("prompt.txt", "prompt_hash"),
+        ):
+            expected_hash = child.get(hash_name)
+            path = expected_workspace / name
+            try:
+                info = path.lstat()
+            except OSError as error:
+                raise ExecutionError("M6 workspace input is unreadable") from error
+            if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
+                raise ExecutionError("M6 workspace input is not a regular file")
+            try:
+                data = path.read_bytes()
+            except OSError as error:
+                raise ExecutionError("M6 workspace input is unreadable") from error
+            if not isinstance(expected_hash, str) or sha256(data) != expected_hash:
+                raise ExecutionError("M6 workspace input hash differs from admission")
+            contents[name] = data
+        try:
+            task = json.loads(contents["task.json"])
+            view = json.loads(contents["view.json"])
+            compiled_prompt = contents["prompt.txt"].decode("utf-8")
+        except (UnicodeError, json.JSONDecodeError) as error:
+            raise ExecutionError("M6 task workspace is invalid") from error
+        if not isinstance(task, dict) or not isinstance(view, dict):
+            raise ExecutionError("M6 task workspace documents must be objects")
+        return task, view, compiled_prompt
+
     async def execute_routed_department(
         self, orchestrator: Orchestrator, run_id: str, department: str,
         adapter: RoutedControlAdapter, runtime: InferenceRuntime, *,
@@ -514,12 +592,7 @@ class DualExecutionController:
                 continue
             child = state["children"][role]
             workspace = Path(child["workspace"])
-            try:
-                task = json.loads((workspace / "task.json").read_text(encoding="utf-8"))
-                view = json.loads((workspace / "view.json").read_text(encoding="utf-8"))
-                compiled_prompt = (workspace / "prompt.txt").read_text(encoding="utf-8")
-            except (OSError, json.JSONDecodeError) as error:
-                raise ExecutionError("M6 task workspace is unreadable") from error
+            task, view, compiled_prompt = self._workspace_inputs(run_id, role, child)
             route = self.registry.role_routes.get(role)
             if route is None:
                 raise ExecutionError("routed worker has no model route")

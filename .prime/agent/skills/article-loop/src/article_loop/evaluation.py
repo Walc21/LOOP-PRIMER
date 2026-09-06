@@ -150,8 +150,14 @@ def sanitize_text(text: str) -> str:
         "author", "authors", "affil", "affiliation", "institute",
         "email", "ead", "orcid", "orcidlink", "thanks", "address",
     }
+    command_names = "|".join(sorted(identity_commands, key=len, reverse=True))
+    # A TeX control word ends at a non-letter boundary.  The boundary prevents
+    # ``\authorinfo`` from being treated as ``\author`` plus leaked
+    # ``info{...}``; the second alternative removes such unknown identity-
+    # prefixed macros as a whole before a jury can receive their arguments.
     command_pattern = re.compile(
-        r"\\(" + "|".join(sorted(identity_commands, key=len, reverse=True)) + r")\*?",
+        r"\\(?:" + command_names + r")\*?(?=[^A-Za-z@]|$)"
+        + r"|\\(?:" + command_names + r")[A-Za-z@]+\*?(?=[^A-Za-z@]|$)",
         flags=re.IGNORECASE,
     )
     cursor = 0

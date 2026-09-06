@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fcntl
+import errno
 import hashlib
 import json
 import os
@@ -22,6 +23,14 @@ _EVENT_FIELDS = frozenset({
     "schema_version", "event_id", "idempotency_key", "run_id", "cycle_id",
     "sequence", "occurred_at", "event_type", "state_from", "state_to",
     "actor_id", "payload", "artifact_hashes", "previous_event_hash", "event_hash",
+})
+# Directory fsync is optional only on filesystems that explicitly report it as
+# unsupported.  Every other open, fsync, or close error is a failed durable
+# publication and must propagate to the caller.
+_DIRECTORY_FSYNC_UNSUPPORTED_ERRNOS = frozenset({
+    errno.EINVAL,
+    errno.ENOTSUP,
+    getattr(errno, "EOPNOTSUPP", errno.ENOTSUP),
 })
 
 
@@ -112,12 +121,15 @@ class DurableStore:
     def _fsync_directory(self, directory: Path) -> None:
         try:
             descriptor = os.open(directory, os.O_RDONLY)
-        except OSError:
-            return
+        except OSError as error:
+            if error.errno in _DIRECTORY_FSYNC_UNSUPPORTED_ERRNOS:
+                return
+            raise
         try:
             os.fsync(descriptor)
-        except OSError:
-            pass
+        except OSError as error:
+            if error.errno not in _DIRECTORY_FSYNC_UNSUPPORTED_ERRNOS:
+                raise
         finally:
             os.close(descriptor)
 

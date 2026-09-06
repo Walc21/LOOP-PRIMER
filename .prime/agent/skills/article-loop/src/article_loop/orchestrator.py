@@ -18,7 +18,7 @@ from typing import Any, Mapping
 import jsonschema
 
 from .activation import ActivationMode, ActivationPlan, ActivationEntry, PlanningLimits, CHILDREN, DEPARTMENTS, specialist_view, submanager_view
-from .adapters import ChildHandle, PrimeRLMAdapter
+from .adapters import ChildHandle, M6OperationalAdapter, PrimeRLMAdapter
 from .prompts import PromptContractError, compile_prompt, expected_prompt_version, validate_output
 from .store import DurableStore, StoreError, TransitionError
 from .ingestion import _persisted_source_identity, _source_identity, _verify_artifacts, _verify_champion
@@ -434,10 +434,32 @@ class Orchestrator:
                 except (OSError, json.JSONDecodeError) as error: raise OrchestrationError("invalid persisted M5 activation map") from error
         raise OrchestrationError("a persisted M5 ActivationPlan is required")
 
-    async def run_cycle(self, *, cycle_id: int | None = None, dry_run: bool = False, run_id: str | None = None, plan: ActivationPlan | Mapping[str, Any] | None = None) -> dict[str, Any]:
-        run = self._run(run_id or self._only_run()); state = self._state(run); self._guard(state)
-        if not dry_run and not isinstance(self.adapter, PrimeRLMAdapter) and self.adapter is None:
-            raise OrchestrationError("live execution requires an explicit PrimeRLMAdapter")
+    async def run_cycle(self, *, cycle_id: int | None = None, dry_run: bool = False,
+                        run_id: str | None = None,
+                        plan: ActivationPlan | Mapping[str, Any] | None = None,
+                        allow_test_doubles: bool = False) -> dict[str, Any]:
+        """Plan and admit one cycle, with an explicit test-double boundary.
+
+        ``allow_test_doubles`` is deliberately an API-only, strictly boolean
+        authorization.  It is examined before planning or admission can write
+        any durable M6 artifact.
+        """
+        if not isinstance(allow_test_doubles, bool):
+            raise OrchestrationError("allow_test_doubles must be strictly boolean")
+        # Preserve the public API's existing run-resolution diagnostic.  It is
+        # read-only and still precedes any planning, admission, or publication.
+        run = self._run(run_id or self._only_run())
+        if not dry_run:
+            if self.adapter is None:
+                raise OrchestrationError("non-dry-run execution requires an explicit adapter")
+            if isinstance(self.adapter, PrimeRLMAdapter):
+                pass
+            elif getattr(self.adapter, "is_test_double", False) is True:
+                if not allow_test_doubles:
+                    raise OrchestrationError("test double requires allow_test_doubles=True")
+            elif not isinstance(self.adapter, M6OperationalAdapter):
+                raise OrchestrationError("non-dry-run execution requires Prime or an authorized M6 adapter")
+        state = self._state(run); self._guard(state)
         if self.adapter is not None and getattr(self.adapter, "actor_role", "M00") != "M00": raise OrchestrationError("only M00 may plan a root cycle")
         persisted = self._load_plan(run, cycle_id)
         if plan is None: plan = persisted

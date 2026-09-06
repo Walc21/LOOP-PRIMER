@@ -21,6 +21,10 @@ class ChildHandle:
     depth: int = 0
 
 
+class M6OperationalAdapter:
+    """Project-owned non-Prime root adapter authorized by the M6 boundary."""
+
+
 class PrimeRLMAdapter:
     """Adapter for one already-authorized, current Prime session.
 
@@ -89,6 +93,7 @@ class PrimeRLMAdapter:
 class FakeRLMAdapter:
     """Deterministic in-memory RLM proof; it is never selected implicitly."""
     is_prime = False
+    is_test_double = True
 
     def __init__(self, *, actor_role: str = "M00", actor_id: str = "root",
                  depth: int = 0, registry: dict[str, ChildHandle] | None = None,

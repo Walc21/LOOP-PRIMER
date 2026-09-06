@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 import json
+import errno
 import sys
 import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / ".prime/agent/skills/article-loop/src"))
 
 from article_loop import DurableStore, IntegrityError, State, StopRequested, StoreError, TransitionError
+from article_loop.store import _DIRECTORY_FSYNC_UNSUPPORTED_ERRNOS
 from article_loop.state_machine import is_valid_transition
 
 
@@ -82,6 +85,36 @@ class DurableStateTests(unittest.TestCase):
         with self.assertRaises(StoreError):
             self.store.record("run-1", State.NEW, **values)
         self.assertFalse((self.root / "state/events/run-1.jsonl").exists())
+
+    def test_directory_fsync_tolerates_only_documented_unsupported_errors(self):
+        self.assertEqual(
+            _DIRECTORY_FSYNC_UNSUPPORTED_ERRNOS,
+            frozenset({errno.EINVAL, errno.ENOTSUP, getattr(errno, "EOPNOTSUPP", errno.ENOTSUP)}),
+        )
+        with (
+            mock.patch("article_loop.store.os.open", return_value=17),
+            mock.patch("article_loop.store.os.fsync", side_effect=OSError(errno.EINVAL, "unsupported")),
+            mock.patch("article_loop.store.os.close"),
+        ):
+            self.store._fsync_directory(self.root)
+
+        with (
+            mock.patch("article_loop.store.os.open", return_value=17),
+            mock.patch("article_loop.store.os.fsync", side_effect=OSError(errno.EIO, "disk failure")),
+            mock.patch("article_loop.store.os.close"),
+        ):
+            with self.assertRaises(OSError) as raised:
+                self.store._fsync_directory(self.root)
+        self.assertEqual(raised.exception.errno, errno.EIO)
+
+    def test_directory_fsync_io_error_fails_atomic_publication(self):
+        target = self.root / "state" / "events" / "publication.json"
+        with mock.patch.object(
+            self.store, "_fsync_directory", side_effect=OSError(errno.EIO, "disk failure"),
+        ):
+            with self.assertRaises(OSError) as raised:
+                self.store._atomic_bytes(target, b"durable payload")
+        self.assertEqual(raised.exception.errno, errno.EIO)
 
     def test_all_valid_transitions(self):
         for current, target in FORWARD.items():
