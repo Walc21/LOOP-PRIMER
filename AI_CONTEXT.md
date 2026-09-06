@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1`
-- Baseline da última sessão: `13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1`
+- Fingerprint atual das fontes: `d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2`
+- Baseline da última sessão: `d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 215 arquivos relevantes, 1900271 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 215 arquivos relevantes, 1900403 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -50,7 +50,7 @@ O delta content-addressed acima é a evidência determinística de alterações;
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (133579 bytes; SHA-256 `70fc59ab585eb4e7`).
+- Fonte lida: `docs/AI_HISTORY.md` (134942 bytes; SHA-256 `f214f80b1a3d59c4`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -77,24 +77,24 @@ O delta content-addressed acima é a evidência determinística de alterações;
 | M13 | 2026-09-04..2026-09-05 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 | M13.1 | 2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
 | M13.2 | 2026-09-06 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
-| M14 | 2026-09-06 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
+| M14 | 2026-09-06 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
 
-- Sessões estruturadas registradas: 40.
-- Índice recente: 2026-09-05T05:00:25Z — Ciclo de contexto de IA redesenhado: início read-only e publicação somente em checkpoint explícito.; 2026-09-06T04:12:37Z — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 t…; 2026-09-06T05:36:44Z — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, mode…; 2026-09-06T06:07:24Z — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map …; 2026-09-06T07:01:49Z — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suporta…; 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado es…; 2026-09-06T07:55:00Z — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.; 2026-09-06T07:59:33Z — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, qu…. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 41.
+- Índice recente: 2026-09-06T04:12:37Z — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 t…; 2026-09-06T05:36:44Z — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, mode…; 2026-09-06T06:07:24Z — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map …; 2026-09-06T07:01:49Z — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suporta…; 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado es…; 2026-09-06T07:55:00Z — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.; 2026-09-06T07:59:33Z — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, qu…; 2026-09-06T08:13:25Z — Restored the two README compatibility markers required by the AI handoff contract after the documentation refresh cause…. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-b6f24eee458186e7c9d9` — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.
-  - mudanças: Replaced README.md with the exact parent revision blob 4df86adcba1d020b26314e365ac1e948eb47cad5.
-  - decisões: Preserve the historical README bytes, including its pre-existing trailing whitespace, rather than silently reformatting the restored version.
-  - validações: Working-tree README hash equals HEAD^:README.md; unresolved conflict markers were removed.
-  - riscos: The restored historical README still contains outdated claims and seven pre-existing trailing-whitespace warnings; no other project source was changed.
-  - próximos: Review the restored README separately before any new documentation rewrite; commit this restoration only with explicit authorization.
 - `session-07dd42119cf2d761e4df` — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, quick-start, CLI, repository-tree and ADR-table structure.
   - mudanças: Updated milestone, security, test, command, repository-layout and ADR references through M14 and the canonical local Control Center launcher.
   - decisões: Keep the legacy README presentation and links; correct claims in place instead of replacing it with a new document structure.
   - validações: Verified all documented local files and command entrypoints exist; git diff --check passed; no source or runtime behavior was changed.
   - riscos: README documents structural readiness only; live models, Prime Agent, providers, paid APIs and scientific runs remain unauthorized and disabled by default.
   - próximos: Review the uncommitted documentation and checkpoint changes, then commit only with explicit authorization.
+- `session-d74de28a5971446dc7ab` — Restored the two README compatibility markers required by the AI handoff contract after the documentation refresh caused CI to fail.
+  - mudanças: Added the literal M10 Decision and operational CLI statements back to the README status block without changing its structure.
+  - decisões: README compatibility markers asserted by control/test_ai_handoff remain stable wording contracts and must be preserved during documentation updates.
+  - validações: python3 -m unittest control.test_ai_handoff -q: 12 tests OK; git diff --check OK.
+  - riscos: This is documentation-only; no model, Prime Agent, provider, API, or scientific pipeline was run.
+  - próximos: Push the CI repair commit and wait for the refreshed PR checks.
 
 ## Marcos planejados
 
@@ -326,7 +326,7 @@ A prova é de sistema offline e de disposição de ciclo. Não certifica matemá
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
 - Total: 215 arquivos; runtime=19, text=196.
-- Fingerprint canônico: `13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1`.
+- Fingerprint canônico: `d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2`.
 
 ## Roteamento para aprofundamento
 

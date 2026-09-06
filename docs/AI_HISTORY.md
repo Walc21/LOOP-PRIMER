@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1`
-- Registrado em: `2026-09-06T07:59:33Z`
-- Git: branch `codex/control-center-launcher`, HEAD `9faed3499bcf`
+- Fingerprint das fontes: `d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2`
+- Registrado em: `2026-09-06T08:13:25Z`
+- Git: branch `codex/control-center-launcher`, HEAD `ef39df85f67f`
 - Arquivos relevantes: 215
 
 ## Evolução reconstruída do versionamento
@@ -37,7 +37,7 @@
 | M13 | 2026-09-04..2026-09-05 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 | M13.1 | 2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
 | M13.2 | 2026-09-06 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
-| M14 | 2026-09-06 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
+| M14 | 2026-09-06 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
 
 ### Commits exatos
 
@@ -165,6 +165,7 @@
 | `e1daf66e9` | 2026-09-06 | M14 | feat(m14): add local control center | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
 | `fce6dfc0e` | 2026-09-06 | sem marco explícito | Merge pull request #7 from Walc21/codex/control-center |  |
 | `9faed3499` | 2026-09-06 | sem marco explícito | Clarify canonical local control-center startup | .prime/agent/skills/article-loop/src/article_loop/control_center_static/index.html, .prime/agent/skills/article-loop/src/article_loop/control_center_static/styles.css, AI_CONTEXT.… |
+| `ef39df85f` | 2026-09-06 | M14 | docs(readme): refresh M14 project overview | AI_CONTEXT.md, README.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 
 ## Decisões arquiteturais
 
@@ -1851,3 +1852,36 @@
 | Tipo | Caminho | SHA anterior | SHA final |
 |---|---|---|---|
 | modified | `README.md` | `bf2c1e350275` | `6b14a95fb275` |
+
+### 2026-09-06T08:13:25Z — Restored the two README compatibility markers required by the AI handoff contract after the documentation refresh caused CI to fail.
+
+- Session ID: `session-d74de28a5971446dc7ab`
+- Fingerprint final: `d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2`
+- Git final: `ef39df85f67f`; status relevante: 1 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- Added the literal M10 Decision and operational CLI statements back to the README status block without changing its structure.
+
+**Decisões**
+
+- README compatibility markers asserted by control/test_ai_handoff remain stable wording contracts and must be preserved during documentation updates.
+
+**Validações**
+
+- python3 -m unittest control.test_ai_handoff -q: 12 tests OK; git diff --check OK.
+
+**Riscos/limites**
+
+- This is documentation-only; no model, Prime Agent, provider, API, or scientific pipeline was run.
+
+**Próximos passos**
+
+- Push the CI repair commit and wait for the refreshed PR checks.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `README.md` | `6b14a95fb275` | `9db883c90233` |

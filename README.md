@@ -22,6 +22,7 @@
 > durability, workspace binding and jury anonymization. M14 adds a local
 > loopback Control Center with read-only projections, resumable events, typed
 > configuration drafts, canonical controls and an independent audit ledger.
+> M10 publishes a canonical, content-addressed `Decision`; M10 CLIs are operational within their documented fail-closed boundaries.
 > The code remains fail-closed: it does not run an article, model, Prime Agent,
 > provider or paid API by itself. A future live execution still requires explicit
 > human authorization, configuration, budget, content policy and preflight.

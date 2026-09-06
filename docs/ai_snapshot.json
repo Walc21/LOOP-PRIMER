@@ -397,10 +397,10 @@
       "sha256": "32816308cbda1d069d4be474172285b4765d57ae5dc1c7040045f48cd8209260"
     },
     "README.md": {
-      "bytes": 19433,
+      "bytes": 19565,
       "kind": "text",
-      "lines": 352,
-      "sha256": "6b14a95fb2756245a9be03bda3a41e146d04cb497b0a221b7e0d576dcec13ad9"
+      "lines": 353,
+      "sha256": "9db883c90233cf34e8e1136a699865c88e303164bf562240ec63121bc7ebe86b"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -1291,16 +1291,16 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1",
+  "fingerprint": "d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2",
   "git": {
     "available": true,
     "branch": "codex/control-center-launcher",
-    "head": "9faed3499bcf4ce5a788c477ec986bf715d8c441",
+    "head": "ef39df85f67fb0ea10fa986c82c0cb051a0c5df7",
     "status": [
       " M README.md"
     ]
   },
-  "recorded_at": "2026-09-06T07:59:33Z",
+  "recorded_at": "2026-09-06T08:13:25Z",
   "schema_version": "1.0.0",
-  "session_id": "session-07dd42119cf2d761e4df"
+  "session_id": "session-d74de28a5971446dc7ab"
 }
