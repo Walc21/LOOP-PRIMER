@@ -71,8 +71,8 @@ class Orchestrator:
     def _dir(self, run: str, *, create: bool = True) -> Path:
         return self._managed("state", "orchestration", self._run(run), create=create)
 
-    def _file(self, run: str, name: str) -> Path:
-        directory = self._dir(run)
+    def _file(self, run: str, name: str, *, create: bool = True) -> Path:
+        directory = self._dir(run, create=create)
         path = directory / name
         if path.is_symlink(): raise OrchestrationError("symlinked orchestration file")
         return path
@@ -110,7 +110,9 @@ class Orchestrator:
             if os.path.exists(temp): os.unlink(temp)
 
     def _events(self, run: str) -> list[dict[str, Any]]:
-        path = self._file(run, "journal.jsonl")
+        # Status projection must never create an orchestration directory merely
+        # because an observer asks about an M2-only or absent run.
+        path = self._file(run, "journal.jsonl", create=False)
         if not path.exists(): return []
         result = []
         for line in path.read_bytes().splitlines(keepends=True):
@@ -220,6 +222,16 @@ class Orchestrator:
 
     def _guard(self, state: Mapping[str, Any]) -> None:
         if state["paused"] or state["stopped"] or state["finalized"]: raise OrchestrationError("execution is not mutable")
+
+    @staticmethod
+    def _require_expected_snapshot(state: Mapping[str, Any], expected_snapshot_hash: str | None) -> None:
+        """Apply an optional optimistic-concurrency check inside the M6 lock."""
+        if expected_snapshot_hash is None:
+            return
+        if not isinstance(expected_snapshot_hash, str) or _SHA.fullmatch(expected_snapshot_hash) is None:
+            raise OrchestrationError("expected snapshot hash is invalid")
+        if _hash(_bytes(state)) != expected_snapshot_hash:
+            raise OrchestrationError("orchestration snapshot is stale")
 
     def _workspace(self, run: str, cycle: int, role: str) -> Path:
         return self._managed("workspaces", self._run(run), f"cycle-{cycle:04d}", role, create=True)
@@ -746,10 +758,11 @@ class Orchestrator:
         await adapter.send_parent(_bytes({"path":str(target),"sha256":digest,"schema_version":SCHEMA_VERSION}).decode())
         return result
 
-    async def pause(self, run_id: str) -> dict[str, Any]:
+    async def pause(self, run_id: str, *, expected_snapshot_hash: str | None = None) -> dict[str, Any]:
         run=self._run(run_id)
         with self._lock(run):
             state=self._state(run)
+            self._require_expected_snapshot(state, expected_snapshot_hash)
             if state["paused"]:
                 pause_id=state.get("pause_id")
                 if not isinstance(pause_id,str): raise OrchestrationError("paused journal lacks pause id")
@@ -761,10 +774,11 @@ class Orchestrator:
             self._canonical(run,State.PAUSED,event_id=pause_id,event_type="M6_PAUSED",payload=payload)
             self._append(run,"PAUSED",pause_id,payload)
             return self._save_snapshot(run)
-    async def resume(self, run_id: str) -> dict[str, Any]:
+    async def resume(self, run_id: str, *, expected_snapshot_hash: str | None = None) -> dict[str, Any]:
         run=self._run(run_id)
         with self._lock(run):
             state=self._state(run)
+            self._require_expected_snapshot(state, expected_snapshot_hash)
             if state["stopped"] or state["finalized"] or not state["paused"]: raise OrchestrationError("execution cannot resume")
             pause_id=state.get("pause_id"); resume_state=state.get("resume_state")
             if not isinstance(pause_id,str) or resume_state not in {item.value for item in State}: raise OrchestrationError("paused journal is malformed")
@@ -774,10 +788,11 @@ class Orchestrator:
             self._canonical(run,State(resume_state),event_id=key,event_type="M6_RESUMED",payload=payload)
             self._append(run,"RESUMED",key,payload)
             return self._save_snapshot(run)
-    async def stop(self, run_id: str) -> dict[str, Any]:
+    async def stop(self, run_id: str, *, expected_snapshot_hash: str | None = None) -> dict[str, Any]:
         run=self._run(run_id)
         with self._lock(run):
             state=self._state(run)
+            self._require_expected_snapshot(state, expected_snapshot_hash)
             stop_id=f"{run}:m6:stopped"
             if state["stopped"]:
                 self._canonical(run,State.TECHNICAL_FAILURE,event_id=stop_id,event_type="M6_STOPPED",payload={"reason":"operator_stop"})
@@ -804,9 +819,11 @@ class Orchestrator:
             state=self._state(run)
             if state["stopped"] or state["finalized"]: raise OrchestrationError("execution is terminal")
             self._append(run,event,f"{run}:{event.lower()}",payload); return self._save_snapshot(run)
-    async def checkpoint(self, run_id: str) -> dict[str, Any]:
+    async def checkpoint(self, run_id: str, *, expected_snapshot_hash: str | None = None) -> dict[str, Any]:
         run=self._run(run_id)
         with self._lock(run):
+            state=self._state(run)
+            self._require_expected_snapshot(state, expected_snapshot_hash)
             state=self._save_snapshot(run); self._atomic(self._file(run,f"checkpoint-{len(self._events(run)):06d}.json"),state); return state
     async def status(self, run_id: str | None=None) -> dict[str, Any]: return self._snapshot(self._run(run_id or self._only_run()))
     def _only_run(self) -> str:

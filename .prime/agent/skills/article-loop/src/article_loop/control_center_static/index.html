@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>article-loop — Central de Controle</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+    <script defer src="/assets/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Ir para o conteúdo</a>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">article-loop · somente local</p>
+        <h1>Central de Controle</h1>
+      </div>
+      <p id="connection-state" class="connection" role="status" aria-live="polite">Atualizando estado confirmado…</p>
+    </header>
+    <div class="shell">
+      <nav class="navigation" aria-label="Seções da Central">
+        <button class="nav-button active" data-view="overview">Visão geral</button>
+        <button class="nav-button" data-view="runs">Execuções</button>
+        <button class="nav-button" data-view="topology">Topologia</button>
+        <button class="nav-button" data-view="evidence">Gates e decisões</button>
+        <button class="nav-button" data-view="budget">Orçamento e custo</button>
+        <button class="nav-button" data-view="config">Configuração</button>
+        <button class="nav-button" data-view="audit">Auditoria e erros</button>
+      </nav>
+      <main id="main" tabindex="-1">
+        <section id="notice" class="notice" hidden aria-live="polite"></section>
+        <section id="view" aria-live="polite"><p>Carregando informações duráveis confirmadas…</p></section>
+      </main>
+    </div>
+  </body>
+</html>

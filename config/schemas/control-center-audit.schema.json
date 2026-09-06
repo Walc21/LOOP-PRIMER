@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "control-center-audit.schema.json",
+  "title": "ControlCenterAuditEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "event_id", "sequence", "occurred_at", "action", "idempotency_key", "request_hash", "expected_hash", "before_hash", "after_hash", "outcome", "previous_event_hash", "event_hash"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "event_id": {"type": "string", "pattern": "^cc-[0-9]{8}$"},
+    "sequence": {"type": "integer", "minimum": 0},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "action": {"type": "string", "minLength": 1, "maxLength": 80},
+    "idempotency_key": {"type": "string", "minLength": 1, "maxLength": 256},
+    "request_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "expected_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "before_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "after_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "outcome": {"enum": ["PREPARED", "APPLIED", "REJECTED", "RECOVERED"]},
+    "run_id": {"type": ["string", "null"], "maxLength": 128},
+    "draft_id": {"type": ["string", "null"], "maxLength": 128},
+    "response_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "previous_event_hash": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "event_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

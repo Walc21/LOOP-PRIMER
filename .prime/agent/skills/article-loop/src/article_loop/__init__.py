@@ -55,6 +55,10 @@ from .execution import (
 )
 from .delivery import DeliveryError, verify_delivery
 from .routed_evaluation import RoutedJurorAdapter, RoutedMetaReviewerAdapter
+from .control_center import (
+    AuditLedger, ConfigurationRepository, ControlCenterError, ControlPlane,
+    IdempotencyStore, LocalControlHTTPServer, active_runs, serve,
+)
 
 __version__ = "0.7.0"
 
@@ -108,4 +112,6 @@ __all__ = [
     "status", "stop", "submanager_view", "tree_hash", "validate_output",
     "verify_delivery", "verify_published_diagnosis",
     "RoutedJurorAdapter", "RoutedMetaReviewerAdapter",
+    "AuditLedger", "ConfigurationRepository", "ControlCenterError", "ControlPlane",
+    "IdempotencyStore", "LocalControlHTTPServer", "active_runs", "serve",
 ]

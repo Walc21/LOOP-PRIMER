@@ -75,13 +75,30 @@ def _is_sha256(value: Any) -> bool:
 class DurableStore:
     """Filesystem-only event store rooted at an existing project directory."""
 
-    def __init__(self, root: str | Path, *, fault: Callable[[str], None] | None = None):
-        self.root = Path(root).resolve()
+    def __init__(
+        self,
+        root: str | Path,
+        *,
+        fault: Callable[[str], None] | None = None,
+        read_only: bool = False,
+    ):
+        raw_root = Path(root)
+        if raw_root.is_symlink():
+            raise StoreError("root must not be a symlink")
+        self.root = raw_root.resolve()
         self.fault = fault
+        if type(read_only) is not bool:
+            raise StoreError("read_only must be boolean")
+        self.read_only = read_only
         if not self.root.is_dir():
             raise StoreError("root must be an existing directory")
         for relative in ("state/events", "state/snapshots", "state/checkpoints", "state/locks"):
-            (self.root / relative).mkdir(parents=True, exist_ok=True)
+            path = self.root / relative
+            if self.read_only:
+                if path.exists() and (path.is_symlink() or not path.is_dir()):
+                    raise StoreError("runtime state directory is unsafe")
+            else:
+                path.mkdir(parents=True, exist_ok=True)
 
     def _p(self, relative: str) -> Path:
         path = (self.root / relative).resolve()

@@ -6,15 +6,15 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `99e18d3743a22283e304aca2cc36576423144a99365d5201734d9bc0e7181a24`
-- Baseline da última sessão: `99e18d3743a22283e304aca2cc36576423144a99365d5201734d9bc0e7181a24`
+- Fingerprint atual das fontes: `39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20`
+- Baseline da última sessão: `39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 205 arquivos relevantes, 1751536 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 214 arquivos relevantes, 1892473 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
 O `article-loop` é uma integração local, auditável e fail-closed para revisão iterativa de artigos matemáticos. Separa PDF original, baseline/champion, propostas de 21 papéis, challenger imutável, gates locais, júri cego, diagnóstico, Decision M10 e finalização transacional.
-O marco implementado mais recente é **M13.2** (hardening estrutural). Nenhum marco canônico pendente está listado; configuração e validação live permanecem separadas.
+O marco implementado mais recente é **M14** (Central de Controle local). Nenhum marco canônico pendente está listado; configuração e validação live permanecem separadas.
 
 Hierarquia de verdade para resolver divergências: `AGENTS.md` e ADRs → schemas/configuração versionados → código e testes → handoff mais recente → `PLANS.md` → `README.md` (introdutório e não normativo).
 
@@ -50,7 +50,7 @@ O delta content-addressed acima é a evidência determinística de alterações;
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (119110 bytes; SHA-256 `32ae49237fa4f783`).
+- Fonte lida: `docs/AI_HISTORY.md` (125240 bytes; SHA-256 `47b8f3089633c0eb`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -76,24 +76,24 @@ O delta content-addressed acima é a evidência determinística de alterações;
 | M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
 | M13 | 2026-09-04..2026-09-05 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 | M13.1 | 2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
-| M13.2 | 2026-09-06 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
+| M13.2 | 2026-09-06 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
 
-- Sessões estruturadas registradas: 34.
-- Índice recente: 2026-09-05T01:41:08Z — M12.5.1 clean promotion candidate finalized offline from baseline 562cbbf.; 2026-09-05T01:42:06Z — M12.5.1 clean promotion committed locally on m1251-promote-local.; 2026-09-05T00:02:51Z — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos …; 2026-09-05T02:45:32Z — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até pro…; 2026-09-05T02:47:51Z — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final do…; 2026-09-05T04:26:25Z — M13.1 encerrado: identidade de avaliador routed foi separada dos 21 papeis RLM e a documentacao final foi reconciliada.; 2026-09-05T05:00:25Z — Ciclo de contexto de IA redesenhado: início read-only e publicação somente em checkpoint explícito.; 2026-09-06T04:12:37Z — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 t…. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 36.
+- Índice recente: 2026-09-05T00:02:51Z — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos …; 2026-09-05T02:45:32Z — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até pro…; 2026-09-05T02:47:51Z — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final do…; 2026-09-05T04:26:25Z — M13.1 encerrado: identidade de avaliador routed foi separada dos 21 papeis RLM e a documentacao final foi reconciliada.; 2026-09-05T05:00:25Z — Ciclo de contexto de IA redesenhado: início read-only e publicação somente em checkpoint explícito.; 2026-09-06T04:12:37Z — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 t…; 2026-09-06T05:36:44Z — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, mode…; 2026-09-06T06:07:24Z — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map …. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-7cd5dccaedab1ffa7fb9` — Ciclo de contexto de IA redesenhado: início read-only e publicação somente em checkpoint explícito.
-  - mudanças: As cinco superfícies de entrada agora leem AI_CONTEXT.md e usam ai_context.py --check apenas como inspeção read-only.; O check agora informa fingerprints atual/armazenado/checkpoint e delta determinístico, sem escrever artefatos ou locks.; O preview Git vivo foi removido de AI_CONTEXT.md para impedir o loop stale após commit.
-  - decisões: Preservar publicação sem flags para compatibilidade, restringindo-a por contrato ao checkpoint explícito.
-  - validações: 28 testes focados control.test_ai_handoff/control.test_m11_commands passaram; py_compile de scripts/ai_context.py e git diff --check passaram antes do checkpoint.
-  - riscos: Consumidores que invocam o gerador sem flags no início devem migrar para leitura e --check opcional; o contexto anterior pode ficar stale até esta publicação.
-  - próximos: Executar inspeção read-only e regressões após publicar e revisar os quatro artefatos gerados.
-- `session-893d2e53b9018274e0f2` — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 testes e publica o checkpoint atual.
-  - mudanças: PLANS.md e ADR-036 agora registram a contagem correta: 474 testes, 1 skip.; O histórico e o contexto gerado são publicados somente neste checkpoint explícito posterior ao merge.
-  - decisões: M13.2 permanece o último marco estrutural; M13.2.1 é uma correção de evidência e handoff, sem mudança funcional.
-  - validações: python3 -m unittest -q control.test_ai_handoff control.test_m11_commands: 28 testes aprovados.; git diff --check: aprovado antes da publicação dos artefatos gerados.
-  - riscos: Execução live, configuração de provedor e M14 continuam deliberadamente fora do escopo.
-  - próximos: Antes de qualquer M14, obter autorização específica de escopo, provedor, orçamento e execução.
+- `session-09c1da6074805018e076` — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, modelos, provedores, pipeline científico ou rede externa.
+  - mudanças: Adicionado control plane Python em /api/v1 estritamente 127.0.0.1, com Host/Origin same-origin, POSTs confirmados/idempotentes e ledger de auditoria separado.; Adicionada UI estática local e responsiva com SSE cursorizado, polling de contingência, topologia de 21 papéis, evidências cegas, orçamento read-only, configuração tipada e links de metadados allowlisted.; Leitores canônicos receberam variantes read-only para store, logger e orçamento; controles M6 passaram hash esperado no lock canônico.
+  - decisões: Aplicação de rascunho permanece bloqueada durante qualquer run não terminal porque snapshots legados não vinculam hash global de configuração.; Links de artefato expõem somente metadados de hashes já presentes no journal; não há leitor HTTP de caminho ou conteúdo arbitrário.
+  - validações: Suites focadas M14/M6/M2/M12/contratos: 167 testes aprovados em 33.904 s.; Regressão integral: 495 testes aprovados em 414.383 s; avisos conhecidos apenas de fixtures HTTP/ZIP temporárias.; bin/check.sh aprovou com live_ready=false, modelos/APIs pagas/routing/targets desabilitados; py_compile, node --check e git diff --check aprovados.
+  - riscos: Execução live continua fail-closed e requer futura autorização explícita de escopo, provedor, orçamento e run; a Central não fornece endpoint de start ou inferência.
+  - próximos: Se houver autorização futura, iniciar a Central somente em 127.0.0.1 e realizar preflight local auditado antes de qualquer operação permitida.
+- `session-19361425ab71b858f229` — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map defaults in the offline UI.
+  - mudanças: Serialized configuration apply with a dedicated interprocess lock across active-run check, hash revalidation, write, and draft state publication.; Serialized control mutations with a dedicated interprocess idempotency lock from lookup through canonical operation and persisted response.; Corrected dynamic map creation to initialize values from the resolved item schema.
+  - decisões: Concurrent drafts with the same base hash must have one winner and all same-key requests must replay one persisted canonical result.
+  - validações: Focused M14: 20 tests OK; full control regression: 497 tests OK in 431.752s; bin/check.sh, py_compile, node --check, and git diff --check OK.
+  - riscos: No model, Prime Agent, endpoint, provider, or live pipeline was run; no commit or push was made.
+  - próximos: Review the uncommitted M14 control-center branch changes, then commit and open a PR only with explicit authorization.
 
 ## Marcos planejados
 
@@ -119,6 +119,7 @@ Detalhe das duas sessões mais recentes:
 | M13 | testes de sistema e entrega | concluído |
 | M13.1 | identidade de avaliador para júri/meta routed | concluído localmente |
 | M13.2 | hardening estrutural | concluído localmente |
+| M14 | Central de Controle local | concluído localmente |
 
 ## Topologia dos 21 papéis
 
@@ -153,6 +154,7 @@ Detalhe das duas sessões mais recentes:
 - `.prime/agent/skills/article-loop/src/article_loop/adapters.py` — fronteira PrimeRLMAdapter/FakeRLMAdapter e handles documentados. API/símbolos: class ChildHandle; class M6OperationalAdapter; class PrimeRLMAdapter [preflight, spawn, list_subagents, send_parent, delete_subagent]; class FakeRLMAdapter [spawn, list_subagents, for_child, send_parent, delete_subagent, preflight]
 - `.prime/agent/skills/article-loop/src/article_loop/blackboard.py` — ledgers append-only de claims/issues e grafo conservador de impacto. API/símbolos: class BlackboardError; stable_claim_id(); class Impact; class Blackboard [append, read, claims, impact]; class ImpactGraph [affected]
 - `.prime/agent/skills/article-loop/src/article_loop/budget.py` — módulo ainda não classificado; examine antes de usar. API/símbolos: class BudgetError; class BudgetIntegrityError; class BudgetExceeded; class BudgetAuthorizationError; class BudgetIdempotencyError; class BudgetStateError; class BudgetLimits; class RunAuthorization [from_mapping, public]; class ManualClock [now_utc, monotonic, advance]; load_budget_config(); class BudgetLedger [from_project, ledger_path, lock_path, read_events, authorize, reserve, admit, mark_uncertain, reconcile, release_unadmitted, record_progress, pause, resume, stop, check_alerts, status, human_status]; class LimitedSupervisor [execute]
+- `.prime/agent/skills/article-loop/src/article_loop/control_center.py` — módulo ainda não classificado; examine antes de usar. API/símbolos: class ControlCenterError; class AuditLedger [exclusive, read_events, append]; class IdempotencyStore [get, put]; class ConfigurationRepository [list, validate, read_draft, create_draft, validate_draft, apply_draft, public_draft]; execution_readiness_from_mapping(); run_detail(); approved_artifacts(); approved_artifact_metadata(); active_runs(); class ControlPlane [health, runs, topology, evidence, artifacts, artifact_metadata, budget, system_status, errors, events, run_action, preflight_action, config_action]; class LocalControlHTTPServer; serve(); main()
 - `.prime/agent/skills/article-loop/src/article_loop/delivery.py` — auditoria M13 somente leitura da cadeia de evidência e disposição publicada. API/símbolos: class DeliveryError; verify_delivery()
 - `.prime/agent/skills/article-loop/src/article_loop/diagnosis.py` — série histórica validada, 7 classificações e publicação M9. API/símbolos: class DiagnosisError; class CycleRecord; load_history_series(); classify_cycle_progress(); verify_published_diagnosis(); diagnose_cycle()
 - `.prime/agent/skills/article-loop/src/article_loop/evaluation.py` — comparação A/B cega, júri, meta-review e publicação M8. API/símbolos: class EvaluationError; load_rubric(); sanitize_text(); class BlindComparisonBundle [presentation_for_order, create]; class FakeJurorAdapter [evaluate]; class FakeMetaReviewerAdapter [review]; check_inversion_consistency(); evaluate_candidate()
@@ -197,6 +199,8 @@ Detalhe das duas sessões mais recentes:
 | `agent-task.schema.json` | AgentTask | 13 | schema_version, task_id, run_id, cycle_id, role_id, activation_mode, created_at, base_hash, scope, input_locators, requested_output_schema, prompt_version, constraints |
 | `budget-event.schema.json` | BudgetEvent | 15 | schema_version, event_id, idempotency_key, event_type, run_id, cycle_id, department_id, role_id, call_id, attempt, occurred_at, monotonic_elapsed_seconds, payload, previous_event_… |
 | `candidate-manifest.schema.json` | CandidateManifest | 12 | schema_version, candidate_id, candidate_kind, run_id, cycle_id, base_candidate_id, built_at, workspace_hash, content_hash, source_proposal_ids, merge_receipt_locator, immutable, i… |
+| `control-center-audit.schema.json` | ControlCenterAuditEvent | 13 | schema_version, event_id, sequence, occurred_at, action, idempotency_key, request_hash, expected_hash, before_hash, after_hash, outcome, run_id, draft_id, response_hash, previous_… |
+| `control-center-draft.schema.json` | ControlCenterConfigurationDraft | 10 | schema_version, draft_id, created_at, config_path, base_hash, candidate_hash, status, validation, diff, value, applied_hash |
 | `decision.schema.json` | Decision | 20 | schema_version, decision_id, run_id, cycle_id, candidate_id, candidate_content_hash, decided_at, action, gate_report_id, verdict_ids, diagnosis_id, basis_locators, reason_code, in… |
 | `department-packet.schema.json` | DepartmentPacket | 13 | schema_version, packet_id, run_id, cycle_id, department_id, base_hash, proposal_ids, specialist_task_ids, dependency_reviews, status, no_change_justification, evidence_locators, c… |
 | `diagnosis-manifest.schema.json` | DiagnosisManifest | 11 | schema_version, diagnosis_id, run_id, cycle_id, candidate_id, classification, diagnosis_hash, gate_report_hash, evaluation_report_hash, tree_content_hash, created_at |
@@ -221,7 +225,7 @@ Detalhe das duas sessões mais recentes:
 
 ## Cobertura estrutural de testes
 
-Total detectado por AST: **477 testes**.
+Total detectado por AST: **497 testes**.
 
 | Arquivo | Testes | Amostra de fronteiras cobertas |
 |---|---:|---|
@@ -234,6 +238,7 @@ Total detectado por AST: **477 testes**.
 | `test_m12_budget_observability.py` | 20 | reserve admit reconcile is hash bound and reported; two reservations race cannot spend last balance twice; usage absent becomes uncertain and keeps reservation; release requires p… |
 | `test_m131_routed_evaluation.py` | 14 | full m8 publication through seven routed calls; juror replay survives new adapter and no backend call; model protocol fields are rejected including gate identity; missing scientif… |
 | `test_m13_system_delivery.py` | 25 | golden ingestion to verified promotion; math gate failure stops before jury or decision; jury math veto beats excellent scores and is rejected; blind presentations invert without … |
+| `test_m14_control_center.py` | 20 | status without run is read only; run projection rebuilds after control plane restart; event cursor backfills and deduplicates; sse serves confirmed event with resumable cursor; ev… |
 | `test_m2_durable_state.py` | 32 | directory fsync tolerates only documented unsupported errors; directory fsync io error fails atomic publication; all valid transitions; all invalid transitions; full event log rep… |
 | `test_m3_ingestion.py` | 22 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash di… |
 | `test_m4_prompts.py` | 13 | all 21 compiled prompts match snapshots; prompt contract sections and required dependencies; structured output fixtures validate; immutable overwrite and unknown version block exe… |
@@ -318,8 +323,8 @@ A prova é de sistema offline e de disposição de ciclo. Não certifica matemá
 
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
-- Total: 205 arquivos; runtime=18, text=187.
-- Fingerprint canônico: `99e18d3743a22283e304aca2cc36576423144a99365d5201734d9bc0e7181a24`.
+- Total: 214 arquivos; runtime=19, text=195.
+- Fingerprint canônico: `39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20`.
 
 ## Roteamento para aprofundamento
 

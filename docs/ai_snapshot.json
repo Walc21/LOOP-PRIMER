@@ -31,10 +31,10 @@
       "sha256": "bf1d737ea098c709c7037b7ee79a6c2a5d26306bdd1e4a7b42bd108f15e25139"
     },
     ".gitignore": {
-      "bytes": 1089,
+      "bytes": 1143,
       "kind": "text",
-      "lines": 63,
-      "sha256": "293dc90f4e63ba972439af7a30c5e1d48045c96f9527bd878aed8732ea4875a8"
+      "lines": 65,
+      "sha256": "35a6d1a41539b066066d1920f4a379be5910de00916591b9367d5c53fe7953fa"
     },
     ".prime/agent/APPEND_SYSTEM.md": {
       "bytes": 1867,
@@ -115,10 +115,10 @@
       "sha256": "3a6e28296b26a6724897df658b0eba77add92e9f10bc228644f48f1d89d12bf3"
     },
     ".prime/agent/skills/article-loop/src/article_loop/__init__.py": {
-      "bytes": 6555,
+      "bytes": 6887,
       "kind": "text",
-      "lines": 111,
-      "sha256": "aec1d2b67a19feb978f052a22fb10d9eebb13ed326f5397fe82635378467128c"
+      "lines": 117,
+      "sha256": "90b65b60309b020c6195c077ba291b32c6aa5e87fdae61798c0286ef12c03088"
     },
     ".prime/agent/skills/article-loop/src/article_loop/activation.py": {
       "bytes": 11504,
@@ -139,10 +139,34 @@
       "sha256": "764d6a1441a9f233f336310eec067147f4a824a293920b88aef19a75ae732df2"
     },
     ".prime/agent/skills/article-loop/src/article_loop/budget.py": {
-      "bytes": 82090,
+      "bytes": 83432,
       "kind": "text",
-      "lines": 1576,
-      "sha256": "1fa4c6dfc435cd53fea50f59c01e9adeee344bab1287851e5eda5760f0c20466"
+      "lines": 1609,
+      "sha256": "936a9a9e30ff3f1324cee13a80f0834a07eda92efc61594c888817d89312e97e"
+    },
+    ".prime/agent/skills/article-loop/src/article_loop/control_center.py": {
+      "bytes": 74748,
+      "kind": "text",
+      "lines": 1459,
+      "sha256": "a91cb370be06f62604cd5d13e6c7611f3fa3bdb8fc4ff4883b07abb46fadfe01"
+    },
+    ".prime/agent/skills/article-loop/src/article_loop/control_center_static/app.js": {
+      "bytes": 22505,
+      "kind": "text",
+      "lines": 243,
+      "sha256": "f20913c8a3fa6c2b244e2d212eddcf7b33011e8f0be9a064cc25ffaa655f796f"
+    },
+    ".prime/agent/skills/article-loop/src/article_loop/control_center_static/index.html": {
+      "bytes": 1653,
+      "kind": "text",
+      "lines": 36,
+      "sha256": "c0f9a056a2069b417148acc9b98cc7c7a61fc8129637c0078d96b9f61cdf92e7"
+    },
+    ".prime/agent/skills/article-loop/src/article_loop/control_center_static/styles.css": {
+      "bytes": 5938,
+      "kind": "text",
+      "lines": 78,
+      "sha256": "65b8fdf75739f449afc7211fd66f41afd6002ebb723d72848a298ba8265669c6"
     },
     ".prime/agent/skills/article-loop/src/article_loop/delivery.py": {
       "bytes": 17503,
@@ -199,16 +223,16 @@
       "sha256": "e33ca846c9cca69de86164bd018ad4809f2948a97dd4ed218b231ed952ff8c4a"
     },
     ".prime/agent/skills/article-loop/src/article_loop/observability.py": {
-      "bytes": 13178,
+      "bytes": 13906,
       "kind": "text",
-      "lines": 320,
-      "sha256": "bb380abefcb5a708a0bfefd37956b7569ca74903263ec4a5ed81a8d8610a4ac2"
+      "lines": 336,
+      "sha256": "6c4cb2259d89a1b4effd1a1d084de6934691fd8d7ddd004900dc6359bfa41e93"
     },
     ".prime/agent/skills/article-loop/src/article_loop/orchestrator.py": {
-      "bytes": 61447,
+      "bytes": 62745,
       "kind": "text",
-      "lines": 815,
-      "sha256": "4a7859229859b8754ca40c3c410c7463a3764b81ebf4c164cbed3429a3df1f98"
+      "lines": 832,
+      "sha256": "9c13c891f0d1502095bd3e0a0b425d9fd476f513577a832fb4e67da7f0de26ec"
     },
     ".prime/agent/skills/article-loop/src/article_loop/policy.py": {
       "bytes": 35034,
@@ -241,10 +265,10 @@
       "sha256": "7f8ee90f749661330e6c43fc15a372f6e538664a2e8d96f07a49432f608e8647"
     },
     ".prime/agent/skills/article-loop/src/article_loop/store.py": {
-      "bytes": 19184,
+      "bytes": 19738,
       "kind": "text",
-      "lines": 423,
-      "sha256": "0f0e0177405cd2ad48ddeaef5ac17cf37591026be9ec16c7a04b3e9e77e3d0f6"
+      "lines": 440,
+      "sha256": "a23cf5cd930436b249ab2e88bdc786b5af81d9230f85f083a3b1cb583fdc715e"
     },
     ".prime/agent/skills/article-loop/src/article_loop/synthesis.py": {
       "bytes": 21789,
@@ -367,10 +391,10 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 55703,
+      "bytes": 58805,
       "kind": "text",
-      "lines": 766,
-      "sha256": "fdc9f8d10d6c73e2fc3404528214e98dbb0db39b913eb57db0b425ce258bf3cc"
+      "lines": 810,
+      "sha256": "d3355968a55e309135df978de7e6b30e4eee55696630ea252b7cf2f62e1c188e"
     },
     "README.md": {
       "bytes": 18776,
@@ -600,6 +624,18 @@
       "lines": 50,
       "sha256": "a96174c2d8fe3286ce1dcbeee5deead5079a9577844853c73cabb9671e9a1938"
     },
+    "config/schemas/control-center-audit.schema.json": {
+      "bytes": 1535,
+      "kind": "text",
+      "lines": 26,
+      "sha256": "235dd80de607101dbc364299dc896ae96078ade9c65d5895704bf5c2fcf128b0"
+    },
+    "config/schemas/control-center-draft.schema.json": {
+      "bytes": 1506,
+      "kind": "text",
+      "lines": 21,
+      "sha256": "61190b3c62b5cb6388474aee2a5946fa0da93d04ce594e14c87ceaa4315a2f0a"
+    },
     "config/schemas/decision.schema.json": {
       "bytes": 8350,
       "kind": "text",
@@ -775,10 +811,10 @@
       "sha256": "406f7e0298efac3ee89a02caaa184c7d868e3c04fcc0efa2a84aae308b85951a"
     },
     "control/test_contracts.py": {
-      "bytes": 36271,
+      "bytes": 36362,
       "kind": "text",
-      "lines": 885,
-      "sha256": "aa3d80791b67f58755d9279db81398afc7e969a28d4fa9f4c3106647bef52e80"
+      "lines": 886,
+      "sha256": "481cd98e5807a732d2d6fa3bd379860ec282ebffacf27337ce25c812e42574f4"
     },
     "control/test_m10_policy_finalization.py": {
       "bytes": 28099,
@@ -821,6 +857,12 @@
       "kind": "text",
       "lines": 429,
       "sha256": "4da13c01f8dda22fe49ffbbfbd86b54fd4dff7ada19bcdf75a4f5511254ed482"
+    },
+    "control/test_m14_control_center.py": {
+      "bytes": 18304,
+      "kind": "text",
+      "lines": 386,
+      "sha256": "815a9e6023f4727ba8940cbe0c88f3472f81dec4803cc6688f0fd17fac9f1eb9"
     },
     "control/test_m2_durable_state.py": {
       "bytes": 19002,
@@ -882,11 +924,17 @@
       "lines": 188,
       "sha256": "be929550d830cb3203e13cbde156a8f5fe73e904a6145c7c9a2b346b9c17ced8"
     },
-    "docs/decisions.md": {
-      "bytes": 80937,
+    "docs/control-center.md": {
+      "bytes": 3253,
       "kind": "text",
-      "lines": 1376,
-      "sha256": "31cb5575e735bc4c9a74ca5c2cb3d74777898237caf0ebd50cd7df8c310bb15c"
+      "lines": 62,
+      "sha256": "784d05166c0c41b4f46890b7406d473688ae2fa93c7f19bc8e00346c7eab1208"
+    },
+    "docs/decisions.md": {
+      "bytes": 84930,
+      "kind": "text",
+      "lines": 1439,
+      "sha256": "387a596451a0be26c062570cf872556fbff8349c02a7add9c655f321fc96ff96"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -1170,6 +1218,12 @@
       "lines": null,
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     },
+    "state/control-center/.gitkeep": {
+      "bytes": 1,
+      "kind": "runtime",
+      "lines": null,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
     "state/decisions/.gitkeep": {
       "bytes": 1,
       "kind": "runtime",
@@ -1231,17 +1285,33 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "99e18d3743a22283e304aca2cc36576423144a99365d5201734d9bc0e7181a24",
+  "fingerprint": "39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20",
   "git": {
     "available": true,
-    "branch": "codex/m13.2.1-handoff",
-    "head": "de925349187617e797a80c9a7d10f9887364e111",
+    "branch": "codex/control-center",
+    "head": "816634ea4cb33bce7b050aef81d68135d69c9aa0",
     "status": [
+      " M .gitignore",
+      " M .prime/agent/skills/article-loop/src/article_loop/__init__.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/budget.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/observability.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/orchestrator.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/store.py",
       " M PLANS.md",
-      " M docs/decisions.md"
+      " M control/test_contracts.py",
+      " M docs/decisions.md",
+      "?? .prime/agent/skills/article-loop/src/article_loop/control_center.py",
+      "?? .prime/agent/skills/article-loop/src/article_loop/control_center_static/app.js",
+      "?? .prime/agent/skills/article-loop/src/article_loop/control_center_static/index.html",
+      "?? .prime/agent/skills/article-loop/src/article_loop/control_center_static/styles.css",
+      "?? config/schemas/control-center-audit.schema.json",
+      "?? config/schemas/control-center-draft.schema.json",
+      "?? control/test_m14_control_center.py",
+      "?? docs/control-center.md",
+      "?? state/control-center/.gitkeep"
     ]
   },
-  "recorded_at": "2026-09-06T04:12:37Z",
+  "recorded_at": "2026-09-06T06:07:24Z",
   "schema_version": "1.0.0",
-  "session_id": "session-893d2e53b9018274e0f2"
+  "session_id": "session-19361425ab71b858f229"
 }

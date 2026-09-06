@@ -151,6 +151,50 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M13 | testes de sistema e entrega | concluído | 25 testes offline cobrem A–T: ingestão até promoção/Pareto/rejeição, original imutável, cadeia auditável, veto, cegueira, replay, recuperação e auditoria independente; regressão de 445 testes sem skips |
 | M13.1 | identidade de avaliador para júri/meta routed | concluído localmente | identidade de avaliador separada dos 21 papéis RLM, autoridade explícita de routing, receipt 1.2.0 fechado e replay durável sem reinferência; 14 testes dedicados, 135 adjacentes, check M13 de 25 testes e regressão completa de 465 testes aprovados offline |
 | M13.2 | hardening estrutural | concluído localmente | fecha somente a fronteira de dublês M6, a revalidação pré-inferência de workspace hash-bound, a política de erro de `fsync` e a anonimização adversarial do júri; 474 testes locais aprovados, 1 skip |
+| M14 | Central de Controle local | concluído localmente | control plane HTTP versionado estritamente em loopback, leitores canônicos sem efeitos colaterais, SSE recuperável, UI estática offline, rascunhos tipados de configuração, controles canônicos idempotentes e ledger de auditoria separado; 497 testes locais aprovados, nenhuma inferência ou Prime Agent é iniciada |
+
+### Plano M14 — Central de Controle local
+
+**Objetivo.** Materializar uma superfície de observação e controle estritamente
+local sobre os contratos já publicados, sem criar um segundo estado científico,
+um executor de shell ou um caminho que contorne M2, M6, M7, M8, M10, M12,
+M12.5 ou M13.2.
+
+**Sequência.** Primeiro definir schemas próprios da Central, o contrato HTTP
+`/api/v1` e projeções read-only de status, execuções, timeline, orçamento,
+configuração e erros. Em seguida acrescentar cursor de eventos/SSE com backfill
+e polling de contingência, servir HTML/CSS/JavaScript local sem CDN e criar as
+telas de visão geral, execuções, topologia, gates/júri/decisão, orçamento,
+configuração e auditoria. Só então expor os seis controles existentes
+(`preflight`, `checkpoint`, `pause`, `resume`, `stop`, `finalize`) como POSTs
+idempotentes e os rascunhos tipados de configuração.
+
+**Limites e hipóteses.** O servidor aceita somente `127.0.0.1`, Host/Origin
+loopback e CSRF local; nunca possui endpoint para `bootstrap`, `run_cycle`,
+inferência, terminal ou arquivo arbitrário. As leituras de orçamento não podem
+emitir alertas ou criar diretórios. Configurações são apresentadas como valores
+tipados, nunca como YAML editável, e só podem ser aplicadas para execuções
+futuras. Como snapshots legados não vinculam um hash global para cada arquivo
+de configuração, a aplicação falha fechada enquanto qualquer run não terminal
+existir; isso é deliberadamente mais restritivo que tentar inferir uma
+vinculação ausente. O ledger separado em `state/control-center/` terá hash
+encadeado, escrita staging+fsync+rename+fsync-dir e não altera o journal
+científico.
+
+**Hardening de concorrência.** A aplicação de um rascunho e a reserva de uma
+chave de idempotência são seções críticas entre processos, não apenas entre
+threads HTTP. A Central mantém locks locais dedicados durante cada operação
+inteira: a primeira aplicação de um hash-base vence e toda concorrente falha
+como versão stale; requisições simultâneas com a mesma chave observam a mesma
+resposta persistida e não voltam a chamar a operação canônica.
+
+**Aceitação prevista.** Testes offline devem cobrir estado vazio, replay após
+reinício, paginação, SSE/cursor/backfill/deduplicação, CSRF/Host/Origin,
+traversal/symlink, redaction, orçamento read-only incluindo `UNCERTAIN`,
+conflitos de hash, idempotência, bloqueio por run ativa, dublês e a delegação
+dos controles exclusivamente às APIs públicas. Validação final: suítes
+focadas, regressão integral proporcional, `bin/check.sh`, `py_compile` e
+`git diff --check`, sem iniciar Prime Agent, modelo, provedor ou pipeline.
 
 ### Aceitação M13
 
