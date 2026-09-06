@@ -36,7 +36,7 @@ já aceitos permanecem compatíveis, mas nenhum resíduo de macro identitária �
 entregue ao jurado.
 
 A validação local aprovou as suítes focadas M6, M2, M8 e M12.5.1, além da
-regressão integral de 473 testes com 1 skip, `bin/check.sh`, compilação dos
+regressão integral de 474 testes com 1 skip, `bin/check.sh`, compilação dos
 módulos Python alterados e `git diff --check`. Nenhum modelo, rede, Prime Agent,
 PDF real, commit ou push participou dessa validação.
 
