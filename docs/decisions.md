@@ -1,5 +1,45 @@
 # Decisões arquiteturais
 
+## ADR-036 — M13.2: hardening estrutural de fronteiras de execução e júri
+
+**Status:** Implementado e validado offline. **Data:** 2026-09-06.
+
+M13.2 é limitado a quatro lacunas estruturais, sem introduzir configuração ou
+execução live. No M6, `FakeRLMAdapter` declara `is_test_double=True`; uma
+execução não-dry-run aceita `PrimeRLMAdapter`, o adaptador operacional dual
+identificado pelo próprio projeto, ou um dublê marcado autorizado pelo
+parâmetro de API estritamente booleano `allow_test_doubles=True`. Nenhuma
+entrada JSON ou CLI transporta essa autorização. Adaptador ausente, adaptador
+arbitrário não-Prime sem essa identidade operacional e valor que não seja
+`bool` falham antes de qualquer escrita de estado, receipt ou admissão.
+Um dublê injetado como adaptador Prime interno do adaptador dual também é
+exposto como dublê do M6; portanto, não pode atravessar esse contêiner quando
+a autorização explícita estiver ausente.
+
+Antes de materializar contexto para inferência routed, o runtime relê uma vez
+em bytes `task.json`, `view.json` e `prompt.txt`, exige arquivos regulares sem
+symlink sob a raiz de workspace autorizada e compara cada SHA-256 ao hash
+canônico já persistido pelo contrato M6. A divergência precede route, reserve,
+admit, backend e qualquer novo receipt; não há um segundo protocolo de hashes.
+
+As publicações continuam na ordem temporário, `fsync` do arquivo, `os.replace`
+e `fsync` do diretório-pai. Somente `EINVAL` e `ENOTSUP` (incluindo o alias
+`EOPNOTSUPP`, quando houver) são tolerados, exclusivamente ao abrir ou
+sincronizar um diretório e somente como "fsync de diretório não suportado".
+Qualquer outro `OSError` é erro de publicação e deve propagar.
+
+Para o júri, comandos LaTeX conhecidos são reconhecidos somente em fronteiras
+de comando válidas e removidos integralmente com seus argumentos. Macros
+desconhecidas cujo nome comece com prefixo identitário são rejeitadas antes da
+apresentação; texto comum de autoria também é removido. Assim, formatos LaTeX
+já aceitos permanecem compatíveis, mas nenhum resíduo de macro identitária é
+entregue ao jurado.
+
+A validação local aprovou as suítes focadas M6, M2, M8 e M12.5.1, além da
+regressão integral de 473 testes com 1 skip, `bin/check.sh`, compilação dos
+módulos Python alterados e `git diff --check`. Nenhum modelo, rede, Prime Agent,
+PDF real, commit ou push participou dessa validação.
+
 ## ADR-035 — M13.1: julgamento routed com identidade de avaliador separada
 
 **Status:** Implementado e validado offline. **Data:** 2026-09-05.

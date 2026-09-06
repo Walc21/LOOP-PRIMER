@@ -27,6 +27,7 @@ from article_loop import (  # noqa: E402
 )
 from article_loop.activation import ActivationPlanner  # noqa: E402
 from article_loop.blackboard import Impact  # noqa: E402
+from article_loop.orchestrator import OrchestrationError  # noqa: E402
 
 
 def target(target_id, *, model=None, local=True, paid=False, pricing=None):
@@ -473,6 +474,39 @@ class EndToEndDualExecutionTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def test_dual_prime_test_double_requires_root_authorization_before_m6_writes(self):
+        impact = Impact(
+            ("claim:fixture",), ("section:proof",), ("equation:1",), ("reference:1",),
+            ("W11",), 10,
+        )
+        plan = ActivationPlanner().plan(cycle_id=0, impact=impact).activation_map()
+        blackboard = self.root / "state/blackboard" / self.run
+        blackboard.mkdir(parents=True)
+        encoded = json.dumps(plan, sort_keys=True, separators=(",", ":"))
+        (blackboard / "activation-c0000.json").write_text(encoded)
+        (blackboard / "activation_map.json").write_text(encoded)
+        execution = ExecutionPolicy(
+            True, "dual",
+            {"S10": "routed", "S20": "prime", "S30": "prime", "S40": "prime", "S50": "prime"},
+            "scoped_remote", "d" * 64,
+        )
+        fake_prime = FakeRLMAdapter()
+        dual = DualExecutionAdapter(self.root, self.run, execution, prime_adapter=fake_prime)
+        orchestrator = Orchestrator(self.root, dual)
+        asyncio.run(orchestrator.bootstrap(self.pdf))
+        journal = self.root / "state/orchestration" / self.run / "journal.jsonl"
+        before = journal.read_bytes()
+
+        with self.assertRaisesRegex(OrchestrationError, "test double requires"):
+            asyncio.run(orchestrator.run_cycle(run_id=self.run, plan=plan))
+
+        self.assertEqual(journal.read_bytes(), before)
+        self.assertEqual(fake_prime.calls, [])
+        self.assertFalse((self.root / "workspaces" / self.run).exists())
+
+        with self.assertRaisesRegex(ExecutionError, "Prime layer adapter"):
+            DualExecutionAdapter(self.root, self.run, execution, prime_adapter=object())
+
     def test_s10_routed_workers_rejoin_m6_while_s20_remains_prime(self):
         impact = Impact(
             ("claim:fixture",), ("section:proof",), ("equation:1",), ("reference:1",),
@@ -494,7 +528,9 @@ class EndToEndDualExecutionTests(unittest.TestCase):
         dual = DualExecutionAdapter(self.root, self.run, execution, prime_adapter=prime)
         orchestrator = Orchestrator(self.root, dual)
         asyncio.run(orchestrator.bootstrap(self.pdf))
-        state = asyncio.run(orchestrator.run_cycle(run_id=self.run, plan=plan))
+        state = asyncio.run(orchestrator.run_cycle(
+            run_id=self.run, plan=plan, allow_test_doubles=True,
+        ))
         self.assertTrue(state["children"]["S10"]["child_id"].startswith("routed-"))
         self.assertTrue(state["children"]["S20"]["child_id"].startswith("fake-"))
 
@@ -531,6 +567,100 @@ class EndToEndDualExecutionTests(unittest.TestCase):
         self.assertEqual(packet["department_id"], "S10")
         self.assertEqual(len(packet["proposal_ids"]), 3)
         self.assertTrue(all(value.startswith("p-") for value in packet["proposal_ids"]))
+
+    def test_routed_workspace_revalidation_precedes_router_budget_backend_and_receipt(self):
+        impact = Impact(
+            ("claim:fixture",), ("section:proof",), ("equation:1",), ("reference:1",),
+            ("W11", "W12", "W13"), 10,
+        )
+        plan = ActivationPlanner().plan(cycle_id=0, impact=impact).activation_map()
+        blackboard = self.root / "state/blackboard" / self.run
+        blackboard.mkdir(parents=True)
+        encoded = json.dumps(plan, sort_keys=True, separators=(",", ":"))
+        (blackboard / "activation-c0000.json").write_text(encoded)
+        (blackboard / "activation_map.json").write_text(encoded)
+
+        execution = ExecutionPolicy(
+            True, "dual",
+            {"S10": "routed", "S20": "prime", "S30": "prime", "S40": "prime", "S50": "prime"},
+            "scoped_remote", "d" * 64,
+        )
+        dual = DualExecutionAdapter(
+            self.root, self.run, execution, prime_adapter=FakeRLMAdapter(),
+        )
+        orchestrator = Orchestrator(self.root, dual)
+        asyncio.run(orchestrator.bootstrap(self.pdf))
+        state = asyncio.run(orchestrator.run_cycle(
+            run_id=self.run, plan=plan, allow_test_doubles=True,
+        ))
+        manager = dual.department_adapter(state["children"]["S10"])
+        state = asyncio.run(orchestrator.advance_department(
+            self.run, "S10", adapter=manager,
+        ))
+        child = state["children"]["W11"]
+        workspace = Path(child["workspace"])
+
+        policy = routing_policy(
+            [target("local-w11"), target("local-w12"), target("local-w13")],
+            {"W11": ["local-w11"], "W12": ["local-w12"], "W13": ["local-w13"]},
+        )
+        registry = ModelRegistry(policy)
+        ledger = BudgetLedger(
+            self.root, self.run,
+            limits=BudgetLimits(total_tokens=100_000, max_calls=10, max_wall_time_seconds=100),
+            inference_policy=policy, currency="USD", max_run_cost_microunits=10_000_000,
+        )
+        backend = RoleAwareBackend(self.base_hash)
+        runtime = InferenceRuntime(self.root, ledger, registry, {"fake": backend})
+        controller = DualExecutionController(self.root, execution, registry)
+        budget_before = ledger.read_events()
+        originals = {
+            name: (workspace / name).read_bytes()
+            for name in ("task.json", "view.json", "prompt.txt")
+        }
+
+        def assert_rejected():
+            with mock.patch.object(runtime.router, "route", side_effect=AssertionError("router must not run")) as routed, \
+                    mock.patch.object(runtime, "execute", side_effect=AssertionError("runtime must not run")) as executed:
+                with self.assertRaises(ExecutionError):
+                    asyncio.run(controller.execute_routed_department(
+                        orchestrator, self.run, "S10", manager, runtime,
+                        allow_test_doubles=True,
+                    ))
+            self.assertFalse(routed.called)
+            self.assertFalse(executed.called)
+            self.assertEqual(ledger.read_events(), budget_before)
+            self.assertEqual(backend.calls, [])
+            self.assertNotIn("W11", asyncio.run(orchestrator.status(self.run))["receipts"])
+
+        for name in ("task.json", "view.json", "prompt.txt"):
+            with self.subTest(case=f"tampered-{name}"):
+                path = workspace / name
+                path.write_bytes(originals[name] + b" ")
+                assert_rejected()
+                path.write_bytes(originals[name])
+
+        replacement = self.root / "replacement-input.json"
+        replacement.write_bytes(originals["task.json"])
+        task_path = workspace / "task.json"
+        task_path.unlink()
+        task_path.symlink_to(replacement)
+        try:
+            with self.subTest(case="symlinked-file"):
+                assert_rejected()
+        finally:
+            task_path.unlink()
+            task_path.write_bytes(originals["task.json"])
+
+        relocated = workspace.parent / (workspace.name + "-relocated")
+        workspace.rename(relocated)
+        workspace.symlink_to(relocated, target_is_directory=True)
+        try:
+            with self.subTest(case="symlinked-workspace"):
+                assert_rejected()
+        finally:
+            workspace.unlink()
+            relocated.rename(workspace)
 
 
 if __name__ == "__main__":

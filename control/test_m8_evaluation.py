@@ -150,7 +150,9 @@ class M8EvaluationTests(unittest.TestCase):
         }
 
     def _m6_state(self):
-        asyncio.run(self.orchestrator.run_cycle(run_id=self.run_id, plan=self.plan))
+        asyncio.run(self.orchestrator.run_cycle(
+            run_id=self.run_id, plan=self.plan, allow_test_doubles=True,
+        ))
         for department in ("S10", "S20", "S30", "S40", "S50"):
             asyncio.run(self.orchestrator.advance_department(self.run_id, department, adapter=self._manager(department)))
         for number in range(1, 6):
@@ -222,6 +224,53 @@ class M8EvaluationTests(unittest.TestCase):
         self.assertNotIn("challenger", sanitized.lower())
         self.assertNotIn("run-abc12345", sanitized)
         self.assertNotIn("workspaces", sanitized)
+
+    def test_sanitize_text_redacts_complete_known_and_identity_prefixed_macros(self):
+        text = (
+            "\\authorinfo{Known Identity}\\author*{Starred Identity}"
+            "\\authorCustom[short]{Custom Identity}\\affilAlias{Institution Identity}\n"
+            "Authors: Plain Text Identity\n"
+            "A regular theorem statement remains available."
+        )
+        sanitized = sanitize_text(text)
+        for identifier in (
+            "Known Identity", "Starred Identity", "Custom Identity",
+            "Institution Identity", "Plain Text Identity", "authorinfo",
+        ):
+            with self.subTest(identifier=identifier):
+                self.assertNotIn(identifier, sanitized)
+        self.assertIn("regular theorem statement", sanitized)
+
+    def test_identity_prefixed_macros_cannot_reach_blind_jury_presentation(self):
+        m7_out = self._setup_m7_gates_passed()
+        challenger = self.root / "versions/challengers" / m7_out["candidate"]["candidate_id"]
+        manuscript = challenger / "latex-source/paper.tex"
+        manifest_path = challenger / "manifest.json"
+        challenger.chmod(0o755)
+        manuscript.parent.chmod(0o755)
+        manuscript.chmod(0o644)
+        manifest_path.chmod(0o644)
+        manuscript.write_text(
+            "\\authorinfo{Jury Secret}\\author*{Star Secret}"
+            "\\authorPrivate{Custom Secret}\nAuthors: Plain Secret\n"
+            "\\begin{document}Blind proof.\\end{document}\n",
+            encoding="utf-8",
+        )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["content_hash"] = tree_hash(challenger, exclude={"manifest.json"})
+        manifest_path.write_bytes(
+            json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode("utf-8") + b"\n"
+        )
+
+        bundle = BlindComparisonBundle.create(
+            self.root,
+            champion_dir=self.root / "versions/champion/v0000",
+            challenger_dir=challenger,
+        )
+        presentation = json.dumps(bundle.presentation_for_order(["A", "B"]), sort_keys=True)
+        for identifier in ("Jury Secret", "Star Secret", "Custom Secret", "Plain Secret", "authorinfo"):
+            with self.subTest(identifier=identifier):
+                self.assertNotIn(identifier, presentation)
 
     def test_blind_bundle_reproducibility_and_bijective_order(self):
         m7_out = self._setup_m7_gates_passed()
