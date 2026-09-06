@@ -116,6 +116,7 @@ class StructuredLogger:
         *,
         max_bytes: int = 65536,
         clock: Any | None = None,
+        read_only: bool = False,
     ):
         raw_root = Path(root)
         if raw_root.is_symlink() or not raw_root.is_dir():
@@ -126,16 +127,29 @@ class StructuredLogger:
             raise ObservabilityError("max_bytes must be an integer >= 1024")
         self.max_bytes = max_bytes
         self.clock = clock
+        if type(read_only) is not bool:
+            raise ObservabilityError("read_only must be boolean")
+        self.read_only = read_only
         self.log_dir = self.root / "logs"
         self.lock_dir = self.root / "state" / "locks"
-        self._ensure_dir(self.log_dir)
-        self._ensure_dir(self.lock_dir)
+        if self.read_only:
+            self._ensure_readable_dir(self.log_dir)
+            self._ensure_readable_dir(self.lock_dir)
+        else:
+            self._ensure_dir(self.log_dir)
+            self._ensure_dir(self.lock_dir)
 
     def _ensure_dir(self, path: Path) -> None:
         if path.exists() and (path.is_symlink() or not path.is_dir()):
             raise ObservabilityError(f"unsafe log directory: {path.name}")
         path.mkdir(parents=True, exist_ok=True)
         if path.is_symlink():
+            raise ObservabilityError(f"unsafe log directory: {path.name}")
+
+    @staticmethod
+    def _ensure_readable_dir(path: Path) -> None:
+        """Validate an optional directory without creating it for observation."""
+        if path.exists() and (path.is_symlink() or not path.is_dir()):
             raise ObservabilityError(f"unsafe log directory: {path.name}")
 
     @property
@@ -267,6 +281,8 @@ class StructuredLogger:
         *,
         level: str = "INFO",
     ) -> dict[str, Any]:
+        if self.read_only:
+            raise ObservabilityError("read-only logger cannot emit events")
         if event_type not in _EVENT_TYPES:
             raise ObservabilityError("unsupported structured log event")
         if level not in {"INFO", "WARNING", "ERROR"}:

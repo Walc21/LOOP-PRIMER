@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `99e18d3743a22283e304aca2cc36576423144a99365d5201734d9bc0e7181a24`
-- Registrado em: `2026-09-06T04:12:37Z`
-- Git: branch `codex/m13.2.1-handoff`, HEAD `de9253491876`
-- Arquivos relevantes: 205
+- Fingerprint das fontes: `39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20`
+- Registrado em: `2026-09-06T06:07:24Z`
+- Git: branch `codex/control-center`, HEAD `816634ea4cb3`
+- Arquivos relevantes: 214
 
 ## Evolução reconstruída do versionamento
 
@@ -36,7 +36,7 @@
 | M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
 | M13 | 2026-09-04..2026-09-05 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 | M13.1 | 2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
-| M13.2 | 2026-09-06 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
+| M13.2 | 2026-09-06 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
 
 ### Commits exatos
 
@@ -159,9 +159,12 @@
 | `67910ec79` | 2026-09-05 | sem marco explícito | Merge pull request #4 from Walc21/chore/ai-context-lifecycle |  |
 | `c7fee6b6b` | 2026-09-06 | M13.2 | feat(m13.2): harden structural execution boundaries | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
 | `de9253491` | 2026-09-06 | M13.2 | Merge pull request #5 from Walc21/codex/m13.2-structural-hardening |  |
+| `9176655e1` | 2026-09-06 | M13.2 | docs(m13.2): publish structural hardening checkpoint | AI_CONTEXT.md, PLANS.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json, docs/decisions.md |
+| `816634ea4` | 2026-09-06 | M13.2 | Merge pull request #6 from Walc21/codex/m13.2.1-handoff |  |
 
 ## Decisões arquiteturais
 
+- ADR-037 — M14: Central de Controle local como camada de projeção e comando canônico
 - ADR-036 — M13.2: hardening estrutural de fronteiras de execução e júri
 - ADR-035 — M13.1: julgamento routed com identidade de avaliador separada
 - ADR-034 — M13: aceitação offline e auditoria independente da entrega
@@ -1605,3 +1608,97 @@
 | modified | `control/test_m8_evaluation.py` | `dd6e1969557c` | `7217301cb474` |
 | modified | `control/test_m9_diagnosis.py` | `0de4b64409e0` | `fc822010cc37` |
 | modified | `docs/decisions.md` | `96a76105f4e3` | `31cb5575e735` |
+
+### 2026-09-06T05:36:44Z — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, modelos, provedores, pipeline científico ou rede externa.
+
+- Session ID: `session-09c1da6074805018e076`
+- Fingerprint final: `7065aca4e586ddb7d5b0f2e4183b641544d5af3733e3d2c8cb3ec2ff010cfc2e`
+- Git final: `816634ea4cb3`; status relevante: 18 item(ns)
+- Delta factual: 9 adicionados, 9 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionado control plane Python em /api/v1 estritamente 127.0.0.1, com Host/Origin same-origin, POSTs confirmados/idempotentes e ledger de auditoria separado.
+- Adicionada UI estática local e responsiva com SSE cursorizado, polling de contingência, topologia de 21 papéis, evidências cegas, orçamento read-only, configuração tipada e links de metadados allowlisted.
+- Leitores canônicos receberam variantes read-only para store, logger e orçamento; controles M6 passaram hash esperado no lock canônico.
+
+**Decisões**
+
+- Aplicação de rascunho permanece bloqueada durante qualquer run não terminal porque snapshots legados não vinculam hash global de configuração.
+- Links de artefato expõem somente metadados de hashes já presentes no journal; não há leitor HTTP de caminho ou conteúdo arbitrário.
+
+**Validações**
+
+- Suites focadas M14/M6/M2/M12/contratos: 167 testes aprovados em 33.904 s.
+- Regressão integral: 495 testes aprovados em 414.383 s; avisos conhecidos apenas de fixtures HTTP/ZIP temporárias.
+- bin/check.sh aprovou com live_ready=false, modelos/APIs pagas/routing/targets desabilitados; py_compile, node --check e git diff --check aprovados.
+
+**Riscos/limites**
+
+- Execução live continua fail-closed e requer futura autorização explícita de escopo, provedor, orçamento e run; a Central não fornece endpoint de start ou inferência.
+
+**Próximos passos**
+
+- Se houver autorização futura, iniciar a Central somente em 127.0.0.1 e realizar preflight local auditado antes de qualquer operação permitida.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/src/article_loop/control_center.py` | `-` | `f62fe85c3f35` |
+| added | `.prime/agent/skills/article-loop/src/article_loop/control_center_static/app.js` | `-` | `b4a87c04ad50` |
+| added | `.prime/agent/skills/article-loop/src/article_loop/control_center_static/index.html` | `-` | `c0f9a056a206` |
+| added | `.prime/agent/skills/article-loop/src/article_loop/control_center_static/styles.css` | `-` | `65b8fdf75739` |
+| added | `config/schemas/control-center-audit.schema.json` | `-` | `235dd80de607` |
+| added | `config/schemas/control-center-draft.schema.json` | `-` | `61190b3c62b5` |
+| added | `control/test_m14_control_center.py` | `-` | `d116fa2dc642` |
+| added | `docs/control-center.md` | `-` | `784d05166c0c` |
+| added | `state/control-center/.gitkeep` | `-` | `01ba4719c80b` |
+| modified | `.gitignore` | `293dc90f4e63` | `35a6d1a41539` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `aec1d2b67a19` | `90b65b60309b` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/budget.py` | `1fa4c6dfc435` | `936a9a9e30ff` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/observability.py` | `bb380abefcb5` | `6c4cb2259d89` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/orchestrator.py` | `4a7859229859` | `9c13c891f0d1` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/store.py` | `0f0e0177405c` | `a23cf5cd9304` |
+| modified | `PLANS.md` | `fdc9f8d10d6c` | `5d98c2fdd324` |
+| modified | `control/test_contracts.py` | `aa3d80791b67` | `481cd98e5807` |
+| modified | `docs/decisions.md` | `31cb5575e735` | `b870c9794a18` |
+
+### 2026-09-06T06:07:24Z — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map defaults in the offline UI.
+
+- Session ID: `session-19361425ab71b858f229`
+- Fingerprint final: `39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20`
+- Git final: `816634ea4cb3`; status relevante: 18 item(ns)
+- Delta factual: 0 adicionados, 5 modificados, 0 removidos
+
+**Mudanças**
+
+- Serialized configuration apply with a dedicated interprocess lock across active-run check, hash revalidation, write, and draft state publication.
+- Serialized control mutations with a dedicated interprocess idempotency lock from lookup through canonical operation and persisted response.
+- Corrected dynamic map creation to initialize values from the resolved item schema.
+
+**Decisões**
+
+- Concurrent drafts with the same base hash must have one winner and all same-key requests must replay one persisted canonical result.
+
+**Validações**
+
+- Focused M14: 20 tests OK; full control regression: 497 tests OK in 431.752s; bin/check.sh, py_compile, node --check, and git diff --check OK.
+
+**Riscos/limites**
+
+- No model, Prime Agent, endpoint, provider, or live pipeline was run; no commit or push was made.
+
+**Próximos passos**
+
+- Review the uncommitted M14 control-center branch changes, then commit and open a PR only with explicit authorization.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/agent/skills/article-loop/src/article_loop/control_center.py` | `f62fe85c3f35` | `a91cb370be06` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/control_center_static/app.js` | `b4a87c04ad50` | `f20913c8a3fa` |
+| modified | `PLANS.md` | `5d98c2fdd324` | `d3355968a55e` |
+| modified | `control/test_m14_control_center.py` | `d116fa2dc642` | `815a9e6023f4` |
+| modified | `docs/decisions.md` | `b870c9794a18` | `387a596451a0` |

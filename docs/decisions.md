@@ -1,5 +1,68 @@
 # Decisões arquiteturais
 
+## ADR-037 — M14: Central de Controle local como camada de projeção e comando canônico
+
+**Status:** Implementado e validado offline. **Data:** 2026-09-06.
+
+### Contexto
+
+M13.2 já possui estado durável, receipts, orçamento hash-bound, routing
+fail-closed e APIs públicas de controle, mas não uma superfície local única
+para observar evidência confirmada ou solicitar as operações suportadas. Ler
+logs informalmente ou escrever JSONL a partir de uma interface criaria uma
+segunda fonte de verdade e poderia violar a cegueira do júri, a contabilidade
+ou as pré-condições da finalização.
+
+### Decisão
+
+1. A Central será um servidor Python project-local, versionado em `/api/v1`,
+   que só faz bind em `127.0.0.1`. Host, Origin e CSRF serão verificados; não
+   haverá CDN, telemetria, proxy público, shell remoto, escrita de arquivos
+   genérica ou endpoint para iniciar inferência, `run_cycle` ou `bootstrap`.
+2. Projeções de runs, timelines, snapshots, orçamento, erros e artefatos
+   chamarão leitores canônicos e validarão contenção/symlinks. O servidor não
+   escreverá nem reconstituirá estado científico em leituras. Em particular,
+   `BudgetLedger` terá uma variante de status explicitamente read-only que não
+   emite alertas, não cria logs/diretórios e falha fechada diante de corrupção.
+3. Eventos da Central terão cursor estável derivado de fontes duráveis já
+   confirmadas. SSE entregará backfill por cursor e heartbeats locais; cliente
+   reconecta, deduplica por cursor e usa polling read-only se o stream cair.
+   A Central nunca afirma que um evento ainda não persistido ocorreu.
+4. Os POSTs de `preflight`, `checkpoint`, `pause`, `resume`, `stop` e
+   `finalize` recebem confirmação, `Idempotency-Key` e hash/versão esperados,
+   verificam pré-condições, e delegam somente às APIs públicas existentes. O
+   resultado estruturado é acompanhado por uma entrada atômica no ledger
+   separado da Central; um replay com a mesma chave retorna o mesmo resultado.
+   Nenhum controle aceita adapter arbitrário ou autorização de dublê.
+5. Os únicos caminhos configuráveis serão a allowlist dos arquivos YAML
+   versionados existentes (`system`, `budgets`, `gates`, `decision-policy`,
+   papéis e rubrica). A UI será gerada a partir de descritores tipados; não
+   haverá editor YAML. Todo rascunho contém hash-base, validação estrutural e
+   cruzada, diff e impacto para futuras runs. Aplicar escreve somente o arquivo
+   permitido com staging, fsync, `os.replace` e fsync de diretório, e registra
+   hashes antes/depois no ledger da Central. Segredos e referências sensíveis
+   são redigidos em respostas e auditoria.
+6. Configuração vinculada a uma execução continua imutável. Até que o produto
+   publique hashes globais por run para todas as superfícies, a Central bloqueia
+   conservadoramente a aplicação de qualquer rascunho quando houver uma run
+   não terminal; isso impede uma mudança observável por execução ativa sem
+   inventar vinculação retroativa.
+7. A reserva de idempotência e a aplicação de configuração são serializadas
+   por locks dedicados entre threads e processos. Os locks cobrem a sequência
+   completa de verificar, revalidar e persistir: duas aplicações baseadas no
+   mesmo hash não podem ambas vencer, e uma operação canônica só pode ser
+   chamada uma vez para uma mesma chave de idempotência.
+
+### Consequências e limites
+
+A Central aumenta a auditabilidade operacional, não a autoridade da UI. O
+estado canônico, gates, cegueira, políticas, receipts e exigência de
+autorização humana permanecem no LOOP. Alterar `enabled: true` em rascunho não
+é autorização de run: provider, política de conteúdo, orçamento, preflight e
+autorização hash-bound continuam obrigatórios e a Central não chama backend.
+O primeiro runtime real permanece posterior e requer a autorização explícita
+de escopo, provedor e orçamento do usuário.
+
 ## ADR-036 — M13.2: hardening estrutural de fronteiras de execução e júri
 
 **Status:** Implementado e validado offline. **Data:** 2026-09-06.

@@ -20,6 +20,7 @@ state/claims/*
 state/issues/*
 state/decisions/*
 state/locks/*
+state/control-center/*
 versions/champion/*
 versions/challengers/*
 versions/pareto/*
@@ -29,6 +30,7 @@ reports/*
 logs/*
 !**/.gitkeep
 !**/*.example.*
+!state/control-center/.gitkeep
 
 # Worktree-local live smoke configuration and evidence
 local-smoke/runs/

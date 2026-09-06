@@ -343,6 +343,7 @@ class BudgetLedger:
         logger: StructuredLogger | None = None,
         inference_policy: Mapping[str, Any] | None = None,
         routing_policy_hash: str | None = None,
+        read_only: bool = False,
     ):
         raw_root = Path(root)
         if raw_root.is_symlink() or not raw_root.is_dir():
@@ -388,14 +389,21 @@ class BudgetLedger:
         self.live_enabled = live_enabled
         self.deadline_at = _timestamp(deadline_at, "deadline_at") if deadline_at is not None else None
         self.orphan_after_seconds = _integer(orphan_after_seconds, "orphan_after_seconds")
+        if type(read_only) is not bool:
+            raise BudgetError("read_only must be boolean")
+        self.read_only = read_only
         self.clock = clock or ManualClock(current=datetime.now(timezone.utc), monotonic=time.monotonic())
         if not callable(getattr(self.clock, "now_utc", None)) or not callable(getattr(self.clock, "monotonic", None)):
             raise BudgetError("clock must expose now_utc() and monotonic()")
         self._started_monotonic = float(self.clock.monotonic())
         self.budget_dir = self.root / "state" / "budgets"
         self.lock_dir = self.root / "state" / "locks"
-        self._ensure_dir(self.budget_dir)
-        self._ensure_dir(self.lock_dir)
+        if self.read_only:
+            self._ensure_readable_dir(self.budget_dir)
+            self._ensure_readable_dir(self.lock_dir)
+        else:
+            self._ensure_dir(self.budget_dir)
+            self._ensure_dir(self.lock_dir)
         existing = self.read_events() if self.ledger_path.exists() else []
         self._resume_elapsed = float(existing[-1]["monotonic_elapsed_seconds"]) if existing else 0.0
         persisted_deadlines = [
@@ -425,7 +433,7 @@ class BudgetLedger:
             actual_binding = {key: persisted.get(key) for key in expected_binding}
             if actual_binding != expected_binding:
                 raise BudgetIntegrityError("run budget binding cannot be enlarged or changed")
-        self.logger = logger or StructuredLogger(self.root, self.run_id)
+        self.logger = logger or StructuredLogger(self.root, self.run_id, read_only=self.read_only)
 
     @classmethod
     def from_project(
@@ -435,6 +443,7 @@ class BudgetLedger:
         *,
         profile: str | None = None,
         clock: Any | None = None,
+        read_only: bool = False,
     ) -> "BudgetLedger":
         config = load_budget_config(root)
         section = config.get("budget")
@@ -464,6 +473,7 @@ class BudgetLedger:
             run_id,
             max_bytes=_integer(observability.get("max_log_bytes", 65536), "max_log_bytes"),
             clock=clock,
+            read_only=read_only,
         )
         inference = config.get("inference")
         if not isinstance(inference, Mapping):
@@ -486,6 +496,7 @@ class BudgetLedger:
             logger=logger,
             inference_policy=inference,
             routing_policy_hash=_hash(_canonical(inference)),
+            read_only=read_only,
         )
 
     def _ensure_dir(self, path: Path) -> None:
@@ -493,6 +504,12 @@ class BudgetLedger:
             raise BudgetError(f"unsafe budget directory: {path.name}")
         path.mkdir(parents=True, exist_ok=True)
         if path.is_symlink():
+            raise BudgetError(f"unsafe budget directory: {path.name}")
+
+    @staticmethod
+    def _ensure_readable_dir(path: Path) -> None:
+        """Validate an optional runtime directory without creating it."""
+        if path.exists() and (path.is_symlink() or not path.is_dir()):
             raise BudgetError(f"unsafe budget directory: {path.name}")
 
     @property
@@ -1376,8 +1393,24 @@ class BudgetLedger:
             self._emit_threshold_alerts_locked(current_cycle=current_cycle)
             return list(self._state_locked()["alerts"])
 
-    def status(self, *, current_cycle: int | None = None) -> dict[str, Any]:
-        self.check_alerts(current_cycle=current_cycle)
+    def status(
+        self,
+        *,
+        current_cycle: int | None = None,
+        read_only: bool = False,
+    ) -> dict[str, Any]:
+        """Return a projection without emitting operational alerts when requested.
+
+        Normal runtime status preserves M12's alert emission contract.  A local
+        observer must opt into ``read_only=True`` so opening a dashboard never
+        creates a log, lock, alert, or other durable runtime record.
+        """
+        if type(read_only) is not bool:
+            raise BudgetError("read_only must be boolean")
+        if current_cycle is not None:
+            _integer(current_cycle, "current_cycle")
+        if not read_only:
+            self.check_alerts(current_cycle=current_cycle)
         state = self._state_locked()
         reservations = list(state["reservations"].values())
         confirmed = [item for item in reservations if item.get("status") == "RECONCILED"]
