@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd`
-- Baseline da última sessão: `79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd`
+- Fingerprint atual das fontes: `13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1`
+- Baseline da última sessão: `13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 215 arquivos relevantes, 1888492 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 215 arquivos relevantes, 1900271 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -50,7 +50,7 @@ O delta content-addressed acima é a evidência determinística de alterações;
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (130641 bytes; SHA-256 `1bafa8cb681843af`).
+- Fonte lida: `docs/AI_HISTORY.md` (133579 bytes; SHA-256 `70fc59ab585eb4e7`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -79,22 +79,22 @@ O delta content-addressed acima é a evidência determinística de alterações;
 | M13.2 | 2026-09-06 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
 | M14 | 2026-09-06 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
 
-- Sessões estruturadas registradas: 38.
-- Índice recente: 2026-09-05T02:47:51Z — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final do…; 2026-09-05T04:26:25Z — M13.1 encerrado: identidade de avaliador routed foi separada dos 21 papeis RLM e a documentacao final foi reconciliada.; 2026-09-05T05:00:25Z — Ciclo de contexto de IA redesenhado: início read-only e publicação somente em checkpoint explícito.; 2026-09-06T04:12:37Z — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 t…; 2026-09-06T05:36:44Z — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, mode…; 2026-09-06T06:07:24Z — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map …; 2026-09-06T07:01:49Z — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suporta…; 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado es…. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 40.
+- Índice recente: 2026-09-05T05:00:25Z — Ciclo de contexto de IA redesenhado: início read-only e publicação somente em checkpoint explícito.; 2026-09-06T04:12:37Z — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 t…; 2026-09-06T05:36:44Z — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, mode…; 2026-09-06T06:07:24Z — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map …; 2026-09-06T07:01:49Z — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suporta…; 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado es…; 2026-09-06T07:55:00Z — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.; 2026-09-06T07:59:33Z — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, qu…. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-f5f4c080e2d7ea248fba` — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suportar file:// ou criar uma variante standalone.
-  - mudanças: Adicionado bin/start-control-center.sh, que exige a raiz article-loop válida, aceita somente --port de 1024 a 65535 e executa exclusivamente o módulo article_loop.control_center em 127.0.0.1 com PYTHONPATH local.; A interface declara discretamente que file:// não é suportado; docs/control-center.md documenta comando, URL, troca segura de porta e encerramento; PLANS.md e ADR-038 registram a decisão.; Os testes M14 agora verificam HTML, CSS e JavaScript pelo LocalControlHTTPServer em porta efêmer…
-  - decisões: Mantido um único caminho oficial de abertura: o LocalControlHTTPServer canônico. URLs absolutas /assets e /api/v1 permanecem intencionais e file:// é explicitamente não operacional.
-  - validações: python3 -m unittest control.test_m14_control_center -v: 21 testes aprovados em 2.028 s, incluindo servidor loopback real em porta efêmera.; python3 -m unittest discover -s control -q: 498 testes aprovados em 320.803 s; apenas avisos conhecidos de fixtures HTTP/ZIP temporárias.; bash bin/check.sh aprovou com live_ready=false; bash -n do launcher, py_compile do módulo/teste, node --check do app.js, git diff --check e --help do launcher aprovaram.
-  - riscos: file:// continua deliberadamente não suportado porque não oferece a origem HTTP nem a API /api/v1; não há servidor alternativo, modelo, Prime Agent, inferência, rede externa ou pipeline científico.
-  - próximos: Revisar o diff na branch local codex/control-center-launcher; commit, push e PR permanecem fora do escopo até autorização explícita.
-- `session-5ac7252fb3aa584776cf` — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado estrutural ate M14 e fronteiras explicitas contra execucao cientifica nao autorizada.
-  - mudanças: Substituido o README desatualizado por uma apresentacao orientada a contratos, fluxo canônico, topologia de 21 papeis, conceitos de champion, challenger, gates, receipts, orcamento e fail-closed.; Documentados somente os comandos locais verificados: bin/check.sh, a regressao unittest, a aceitacao M13 e o launcher bin/start-control-center.sh com URL loopback e porta padrao ou escolhida.
-  - decisões: O README separa implementacao estrutural concluida de execucao cientifica real, que continua condicionada a autorizacao humana e pre-condicoes fail-closed.
-  - validações: git diff --check aprovou; todos os links relativos do README foram verificados como existentes; bash bin/start-control-center.sh --help aprovou.; bash bin/check.sh aprovou e reportou live_ready=false, model_execution_enabled=false e paid_apis_enabled=false.
-  - riscos: Nenhum modelo, Prime Agent, provedor remoto, API paga, pipeline cientifico ou servidor persistente foi iniciado; a suite integral nao foi reexecutada nesta tarefa documental.
-  - próximos: Revisar o diff local; commit, push ou PR permanecem fora do escopo e exigem autorizacao explicita.
+- `session-b6f24eee458186e7c9d9` — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.
+  - mudanças: Replaced README.md with the exact parent revision blob 4df86adcba1d020b26314e365ac1e948eb47cad5.
+  - decisões: Preserve the historical README bytes, including its pre-existing trailing whitespace, rather than silently reformatting the restored version.
+  - validações: Working-tree README hash equals HEAD^:README.md; unresolved conflict markers were removed.
+  - riscos: The restored historical README still contains outdated claims and seven pre-existing trailing-whitespace warnings; no other project source was changed.
+  - próximos: Review the restored README separately before any new documentation rewrite; commit this restoration only with explicit authorization.
+- `session-07dd42119cf2d761e4df` — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, quick-start, CLI, repository-tree and ADR-table structure.
+  - mudanças: Updated milestone, security, test, command, repository-layout and ADR references through M14 and the canonical local Control Center launcher.
+  - decisões: Keep the legacy README presentation and links; correct claims in place instead of replacing it with a new document structure.
+  - validações: Verified all documented local files and command entrypoints exist; git diff --check passed; no source or runtime behavior was changed.
+  - riscos: README documents structural readiness only; live models, Prime Agent, providers, paid APIs and scientific runs remain unauthorized and disabled by default.
+  - próximos: Review the uncommitted documentation and checkpoint changes, then commit only with explicit authorization.
 
 ## Marcos planejados
 
@@ -326,7 +326,7 @@ A prova é de sistema offline e de disposição de ciclo. Não certifica matemá
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
 - Total: 215 arquivos; runtime=19, text=196.
-- Fingerprint canônico: `79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd`.
+- Fingerprint canônico: `13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1`.
 
 ## Roteamento para aprofundamento
 

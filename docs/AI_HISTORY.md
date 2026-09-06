@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd`
-- Registrado em: `2026-09-06T07:29:57Z`
-- Git: branch `codex/control-center-launcher`, HEAD `fce6dfc0ed14`
+- Fingerprint das fontes: `13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1`
+- Registrado em: `2026-09-06T07:59:33Z`
+- Git: branch `codex/control-center-launcher`, HEAD `9faed3499bcf`
 - Arquivos relevantes: 215
 
 ## Evolução reconstruída do versionamento
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
-| sem marco explícito | 2026-08-13..2026-09-06 | 49 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
+| sem marco explícito | 2026-08-13..2026-09-06 | 50 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -164,6 +164,7 @@
 | `816634ea4` | 2026-09-06 | M13.2 | Merge pull request #6 from Walc21/codex/m13.2.1-handoff |  |
 | `e1daf66e9` | 2026-09-06 | M14 | feat(m14): add local control center | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
 | `fce6dfc0e` | 2026-09-06 | sem marco explícito | Merge pull request #7 from Walc21/codex/control-center |  |
+| `9faed3499` | 2026-09-06 | sem marco explícito | Clarify canonical local control-center startup | .prime/agent/skills/article-loop/src/article_loop/control_center_static/index.html, .prime/agent/skills/article-loop/src/article_loop/control_center_static/styles.css, AI_CONTEXT.… |
 
 ## Decisões arquiteturais
 
@@ -1784,3 +1785,69 @@
 | Tipo | Caminho | SHA anterior | SHA final |
 |---|---|---|---|
 | modified | `README.md` | `bf2c1e350275` | `7d19d69de938` |
+
+### 2026-09-06T07:55:00Z — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.
+
+- Session ID: `session-b6f24eee458186e7c9d9`
+- Fingerprint final: `b9ccf46018d73fd0c8c0c1b6aa226279dac15bf873432ee3e348dc630b67b19f`
+- Git final: `9faed3499bcf`; status relevante: 1 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- Replaced README.md with the exact parent revision blob 4df86adcba1d020b26314e365ac1e948eb47cad5.
+
+**Decisões**
+
+- Preserve the historical README bytes, including its pre-existing trailing whitespace, rather than silently reformatting the restored version.
+
+**Validações**
+
+- Working-tree README hash equals HEAD^:README.md; unresolved conflict markers were removed.
+
+**Riscos/limites**
+
+- The restored historical README still contains outdated claims and seven pre-existing trailing-whitespace warnings; no other project source was changed.
+
+**Próximos passos**
+
+- Review the restored README separately before any new documentation rewrite; commit this restoration only with explicit authorization.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `README.md` | `7d19d69de938` | `bf2c1e350275` |
+
+### 2026-09-06T07:59:33Z — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, quick-start, CLI, repository-tree and ADR-table structure.
+
+- Session ID: `session-07dd42119cf2d761e4df`
+- Fingerprint final: `13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1`
+- Git final: `9faed3499bcf`; status relevante: 1 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- Updated milestone, security, test, command, repository-layout and ADR references through M14 and the canonical local Control Center launcher.
+
+**Decisões**
+
+- Keep the legacy README presentation and links; correct claims in place instead of replacing it with a new document structure.
+
+**Validações**
+
+- Verified all documented local files and command entrypoints exist; git diff --check passed; no source or runtime behavior was changed.
+
+**Riscos/limites**
+
+- README documents structural readiness only; live models, Prime Agent, providers, paid APIs and scientific runs remain unauthorized and disabled by default.
+
+**Próximos passos**
+
+- Review the uncommitted documentation and checkpoint changes, then commit only with explicit authorization.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `README.md` | `bf2c1e350275` | `6b14a95fb275` |

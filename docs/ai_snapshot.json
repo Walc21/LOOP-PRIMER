@@ -397,10 +397,10 @@
       "sha256": "32816308cbda1d069d4be474172285b4765d57ae5dc1c7040045f48cd8209260"
     },
     "README.md": {
-      "bytes": 7654,
+      "bytes": 19433,
       "kind": "text",
-      "lines": 112,
-      "sha256": "7d19d69de938f276c18446b8cd4dc6195eeb6220669f08976e6059e43eda33e9"
+      "lines": 352,
+      "sha256": "6b14a95fb2756245a9be03bda3a41e146d04cb497b0a221b7e0d576dcec13ad9"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -1291,23 +1291,16 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd",
+  "fingerprint": "13aad049b10453e81d5f97fc5f6291786ed7c79a9dca739d34d010426c4d0cb1",
   "git": {
     "available": true,
     "branch": "codex/control-center-launcher",
-    "head": "fce6dfc0ed14fdf4531939c1b3e6c8c04fe5a968",
+    "head": "9faed3499bcf4ce5a788c477ec986bf715d8c441",
     "status": [
-      " M .prime/agent/skills/article-loop/src/article_loop/control_center_static/index.html",
-      " M .prime/agent/skills/article-loop/src/article_loop/control_center_static/styles.css",
-      " M PLANS.md",
-      " M README.md",
-      " M control/test_m14_control_center.py",
-      " M docs/control-center.md",
-      " M docs/decisions.md",
-      "?? bin/start-control-center.sh"
+      " M README.md"
     ]
   },
-  "recorded_at": "2026-09-06T07:29:57Z",
+  "recorded_at": "2026-09-06T07:59:33Z",
   "schema_version": "1.0.0",
-  "session_id": "session-5ac7252fb3aa584776cf"
+  "session_id": "session-07dd42119cf2d761e4df"
 }
