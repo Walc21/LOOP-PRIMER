@@ -23,7 +23,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
   I/O; e (4) a apresentação cega remove ou rejeita comandos LaTeX
   potencialmente identitários de forma integral. Não adiciona configuração,
   execução local ou escopo fora dessas quatro fronteiras. A regressão completa
-  aprovou 473 testes, com 1 skip e sem falhas; os checks permanecem offline.
+  aprovou 474 testes, com 1 skip e sem falhas; os checks permanecem offline.
 - Redesenho do ciclo de contexto de IA em `chore/ai-context-lifecycle`:
   início lê o checkpoint `AI_CONTEXT.md` e pode executar somente a inspeção
   read-only `ai_context.py --check`; trabalho normal não publica artefatos;
@@ -150,7 +150,7 @@ integração Prime Agent continua sendo `docs/compatibility.md`.
 | M12.5.1 | ligação end-to-end de execução dual — Phase A | concluído localmente | seleção Prime/Routed por departamento, ator de controle routed persistente, contexto mínimo hash-bound, privacidade fail-closed, teto monetário inteiro, saída científica durável e retomada sem reinferência; defaults disabled e nenhum smoke live |
 | M13 | testes de sistema e entrega | concluído | 25 testes offline cobrem A–T: ingestão até promoção/Pareto/rejeição, original imutável, cadeia auditável, veto, cegueira, replay, recuperação e auditoria independente; regressão de 445 testes sem skips |
 | M13.1 | identidade de avaliador para júri/meta routed | concluído localmente | identidade de avaliador separada dos 21 papéis RLM, autoridade explícita de routing, receipt 1.2.0 fechado e replay durável sem reinferência; 14 testes dedicados, 135 adjacentes, check M13 de 25 testes e regressão completa de 465 testes aprovados offline |
-| M13.2 | hardening estrutural | concluído localmente | fecha somente a fronteira de dublês M6, a revalidação pré-inferência de workspace hash-bound, a política de erro de `fsync` e a anonimização adversarial do júri; 473 testes locais aprovados, 1 skip |
+| M13.2 | hardening estrutural | concluído localmente | fecha somente a fronteira de dublês M6, a revalidação pré-inferência de workspace hash-bound, a política de erro de `fsync` e a anonimização adversarial do júri; 474 testes locais aprovados, 1 skip |
 
 ### Aceitação M13
 
