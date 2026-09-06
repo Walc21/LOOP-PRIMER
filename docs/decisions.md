@@ -1,5 +1,35 @@
 # Decisões arquiteturais
 
+## ADR-038 — M14: inicialização exclusivamente pelo servidor local canônico
+
+**Status:** Implementado e validado offline. **Data:** 2026-09-06.
+
+### Contexto
+
+A interface M14 depende de assets sob `/assets/` e da API versionada
+`/api/v1`. Abrir `control_center_static/index.html` por `file://` não cria essa
+origem HTTP nem fornece a API canônica; converter os assets para caminhos
+relativos apenas ocultaria a indisponibilidade operacional e produziria uma
+Central standalone incompleta.
+
+### Decisão
+
+O único caminho oficial de início é um launcher local versionado que valida a
+raiz do projeto e executa exclusivamente
+`python3 -m article_loop.control_center` com `PYTHONPATH` do pacote local,
+`--root` da raiz validada, `--host 127.0.0.1` e uma porta local explicitamente
+validada. O launcher não recebe host, comando arbitrário, root arbitrária nem
+opções de execução. A UI conserva URLs absolutas para assets e API, mostra um
+aviso discreto de que `file://` é não suportado, e a documentação fornece a URL
+HTTP local e o encerramento por `Ctrl-C`.
+
+### Consequências e limites
+
+Não há servidor HTTP alternativo, CDN, telemetria, proxy, acesso remoto,
+terminal, bootstrap, `run_cycle`, inferência ou Prime Agent. O bind e as
+verificações Host/Origin do `LocalControlHTTPServer` permanecem a fronteira de
+segurança; trocar somente a porta não relaxa essas proteções.
+
 ## ADR-037 — M14: Central de Controle local como camada de projeção e comando canônico
 
 **Status:** Implementado e validado offline. **Data:** 2026-09-06.

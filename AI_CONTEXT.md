@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20`
-- Baseline da última sessão: `39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20`
+- Fingerprint atual das fontes: `79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd`
+- Baseline da última sessão: `79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 214 arquivos relevantes, 1892473 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 215 arquivos relevantes, 1888492 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -50,7 +50,7 @@ O delta content-addressed acima é a evidência determinística de alterações;
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (125240 bytes; SHA-256 `47b8f3089633c0eb`).
+- Fonte lida: `docs/AI_HISTORY.md` (130641 bytes; SHA-256 `1bafa8cb681843af`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -77,23 +77,24 @@ O delta content-addressed acima é a evidência determinística de alterações;
 | M13 | 2026-09-04..2026-09-05 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 | M13.1 | 2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
 | M13.2 | 2026-09-06 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
+| M14 | 2026-09-06 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
 
-- Sessões estruturadas registradas: 36.
-- Índice recente: 2026-09-05T00:02:51Z — Revisão diagnóstica offline e somente leitura da arquitetura de segurança no HEAD 562cbbf, com mapeamento dos caminhos …; 2026-09-05T02:45:32Z — M13 concluído como camada de aceitação de sistema e auditoria independente offline: ciclos sintéticos completos até pro…; 2026-09-05T02:47:51Z — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final do…; 2026-09-05T04:26:25Z — M13.1 encerrado: identidade de avaliador routed foi separada dos 21 papeis RLM e a documentacao final foi reconciliada.; 2026-09-05T05:00:25Z — Ciclo de contexto de IA redesenhado: início read-only e publicação somente em checkpoint explícito.; 2026-09-06T04:12:37Z — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 t…; 2026-09-06T05:36:44Z — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, mode…; 2026-09-06T06:07:24Z — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map …. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 38.
+- Índice recente: 2026-09-05T02:47:51Z — Encerramento pós-commit de M13: implementação e documentação consolidadas no commit local e9cb259, com refresh final do…; 2026-09-05T04:26:25Z — M13.1 encerrado: identidade de avaliador routed foi separada dos 21 papeis RLM e a documentacao final foi reconciliada.; 2026-09-05T05:00:25Z — Ciclo de contexto de IA redesenhado: início read-only e publicação somente em checkpoint explícito.; 2026-09-06T04:12:37Z — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 t…; 2026-09-06T05:36:44Z — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, mode…; 2026-09-06T06:07:24Z — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map …; 2026-09-06T07:01:49Z — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suporta…; 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado es…. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-09c1da6074805018e076` — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, modelos, provedores, pipeline científico ou rede externa.
-  - mudanças: Adicionado control plane Python em /api/v1 estritamente 127.0.0.1, com Host/Origin same-origin, POSTs confirmados/idempotentes e ledger de auditoria separado.; Adicionada UI estática local e responsiva com SSE cursorizado, polling de contingência, topologia de 21 papéis, evidências cegas, orçamento read-only, configuração tipada e links de metadados allowlisted.; Leitores canônicos receberam variantes read-only para store, logger e orçamento; controles M6 passaram hash esperado no lock canônico.
-  - decisões: Aplicação de rascunho permanece bloqueada durante qualquer run não terminal porque snapshots legados não vinculam hash global de configuração.; Links de artefato expõem somente metadados de hashes já presentes no journal; não há leitor HTTP de caminho ou conteúdo arbitrário.
-  - validações: Suites focadas M14/M6/M2/M12/contratos: 167 testes aprovados em 33.904 s.; Regressão integral: 495 testes aprovados em 414.383 s; avisos conhecidos apenas de fixtures HTTP/ZIP temporárias.; bin/check.sh aprovou com live_ready=false, modelos/APIs pagas/routing/targets desabilitados; py_compile, node --check e git diff --check aprovados.
-  - riscos: Execução live continua fail-closed e requer futura autorização explícita de escopo, provedor, orçamento e run; a Central não fornece endpoint de start ou inferência.
-  - próximos: Se houver autorização futura, iniciar a Central somente em 127.0.0.1 e realizar preflight local auditado antes de qualquer operação permitida.
-- `session-19361425ab71b858f229` — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map defaults in the offline UI.
-  - mudanças: Serialized configuration apply with a dedicated interprocess lock across active-run check, hash revalidation, write, and draft state publication.; Serialized control mutations with a dedicated interprocess idempotency lock from lookup through canonical operation and persisted response.; Corrected dynamic map creation to initialize values from the resolved item schema.
-  - decisões: Concurrent drafts with the same base hash must have one winner and all same-key requests must replay one persisted canonical result.
-  - validações: Focused M14: 20 tests OK; full control regression: 497 tests OK in 431.752s; bin/check.sh, py_compile, node --check, and git diff --check OK.
-  - riscos: No model, Prime Agent, endpoint, provider, or live pipeline was run; no commit or push was made.
-  - próximos: Review the uncommitted M14 control-center branch changes, then commit and open a PR only with explicit authorization.
+- `session-f5f4c080e2d7ea248fba` — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suportar file:// ou criar uma variante standalone.
+  - mudanças: Adicionado bin/start-control-center.sh, que exige a raiz article-loop válida, aceita somente --port de 1024 a 65535 e executa exclusivamente o módulo article_loop.control_center em 127.0.0.1 com PYTHONPATH local.; A interface declara discretamente que file:// não é suportado; docs/control-center.md documenta comando, URL, troca segura de porta e encerramento; PLANS.md e ADR-038 registram a decisão.; Os testes M14 agora verificam HTML, CSS e JavaScript pelo LocalControlHTTPServer em porta efêmer…
+  - decisões: Mantido um único caminho oficial de abertura: o LocalControlHTTPServer canônico. URLs absolutas /assets e /api/v1 permanecem intencionais e file:// é explicitamente não operacional.
+  - validações: python3 -m unittest control.test_m14_control_center -v: 21 testes aprovados em 2.028 s, incluindo servidor loopback real em porta efêmera.; python3 -m unittest discover -s control -q: 498 testes aprovados em 320.803 s; apenas avisos conhecidos de fixtures HTTP/ZIP temporárias.; bash bin/check.sh aprovou com live_ready=false; bash -n do launcher, py_compile do módulo/teste, node --check do app.js, git diff --check e --help do launcher aprovaram.
+  - riscos: file:// continua deliberadamente não suportado porque não oferece a origem HTTP nem a API /api/v1; não há servidor alternativo, modelo, Prime Agent, inferência, rede externa ou pipeline científico.
+  - próximos: Revisar o diff na branch local codex/control-center-launcher; commit, push e PR permanecem fora do escopo até autorização explícita.
+- `session-5ac7252fb3aa584776cf` — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado estrutural ate M14 e fronteiras explicitas contra execucao cientifica nao autorizada.
+  - mudanças: Substituido o README desatualizado por uma apresentacao orientada a contratos, fluxo canônico, topologia de 21 papeis, conceitos de champion, challenger, gates, receipts, orcamento e fail-closed.; Documentados somente os comandos locais verificados: bin/check.sh, a regressao unittest, a aceitacao M13 e o launcher bin/start-control-center.sh com URL loopback e porta padrao ou escolhida.
+  - decisões: O README separa implementacao estrutural concluida de execucao cientifica real, que continua condicionada a autorizacao humana e pre-condicoes fail-closed.
+  - validações: git diff --check aprovou; todos os links relativos do README foram verificados como existentes; bash bin/start-control-center.sh --help aprovou.; bash bin/check.sh aprovou e reportou live_ready=false, model_execution_enabled=false e paid_apis_enabled=false.
+  - riscos: Nenhum modelo, Prime Agent, provedor remoto, API paga, pipeline cientifico ou servidor persistente foi iniciado; a suite integral nao foi reexecutada nesta tarefa documental.
+  - próximos: Revisar o diff local; commit, push ou PR permanecem fora do escopo e exigem autorizacao explicita.
 
 ## Marcos planejados
 
@@ -179,6 +180,7 @@ Detalhe das duas sessões mais recentes:
 - `bin/bootstrap-deps.sh` — Prepara requisitos locais da ingestão M3. Não instala nem inicia o Prime Agent.
 - `bin/check.sh` — Fast, local M11/M12/M12.5/M12.5.1 integrity check. It never starts Prime Agent or a model.
 - `bin/preflight.sh` — script shell
+- `bin/start-control-center.sh` — Start the M14 Control Center only through its canonical loopback server.
 - `bin/start-prime.sh` — Start only an explicitly authorized, project-local Prime Agent session.
 - `scripts/01_external_evaluator.py` — API: main()
 - `scripts/02_stagnation_detector.py` — API: main()
@@ -225,7 +227,7 @@ Detalhe das duas sessões mais recentes:
 
 ## Cobertura estrutural de testes
 
-Total detectado por AST: **497 testes**.
+Total detectado por AST: **498 testes**.
 
 | Arquivo | Testes | Amostra de fronteiras cobertas |
 |---|---:|---|
@@ -238,7 +240,7 @@ Total detectado por AST: **497 testes**.
 | `test_m12_budget_observability.py` | 20 | reserve admit reconcile is hash bound and reported; two reservations race cannot spend last balance twice; usage absent becomes uncertain and keeps reservation; release requires p… |
 | `test_m131_routed_evaluation.py` | 14 | full m8 publication through seven routed calls; juror replay survives new adapter and no backend call; model protocol fields are rejected including gate identity; missing scientif… |
 | `test_m13_system_delivery.py` | 25 | golden ingestion to verified promotion; math gate failure stops before jury or decision; jury math veto beats excellent scores and is rejected; blind presentations invert without … |
-| `test_m14_control_center.py` | 20 | status without run is read only; run projection rebuilds after control plane restart; event cursor backfills and deduplicates; sse serves confirmed event with resumable cursor; ev… |
+| `test_m14_control_center.py` | 21 | status without run is read only; run projection rebuilds after control plane restart; event cursor backfills and deduplicates; sse serves confirmed event with resumable cursor; ev… |
 | `test_m2_durable_state.py` | 32 | directory fsync tolerates only documented unsupported errors; directory fsync io error fails atomic publication; all valid transitions; all invalid transitions; full event log rep… |
 | `test_m3_ingestion.py` | 22 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash di… |
 | `test_m4_prompts.py` | 13 | all 21 compiled prompts match snapshots; prompt contract sections and required dependencies; structured output fixtures validate; immutable overwrite and unknown version block exe… |
@@ -323,8 +325,8 @@ A prova é de sistema offline e de disposição de ciclo. Não certifica matemá
 
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
-- Total: 214 arquivos; runtime=19, text=195.
-- Fingerprint canônico: `39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20`.
+- Total: 215 arquivos; runtime=19, text=196.
+- Fingerprint canônico: `79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd`.
 
 ## Roteamento para aprofundamento
 

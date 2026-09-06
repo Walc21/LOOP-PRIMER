@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `39c79953b9385996475e7a13b0962243b16fbbe6c1ff15610f80ab0b90ad0b20`
-- Registrado em: `2026-09-06T06:07:24Z`
-- Git: branch `codex/control-center`, HEAD `816634ea4cb3`
-- Arquivos relevantes: 214
+- Fingerprint das fontes: `79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd`
+- Registrado em: `2026-09-06T07:29:57Z`
+- Git: branch `codex/control-center-launcher`, HEAD `fce6dfc0ed14`
+- Arquivos relevantes: 215
 
 ## Evolução reconstruída do versionamento
 
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
-| sem marco explícito | 2026-08-13..2026-09-05 | 48 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
+| sem marco explícito | 2026-08-13..2026-09-06 | 49 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -37,6 +37,7 @@
 | M13 | 2026-09-04..2026-09-05 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 | M13.1 | 2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
 | M13.2 | 2026-09-06 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
+| M14 | 2026-09-06 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
 
 ### Commits exatos
 
@@ -161,9 +162,12 @@
 | `de9253491` | 2026-09-06 | M13.2 | Merge pull request #5 from Walc21/codex/m13.2-structural-hardening |  |
 | `9176655e1` | 2026-09-06 | M13.2 | docs(m13.2): publish structural hardening checkpoint | AI_CONTEXT.md, PLANS.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json, docs/decisions.md |
 | `816634ea4` | 2026-09-06 | M13.2 | Merge pull request #6 from Walc21/codex/m13.2.1-handoff |  |
+| `e1daf66e9` | 2026-09-06 | M14 | feat(m14): add local control center | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
+| `fce6dfc0e` | 2026-09-06 | sem marco explícito | Merge pull request #7 from Walc21/codex/control-center |  |
 
 ## Decisões arquiteturais
 
+- ADR-038 — M14: inicialização exclusivamente pelo servidor local canônico
 - ADR-037 — M14: Central de Controle local como camada de projeção e comando canônico
 - ADR-036 — M13.2: hardening estrutural de fronteiras de execução e júri
 - ADR-035 — M13.1: julgamento routed com identidade de avaliador separada
@@ -1702,3 +1706,81 @@
 | modified | `PLANS.md` | `5d98c2fdd324` | `d3355968a55e` |
 | modified | `control/test_m14_control_center.py` | `d116fa2dc642` | `815a9e6023f4` |
 | modified | `docs/decisions.md` | `b870c9794a18` | `387a596451a0` |
+
+### 2026-09-06T07:01:49Z — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suportar file:// ou criar uma variante standalone.
+
+- Session ID: `session-f5f4c080e2d7ea248fba`
+- Fingerprint final: `b9ccf46018d73fd0c8c0c1b6aa226279dac15bf873432ee3e348dc630b67b19f`
+- Git final: `fce6dfc0ed14`; status relevante: 7 item(ns)
+- Delta factual: 1 adicionados, 6 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionado bin/start-control-center.sh, que exige a raiz article-loop válida, aceita somente --port de 1024 a 65535 e executa exclusivamente o módulo article_loop.control_center em 127.0.0.1 com PYTHONPATH local.
+- A interface declara discretamente que file:// não é suportado; docs/control-center.md documenta comando, URL, troca segura de porta e encerramento; PLANS.md e ADR-038 registram a decisão.
+- Os testes M14 agora verificam HTML, CSS e JavaScript pelo LocalControlHTTPServer em porta efêmera, ausência de URLs externas, rejeição loopback e restrições estáticas do launcher.
+
+**Decisões**
+
+- Mantido um único caminho oficial de abertura: o LocalControlHTTPServer canônico. URLs absolutas /assets e /api/v1 permanecem intencionais e file:// é explicitamente não operacional.
+
+**Validações**
+
+- python3 -m unittest control.test_m14_control_center -v: 21 testes aprovados em 2.028 s, incluindo servidor loopback real em porta efêmera.
+- python3 -m unittest discover -s control -q: 498 testes aprovados em 320.803 s; apenas avisos conhecidos de fixtures HTTP/ZIP temporárias.
+- bash bin/check.sh aprovou com live_ready=false; bash -n do launcher, py_compile do módulo/teste, node --check do app.js, git diff --check e --help do launcher aprovaram.
+
+**Riscos/limites**
+
+- file:// continua deliberadamente não suportado porque não oferece a origem HTTP nem a API /api/v1; não há servidor alternativo, modelo, Prime Agent, inferência, rede externa ou pipeline científico.
+
+**Próximos passos**
+
+- Revisar o diff na branch local codex/control-center-launcher; commit, push e PR permanecem fora do escopo até autorização explícita.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `bin/start-control-center.sh` | `-` | `7a0e4871790b` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/control_center_static/index.html` | `c0f9a056a206` | `2f775a29f11a` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/control_center_static/styles.css` | `65b8fdf75739` | `bf08db5bcb11` |
+| modified | `PLANS.md` | `d3355968a55e` | `32816308cbda` |
+| modified | `control/test_m14_control_center.py` | `815a9e6023f4` | `2e0376925305` |
+| modified | `docs/control-center.md` | `784d05166c0c` | `2eb9ab85bd98` |
+| modified | `docs/decisions.md` | `387a596451a0` | `63ccee46aa6f` |
+
+### 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado estrutural ate M14 e fronteiras explicitas contra execucao cientifica nao autorizada.
+
+- Session ID: `session-5ac7252fb3aa584776cf`
+- Fingerprint final: `79ef00da29c7fda60bd10d70f933e3b960af8a813e91402a0fb7eeb376ae59bd`
+- Git final: `fce6dfc0ed14`; status relevante: 8 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- Substituido o README desatualizado por uma apresentacao orientada a contratos, fluxo canônico, topologia de 21 papeis, conceitos de champion, challenger, gates, receipts, orcamento e fail-closed.
+- Documentados somente os comandos locais verificados: bin/check.sh, a regressao unittest, a aceitacao M13 e o launcher bin/start-control-center.sh com URL loopback e porta padrao ou escolhida.
+
+**Decisões**
+
+- O README separa implementacao estrutural concluida de execucao cientifica real, que continua condicionada a autorizacao humana e pre-condicoes fail-closed.
+
+**Validações**
+
+- git diff --check aprovou; todos os links relativos do README foram verificados como existentes; bash bin/start-control-center.sh --help aprovou.
+- bash bin/check.sh aprovou e reportou live_ready=false, model_execution_enabled=false e paid_apis_enabled=false.
+
+**Riscos/limites**
+
+- Nenhum modelo, Prime Agent, provedor remoto, API paga, pipeline cientifico ou servidor persistente foi iniciado; a suite integral nao foi reexecutada nesta tarefa documental.
+
+**Próximos passos**
+
+- Revisar o diff local; commit, push ou PR permanecem fora do escopo e exigem autorizacao explicita.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `README.md` | `bf2c1e350275` | `7d19d69de938` |

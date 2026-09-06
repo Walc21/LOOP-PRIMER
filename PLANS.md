@@ -196,6 +196,24 @@ dos controles exclusivamente às APIs públicas. Validação final: suítes
 focadas, regressão integral proporcional, `bin/check.sh`, `py_compile` e
 `git diff --check`, sem iniciar Prime Agent, modelo, provedor ou pipeline.
 
+### Ajuste M14 — Inicialização local canônica
+
+**Objetivo.** Remover a ambiguidade da abertura direta de
+`control_center_static/index.html` sem criar uma segunda Central incompleta.
+O único caminho oficial será `bin/start-control-center.sh`: ele resolve e
+valida a raiz do projeto, aceita apenas uma porta local explícita e executa o
+módulo canônico `article_loop.control_center` em `127.0.0.1`. A página continua
+a usar caminhos absolutos de assets e `/api/v1`, pois estes pertencem à mesma
+origem HTTP local, não a `file://`.
+
+**Limites e aceitação.** O launcher não instala dependências nem inicia Prime
+Agent, modelo, provedor, rede externa ou pipeline científico. Argumentos fora
+da allowlist e portas ausentes, não numéricas ou fora da faixa segura falham
+antes de iniciar Python. Testes offline iniciarão `LocalControlHTTPServer` em
+porta efêmera e verificarão HTML, CSS e JavaScript servidos, ausência de URLs
+externas, rejeição de bind não-loopback e que o launcher contém somente a
+invocação do servidor canônico, sem comandos de modelo ou Prime Agent.
+
 ### Aceitação M13
 
 Compor APIs reais M2–M12.5.1 em fixtures temporárias; dublês somente nas

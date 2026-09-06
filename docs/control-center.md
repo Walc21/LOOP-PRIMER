@@ -4,20 +4,37 @@ A Central de Controle é uma superfície local sobre as fontes de verdade já
 existentes no article-loop. Ela não inicia Prime Agent, inferência, provedores,
 rede de modelo, pipeline científico, shell ou edição de arquivo arbitrário.
 
-## Operação local
+## Inicialização local oficial
 
-Com o ambiente Python do projeto que já fornece `PyYAML` e `jsonschema`, inicie
-somente em loopback:
+Na raiz do repositório, com o ambiente Python do projeto que já fornece
+`PyYAML` e `jsonschema`, use exclusivamente:
 
 ```sh
-PYTHONPATH=.prime/agent/skills/article-loop/src \
-  python3 -m article_loop.control_center --root . --host 127.0.0.1 --port 8765
+bash bin/start-control-center.sh
 ```
 
-Abra `http://127.0.0.1:8765` no mesmo computador. O processo recusa qualquer
-host diferente de `127.0.0.1`; Host e Origin que não sejam loopback são
-rejeitados. Interromper o processo com `Ctrl-C` desabilita a Central sem tocar
-no estado do LOOP.
+Abra exatamente `http://127.0.0.1:8765` no mesmo computador. O launcher
+resolve a raiz atual, fixa o `PYTHONPATH` do pacote local e inicia somente o
+`article_loop.control_center` canônico com bind em `127.0.0.1`. Ele rejeita
+argumentos não reconhecidos, raiz inválida e portas inseguras ou inválidas.
+
+Não abra `control_center_static/index.html` diretamente no navegador. O modo
+`file://` não é suportado: ele não possui a origem HTTP que serve
+`/assets/styles.css` e `/assets/app.js` nem a API canônica `/api/v1`; transformar
+os assets em caminhos relativos não resolveria essa ausência e criaria uma UI
+standalone incompleta.
+
+Para trocar somente a porta, escolha uma porta local entre 1024 e 65535 e abra
+a URL correspondente, por exemplo:
+
+```sh
+bash bin/start-control-center.sh --port 8766
+```
+
+Depois abra `http://127.0.0.1:8766`. Host, Origin e bind continuam limitados a
+loopback. Para encerrar com segurança, mantenha o terminal do launcher em
+primeiro plano e pressione `Ctrl-C`; isso para o servidor sem iniciar ou alterar
+o pipeline científico.
 
 ## Autoridade e proteção
 
