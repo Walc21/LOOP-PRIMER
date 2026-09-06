@@ -6,6 +6,7 @@ import http.client
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -373,7 +374,21 @@ class ControlCenterTests(unittest.TestCase):
             self.assertEqual(response.status, 200)
             self.assertNotIn("https://", body)
             self.assertIn("Central de Controle", body)
+            self.assertIn("file://", body)
             connection.close()
+            for path, expected_type, marker in (
+                ("/assets/styles.css", "text/css", ":root"),
+                ("/assets/app.js", "javascript", "EventSource"),
+            ):
+                connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+                connection.request("GET", path, headers={"Host": f"127.0.0.1:{port}"})
+                response = connection.getresponse()
+                asset = response.read().decode("utf-8")
+                self.assertEqual(response.status, 200)
+                self.assertIn(expected_type, response.getheader("Content-Type"))
+                self.assertIn(marker, asset)
+                self.assertNotRegex(asset, r"https?://")
+                connection.close()
             script = (ROOT / ".prime/agent/skills/article-loop/src/article_loop/control_center_static/app.js").read_text(encoding="utf-8")
             self.assertIn("EventSource", script)
             self.assertIn("Reconectando", script)
@@ -384,3 +399,25 @@ class ControlCenterTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=3)
+
+    def test_launcher_is_limited_to_the_canonical_loopback_server(self):
+        launcher = ROOT / "bin/start-control-center.sh"
+        source = launcher.read_text(encoding="utf-8")
+        self.assertIn("exec python3 -m article_loop.control_center", source)
+        self.assertIn("--host 127.0.0.1", source)
+        self.assertIn('export PYTHONPATH="$ROOT/.prime/agent/skills/article-loop/src"', source)
+        for forbidden in ("prime-agent", "ollama", "run_cycle", "bootstrap", "curl", "wget"):
+            self.assertNotIn(forbidden, source)
+        with tempfile.TemporaryDirectory() as outside:
+            result = subprocess.run(
+                ["bash", str(launcher), "--port", "8766"], cwd=outside, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("valid article-loop project root", result.stderr)
+        invalid_port = subprocess.run(
+            ["bash", str(launcher), "--port", "0"], cwd=ROOT, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        )
+        self.assertEqual(invalid_port.returncode, 2)
+        self.assertIn("1024 to 65535", invalid_port.stderr)

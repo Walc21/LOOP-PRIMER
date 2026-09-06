@@ -25,6 +25,7 @@ h1 { margin-bottom: 0; font-size: clamp(1.5rem, 3vw, 2.2rem); letter-spacing: -.
 h2 { font-size: 1.45rem; }
 h3 { font-size: 1.05rem; }
 .eyebrow { margin-bottom: .2rem; color: var(--accent); font-size: .84rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.served-only { max-width: 44rem; margin: .45rem 0 0; color: var(--muted); font-size: .86rem; }
 .connection { max-width: 22rem; margin: 0; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: .45rem; color: var(--muted); text-align: right; }
 .shell { display: grid; grid-template-columns: 15.5rem minmax(0, 1fr); min-height: calc(100vh - 7rem); }
 .navigation { padding: 1rem; border-right: 1px solid var(--line); background: #0c1a28; }
