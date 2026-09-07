@@ -1,5 +1,41 @@
 # Decisões arquiteturais
 
+## ADR-040 — Contexto escalonado para agentes sem perda de autoridade
+
+**Status:** Implementado localmente. **Data:** 2026-09-07.
+
+### Decisão
+
+O contexto carregado no início deixa de ser um inventário operacional amplo. O
+`AI_CONTEXT.md` gerado preserva fingerprint, frescor, estado/marco corrente,
+fronteiras de execução e evidência, últimas sessões materiais e um roteamento
+explícito para a fonte autoritativa de cada tipo de tarefa. APIs completas,
+schemas, topologia, cobertura, histórico e handoffs continuam versionados, mas
+não são injetados por padrão; são lidos somente quando o escopo os exigir.
+
+`AGENTS.md` contém apenas regras transversais: autorização, segredos, evidência
+imutável, execução externa, qualidade e ciclo de checkpoint. A skill curta
+mantém os contratos operacionais e encaminha detalhes para referência local.
+Os adaptadores de cada cliente só apontam à política canônica, evitando cópias
+que possam divergir. Claude e Gemini não são superfícies suportadas neste
+checkout e seus adaptadores são removidos.
+
+O checkpoint explícito permanece para alterações materiais de código, contratos,
+decisões, evidência durável ou handoff solicitado. Perguntas, inspeções
+read-only, troca de branch e verificações sem resultado novo não criam entrada
+de histórico nem regeneram contexto. `ai_history.py` continua antecedendo a
+publicação do contexto quando um checkpoint ocorrer; nenhum arquivo gerado é
+editado manualmente.
+
+### Consequências e limites
+
+A redução de contexto não relaxa estados, ações, hashes, receipts, gates,
+privacidade, imutabilidade de PDF, STOP, orçamento ou a exigência de autorização
+explícita para modelos, Prime, rede e execução científica. A informação removida
+da carga inicial não é descartada: permanece em `docs/AI_HISTORY.md`,
+`docs/ai_snapshot.json`, ADRs, planos, schemas, código e testes, todos
+alcançáveis pelo roteamento do contexto compacto.
+
 ## ADR-039 — Ciclo local autorizado por composição das APIs canônicas
 
 **Status:** Implementado; tentativa real bloqueada em M3. **Data:** 2026-09-06.

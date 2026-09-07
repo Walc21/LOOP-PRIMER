@@ -106,25 +106,26 @@ class AIHandoffTests(unittest.TestCase):
             self.assertNotIn(str(root), second)
             self.assertNotRegex(second, r"HEAD `[0-9a-f]{7,40}`")
 
-    def test_repository_trigger_surfaces_require_read_only_startup_and_explicit_checkpoint(self) -> None:
+    def test_repository_trigger_surfaces_are_thin_and_preserve_checkpoint_policy(self) -> None:
         required = {
-            "AGENTS.md": ("python3 scripts/ai_context.py --check", "stale", "Nunca execute", "scripts/ai_history.py", "AI_CONTEXT.md"),
-            "CLAUDE.md": ("python3 scripts/ai_context.py --check", "stale", "Nunca execute", "scripts/ai_history.py", "AI_CONTEXT.md"),
+            "AGENTS.md": ("AI_CONTEXT.md", "ai_context.py --check", "ai_history.py", "checkpoint", "read-only"),
             ".prime/agent/APPEND_SYSTEM.md": (
-                "python3 scripts/ai_context.py --check",
-                "stale",
-                "Nunca execute",
-                "scripts/ai_history.py",
+                "AGENTS.md",
                 "AI_CONTEXT.md",
+                "article-loop",
+                "dry-run",
+                "M14",
             ),
-            "GEMINI.md": ("AGENTS.md", "python3 scripts/ai_context.py --check", "stale", "Nunca execute", "AI_CONTEXT.md"),
-            ".github/copilot-instructions.md": ("AGENTS.md", "python3 scripts/ai_context.py --check", "stale", "Nunca execute", "AI_CONTEXT.md"),
+            ".github/copilot-instructions.md": ("AGENTS.md", "AI_CONTEXT.md", "read-only", "checkpoint", "modelo"),
         }
         for relative, markers in required.items():
             with self.subTest(path=relative):
                 text = (ROOT / relative).read_text(encoding="utf-8")
                 for marker in markers:
                     self.assertIn(marker, text)
+
+        self.assertFalse((ROOT / "CLAUDE.md").exists())
+        self.assertFalse((ROOT / "GEMINI.md").exists())
 
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertNotIn("Entrada obrigatória para IAs", readme)
@@ -198,16 +199,31 @@ class AIHandoffTests(unittest.TestCase):
             self.assertEqual(before, self._generated_bytes(root))
             self.assertEqual(subprocess.run(["git", "status", "--porcelain"], cwd=root, text=True, stdout=subprocess.PIPE, check=True).stdout, "")
 
-    def test_context_points_to_ai_sources_without_embedding_human_docs_or_full_inventory(self) -> None:
+    def test_context_is_compact_and_routes_to_authoritative_sources(self) -> None:
         context = render_context(ROOT, diff_limit=0)
 
-        self.assertIn("## Autoridade e separação de audiências", context)
-        self.assertIn("`AGENTS.md` é a política autoritativa", context)
-        self.assertIn("`README.md`, `CONTRIBUTING.md` e `SECURITY.md`", context)
+        self.assertIn("# AI_CONTEXT — estado operacional compacto", context)
+        self.assertIn("## Estado e limites atuais", context)
+        self.assertIn("## Roteamento obrigatório por escopo", context)
+        self.assertIn("`docs/AI_HISTORY.md` e `docs/ai_snapshot.json`", context)
         self.assertNotIn("<agents_md>", context)
-        self.assertNotIn("<readme>", context)
+        self.assertNotIn("## Componentes Python", context)
+        self.assertNotIn("## Contratos JSON Schema", context)
+        self.assertNotIn("## Cobertura estrutural de testes", context)
+        self.assertNotIn("<latest_handoff>", context)
         self.assertNotIn("| Caminho | Tipo | Bytes |", context)
-        self.assertLess(len(context.encode("utf-8")), 45_000)
+        self.assertLess(len(context.encode("utf-8")), 12_000)
+
+    def test_short_skill_routes_to_preserved_detailed_contract(self) -> None:
+        skill = (ROOT / ".prime/agent/skills/article-loop/SKILL.md").read_text(encoding="utf-8")
+        reference = ROOT / ".prime/agent/skills/article-loop/references/api-contracts.md"
+
+        self.assertLess(len(skill.encode("utf-8")), 6_000)
+        self.assertIn("references/api-contracts.md", skill)
+        self.assertTrue(reference.is_file())
+        detailed = reference.read_text(encoding="utf-8")
+        self.assertIn("DurableStore", detailed)
+        self.assertIn("M12.5", detailed)
 
     def test_inventory_is_content_addressed_and_excludes_generated_and_caches(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -302,7 +318,6 @@ class AIHandoffTests(unittest.TestCase):
             context = render_context(root, diff_limit=0)
             self.assertIn("Criado handoff mínimo.", context)
             self.assertIn("M2", context)
-            self.assertIn("README.md", context)
             self.assertNotIn("| Marco | Intervalo", context)
 
 

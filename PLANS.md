@@ -10,6 +10,26 @@ champion, challengers e arquivo Pareto.
 A fonte normativa de arquitetura é `docs/architecture.md`; a autoridade da
 integração Prime Agent continua sendo `docs/compatibility.md`.
 
+## Contexto enxuto para agentes — 2026-09-07
+
+Reduzir o custo de início de Codex, Copilot e Prime sem perder contratos ou
+evidência. `AI_CONTEXT.md` continuará gerado e versionado, mas passará a
+conter somente identidade/frescor, estado operacional, fronteiras de
+autorização, sessões recentes e roteamento para fontes autoritativas. Inventário
+completo, APIs, schemas, matriz de papéis, cobertura e histórico detalhado
+continuarão em seus arquivos próprios e serão carregados apenas pelo escopo da
+tarefa.
+
+`AGENTS.md` ficará restrito a regras globais e ciclo de checkpoint; detalhes de
+Prime e APIs permanecerão na skill e em documentação específica. Checkpoint
+continuará obrigatório para mudança material de código, contrato, decisão,
+evidência durável ou handoff solicitado, mas não para conversa, inspeção pura,
+troca de branch ou outro diagnóstico sem resultado a preservar. Os adaptadores
+não utilizados de Claude e Gemini serão removidos a pedido do operador; o
+adaptador Copilot e a superfície Prime serão curtos e apontarão à política
+canônica. Nenhum estado científico, PDF original, evidência congelada, schema,
+ADR ou histórico será descartado.
+
 ## Execução local autorizada — 2026-09-06
 
 Implementar uma única CLI project-local para compor M3/M5/M6 routed/M7/M8

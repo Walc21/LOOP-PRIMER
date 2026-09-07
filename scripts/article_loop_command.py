@@ -396,7 +396,7 @@ def check_project(root: str | Path, *, require_live: bool = False) -> dict[str, 
         if path.is_symlink() or not path.is_dir():
             raise ProjectCheckError(f"required project directory is unsafe or missing: {relative}")
     append = (project / ".prime/agent/APPEND_SYSTEM.md").read_text(encoding="utf-8")
-    for marker in ("AGENTS.md", "article-loop/SKILL.md", "FINALIZED"):
+    for marker in ("AGENTS.md", "AI_CONTEXT.md", "dry-run", "M14"):
         if marker not in append:
             raise ProjectCheckError("APPEND_SYSTEM.md is missing a required guardrail")
     stop_path = project / "control/STOP"

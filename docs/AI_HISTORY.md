@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `0c2ecddf458ea660521359c04d808331c3f053a87d0a47fd391548d3e0af81a6`
-- Registrado em: `2026-09-07T01:39:39Z`
-- Git: branch `codex/local-loopback-full-cycle`, HEAD `6ac799fac683`
-- Arquivos relevantes: 219
+- Fingerprint das fontes: `d7cfbaf096f9c41db7d0741db0b8021a18213abc3313b8ac924e9649cb454406`
+- Registrado em: `2026-09-07T03:22:59Z`
+- Git: branch `codex/lean-agent-context`, HEAD `3ae6ab7a60d0`
+- Arquivos relevantes: 218
 
 ## Evolução reconstruída do versionamento
 
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13..2026-09-06 | 6 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.p… |
-| sem marco explícito | 2026-08-13..2026-09-06 | 53 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
+| sem marco explícito | 2026-08-13..2026-09-06 | 55 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -170,9 +170,12 @@
 | `ba90b7847` | 2026-09-06 | sem marco explícito | Merge pull request #8 from Walc21/codex/control-center-launcher |  |
 | `edcba666e` | 2026-09-06 | M3 | feat(local): add isolated full-cycle entry and harden M3 | .gitignore, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, AI_CONTEXT.md, PLANS.md, control/test_local_loopback_full_cycle.py, control/test_m3_ingestion.py |
 | `6ac799fac` | 2026-09-06 | sem marco explícito | docs(ai): checkpoint commit and PR publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `6753f0cd6` | 2026-09-06 | sem marco explícito | test(ci): make local cycle fixture self-contained | AI_CONTEXT.md, PLANS.md, control/test_local_loopback_full_cycle.py, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `3ae6ab7a6` | 2026-09-06 | sem marco explícito | Merge pull request #9 from Walc21/codex/local-loopback-full-cycle |  |
 
 ## Decisões arquiteturais
 
+- ADR-040 — Contexto escalonado para agentes sem perda de autoridade
 - ADR-039 — Ciclo local autorizado por composição das APIs canônicas
 - ADR-038 — M14: inicialização exclusivamente pelo servidor local canônico
 - ADR-037 — M14: Central de Controle local como camada de projeção e comando canônico
@@ -2040,3 +2043,52 @@
 | modified | `PLANS.md` | `8831f830600e` | `17f01d5969b0` |
 | modified | `control/test_local_loopback_full_cycle.py` | `36dbf8b9a9a0` | `3497ecd554b8` |
 | modified | `docs/decisions.md` | `0978281b1043` | `c68d840cb18e` |
+
+### 2026-09-07T03:22:59Z — O contexto de entrada para agentes foi compactado sem descartar contratos, evidências ou fontes autoritativas.
+
+- Session ID: `lean-agent-context-20260907`
+- Fingerprint final: `d7cfbaf096f9c41db7d0741db0b8021a18213abc3313b8ac924e9649cb454406`
+- Git final: `3ae6ab7a60d0`; status relevante: 14 item(ns)
+- Delta factual: 1 adicionados, 11 modificados, 2 removidos
+
+**Mudanças**
+
+- AI_CONTEXT.md passou a ser gerado como roteador compacto com fingerprint de fontes e histórico, estado, limites, delta, três sessões materiais e fontes por escopo.
+- AGENTS.md, a skill article-loop e os adaptadores Prime/Copilot foram reduzidos a regras transversais e encaminhamento; o contrato detalhado da skill foi preservado em references/api-contracts.md.
+- CLAUDE.md e GEMINI.md foram removidos por não serem superfícies usadas; diretórios vazios .agents e .codex sem arquivos nem rastreamento foram removidos.
+
+**Decisões**
+
+- Contexto inicial é escalonado: dados detalhados continuam versionados e só são abertos quando o escopo requer, conforme ADR-040.
+
+**Validações**
+
+- 29 testes focados de handoff e M11 passaram; py_compile dos scripts alterados e article_loop_command.py check passaram; git diff --check e git diff --cached --check passaram.
+- A regressão integral control foi executada localmente e concluída OK, conforme confirmação do operador; a repetição rastreável posterior foi interrompida deliberadamente e não é contada como validação.
+
+**Riscos/limites**
+
+- Nenhum modelo, Prime Agent, rede, API paga, PDF real ou ciclo científico foi iniciado; a qualidade futura depende de seguir o roteamento para módulos, schemas, testes e ADRs específicos.
+
+**Próximos passos**
+
+- Revisar o diff, decidir se deseja commit/PR e, em tarefa futura, abrir somente as fontes indicadas pelo contexto compacto.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/references/api-contracts.md` | `-` | `7177a152fcde` |
+| modified | `.github/copilot-instructions.md` | `e330cf49a962` | `776217ed4380` |
+| modified | `.prime/agent/APPEND_SYSTEM.md` | `42fa8e1fbf01` | `aec816192e5e` |
+| modified | `.prime/agent/skills/article-loop/SKILL.md` | `7177a152fcde` | `8f1e7d84bb88` |
+| modified | `AGENTS.md` | `735bc4d248b8` | `bcce634f6952` |
+| modified | `PLANS.md` | `17f01d5969b0` | `a835f54a4020` |
+| modified | `control/test_ai_handoff.py` | `406f7e0298ef` | `aad996d05dc8` |
+| modified | `control/test_m11_commands.py` | `2d3fae206b85` | `cebe422d7122` |
+| modified | `docs/architecture.md` | `4b52226603de` | `ca96280f20f5` |
+| modified | `docs/decisions.md` | `c68d840cb18e` | `e4da251c4de0` |
+| modified | `scripts/ai_context.py` | `827ba6692584` | `f977db70f0ff` |
+| modified | `scripts/article_loop_command.py` | `0699196206ee` | `f847bdc092e9` |
+| deleted | `CLAUDE.md` | `2eb0ae4ce37a` | `-` |
+| deleted | `GEMINI.md` | `058ce9fdb605` | `-` |

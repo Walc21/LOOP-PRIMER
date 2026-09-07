@@ -13,10 +13,10 @@
       "sha256": "bf3b8ec7c4977a72de1e0fee9d524aa5db065089adcc11c98cb5070dee1a2c71"
     },
     ".github/copilot-instructions.md": {
-      "bytes": 724,
+      "bytes": 395,
       "kind": "text",
-      "lines": 15,
-      "sha256": "e330cf49a962276e98f697c7467083ff8804dd39798457da389af6068c681869"
+      "lines": 7,
+      "sha256": "776217ed43802f886c6c76bf8bd46f00461c9244be8dce6fc0c1f48e404dedeb"
     },
     ".github/pull_request_template.md": {
       "bytes": 871,
@@ -37,10 +37,10 @@
       "sha256": "7e4121d149657faf3ad063682578f495ce6d7841fe278c726ce3413f050dcfe2"
     },
     ".prime/agent/APPEND_SYSTEM.md": {
-      "bytes": 1867,
+      "bytes": 918,
       "kind": "text",
-      "lines": 30,
-      "sha256": "42fa8e1fbf01b35d84c5d12860f3d16c144893d0c7f3549d65f2433ff4c67ff8"
+      "lines": 16,
+      "sha256": "aec816192e5e1cc7e526413e92eb7e9cac255dae5732ca6cc8fdd033e4e4ac9e"
     },
     ".prime/agent/prompts/.gitkeep": {
       "bytes": 1,
@@ -103,16 +103,22 @@
       "sha256": "7d9a74a1302a597798556a0c8a79d9efbb658a13b854dcb08162bbf5e441dbd1"
     },
     ".prime/agent/skills/article-loop/SKILL.md": {
-      "bytes": 15060,
+      "bytes": 3498,
       "kind": "text",
-      "lines": 253,
-      "sha256": "7177a152fcde987d8d0f6aefcf372bb0f17cd36d3360284b373deff73f98a0a0"
+      "lines": 61,
+      "sha256": "8f1e7d84bb8868fff2e710883d5cd30f03e12865b108ba2b794113bd66174530"
     },
     ".prime/agent/skills/article-loop/pyproject.toml": {
       "bytes": 304,
       "kind": "text",
       "lines": 13,
       "sha256": "3a6e28296b26a6724897df658b0eba77add92e9f10bc228644f48f1d89d12bf3"
+    },
+    ".prime/agent/skills/article-loop/references/api-contracts.md": {
+      "bytes": 15060,
+      "kind": "text",
+      "lines": 253,
+      "sha256": "7177a152fcde987d8d0f6aefcf372bb0f17cd36d3360284b373deff73f98a0a0"
     },
     ".prime/agent/skills/article-loop/src/article_loop/__init__.py": {
       "bytes": 6887,
@@ -361,28 +367,16 @@
       "sha256": "7f905635a87c77fbfec21043c59b63f78e772a0cfaa624d36e20f2a3744344f0"
     },
     "AGENTS.md": {
-      "bytes": 8461,
+      "bytes": 3870,
       "kind": "text",
-      "lines": 146,
-      "sha256": "735bc4d248b8ea16b965b24a91298f3c68d9017e772fcb63c012afef4d175f5d"
-    },
-    "CLAUDE.md": {
-      "bytes": 853,
-      "kind": "text",
-      "lines": 20,
-      "sha256": "2eb0ae4ce37a4d7f95d5aafdad1603629263c819f2574f8e64e7301234ed1575"
+      "lines": 63,
+      "sha256": "bcce634f695265611e57bad8a7a904d8b9bd7b2c0b361433a7038481b008548c"
     },
     "CONTRIBUTING.md": {
       "bytes": 2175,
       "kind": "text",
       "lines": 63,
       "sha256": "88dd6a0e2eb029acecf00f6b3d30046425027832782a5a903fa21f9c26bab224"
-    },
-    "GEMINI.md": {
-      "bytes": 675,
-      "kind": "text",
-      "lines": 18,
-      "sha256": "058ce9fdb605b97ba1fcb3ecc37c3bd5590d1048229423426c80f8f4f67653c0"
     },
     "LICENSE": {
       "bytes": 1092,
@@ -391,10 +385,10 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 63432,
+      "bytes": 64635,
       "kind": "text",
-      "lines": 883,
-      "sha256": "17f01d5969b07bcc63c404e4e7aaf21b8de73c2e69b1024c89eed95a01ed290a"
+      "lines": 903,
+      "sha256": "a835f54a40205599abf7511176dbf7561625eee2f219b49e5f2da0965fa28300"
     },
     "README.md": {
       "bytes": 19565,
@@ -811,10 +805,10 @@
       "sha256": "d0bf339d2921c6ae65672b2ab4bad0e93b1f2d1264b01b065e8492517858a167"
     },
     "control/test_ai_handoff.py": {
-      "bytes": 16378,
+      "bytes": 16892,
       "kind": "text",
-      "lines": 310,
-      "sha256": "406f7e0298efac3ee89a02caaa184c7d868e3c04fcc0efa2a84aae308b85951a"
+      "lines": 325,
+      "sha256": "aad996d05dc8c0fa8dfa4470ee3ac78e9f7bc1858bc4b1bd3021ecb4d077936d"
     },
     "control/test_contracts.py": {
       "bytes": 36362,
@@ -835,10 +829,10 @@
       "sha256": "3084e0cf69b9905f13052ef9c20cb6a8c6589db4a272ae9d33aaf49a2adb4238"
     },
     "control/test_m11_commands.py": {
-      "bytes": 8867,
+      "bytes": 8674,
       "kind": "text",
-      "lines": 199,
-      "sha256": "2d3fae206b85672b3656f7d7384dbd6480499842483dbd4a1dadf64b94ecb76c"
+      "lines": 197,
+      "sha256": "cebe422d7122b710d1df7ff72b74fdb2341e7a34d1e3879938d6eb12ffda42ca"
     },
     "control/test_m1251_dual_execution.py": {
       "bytes": 33037,
@@ -925,10 +919,10 @@
       "sha256": "fc822010cc3726b4c081d84e36eb0b4c9a46c90c22e1f3a58a00efd7673cec8a"
     },
     "docs/architecture.md": {
-      "bytes": 27959,
+      "bytes": 28528,
       "kind": "text",
-      "lines": 553,
-      "sha256": "4b52226603de48c6250e38069c40c8c3ebd1c14f13f399f48e1209d9ed9ce3fb"
+      "lines": 563,
+      "sha256": "ca96280f20f577dee5a452c662609977d0df0bb24a7ab12769a8635a7b8326d5"
     },
     "docs/compatibility.md": {
       "bytes": 12986,
@@ -943,10 +937,10 @@
       "sha256": "2eb9ab85bd98ebf5bac9e5209a1c8fb97dd85181ac32aeff9de3745e8dec1c62"
     },
     "docs/decisions.md": {
-      "bytes": 89752,
+      "bytes": 91725,
       "kind": "text",
-      "lines": 1527,
-      "sha256": "c68d840cb18ee5671c664f674f80d3fe5a9d45d4ab948434642455cfaf2e88c3"
+      "lines": 1563,
+      "sha256": "e4da251c4de0f2ba462acc036a69a1f21e38a9c57c0a5454a7f84e7e08a2827e"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -1195,10 +1189,10 @@
       "sha256": "6d379c3173b9067f65ecfa6b68efb81d80fbd3f8b2de67b9786ff7944c204bbe"
     },
     "scripts/ai_context.py": {
-      "bytes": 24226,
+      "bytes": 20078,
       "kind": "text",
-      "lines": 447,
-      "sha256": "827ba66925847f7c76e3ff845d593a13775d6e78fdb0829e7f50189eca95d3be"
+      "lines": 388,
+      "sha256": "f977db70f0ffda9d183ab2789a0efb3a16a06d3d88622da7298532d9eb5cd97f"
     },
     "scripts/ai_handoff_common.py": {
       "bytes": 13786,
@@ -1213,10 +1207,10 @@
       "sha256": "3486b7e1f10232c7a4ac5942659770c2e453625e76eca435ab5cd937894e14b8"
     },
     "scripts/article_loop_command.py": {
-      "bytes": 23164,
+      "bytes": 23161,
       "kind": "text",
       "lines": 539,
-      "sha256": "0699196206eec70d13cf8defd9bc8f08d8f077f3e5b416a7932c09b6ad5f1141"
+      "sha256": "f847bdc092e9b61cce25a8f1e096b69141b93bf445ef40de6703ebce9f31a8ab"
     },
     "scripts/local_loopback_full_cycle.py": {
       "bytes": 24060,
@@ -1315,18 +1309,29 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "0c2ecddf458ea660521359c04d808331c3f053a87d0a47fd391548d3e0af81a6",
+  "fingerprint": "d7cfbaf096f9c41db7d0741db0b8021a18213abc3313b8ac924e9649cb454406",
   "git": {
     "available": true,
-    "branch": "codex/local-loopback-full-cycle",
-    "head": "6ac799fac683d2db6f006253229deb70f2632769",
+    "branch": "codex/lean-agent-context",
+    "head": "3ae6ab7a60d02c82978b4221e5f1aca5c9331dde",
     "status": [
+      " M .github/copilot-instructions.md",
+      " M .prime/agent/APPEND_SYSTEM.md",
+      "R  .prime/agent/skills/article-loop/SKILL.md -> .prime/agent/skills/article-loop/references/api-contracts.md",
+      " M AGENTS.md",
+      "D  CLAUDE.md",
+      "D  GEMINI.md",
       " M PLANS.md",
-      " M control/test_local_loopback_full_cycle.py",
-      " M docs/decisions.md"
+      " M control/test_ai_handoff.py",
+      " M control/test_m11_commands.py",
+      " M docs/architecture.md",
+      " M docs/decisions.md",
+      " M scripts/ai_context.py",
+      " M scripts/article_loop_command.py",
+      "?? .prime/agent/skills/article-loop/SKILL.md"
     ]
   },
-  "recorded_at": "2026-09-07T01:39:39Z",
+  "recorded_at": "2026-09-07T03:22:59Z",
   "schema_version": "1.0.0",
-  "session_id": "ci-fixture-portability-20260907"
+  "session_id": "lean-agent-context-20260907"
 }
