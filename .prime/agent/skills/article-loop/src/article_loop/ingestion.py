@@ -609,6 +609,73 @@ def _verify_champion(champion: Path, digest: str, hashes: dict[str,str],
     if _directory_hash(champion/"source", exclude={"manifest.json"}) != hashes["extracted"]: raise IngestionError("champion source diverges from extracted artifact")
 
 
+def validate_source_ready(root: str | Path, run_id: str) -> dict[str, Any]:
+    """Revalidate one explicit canonical M3 run without writing to it."""
+    supplied = Path(root)
+    if supplied.is_symlink() or not supplied.is_dir():
+        raise IngestionError("M3 root is missing or unsafe")
+    project = supplied.resolve()
+    _validate_managed_directories(project)
+    pdf = _inbox_pdf(project)
+    digest = _sha256(pdf)
+    expected_run = f"ingest-{digest}"
+    if run_id != expected_run:
+        raise IngestionError("explicit M3 run differs from the canonical PDF identity")
+    store = DurableStore(project, read_only=True)
+    snapshot = store.snapshot(run_id)
+    if snapshot["state"] != State.SOURCE_READY.value:
+        raise IngestionError("M3 run is not SOURCE_READY")
+    events = store.read_events(run_id)
+    ready_events = [event for event in events if event["state_to"] == State.SOURCE_READY.value]
+    if len(ready_events) != 1:
+        raise IngestionError("M3 SOURCE_READY evidence is missing or ambiguous")
+
+    original = _managed_child(project, f"artifacts/original/{digest}")
+    extracted = _managed_child(project, f"artifacts/extracted/{digest}")
+    rendered = _managed_child(project, f"artifacts/rendered/{digest}")
+    champion = _managed_child(project, "versions/champion/v0000")
+    required = (
+        original / "document.pdf", original / "manifest.json",
+        extracted / "manifest.json", extracted / "text.txt",
+        extracted / "source_ready.json", rendered / "manifest.json",
+        champion / "baseline.pdf", champion / "manifest.json",
+        champion / "ingestion-manifest.json", champion / "source",
+    )
+    if any(path.is_symlink() or not path.exists() for path in required):
+        raise IngestionError("canonical M3 evidence is unsafe or incomplete")
+    hashes = _verify_artifacts(original, extracted, rendered, digest)
+    source_identity = _persisted_source_identity(store, run_id)
+    if source_identity is None:
+        raise IngestionError("persisted M3 source identity is missing")
+    _verify_champion(champion, digest, hashes, source_identity)
+    source_ready = _read_json(extracted / "source_ready.json")
+    event_payload = ready_events[0].get("payload", {})
+    if (
+        source_ready.get("id") != "SOURCE_READY"
+        or source_ready.get("status") != "passed"
+        or event_payload.get("gate") != source_ready
+        or event_payload.get("artifacts") != hashes
+    ):
+        raise IngestionError("M3 SOURCE_READY gate or artifact binding diverges")
+    champion_manifest = _read_json(champion / "manifest.json")
+    base_hash = champion_manifest.get("content_hash")
+    if champion_manifest.get("run_id") != run_id or not isinstance(base_hash, str) or re.fullmatch(r"[a-f0-9]{64}", base_hash) is None:
+        raise IngestionError("M3 champion identity is invalid")
+    return {
+        "schema_version": "1.0.0",
+        "m3_root": str(project),
+        "run_id": run_id,
+        "pdf_path": str(pdf.resolve()),
+        "pdf_sha256": digest,
+        "base_hash": base_hash,
+        "artifact_hashes": hashes,
+        "source_identity": source_identity,
+        "extracted_path": str(extracted),
+        "rendered_path": str(rendered),
+        "champion_path": str(champion),
+    }
+
+
 def ingest(root: str | Path, *, fault: Callable[[str], None] | None = None) -> dict[str, Any]:
     """Freeze inbox bytes, prepare all outputs, then recoverably publish M3."""
     supplied_root = Path(root)

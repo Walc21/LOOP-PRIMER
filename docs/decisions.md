@@ -1,5 +1,39 @@
 # Decisões arquiteturais
 
+## ADR-042 — Smoke oficial M6 limitado a uma tarefa routed
+
+**Status:** Implementado e validado offline. **Data:** 2026-09-07.
+
+O primeiro smoke M6 terá uma entrada própria e executará exatamente uma
+`AgentTask`, restrita a `S10` ou `W11`, numa raiz nova, isolada e create-only.
+Uma tarefa é suficiente para provar a fronteira operacional routed e limita a
+superfície de custo, ambiguidade e evidência antes de ampliar a execução. M7,
+júri, síntese, iteração e continuação automática ficam fora; o entrypoint
+persiste STOP explícito após a primeira cadeia terminal.
+
+A CLI exigirá modelo, endpoint HTTP com host literal `127.0.0.1`, deadline UTC
+absoluto, raiz M3, run M3 e raiz nova da tentativa. O contrato fixa uma chamada,
+uma unidade concorrente, zero retries, um ciclo, custo máximo zero,
+`deny_remote`, target único e nenhum fallback. Habilitação e autorização humana
+são booleanos distintos e falsos por padrão em cada invocação live. Dublês só
+podem ser liberados por booleano da API de teste, nunca por JSON persistido ou
+opção da CLI. A deadline deve comportar o timeout completo antes da rota e da
+reserva; não existe fallback silencioso de modelo ou endpoint.
+
+O root M3 é tratado somente para leitura. O `ingest-<sha256>` explícito deve
+estar em `SOURCE_READY`; PDF congelado, source identity, manifests, champion e
+as três árvores de artefatos são revalidados pelos verificadores canônicos
+antes da construção de contexto e novamente antes de route. Symlink, travessia,
+ausência, manifest incompleto ou divergência de hash falham fechados. Não há
+OCR, aproximação, PDF alternativo ou evidência histórica como fallback.
+
+Routing, reserva, admissão, backend, inference receipt e reconciliação usam
+os componentes M12/M12.5 existentes. Os insumos e o binding M3 são write-once
+na nova tentativa; a origem M3 e tentativas anteriores nunca são escritas.
+Falha pré-envio não produz receipt nem gasto. Erro ambíguo pós-envio permanece
+`UNCERTAIN`, sem retry, release ou refund automático. Esta implementação é
+preparação operacional: não autoriza modelo, endpoint ou run científica.
+
 ## ADR-040 — Contexto escalonado para agentes sem perda de autoridade
 
 **Status:** Implementado localmente. **Data:** 2026-09-07.

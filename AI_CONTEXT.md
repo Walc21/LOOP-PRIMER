@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `7f5d99af47fdf9586606a14eb0397d872775508cce61231d6a89c8c0bb2d7b73`
-- Baseline da última sessão: `7f5d99af47fdf9586606a14eb0397d872775508cce61231d6a89c8c0bb2d7b73`
-- Inventário: 633 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (315627 bytes; SHA-256 `fb526f4becba9889`).
+- Fingerprint atual das fontes: `fc0203acbbc0d0eeb4b817d07b61f207a6f03def995a9fd790a7fb54acb9b815`
+- Baseline da última sessão: `fc0203acbbc0d0eeb4b817d07b61f207a6f03def995a9fd790a7fb54acb9b815`
+- Inventário: 637 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (319934 bytes; SHA-256 `952ef5c411504f65`).
 
 ## Estado e limites atuais
 
@@ -30,22 +30,22 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 50.
-- `m3-runtime-evidence-boundary-20260907` — A fronteira de publicação da evidência M3 real foi corrigida sem mover, apagar ou reexecutar tentativas.
-  - mudança: runtime/m3-real-attempts/ passou a ser ignorado pelo Git para impedir inclusão acidental de PDF, texto extraído e imagens em commits ou PRs.
-  - decisão: Evidência M3 real permanece create-only no checkout local; seu conteúdo não é fonte versionada, mas hashes e tamanhos continuam verificáveis no inventário local.
-  - risco: Não houve modelo, Prime Agent, backend, inferência, reserva, receipt, rede, API paga, nova tentativa M3 ou alteração dos artefatos existentes.
-  - próximo: Revisar o diff completo M3 e a fronteira de evidência; commit, push e PR dependem de autorização explícita.
-- `m12-execution-hardening-20260907` — Endurecimento M12/M12.5 concluído localmente antes do primeiro smoke routed.
-  - mudança: Bloqueio absoluto de novas rotas e reservas enquanto existir UNCERTAIN; cada inferência routed reserva uma unidade concorrente.
-  - decisão: Manter defaults inertes e adiar seleção de excertos M3 e o entrypoint M6 de uma tarefa para uma fase posterior.
-  - risco: Nenhuma execução real foi autorizada; permanece necessário criar a continuação M3/M6 create-only e um entrypoint de smoke de uma tarefa.
-  - próximo: Projetar a continuação M3/M6 create-only e o smoke routed de uma AgentTask, com autorização nova e sem M7.
+- Sessões estruturadas registradas: 52.
 - `m12-execution-hardening-adr-number-fix-20260907` — Correção documental da numeração do ADR de endurecimento M12/M12.5.
   - mudança: Renumerado o ADR novo de 040 para 041 para preservar a identidade do ADR-040 já existente sobre contexto de agentes.
   - decisão: Nenhum contrato de código, configuração, execução ou evidência foi alterado por esta correção documental.
   - risco: Execução real continua desautorizada; seleção de excertos M3 e smoke M6 permanecem pendentes.
   - próximo: Projetar continuação M3/M6 create-only e entrypoint de smoke de uma tarefa, com autorização nova e sem M7.
+- `m6-official-single-task-smoke-20260907` — Smoke oficial M6 de uma tarefa routed implementado e validado offline
+  - mudança: Entrada create-only para exatamente uma AgentTask S10 ou W11, com defaults inertes e sem M7 ou continuação automática.
+  - decisão: Impor uma chamada, uma unidade concorrente, zero retries, um ciclo, custo zero, deny_remote e endpoint HTTP literal 127.0.0.1 sem fallback.
+  - risco: Nenhuma execução real ocorreu; modelo local, endpoint loopback e deadline futura ainda exigem decisão e autorização humana novas.
+  - próximo: Revisar o diff sem commit, push ou PR; uma futura execução real depende de autorização operacional separada.
+- `m6-official-single-task-smoke-final-20260907` — Smoke oficial M6 de uma tarefa routed finalizado e validado offline.
+  - mudança: Implementada entrada create-only para uma AgentTask S10 ou W11 com vínculo M3 SOURCE_READY revalidado, limites fixos e STOP terminal.
+  - decisão: Manter a superfície inerte por padrão, sem M7, retry, fallback ou execução externa implícita.
+  - risco: Modelo local, endpoint loopback, deadline e autorização humana continuam necessários para qualquer execução futura.
+  - próximo: Revisar e autorizar separadamente uma execução M6 real de uma tarefa.
 
 ## Roteamento obrigatório por escopo
 

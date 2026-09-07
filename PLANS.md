@@ -62,6 +62,47 @@ integral de 514 testes aprovaram; `bin/check.sh`, `py_compile` dos três módulo
 alterados e `git diff --check` também aprovaram. Nenhum modelo, Prime Agent,
 endpoint, rede, PDF real ou run foi iniciado.
 
+## Smoke oficial M6 de uma tarefa routed — 2026-09-07
+
+Criar uma entrada project-local exclusiva para uma futura chamada M6 inicial,
+sem acionar o ciclo completo. O operador deverá fornecer explicitamente a raiz
+M3 somente leitura, o `ingest-<sha256>` esperado, uma raiz de tentativa nova e
+ausente, o papel `S10` ou `W11`, o modelo, o endpoint HTTP com host literal
+`127.0.0.1` e um deadline UTC absoluto. A preparação não terá hashes, paths,
+modelo ou endpoint reais embutidos e não constituirá autorização de execução.
+
+O contrato imporá `max_calls=1`, `max_concurrency=1`, `max_retries=0`,
+`max_cycles=1`, custo local máximo zero, `deny_remote=true`, ausência de
+fallback e dois consentimentos booleanos novos na invocação live: habilitação
+da operação e autorização humana. Dublês continuarão acessíveis somente por
+parâmetro estritamente booleano da API de testes; a CLI não exporá esse bypass.
+Deadline ausente, inválido, expirado ou menor que o timeout reservado falhará
+antes de route, reserve ou backend.
+
+Uma validação M3 pública e somente leitura reaproveitará o event store, os
+manifests e os verificadores canônicos de artefato/champion. Ela rejeitará run
+diferente, `SOURCE_READY` ausente, symlink, path fora da raiz, arquivo ausente
+ou hash divergente. O smoke a executará antes de construir contexto e de novo
+imediatamente antes de qualquer rota/efeito externo. Task, view, prompt,
+binding M3, configuração e resultado serão write-once na tentativa isolada.
+
+A chamada reutilizará `ContextMaterializer`, `ModelRouter`, `BudgetLedger`,
+`InferenceRuntime`, `InferenceStore`, schemas e prompts atuais, preservando a
+ordem `route -> reserve -> admit -> backend -> receipt -> reconcile`. Depois
+de uma tarefa, o smoke gravará STOP explícito e não chamará M7, júri,
+continuação, ciclo adicional, retry, fallback ou refund. Ambiguidade
+pós-envio permanecerá `UNCERTAIN`, com a evidência e reserva intactas.
+Testes serão sintéticos, determinísticos e sem rede/modelo/PDF real.
+
+Implementação e validação offline concluídas: 11 testes novos cobrem os
+13 comportamentos obrigatórios agrupados; 68 testes focados finais aprovaram
+com 1 skip preexistente; a regressão integral final aprovou 525 testes fora do
+sandbox para permitir somente os sockets loopback efêmeros de M14.
+`bin/check.sh`, compilação dos módulos Python alterados e `git diff --check`
+também aprovaram. A CLI foi exercitada apenas no default inerte, retornando
+`DISABLED` com zero chamadas. Nenhum modelo, Prime Agent, endpoint, rede
+externa, PDF real ou run científica foi iniciado.
+
 ## Execução local autorizada — 2026-09-06
 
 Implementar uma única CLI project-local para compor M3/M5/M6 routed/M7/M8

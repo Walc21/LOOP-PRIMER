@@ -121,10 +121,10 @@
       "sha256": "7177a152fcde987d8d0f6aefcf372bb0f17cd36d3360284b373deff73f98a0a0"
     },
     ".prime/agent/skills/article-loop/src/article_loop/__init__.py": {
-      "bytes": 6887,
+      "bytes": 7088,
       "kind": "text",
-      "lines": 117,
-      "sha256": "90b65b60309b020c6195c077ba291b32c6aa5e87fdae61798c0286ef12c03088"
+      "lines": 119,
+      "sha256": "15b85bdf22f1e21df3549c9f8f92c12bf5a99adac318ad419cb5b531d4771055"
     },
     ".prime/agent/skills/article-loop/src/article_loop/activation.py": {
       "bytes": 11504,
@@ -193,10 +193,10 @@
       "sha256": "0ef24de6bb89a0faa46a47b52225e7ff88bb629d4cfd77479826e07248230767"
     },
     ".prime/agent/skills/article-loop/src/article_loop/execution.py": {
-      "bytes": 35871,
+      "bytes": 36178,
       "kind": "text",
-      "lines": 736,
-      "sha256": "b9617ecac6517b565e5805e0b750d147b78af1c80ba2d37e18baf92abbc4ebe5"
+      "lines": 740,
+      "sha256": "d875e151b4e9055252b883819ef12c1f26f775c47f8eb1312e9f0fa5ee28f9e8"
     },
     ".prime/agent/skills/article-loop/src/article_loop/finalization.py": {
       "bytes": 29899,
@@ -211,10 +211,10 @@
       "sha256": "0f7376d992db558f17460b08c2d501cb84ed7b2479938bcf37ef06c917010bac"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference.py": {
-      "bytes": 84747,
+      "bytes": 85385,
       "kind": "text",
-      "lines": 1676,
-      "sha256": "e010645e0f9cb15538ef2ddffb954c905a573c1a28f71b6a211c2d7110b81711"
+      "lines": 1687,
+      "sha256": "f2edeccd833cb9a76e86f7c87bbf9a7c365347fb8b42f4ec0c8f8d5cc55adfbf"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference_backends.py": {
       "bytes": 11300,
@@ -223,10 +223,16 @@
       "sha256": "a538afb419e91decacd1f84fff2e7ecb8b4516229160f4ff77739b32a1532abf"
     },
     ".prime/agent/skills/article-loop/src/article_loop/ingestion.py": {
-      "bytes": 36795,
+      "bytes": 40060,
       "kind": "text",
-      "lines": 671,
-      "sha256": "43df1a932fb38aba2597c2a831612b071071952537ce7922caa251a707765d69"
+      "lines": 738,
+      "sha256": "ff3679b5ded99bd6d96ada25eea0dde567fdb5f6e2debc6d12dc99656d35d100"
+    },
+    ".prime/agent/skills/article-loop/src/article_loop/m6_smoke.py": {
+      "bytes": 21914,
+      "kind": "text",
+      "lines": 505,
+      "sha256": "4a4d6c46c06321ffc6c4e3e7650447c77c8b7b7ea8007396649dbeda46b585a6"
     },
     ".prime/agent/skills/article-loop/src/article_loop/observability.py": {
       "bytes": 13906,
@@ -235,10 +241,10 @@
       "sha256": "6c4cb2259d89a1b4effd1a1d084de6934691fd8d7ddd004900dc6359bfa41e93"
     },
     ".prime/agent/skills/article-loop/src/article_loop/orchestrator.py": {
-      "bytes": 62745,
+      "bytes": 61200,
       "kind": "text",
-      "lines": 832,
-      "sha256": "9c13c891f0d1502095bd3e0a0b425d9fd476f513577a832fb4e67da7f0de26ec"
+      "lines": 817,
+      "sha256": "1d541d68a101c6250b7d0f9ecd0ba3e87a5caf865f3790b7dbabbea309ecebab"
     },
     ".prime/agent/skills/article-loop/src/article_loop/policy.py": {
       "bytes": 35034,
@@ -385,10 +391,10 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 68697,
+      "bytes": 71326,
       "kind": "text",
-      "lines": 966,
-      "sha256": "12c192b3d5f1fb2506be0f185676ca16a82a6532b468e301d618fdb787b5c944"
+      "lines": 1007,
+      "sha256": "b5911541afdaf78633558968defb2ac92141849083760775e6c66d60232b01af"
     },
     "README.md": {
       "bytes": 19565,
@@ -894,6 +900,12 @@
       "lines": 298,
       "sha256": "318f74718d236119a551707012d2451c1a18bf7b002f083038968aae5e98f027"
     },
+    "control/test_m6_official_smoke.py": {
+      "bytes": 17034,
+      "kind": "text",
+      "lines": 360,
+      "sha256": "502f5b283c447387c93af3b929fe7e0e5b4504333fd4b203609398c068a8e93a"
+    },
     "control/test_m6_orchestration.py": {
       "bytes": 41501,
       "kind": "text",
@@ -937,10 +949,10 @@
       "sha256": "2eb9ab85bd98ebf5bac9e5209a1c8fb97dd85181ac32aeff9de3745e8dec1c62"
     },
     "docs/decisions.md": {
-      "bytes": 95871,
+      "bytes": 98031,
       "kind": "text",
-      "lines": 1637,
-      "sha256": "cca89ada39603ac005d22a317ac22ab86d089419db0b309822a59d5356634803"
+      "lines": 1671,
+      "sha256": "aa72535c1b6197bb2846054ce0b2e76184f578cb634d411bf3e414617bfb35dd"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -959,6 +971,12 @@
       "kind": "text",
       "lines": 144,
       "sha256": "da913ee40db235467952620cdb2bba78e71f60cdd80087e80fb0c98119c1e5c9"
+    },
+    "docs/m6-official-smoke.md": {
+      "bytes": 2782,
+      "kind": "text",
+      "lines": 55,
+      "sha256": "4beffef7fd2dbd35240f7e996fe3af28da7007c077e4d3dca318280abe89b9cb"
     },
     "docs/model-driven-surfaces.md": {
       "bytes": 2385,
@@ -3720,6 +3738,12 @@
       "lines": 156,
       "sha256": "5861d2384b71db0b24600572e889ae72784f3be9d968e312669245bf5c05b62f"
     },
+    "scripts/m6_official_smoke.py": {
+      "bytes": 2697,
+      "kind": "text",
+      "lines": 69,
+      "sha256": "4a329d5f6bafc2fea12e6b5da546ee39365bf254e3c97da23ab9713791adfade"
+    },
     "state/checkpoints/.gitkeep": {
       "bytes": 1,
       "kind": "runtime",
@@ -3799,23 +3823,26 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "7f5d99af47fdf9586606a14eb0397d872775508cce61231d6a89c8c0bb2d7b73",
+  "fingerprint": "fc0203acbbc0d0eeb4b817d07b61f207a6f03def995a9fd790a7fb54acb9b815",
   "git": {
     "available": true,
-    "branch": "codex/m12-execution-hardening",
-    "head": "58a2202cd324b2c5baadf8c3226902eb6dbd1c4e",
+    "branch": "codex/m6-official-single-task-smoke",
+    "head": "2db94e5a0b91f1ccc234f158d5b1389b389ef3e5",
     "status": [
-      " M .prime/agent/skills/article-loop/src/article_loop/budget.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/__init__.py",
       " M .prime/agent/skills/article-loop/src/article_loop/execution.py",
       " M .prime/agent/skills/article-loop/src/article_loop/inference.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/ingestion.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/orchestrator.py",
       " M PLANS.md",
-      " M control/test_m1251_dual_execution.py",
-      " M control/test_m125_inference_routing.py",
-      " M control/test_m12_budget_observability.py",
-      " M docs/decisions.md"
+      " M docs/decisions.md",
+      "?? .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py",
+      "?? control/test_m6_official_smoke.py",
+      "?? docs/m6-official-smoke.md",
+      "?? scripts/m6_official_smoke.py"
     ]
   },
-  "recorded_at": "2026-09-07T06:55:09Z",
+  "recorded_at": "2026-09-07T23:05:44Z",
   "schema_version": "1.0.0",
-  "session_id": "m12-execution-hardening-adr-number-fix-20260907"
+  "session_id": "m6-official-single-task-smoke-final-20260907"
 }
