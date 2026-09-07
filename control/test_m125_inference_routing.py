@@ -31,6 +31,7 @@ from article_loop.budget import (  # noqa: E402
     BudgetIntegrityError,
     BudgetLedger,
     BudgetLimits,
+    BudgetStateError,
     ManualClock,
     RunAuthorization,
     load_budget_config,
@@ -186,6 +187,8 @@ class M125Base(unittest.TestCase):
         )
 
     def ledger(self, route_policy: dict, **kwargs) -> BudgetLedger:
+        if kwargs.get("live_enabled") is True:
+            kwargs.setdefault("deadline_at", "2026-01-01T00:10:00Z")
         return BudgetLedger(
             self.root, "run-1",
             limits=BudgetLimits(total_tokens=200, per_model_tokens=100, max_calls=5, max_retries=2, max_wall_time_seconds=10),
@@ -508,7 +511,26 @@ class M125TransactionTests(M125Base):
         status = runtime.ledger.status()
         self.assertEqual(status["reservations"][0]["status"], "UNCERTAIN")
         self.assertEqual(status["usage"]["reserved_tokens"], 20)
+        self.assertEqual(status["children"], 1)
         self.assertEqual(len(backend.calls), 1)
+
+    def test_uncertain_blocks_new_runtime_before_route_or_backend(self):
+        route_policy = policy(target("blocked"))
+        ledger = self.ledger(route_policy)
+        reservation = ledger.reserve("prior-call", 1)
+        ledger.admit(reservation["reservation_id"], "prior-receipt")
+        ledger.mark_uncertain(
+            reservation["reservation_id"], "response_unknown_after_admission",
+            receipt_id="prior-receipt",
+        )
+        backend = FakeInferenceBackend()
+        runtime = InferenceRuntime(
+            self.root, ledger, ModelRegistry(route_policy), {"fake": backend}, clock=self.clock,
+        )
+        with self.assertRaises(BudgetStateError):
+            runtime.execute(self.request(), allow_test_doubles=True)
+        self.assertEqual(backend.calls, [])
+        self.assertEqual(list((self.root / "state/inference/run-1/routes").glob("*.json")), [])
 
     def test_backend_content_over_routed_bound_is_uncertain(self):
         route_policy = policy(target("oversized"))

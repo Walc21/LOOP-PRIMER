@@ -23,7 +23,7 @@ from article_loop import (  # noqa: E402
     InferenceBackendError, InferenceIntegrityError, InferenceRequest,
     InferenceResult, InferenceRuntime, ModelRegistry, ModelRouter,
     Orchestrator, RoutedControlAdapter, RunAuthorization, TargetPricing,
-    RemoteOpenAICompatibleBackend, execution_readiness, ingest,
+    RemoteOpenAICompatibleBackend, execution_readiness, ingest, load_budget_config,
 )
 from article_loop.activation import ActivationPlanner  # noqa: E402
 from article_loop.blackboard import Impact  # noqa: E402
@@ -143,8 +143,27 @@ class ContextAndConfigurationTests(unittest.TestCase):
         self.assertEqual(status["currency"], "USD")
         self.assertEqual(
             set(status["missing_configuration"]),
-            {"department_execution_map", "local_target", "remote_target", "target_pricing", "role_routes", "run_authorization"},
+            {"model_execution", "budget_profile", "department_execution_map", "role_routes"},
         )
+        self.assertTrue(status["authorization_required"])
+
+    def test_readiness_accepts_a_local_free_configuration_without_remote_or_pricing(self):
+        config = json.loads(json.dumps(load_budget_config(ROOT)))
+        config["model_execution"]["enabled"] = True
+        config["budget"]["profiles"]["calibration"]["enabled"] = True
+        config["execution"] = {
+            "schema_version": "1.0.0", "enabled": True, "mode": "dual",
+            "departments": {"S10": "routed"},
+        }
+        config["inference"] = routing_policy(
+            [target("local-only")], {"W11": ["local-only"]}, allow_remote=False,
+        )
+        with mock.patch("article_loop.execution.load_budget_config", return_value=config):
+            status = execution_readiness(self.root)
+        self.assertTrue(status["configuration_ready"])
+        self.assertFalse(status["live_ready"])
+        self.assertEqual(status["missing_configuration"], [])
+        self.assertTrue(status["authorization_required"])
 
     def test_materializer_is_closed_hash_bound_and_does_not_load_pdf(self):
         pdf = self.root / "original.pdf"
@@ -177,6 +196,26 @@ class ContextAndConfigurationTests(unittest.TestCase):
             materializer.materialize(current, widened, privacy_mode="scoped_remote", context_limit=1000, max_output_tokens=10, overhead_tokens=0)
         with self.assertRaises(ExecutionError):
             materializer.materialize(current, {"task": current, "excerpts": current["input_locators"], "dependent_claims": [], "rubric": None, "local_history": []}, privacy_mode="scoped_remote", context_limit=1, max_output_tokens=1, overhead_tokens=0)
+        directory = self.root / "too-broad"
+        directory.mkdir()
+        (directory / "fragment.txt").write_text("bounded", encoding="utf-8")
+        directory_task = task(self.root, locator=f"readonly:{directory}")
+        with self.assertRaises(ExecutionError):
+            materializer.materialize(directory_task, {"task": directory_task, "excerpts": directory_task["input_locators"], "dependent_claims": [], "rubric": None, "local_history": []}, privacy_mode="scoped_remote", context_limit=100, max_output_tokens=1, overhead_tokens=0)
+        package = self.root / "artifacts" / "extracted" / ("a" * 64)
+        package.mkdir(parents=True)
+        (package / "manifest.json").write_text('{"kind":"m3"}', encoding="utf-8")
+        (package / "text.txt").write_text("allowed aggregate text", encoding="utf-8")
+        (package / "unlisted.txt").write_text("DO_NOT_MATERIALIZE", encoding="utf-8")
+        package_task = task(self.root, locator=f"readonly:{package}")
+        package_context = materializer.materialize(package_task, {"task": package_task, "excerpts": package_task["input_locators"], "dependent_claims": [], "rubric": None, "local_history": []}, privacy_mode="scoped_remote", context_limit=1000, max_output_tokens=1, overhead_tokens=0)
+        self.assertIn("allowed aggregate text", package_context.prompt_fragment())
+        self.assertNotIn("DO_NOT_MATERIALIZE", package_context.prompt_fragment())
+        oversized = self.root / "oversized.txt"
+        oversized.write_text("x" * 9, encoding="utf-8")
+        oversized_task = task(self.root, locator=f"readonly:{oversized}")
+        with self.assertRaises(ExecutionError):
+            materializer.materialize(oversized_task, {"task": oversized_task, "excerpts": oversized_task["input_locators"], "dependent_claims": [], "rubric": None, "local_history": []}, privacy_mode="scoped_remote", context_limit=3, max_output_tokens=1, overhead_tokens=0)
 
     def test_full_remote_requires_explicit_locator_and_deny_remote_blocks_route(self):
         marker = self.root / "explicit.txt"

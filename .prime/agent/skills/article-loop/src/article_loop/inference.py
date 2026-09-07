@@ -1368,6 +1368,7 @@ class InferenceRuntime:
         return {**result, "targets": target_status}
 
     def route(self, request: InferenceRequest) -> RouteDecision:
+        self.ledger.assert_new_inference_permitted()
         decision = self.router.route(request, self.ledger.status(current_cycle=request.cycle_id))
         if decision.reason_code != "NO_INFERENCE_REQUIRED":
             self.store.persist_route(decision)
@@ -1437,6 +1438,7 @@ class InferenceRuntime:
             raise InferenceConfigError("runtime flags must be strictly boolean")
         if self.registry.privacy_mode is not None and request.privacy_mode != self.registry.privacy_mode:
             raise InferenceRoutingError("request privacy mode differs from project policy")
+        self.ledger.assert_new_inference_permitted()
         decision = self.router.route(request, self.ledger.status(current_cycle=request.cycle_id))
         if decision.reason_code == "NO_INFERENCE_REQUIRED":
             return {"decision": decision.identity(), "result": None, "receipt": None, "replayed": False}
@@ -1506,6 +1508,7 @@ class InferenceRuntime:
             attempt=request.attempt, provider=target.provider, model=target.model,
             estimated_wall_time_seconds=target.timeout_seconds,
             estimated_cost_microunits=estimated_cost,
+            children=1,
             extra_judgment=request.extra_judgment, live=live,
         )
         if durable_output is not None:

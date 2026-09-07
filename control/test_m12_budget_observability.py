@@ -110,9 +110,22 @@ class M12LedgerTests(unittest.TestCase):
         result = ledger.reconcile(reservation["reservation_id"], receipt_id="receipt-1")
         self.assertEqual(result["status"], "UNCERTAIN")
         self.assertEqual(ledger.status()["assurance"], "uncertain")
-        with self.assertRaises(BudgetExceeded):
+        with self.assertRaises(BudgetStateError):
             ledger.reserve("call-2", 1)
         self.assertEqual(ledger.mark_uncertain(reservation["reservation_id"], "usage_unavailable", receipt_id="receipt-1")["status"], "UNCERTAIN")
+
+    def test_uncertain_blocks_new_reservation_even_with_remaining_balance(self):
+        ledger = self.ledger(limits={"total_tokens": 100})
+        reservation = ledger.reserve("call-1", 10)
+        ledger.admit(reservation["reservation_id"], "receipt-1")
+        ledger.mark_uncertain(
+            reservation["reservation_id"], "response_unknown_after_admission",
+            receipt_id="receipt-1",
+        )
+        with self.assertRaises(BudgetStateError):
+            ledger.reserve("call-2", 1)
+        with self.assertRaises(BudgetStateError):
+            ledger.assert_new_inference_permitted()
 
     def test_release_requires_proof_and_only_unadmitted_reservation(self):
         ledger = self.ledger(limits={"total_tokens": 10})
@@ -167,6 +180,47 @@ class M12LedgerTests(unittest.TestCase):
             resumed.reserve("call-2", 1)
         self.assertTrue(any(item["alert_code"] == "deadline" for item in resumed.status()["alerts"]))
 
+    def test_live_reservation_requires_absolute_deadline_and_reserves_within_it(self):
+        config_hash = "a" * 64
+        deadline = "2026-01-01T00:00:05Z"
+        ledger = BudgetLedger(
+            self.root, "live-deadline", limits=BudgetLimits(total_tokens=20),
+            config_hash=config_hash, live_enabled=True, deadline_at=deadline,
+            clock=self.clock,
+        )
+        ledger.authorize({
+            "run_id": "live-deadline", "profile": None, "config_hash": config_hash,
+            "provider": "local", "model": "model-1", "token_limit": 20,
+            "approved_at": self.clock.now_utc(), "approval_reference": "approval-1",
+        })
+        with self.assertRaises(BudgetExceeded):
+            ledger.reserve(
+                "too-late", 1, provider="local", model="model-1", live=True,
+                estimated_wall_time_seconds=6,
+            )
+        reservation = ledger.reserve(
+            "within-deadline", 1, provider="local", model="model-1", live=True,
+            estimated_wall_time_seconds=5,
+        )
+        self.assertEqual(reservation["deadline_at"], deadline)
+        resumed = BudgetLedger(
+            self.root, "live-deadline", limits=BudgetLimits(total_tokens=20),
+            config_hash=config_hash, live_enabled=True, clock=self.clock,
+        )
+        self.assertEqual(resumed.deadline_at, deadline)
+
+        no_deadline = BudgetLedger(
+            self.root, "live-no-deadline", limits=BudgetLimits(total_tokens=20),
+            config_hash=config_hash, live_enabled=True, clock=self.clock,
+        )
+        no_deadline.authorize({
+            "run_id": "live-no-deadline", "profile": None, "config_hash": config_hash,
+            "provider": "local", "model": "model-1", "token_limit": 20,
+            "approved_at": self.clock.now_utc(), "approval_reference": "approval-2",
+        })
+        with self.assertRaises(BudgetAuthorizationError):
+            no_deadline.reserve("missing-deadline", 1, provider="local", model="model-1", live=True)
+
     def test_restart_cannot_enlarge_or_change_a_run_budget(self):
         ledger = self.ledger(limits={"total_tokens": 20}, currency="USD")
         ledger.reserve("call-1", 2)
@@ -192,7 +246,10 @@ class M12LedgerTests(unittest.TestCase):
 
     def test_authorization_is_bound_to_run_config_profile_and_provider(self):
         config_hash = "a" * 64
-        ledger = self.ledger(profile="calibration", config_hash=config_hash, live_enabled=True, limits={"total_tokens": 100})
+        ledger = self.ledger(
+            profile="calibration", config_hash=config_hash, live_enabled=True,
+            deadline_at="2026-01-01T00:10:00Z", limits={"total_tokens": 100},
+        )
         authorization = {
             "run_id": "run-1", "profile": "calibration", "config_hash": config_hash,
             "provider": "local", "model": "model-1", "token_limit": 50,

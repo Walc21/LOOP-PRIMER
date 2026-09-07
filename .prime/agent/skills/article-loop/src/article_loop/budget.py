@@ -442,6 +442,7 @@ class BudgetLedger:
         run_id: str,
         *,
         profile: str | None = None,
+        deadline_at: str | None = None,
         clock: Any | None = None,
         read_only: bool = False,
     ) -> "BudgetLedger":
@@ -490,6 +491,7 @@ class BudgetLedger:
                 "budget.max_run_cost_microunits", allow_none=True,
             ),
             live_enabled=execution.get("enabled") is True and active_profile is not None,
+            deadline_at=deadline_at,
             max_integer=max_integer,
             orphan_after_seconds=_integer(observability.get("orphan_after_seconds", 900), "orphan_after_seconds"),
             clock=clock,
@@ -854,12 +856,18 @@ class BudgetLedger:
         stop = self.root / "control" / "STOP"
         if stop.exists() or stop.is_symlink():
             raise BudgetStateError("control/STOP blocks new reservations")
-        self._check_deadline()
-        if deadline_at is not None and _parse_datetime(self.clock.now_utc()) >= _parse_datetime(deadline_at):
-            raise BudgetExceeded("reservation deadline has expired")
+        if deadline_at is not None:
+            now = _parse_datetime(self.clock.now_utc())
+            deadline = _parse_datetime(deadline_at)
+            if now >= deadline:
+                raise BudgetExceeded("reservation deadline has expired")
+            if estimated_wall_time_seconds > (deadline - now).total_seconds():
+                raise BudgetExceeded("reservation timeout exceeds the remaining deadline")
         if self.limits.max_cycles is not None and cycle_id >= self.limits.max_cycles:
             raise BudgetExceeded("max_cycles exceeded")
         reservations = list(state["reservations"].values())
+        if any(item.get("status") == "UNCERTAIN" for item in reservations):
+            raise BudgetStateError("unresolved uncertain reservation blocks new reservations")
         confirmed = [item for item in reservations if item.get("status") == "RECONCILED"]
         open_items = [item for item in reservations if self._open(item)]
         if any(item.get("status") == "RECONCILED" and item.get("usage_tokens", 0) > item.get("estimate_tokens", 0) for item in reservations):
@@ -1009,6 +1017,22 @@ class BudgetLedger:
                 payload=auth.public(),
             )
 
+    def assert_new_inference_permitted(self) -> None:
+        """Block routing before it can create a second ambiguous inference."""
+        with self._lock():
+            state = self._state_locked()
+            if state["state"] in {"PAUSED", "STOPPED"}:
+                raise BudgetStateError(f"run is {state['state'].lower()}")
+            stop = self.root / "control" / "STOP"
+            if stop.exists() or stop.is_symlink():
+                raise BudgetStateError("control/STOP blocks new inference")
+            self._check_deadline()
+            if any(
+                item.get("status") == "UNCERTAIN"
+                for item in state["reservations"].values()
+            ):
+                raise BudgetStateError("unresolved uncertain reservation blocks new inference")
+
     def reserve(
         self,
         call_id: str,
@@ -1082,13 +1106,29 @@ class BudgetLedger:
                 ):
                     raise BudgetIdempotencyError("conflicting reservation retry")
                 return dict(prior)
+            persisted_deadlines = [
+                item.get("deadline_at")
+                for item in state["reservations"].values()
+                if isinstance(item.get("deadline_at"), str)
+            ]
+            deadline_values = [
+                value for value in (self.deadline_at, deadline_at, *persisted_deadlines)
+                if value is not None
+            ]
+            effective_deadline_at = (
+                min(_parse_datetime(value) for value in deadline_values)
+                .isoformat().replace("+00:00", "Z")
+                if deadline_values else None
+            )
+            if live and effective_deadline_at is None:
+                raise BudgetAuthorizationError("live reservation requires an absolute deadline")
             self._check_reservation_limits(
                 state, cycle_id=cycle_id, department_id=department_id, role_id=role_id,
                 model=model, estimate_tokens=estimate_tokens,
                 estimated_cost_microunits=estimated_cost_microunits,
                 estimated_wall_time_seconds=estimated_wall_time_seconds,
                 children=children, attempt=attempt, extra_judgment=extra_judgment,
-                deadline_at=deadline_at,
+                deadline_at=effective_deadline_at,
             )
             if live:
                 self._authorization_valid(
@@ -1103,7 +1143,7 @@ class BudgetLedger:
                 "department_id": department_id, "role_id": role_id,
                 "attempt": attempt, "provider": provider, "model": model,
                 "estimated_wall_time_seconds": estimated_wall_time_seconds,
-                "children": children, "deadline_at": deadline_at or self.deadline_at,
+                "children": children, "deadline_at": effective_deadline_at,
                 "extra_judgment": extra_judgment, "live": live,
                 "budget_config_hash": self.config_hash,
                 "budget_limits_hash": self._limits_hash,
@@ -1114,6 +1154,8 @@ class BudgetLedger:
                 payload["routing_role_id"] = routing_role_id
             if self.max_run_cost_microunits is not None:
                 payload["budget_max_run_cost_microunits"] = self.max_run_cost_microunits
+            if effective_deadline_at is not None:
+                self.deadline_at = effective_deadline_at
             event = self._append_locked(
                 "RESERVED", idempotency_key=f"reserve:{reservation_id}",
                 cycle_id=cycle_id, department_id=department_id, role_id=role_id,

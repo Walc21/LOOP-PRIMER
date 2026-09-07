@@ -30,6 +30,38 @@ adaptador Copilot e a superfície Prime serão curtos e apontarão à política
 canônica. Nenhum estado científico, PDF original, evidência congelada, schema,
 ADR ou histórico será descartado.
 
+## Endurecimento de prontidão M12/M12.5 — 2026-09-07
+
+Corrigir as lacunas de contrato identificadas antes de qualquer nova autorização
+de inferência, sem mudar os defaults inertes, criar uma tentativa, consultar um
+endpoint ou iniciar M6. Uma reserva `UNCERTAIN` passa a congelar novas rotas e
+reservas da inferência até reconciliação explícita; isso não autoriza retry,
+liberação, reembolso ou alteração da evidência ambígua. A garantia será provada
+com saldo remanescente, para que não dependa acidentalmente de um teto de tokens
+já esgotado.
+
+O runtime routed contabilizará uma unidade concorrente por chamada de inferência.
+Uma chamada live exigirá deadline UTC absoluto; ele será publicado no primeiro
+evento de reserva antes do backend, preservado ao reabrir o ledger e rejeitará
+uma chamada cujo timeout reservado não caiba no tempo restante. A configuração
+de projeto continuará sem deadline e sem perfil ativo: a futura entrada
+autorizada deverá fornecer o valor por run, nunca reutilizar uma data embutida.
+
+O materializador deixará de percorrer diretórios arbitrários: os pacotes M3 já
+canônicos poderão expor somente `manifest.json` e `text.txt`, em ordem fixa e
+sob um teto total de bytes, e um arquivo que certamente excede o orçamento de
+contexto será rejeitado antes de ser lido. Assim, locators M6 permanecem
+contidos e hash-bound; a seleção de excertos do primeiro smoke continuará uma
+decisão posterior, vinculada à evidência M3 escolhida. O relatório de readiness
+separará configuração estática de autorização por run e exigirá targets/preços
+apenas para modalidades efetivamente habilitadas. Testes cobrirão todas essas
+fronteiras sem rede, modelo, Prime, PDF real ou alteração em `runtime/`.
+
+Validação local concluída: 85 testes focados M12/M12.5/M12.5.1 e a regressão
+integral de 514 testes aprovaram; `bin/check.sh`, `py_compile` dos três módulos
+alterados e `git diff --check` também aprovaram. Nenhum modelo, Prime Agent,
+endpoint, rede, PDF real ou run foi iniciado.
+
 ## Execução local autorizada — 2026-09-06
 
 Implementar uma única CLI project-local para compor M3/M5/M6 routed/M7/M8
