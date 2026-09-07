@@ -36,6 +36,39 @@ da carga inicial não é descartada: permanece em `docs/AI_HISTORY.md`,
 `docs/ai_snapshot.json`, ADRs, planos, schemas, código e testes, todos
 alcançáveis pelo roteamento do contexto compacto.
 
+## ADR-041 — Barreira operacional routed antes do primeiro smoke
+
+**Status:** Concluído localmente. **Data:** 2026-09-07.
+
+O ledger tratará qualquer reserva `UNCERTAIN` como barreira absoluta a uma nova
+rota ou reserva de inferência. A inspeção e a reconciliação explícita continuam
+possíveis, mas `InferenceRuntime.execute()` não poderá usar a rota normal como
+forma de repetir ou contornar uma chamada ambígua. O bloqueio ocorre antes da
+decisão de rota persistida e não depende de esgotar algum limite numérico.
+
+Cada inferência routed reserva exatamente uma unidade de concorrência. Para uma
+chamada live, um deadline UTC absoluto é obrigatório: a reserva o grava antes do
+backend, o ledger o recupera em reinicialização e rejeita timeout estimado que
+ultrapasse o prazo restante. O deadline é uma entrada específica do run e não
+uma data configurada globalmente ou reutilizável.
+
+Contexto de arquivo será sempre contido e limitado. Um arquivo direto deve ser
+regular; um diretório M3 canônico só expõe os membros fixos `manifest.json` e
+`text.txt`, em ordem determinística, sem descoberta recursiva. Um arquivo maior
+que o máximo físico possível para o contexto é recusado antes de ser lido. O
+cálculo final continua canônico e fail-closed. A seleção de excertos do smoke
+M6 é uma etapa separada e não será inventada por truncamento.
+
+O readiness report representará somente as modalidades habilitadas: um caminho
+local gratuito não precisa declarar alvo remoto ou preço, mas autorização por
+run continua requisito para `live_ready`. Defaults inertes permanecem
+`configuration_ready=false` e `live_ready=false`.
+
+A validação local aprovou 85 testes focados M12/M12.5/M12.5.1, a regressão
+integral de 514 testes, `bin/check.sh`, compilação dos módulos alterados e
+`git diff --check`. Nenhum modelo, Prime Agent, endpoint, rede, PDF real ou
+run foi iniciado.
+
 ## ADR-039 — Ciclo local autorizado por composição das APIs canônicas
 
 **Status:** Implementado; nova validação real M3 aprovada. **Data:** 2026-09-07.

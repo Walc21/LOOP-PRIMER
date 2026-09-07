@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `07bd06008d6f89faf1b3b8e83ec95ad0f810430a390a47fd12380e4a539077c5`
-- Registrado em: `2026-09-07T04:57:09Z`
-- Git: branch `codex/m3-real-source-ready`, HEAD `2ff020dfe869`
+- Fingerprint das fontes: `7f5d99af47fdf9586606a14eb0397d872775508cce61231d6a89c8c0bb2d7b73`
+- Registrado em: `2026-09-07T06:55:09Z`
+- Git: branch `codex/m12-execution-hardening`, HEAD `58a2202cd324`
 - Arquivos relevantes: 633
 
 ## Evolução reconstruída do versionamento
@@ -17,7 +17,7 @@
 | M0.6 | 2026-08-12 | 1 | Completude de paths e ordem transacional do pipeline. | PLANS.md, docs/architecture.md, docs/decisions.md |
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M3 | 2026-08-13..2026-09-06 | 6 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.p… |
+| M3 | 2026-08-13..2026-09-07 | 8 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.p… |
 | sem marco explícito | 2026-08-13..2026-09-07 | 57 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
@@ -174,10 +174,13 @@
 | `3ae6ab7a6` | 2026-09-06 | sem marco explícito | Merge pull request #9 from Walc21/codex/local-loopback-full-cycle |  |
 | `b16fb5205` | 2026-09-07 | sem marco explícito | docs: compact agent context routing | .github/copilot-instructions.md, .prime/agent/APPEND_SYSTEM.md, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/references/api-contracts.md, AGENTS.md,… |
 | `2ff020dfe` | 2026-09-07 | sem marco explícito | Merge pull request #10 from Walc21/codex/lean-agent-context |  |
+| `1e6f7d8e1` | 2026-09-07 | M3 | fix(m3): validate source readiness safely | .gitignore, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, AI_CONTEXT.md, PLANS.md, control/test_ai_handoff.py, control/test_m3_ingestion.py |
+| `58a2202cd` | 2026-09-07 | M3 | Merge pull request #11 from Walc21/codex/m3-real-source-ready |  |
 
 ## Decisões arquiteturais
 
 - ADR-040 — Contexto escalonado para agentes sem perda de autoridade
+- ADR-041 — Barreira operacional routed antes do primeiro smoke
 - ADR-039 — Ciclo local autorizado por composição das APIs canônicas
 - ADR-038 — M14: inicialização exclusivamente pelo servidor local canônico
 - ADR-037 — M14: Central de Controle local como camada de projeção e comando canônico
@@ -2997,3 +3000,78 @@
 | modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-9.txt` | `f4dc4757dbae` | `f4dc4757dbae` |
 | modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text.txt` | `cefcc209f1ac` | `cefcc209f1ac` |
 | modified | `scripts/ai_handoff_common.py` | `36c5f8907375` | `383b2f011d5c` |
+
+### 2026-09-07T06:54:09Z — Endurecimento M12/M12.5 concluído localmente antes do primeiro smoke routed.
+
+- Session ID: `m12-execution-hardening-20260907`
+- Fingerprint final: `203bbab4913ad613b0e125b61d978254fc8500ac1200b352111fff5d3ef8764a`
+- Git final: `58a2202cd324`; status relevante: 8 item(ns)
+- Delta factual: 0 adicionados, 8 modificados, 0 removidos
+
+**Mudanças**
+
+- Bloqueio absoluto de novas rotas e reservas enquanto existir UNCERTAIN; cada inferência routed reserva uma unidade concorrente.
+- Deadline UTC absoluto passou a ser obrigatório para reserva live, persistido no ledger e limitado pelo timeout reservado.
+- Materialização de contexto agora limita bytes antes da leitura e reduz pacotes M3 a membros fixos; readiness separa configuração estática de autorização por run.
+
+**Decisões**
+
+- Manter defaults inertes e adiar seleção de excertos M3 e o entrypoint M6 de uma tarefa para uma fase posterior.
+
+**Validações**
+
+- 85 testes focados M12/M12.5/M12.5.1 e regressão integral 514 testes aprovados; bin/check.sh, py_compile e git diff --check aprovados.
+
+**Riscos/limites**
+
+- Nenhuma execução real foi autorizada; permanece necessário criar a continuação M3/M6 create-only e um entrypoint de smoke de uma tarefa.
+
+**Próximos passos**
+
+- Projetar a continuação M3/M6 create-only e o smoke routed de uma AgentTask, com autorização nova e sem M7.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/agent/skills/article-loop/src/article_loop/budget.py` | `936a9a9e30ff` | `6d7166c3d594` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/execution.py` | `2f89f04e9f5f` | `b9617ecac651` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference.py` | `7eb77ab24667` | `e010645e0f9c` |
+| modified | `PLANS.md` | `7b349bcafaa7` | `12c192b3d5f1` |
+| modified | `control/test_m1251_dual_execution.py` | `41cd66c9796e` | `b6f73ce0cded` |
+| modified | `control/test_m125_inference_routing.py` | `d8430f7f3acf` | `623838c2edb0` |
+| modified | `control/test_m12_budget_observability.py` | `4c18cab99ae3` | `4c49c8587939` |
+| modified | `docs/decisions.md` | `03ca5c2a8a8c` | `91fd9313e492` |
+
+### 2026-09-07T06:55:09Z — Correção documental da numeração do ADR de endurecimento M12/M12.5.
+
+- Session ID: `m12-execution-hardening-adr-number-fix-20260907`
+- Fingerprint final: `7f5d99af47fdf9586606a14eb0397d872775508cce61231d6a89c8c0bb2d7b73`
+- Git final: `58a2202cd324`; status relevante: 8 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- Renumerado o ADR novo de 040 para 041 para preservar a identidade do ADR-040 já existente sobre contexto de agentes.
+
+**Decisões**
+
+- Nenhum contrato de código, configuração, execução ou evidência foi alterado por esta correção documental.
+
+**Validações**
+
+- git diff --check e py_compile dos módulos já alterados permanecem aprovados; a regressão integral anterior de 514 testes continua aplicável porque não houve alteração de código.
+
+**Riscos/limites**
+
+- Execução real continua desautorizada; seleção de excertos M3 e smoke M6 permanecem pendentes.
+
+**Próximos passos**
+
+- Projetar continuação M3/M6 create-only e entrypoint de smoke de uma tarefa, com autorização nova e sem M7.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `docs/decisions.md` | `91fd9313e492` | `cca89ada3960` |

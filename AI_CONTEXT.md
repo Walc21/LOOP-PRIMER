@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `07bd06008d6f89faf1b3b8e83ec95ad0f810430a390a47fd12380e4a539077c5`
-- Baseline da última sessão: `07bd06008d6f89faf1b3b8e83ec95ad0f810430a390a47fd12380e4a539077c5`
+- Fingerprint atual das fontes: `7f5d99af47fdf9586606a14eb0397d872775508cce61231d6a89c8c0bb2d7b73`
+- Baseline da última sessão: `7f5d99af47fdf9586606a14eb0397d872775508cce61231d6a89c8c0bb2d7b73`
 - Inventário: 633 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (311733 bytes; SHA-256 `1a56e26e72b17f80`).
+- Histórico detalhado: `docs/AI_HISTORY.md` (315627 bytes; SHA-256 `fb526f4becba9889`).
 
 ## Estado e limites atuais
 
@@ -30,22 +30,22 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 48.
-- `lean-agent-context-20260907` — O contexto de entrada para agentes foi compactado sem descartar contratos, evidências ou fontes autoritativas.
-  - mudança: AI_CONTEXT.md passou a ser gerado como roteador compacto com fingerprint de fontes e histórico, estado, limites, delta, três sessões materiais e fontes por escopo.
-  - decisão: Contexto inicial é escalonado: dados detalhados continuam versionados e só são abertos quando o escopo requer, conforme ADR-040.
-  - risco: Nenhum modelo, Prime Agent, rede, API paga, PDF real ou ciclo científico foi iniciado; a qualidade futura depende de seguir o roteamento para módulos, schemas, testes e ADRs específicos.
-  - próximo: Revisar o diff, decidir se deseja commit/PR e, em tarefa futura, abrir somente as fontes indicadas pelo contexto compacto.
-- `m3-real-source-ready-20260907` — Validação M3 real do PDF preservado alcançou SOURCE_READY em uma segunda raiz isolada após correção determinística do inventário autor--ano.
-  - mudança: Criadas duas tentativas M3-only create-only e um diagnóstico hash-bound; a primeira preserva a falha reference_coverage em INGESTED e a segunda publicou os artefatos M3 e o baseline v0000 em SOURCE_READY.
-  - decisão: Manter o limiar de referência em 0.80 e todos os controles fail-closed; corrigir a inconsistência interna entre candidato e inventário sem OCR, fallback semântico ou force.
-  - risco: A validação comprova somente M3 local; M6+, modelos, backend, reservas, receipts, rede e custo não foram iniciados.
-  - próximo: Revisar as mudanças e evidências; commit, push ou PR dependem de autorização explícita nova.
+- Sessões estruturadas registradas: 50.
 - `m3-runtime-evidence-boundary-20260907` — A fronteira de publicação da evidência M3 real foi corrigida sem mover, apagar ou reexecutar tentativas.
   - mudança: runtime/m3-real-attempts/ passou a ser ignorado pelo Git para impedir inclusão acidental de PDF, texto extraído e imagens em commits ou PRs.
   - decisão: Evidência M3 real permanece create-only no checkout local; seu conteúdo não é fonte versionada, mas hashes e tamanhos continuam verificáveis no inventário local.
   - risco: Não houve modelo, Prime Agent, backend, inferência, reserva, receipt, rede, API paga, nova tentativa M3 ou alteração dos artefatos existentes.
   - próximo: Revisar o diff completo M3 e a fronteira de evidência; commit, push e PR dependem de autorização explícita.
+- `m12-execution-hardening-20260907` — Endurecimento M12/M12.5 concluído localmente antes do primeiro smoke routed.
+  - mudança: Bloqueio absoluto de novas rotas e reservas enquanto existir UNCERTAIN; cada inferência routed reserva uma unidade concorrente.
+  - decisão: Manter defaults inertes e adiar seleção de excertos M3 e o entrypoint M6 de uma tarefa para uma fase posterior.
+  - risco: Nenhuma execução real foi autorizada; permanece necessário criar a continuação M3/M6 create-only e um entrypoint de smoke de uma tarefa.
+  - próximo: Projetar a continuação M3/M6 create-only e o smoke routed de uma AgentTask, com autorização nova e sem M7.
+- `m12-execution-hardening-adr-number-fix-20260907` — Correção documental da numeração do ADR de endurecimento M12/M12.5.
+  - mudança: Renumerado o ADR novo de 040 para 041 para preservar a identidade do ADR-040 já existente sobre contexto de agentes.
+  - decisão: Nenhum contrato de código, configuração, execução ou evidência foi alterado por esta correção documental.
+  - risco: Execução real continua desautorizada; seleção de excertos M3 e smoke M6 permanecem pendentes.
+  - próximo: Projetar continuação M3/M6 create-only e entrypoint de smoke de uma tarefa, com autorização nova e sem M7.
 
 ## Roteamento obrigatório por escopo
 

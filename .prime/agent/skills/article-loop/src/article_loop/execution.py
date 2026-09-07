@@ -157,42 +157,64 @@ class ContextMaterializer:
         return resolved
 
     @staticmethod
-    def _read_text(path: Path) -> str:
+    def _read_text(path: Path, *, maximum_bytes: int) -> str:
         if path.is_symlink() or not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
             raise ExecutionError("context source is not an authorized text file")
+        if type(maximum_bytes) is not int or maximum_bytes < 0:
+            raise ExecutionError("context source byte bound is invalid")
         try:
+            if path.stat().st_size > maximum_bytes:
+                raise ExecutionError("context source exceeds the materialization byte bound")
             data = path.read_bytes()
             text = data.decode("utf-8")
         except (OSError, UnicodeError) as error:
             raise ExecutionError("context text is unreadable") from error
+        if len(data) > maximum_bytes:
+            raise ExecutionError("context source exceeds the materialization byte bound")
         if "\x00" in text:
             raise ExecutionError("context text contains a NUL byte")
         return text
 
-    def _path_items(self, locator: str, raw_path: str) -> tuple[list[ContextItem], bool]:
+    def _path_items(
+        self, locator: str, raw_path: str, *, maximum_bytes: int,
+    ) -> tuple[list[ContextItem], bool]:
         path = self._contained(raw_path)
         if path.is_file() and path.suffix.lower() == ".pdf":
             # Deliberately do not open or hash the immutable binary PDF.  M3's
             # extracted text locator is a separate required task input.
             return [], True
-        candidates: list[Path]
         if path.is_dir():
-            candidates = []
-            for candidate in sorted(path.rglob("*")):
-                if candidate.is_symlink():
-                    raise ExecutionError("context tree contains a symlink")
-                if candidate.is_file() and candidate.suffix.lower() in TEXT_SUFFIXES:
-                    candidates.append(candidate)
-        else:
-            candidates = [path]
-        result = []
-        for candidate in candidates:
-            text = self._read_text(candidate)
-            source = str(candidate.relative_to(self.root))
-            result.append(ContextItem(locator, source, sha256(text.encode("utf-8")), text))
-        return result, False
+            # M6 already uses M3 artifact-package locators.  Their only
+            # text-bearing members admitted here are a fixed manifest and the
+            # extracted aggregate text; recursive discovery would make prompt
+            # size and scope depend on the full artifact tree.
+            package_roots = (
+                self.root / "artifacts" / "extracted",
+                self.root / "artifacts" / "rendered",
+            )
+            if not any(path.parent == package_root for package_root in package_roots):
+                raise ExecutionError("context directory is not a canonical M3 package")
+            result: list[ContextItem] = []
+            for name in ("manifest.json", "text.txt"):
+                candidate = path / name
+                if not candidate.exists():
+                    continue
+                if candidate.is_symlink() or not candidate.is_file():
+                    raise ExecutionError("context package member is unsafe")
+                text = self._read_text(candidate, maximum_bytes=maximum_bytes)
+                source = str(candidate.relative_to(self.root))
+                result.append(ContextItem(locator, source, sha256(text.encode("utf-8")), text))
+                maximum_bytes -= len(text.encode("utf-8"))
+            if not result:
+                raise ExecutionError("context package has no authorized text member")
+            return result, False
+        text = self._read_text(path, maximum_bytes=maximum_bytes)
+        source = str(path.relative_to(self.root))
+        return [ContextItem(locator, source, sha256(text.encode("utf-8")), text)], False
 
-    def _blackboard_item(self, run_id: str, locator: str, view: Mapping[str, Any]) -> ContextItem:
+    def _blackboard_item(
+        self, run_id: str, locator: str, view: Mapping[str, Any], *, maximum_bytes: int,
+    ) -> ContextItem:
         token = locator.split(":", 1)[1]
         matching = []
         source = "closed-view"
@@ -202,13 +224,18 @@ class ContextMaterializer:
                 if isinstance(value, Mapping) and value.get("locator") == locator
             )
         directory = self.root / "state" / "blackboard" / run_id
+        remaining_bytes = maximum_bytes
         if directory.exists():
             directory = self._contained(str(directory))
             for path in sorted(directory.glob("*.jsonl")):
                 if path.is_symlink() or not path.is_file():
                     raise ExecutionError("blackboard ledger is unsafe")
                 try:
-                    for line in path.read_text(encoding="utf-8").splitlines():
+                    data = path.read_bytes()
+                    if len(data) > remaining_bytes:
+                        raise ExecutionError("blackboard source exceeds the materialization byte bound")
+                    remaining_bytes -= len(data)
+                    for line in data.decode("utf-8").splitlines():
                         value = json.loads(line)
                         if isinstance(value, Mapping) and (
                             value.get("record_id") == token or value.get("claim_id") == token
@@ -218,6 +245,8 @@ class ContextMaterializer:
                 except (OSError, UnicodeError, json.JSONDecodeError) as error:
                     raise ExecutionError("blackboard ledger is unreadable") from error
         text = canonical_bytes(matching).decode("ascii")
+        if len(text.encode("ascii")) > maximum_bytes:
+            raise ExecutionError("blackboard context exceeds the materialization byte bound")
         return ContextItem(locator, source, sha256(text.encode("ascii")), text)
 
     def materialize(
@@ -237,6 +266,10 @@ class ContextMaterializer:
             raise ExecutionError("closed view is not bound to AgentTask")
         if any(type(value) is not int or value < 0 for value in (context_limit, max_output_tokens, overhead_tokens)):
             raise ExecutionError("context limits must be non-negative integers")
+        remaining_context_tokens = context_limit - max_output_tokens - overhead_tokens
+        if remaining_context_tokens < 0:
+            raise ExecutionError("context output and overhead exceed the target context limit")
+        remaining_source_bytes = remaining_context_tokens * 4
         authorized = set(task["input_locators"])
         view_locators: set[str] = set()
         for key in ("excerpts",):
@@ -263,15 +296,25 @@ class ContextMaterializer:
         omitted: list[str] = []
         for locator in sorted(view_locators):
             if locator.startswith("readonly:history:"):
-                resolved, binary = self._path_items(locator, locator[len("readonly:history:"):])
+                resolved, binary = self._path_items(
+                    locator, locator[len("readonly:history:"):],
+                    maximum_bytes=remaining_source_bytes,
+                )
             elif locator.startswith("readonly:"):
-                resolved, binary = self._path_items(locator, locator[len("readonly:"):])
+                resolved, binary = self._path_items(
+                    locator, locator[len("readonly:"):],
+                    maximum_bytes=remaining_source_bytes,
+                )
             elif locator.startswith("blackboard:"):
-                resolved = [self._blackboard_item(task["run_id"], locator, view)]
+                resolved = [self._blackboard_item(
+                    task["run_id"], locator, view,
+                    maximum_bytes=remaining_source_bytes,
+                )]
                 binary = False
             else:
                 raise ExecutionError("unsupported context locator")
             items.extend(resolved)
+            remaining_source_bytes -= sum(len(item.text.encode("utf-8")) for item in resolved)
             if binary:
                 omitted.append(locator)
         if omitted and not items:
@@ -624,6 +667,7 @@ class DualExecutionController:
                 max_output_tokens=max_output, context_hash=context.context_hash,
                 privacy_mode=self.policy.remote_content_mode,
             )
+            runtime.ledger.assert_new_inference_permitted()
             decision = runtime.router.route(request, runtime.ledger.status(current_cycle=request.cycle_id))
             target = self.registry.target(str(decision.target_id))
             self.materializer.enforce_remote_policy(context, target_local=target.local)
@@ -647,12 +691,27 @@ def execution_readiness(root: str | Path) -> dict[str, Any]:
     policy = ExecutionPolicy.from_mapping(config)
     registry = ModelRegistry(config["inference"])
     missing = []
+    model_execution = config.get("model_execution")
+    if not isinstance(model_execution, Mapping) or model_execution.get("enabled") is not True:
+        missing.append("model_execution")
+    budget = config.get("budget")
+    profiles = budget.get("profiles") if isinstance(budget, Mapping) else None
+    if not isinstance(profiles, Mapping) or not any(
+        isinstance(profile, Mapping) and profile.get("enabled") is True
+        for profile in profiles.values()
+    ):
+        missing.append("budget_profile")
     if not policy.departments: missing.append("department_execution_map")
-    if not any(target.local for target in registry.targets.values()): missing.append("local_target")
-    if not any(not target.local for target in registry.targets.values()): missing.append("remote_target")
-    if not any(target.pricing is not None for target in registry.targets.values()): missing.append("target_pricing")
+    enabled_targets = tuple(target for target in registry.targets.values() if target.enabled)
+    if registry.allow_local and not any(target.local for target in enabled_targets):
+        missing.append("local_target")
+    if registry.allow_remote and not any(not target.local for target in enabled_targets):
+        missing.append("remote_target")
+    if any(target.paid for target in enabled_targets) and not all(
+        target.pricing is not None for target in enabled_targets if target.paid
+    ):
+        missing.append("target_pricing")
     if not registry.role_routes: missing.append("role_routes")
-    missing.append("run_authorization")
     configured = not missing and policy.enabled and registry.enabled
     return {
         "schema_version": "1.0.0",
@@ -666,6 +725,7 @@ def execution_readiness(root: str | Path) -> dict[str, Any]:
         "max_run_cost_microunits": config["budget"].get("max_run_cost_microunits"),
         "currency": config["budget"].get("currency"),
         "missing_configuration": missing,
+        "authorization_required": True,
     }
 
 
