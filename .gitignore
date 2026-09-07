@@ -63,3 +63,5 @@ env/
 
 # Lock transitório do histórico/contexto para IAs
 docs/ai_history.lock
+runtime/local-full-cycle/
+runtime/m3-diagnostics/

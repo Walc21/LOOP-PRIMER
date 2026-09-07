@@ -11,6 +11,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 import jsonschema
 
@@ -255,6 +256,63 @@ class IngestionTests(unittest.TestCase):
         self.assertEqual(r"\textbackslash{}\{\}\$\&\#\textasciicircum{}\_\%\textasciitilde{}", _latex_escape("\\{}$&#^_%~"))
         lines, *_ = _lines(["first", "second"])
         self.assertEqual([1, 2], [line["page"] for line in lines])
+
+    def test_reconstruction_is_ascii_safe_bounded_and_has_no_pdf_commands(self):
+        from article_loop.ingestion import MAX_TEX_LINE_CHARS, _normalized_latex
+        untrusted = (
+            "alpha α ≤ ∑ √ “smart quotes” 😀 \\input{never} $ & # ^ _ % ~ "
+            "\x00\x1f\x7f\x85" + "x" * 1_000
+        )
+        rendered = _normalized_latex([{"text": untrusted}], [])
+        self.assertTrue(rendered.isascii())
+        self.assertEqual(rendered, _normalized_latex([{"text": untrusted}], []))
+        self.assertTrue(all(len(line) <= MAX_TEX_LINE_CHARS for line in rendered.splitlines()))
+        self.assertIn(r"\hbadness=10000", rendered)
+        self.assertIn(r"\hfuzz=10000pt", rendered)
+        for marker in ("[U+03B1]", "[U+2264]", "[U+2211]", "[U+221A]", "[U+1F600]", "[CTRL-U+0000]", "[CTRL-U+0085]"):
+            self.assertIn(marker, rendered)
+        self.assertNotIn("\\input", rendered)
+        self.assertIn(r"\textbackslash{}input\{never\}", rendered)
+
+    def test_compiler_failure_stays_ingested_with_limited_hash_bound_diagnostic(self):
+        from article_loop.ingestion import LatexCompileError
+        pdf = self.fixture()
+        digest = hashlib.sha256(pdf.read_bytes()).hexdigest()
+        failure = LatexCompileError(
+            "LATEX_EXIT_NONZERO", returncode=1, duration_ms=12,
+            output_bytes=44, output_sha256="a" * 64,
+        )
+        with patch("article_loop.ingestion._compile_latex", side_effect=failure):
+            with self.assertRaises(LatexCompileError) as raised:
+                ingest(self.root)
+        report = raised.exception.diagnostic()
+        self.assertEqual({"classification", "returncode", "duration_ms", "output_bytes", "output_sha256"}, set(report))
+        self.assertEqual("LATEX_EXIT_NONZERO", report["classification"])
+        self.assertNotIn("Fixture Equation", str(raised.exception))
+        events = DurableStore(self.root).read_events(f"ingest-{digest}")
+        self.assertEqual([State.NEW.value, State.INGESTED.value], [event["state_to"] for event in events])
+        self.assertFalse((self.root / "versions/champion/v0000").exists())
+        self.assertFalse((self.root / "versions/challengers").exists())
+        self.assertFalse((self.root / "state/reservations").exists())
+        self.assertFalse((self.root / "state/receipts").exists())
+
+    def test_hash_bound_offline_diagnostic_writes_metadata_only(self):
+        import importlib.util
+        script = ROOT / "scripts/m3_reconstruction_diagnostic.py"
+        spec = importlib.util.spec_from_file_location("m3_reconstruction_diagnostic_test", script)
+        assert spec and spec.loader
+        diagnostic = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(diagnostic)
+        pdf = self.fixture()
+        expected = hashlib.sha256(pdf.read_bytes()).hexdigest()
+        with patch.object(diagnostic, "ROOT", self.root):
+            report = diagnostic.diagnose(expected)
+        report_path = self.root / "runtime/m3-diagnostics" / report["diagnostic_id"] / "report.json"
+        self.assertTrue(report_path.is_file())
+        self.assertEqual(report, json.loads(report_path.read_text(encoding="utf-8")))
+        self.assertEqual(expected, report["input_sha256"])
+        self.assertEqual({"diagnostic_id", "input_sha256", "reconstructed_sha256", "classification", "returncode", "duration_ms", "output_bytes", "output_sha256"}, set(report))
+        self.assertNotIn("Fixture Equation", report_path.read_text(encoding="utf-8"))
 
     def test_source_zip_is_frozen_before_later_inbox_change(self):
         self.fixture()

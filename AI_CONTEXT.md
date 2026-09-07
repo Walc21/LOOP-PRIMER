@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2`
-- Baseline da última sessão: `d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2`
+- Fingerprint atual das fontes: `0c2ecddf458ea660521359c04d808331c3f053a87d0a47fd391548d3e0af81a6`
+- Baseline da última sessão: `0c2ecddf458ea660521359c04d808331c3f053a87d0a47fd391548d3e0af81a6`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 215 arquivos relevantes, 1900403 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 219 arquivos relevantes, 2827780 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -50,7 +50,7 @@ O delta content-addressed acima é a evidência determinística de alterações;
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (134942 bytes; SHA-256 `f214f80b1a3d59c4`).
+- Fonte lida: `docs/AI_HISTORY.md` (143692 bytes; SHA-256 `5ab73577234c842b`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -58,7 +58,7 @@ O delta content-addressed acima é a evidência determinística de alterações;
 | M0.6 | 2026-08-12 | 1 | Completude de paths e ordem transacional do pipeline. | PLANS.md, docs/architecture.md, docs/decisions.md |
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
+| M3 | 2026-08-13..2026-09-06 | 6 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.p… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -79,22 +79,22 @@ O delta content-addressed acima é a evidência determinística de alterações;
 | M13.2 | 2026-09-06 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
 | M14 | 2026-09-06 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
 
-- Sessões estruturadas registradas: 41.
-- Índice recente: 2026-09-06T04:12:37Z — M13.2.1 encerra documentalmente a M13.2 após o merge do PR #5: corrige a evidência da regressão final de 473 para 474 t…; 2026-09-06T05:36:44Z — M14 entregue: Central de Controle local para observação e comandos canônicos, sem iniciar Prime Agent, inferência, mode…; 2026-09-06T06:07:24Z — M14 control-center hardening repaired the known concurrent configuration-apply and idempotency races, plus dynamic map …; 2026-09-06T07:01:49Z — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suporta…; 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado es…; 2026-09-06T07:55:00Z — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.; 2026-09-06T07:59:33Z — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, qu…; 2026-09-06T08:13:25Z — Restored the two README compatibility markers required by the AI handoff contract after the documentation refresh cause…. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 45.
+- Índice recente: 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado es…; 2026-09-06T07:55:00Z — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.; 2026-09-06T07:59:33Z — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, qu…; 2026-09-06T08:13:25Z — Restored the two README compatibility markers required by the AI handoff contract after the documentation refresh cause…; 2026-09-07T00:34:13Z — Implementada a entrada local restrita para ciclo routed e executada uma única tentativa real autorizada.; 2026-09-07T01:09:49Z — Correção estrutural M3 concluída sem retomar a tentativa congelada: a reconstrução auxiliar passou a ser ASCII-safe, li…; 2026-09-07T01:21:13Z — Revisado, validado, versionado e publicado o conjunto da entrada local isolada e do endurecimento M3.; 2026-09-07T01:39:39Z — Corrigida a falha de CI da entrada local ao remover a dependência do PDF ignorado do checkout.. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `session-07dd42119cf2d761e4df` — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, quick-start, CLI, repository-tree and ADR-table structure.
-  - mudanças: Updated milestone, security, test, command, repository-layout and ADR references through M14 and the canonical local Control Center launcher.
-  - decisões: Keep the legacy README presentation and links; correct claims in place instead of replacing it with a new document structure.
-  - validações: Verified all documented local files and command entrypoints exist; git diff --check passed; no source or runtime behavior was changed.
-  - riscos: README documents structural readiness only; live models, Prime Agent, providers, paid APIs and scientific runs remain unauthorized and disabled by default.
-  - próximos: Review the uncommitted documentation and checkpoint changes, then commit only with explicit authorization.
-- `session-d74de28a5971446dc7ab` — Restored the two README compatibility markers required by the AI handoff contract after the documentation refresh caused CI to fail.
-  - mudanças: Added the literal M10 Decision and operational CLI statements back to the README status block without changing its structure.
-  - decisões: README compatibility markers asserted by control/test_ai_handoff remain stable wording contracts and must be preserved during documentation updates.
-  - validações: python3 -m unittest control.test_ai_handoff -q: 12 tests OK; git diff --check OK.
-  - riscos: This is documentation-only; no model, Prime Agent, provider, API, or scientific pipeline was run.
-  - próximos: Push the CI repair commit and wait for the refreshed PR checks.
+- `commit-pr-m3-local-loopback-20260907` — Revisado, validado, versionado e publicado o conjunto da entrada local isolada e do endurecimento M3.
+  - mudanças: Commit edcba66 criado na branch codex/local-loopback-full-cycle com a entrada local loopback-only, diagnóstico M3 e endurecimento da reconstrução.; PR #9 aberto contra main; nenhum artefato da tentativa congelada foi versionado.
+  - decisões: A tentativa attempt-55081d47-a57f-4d21-846c-54f0aaa5ef0e permanece evidência imutável em INGESTED; qualquer nova tentativa exige autorização explícita e identidade nova.
+  - validações: 31 testes focados, regressão completa de 507 testes, bin/check.sh, py_compile e git diff --check passaram nesta sessão.
+  - riscos: O M3 endurecido ainda não foi aplicado ao PDF real em uma nova tentativa; diagnóstico histórico não deve ser confundido com execução.
+  - próximos: Revisar e fazer merge do PR #9; depois, somente com autorização explícita, preparar nova tentativa isolada de M3.
+- `ci-fixture-portability-20260907` — Corrigida a falha de CI da entrada local ao remover a dependência do PDF ignorado do checkout.
+  - mudanças: A fixture de control/test_local_loopback_full_cycle.py agora cria bytes sintéticos locais em input/inbox/artigo.pdf.; PLANS.md e ADR-039 registram que a aceitação de preparação é independente do PDF real.
+  - decisões: Os testes de preparação validam somente regularidade, hash e isolamento; não devem consumir ou publicar a evidência PDF real.
+  - validações: python3 -m unittest control.test_local_loopback_full_cycle -v: 6 testes OK; python3 -m unittest discover -s control -p test_*.py -q: 507 testes OK em 381.789s; git diff --check: OK.
+  - riscos: A CI não executa uma tentativa real ou M3 sobre o PDF real; isso permanece corretamente fora do escopo dos testes.
+  - próximos: Aguardar a CI do PR #9 e revisar o merge; uma nova tentativa M3 só poderá ser criada com autorização explícita.
 
 ## Marcos planejados
 
@@ -164,7 +164,7 @@ Detalhe das duas sessões mais recentes:
 - `.prime/agent/skills/article-loop/src/article_loop/gates.py` — 13 verificadores locais, evidência matemática e GateReport canônico. API/símbolos: record_math_verification(); verify_gate_report(); run_gates(); compare()
 - `.prime/agent/skills/article-loop/src/article_loop/inference.py` — registry/router M12.5, runtime transacional e rotas/receipts write-once. API/símbolos: class InferenceError; class InferenceConfigError; class InferenceRoutingError; class InferenceIntegrityError; class InferenceBackendError; class InferenceOutputError; canonical_bytes(); sha256(); routing_policy_hash(); load_requested_output_schema(); class TargetPricing [cost]; class InferenceTarget [public]; class ModelRegistry [from_project, validate_enabled_policy, target, status]; class InferenceRequest [from_agent_task, identity, effective_routing_role_id, request_hash, escalated]; output_identity_values(); agent_proposal_payload_schema(); model_output_schema(); trusted_protocol_envelope…
 - `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` — backends fake explícito e OpenAI-compatible restrito a loopback. API/símbolos: class FakeInferenceBackend [preflight, complete]; class LocalOpenAICompatibleBackend [preflight, complete]; class RemoteOpenAICompatibleBackend [preflight]
-- `.prime/agent/skills/article-loop/src/article_loop/ingestion.py` — congelamento de PDF/ZIP, derivados e publicação do baseline v0000. API/símbolos: class IngestionError; class SourceReadyError; ingest()
+- `.prime/agent/skills/article-loop/src/article_loop/ingestion.py` — congelamento de PDF/ZIP, derivados e publicação do baseline v0000. API/símbolos: class IngestionError; class SourceReadyError; class LatexCompileError [diagnostic]; ingest()
 - `.prime/agent/skills/article-loop/src/article_loop/observability.py` — módulo ainda não classificado; examine antes de usar. API/símbolos: class ObservabilityError; redact_payload(); class StructuredLogger [path, lock_path, read_events, emit, status]
 - `.prime/agent/skills/article-loop/src/article_loop/orchestrator.py` — árvore M00→Sxx→Wxx reentrante, journal e receipts M6. API/símbolos: class OrchestrationError; class Orchestrator [bootstrap, preflight, run_cycle, advance_department, receipt, mark_failed, cancel, consolidate_department, pause, resume, stop, finalize, checkpoint, status]
 - `.prime/agent/skills/article-loop/src/article_loop/policy.py` — política M10 fechada, Decision content-addressed, Pareto e checkpoints técnicos. API/símbolos: class PolicyError; load_policy(); verify_finalization_evidence(); pareto_relation(); choose_action(); validate_decision_disposition(); decide(); load_published_decision()
@@ -191,7 +191,9 @@ Detalhe das duas sessões mais recentes:
 - `scripts/ai_handoff_common.py` — API: HandoffError, canonical_json(), sha256_bytes(), sha256_file(), is_sensitive_path(), run_local(), git_root(), list_relevant_paths(), summarize_text(), file_record(), build_inventory(), inventory_fingerprint(), snapshot_files(), inventory_delta()
 - `scripts/ai_history.py` — API: load_entries(), infer_milestone(), render_history(), update_history(), parser(), main()
 - `scripts/article_loop_command.py` — API: CommandInputError, ProjectCheckError, check_project(), main()
+- `scripts/local_loopback_full_cycle.py` — API: LocalCycleError, prepare(), preflight(), run(), status(), main()
 - `scripts/m13_system_check.py` — API: main()
+- `scripts/m3_reconstruction_diagnostic.py` — API: DiagnosticError, diagnose(), main()
 
 ## Contratos JSON Schema
 
@@ -227,12 +229,13 @@ Detalhe das duas sessões mais recentes:
 
 ## Cobertura estrutural de testes
 
-Total detectado por AST: **498 testes**.
+Total detectado por AST: **507 testes**.
 
 | Arquivo | Testes | Amostra de fronteiras cobertas |
 |---|---:|---|
 | `test_ai_handoff.py` | 12 | embedded previews are bounded and have no trailing whitespace; explicit publication is portable and idempotent; repository trigger surfaces require read only startup and explicit … |
 | `test_contracts.py` | 52 | all yaml is parseable; canonical states and actions; eight evaluation dimensions; exact ids without duplicates; one plus five plus fifteen; parent child topology; exact schema cat… |
+| `test_local_loopback_full_cycle.py` | 6 | prepare creates isolated loopback only configuration; stop blocks prepare before writing an attempt; one model is rejected before writing an attempt; preflight requires both decla… |
 | `test_m10_policy_finalization.py` | 24 | all policy rows and actions are closed; hard math gate and extra judgment limit have precedence; global plateau can finalize only with final gate evidence; pareto dominated candid… |
 | `test_m11_commands.py` | 16 | exact flat template discovery and frontmatter; append system is additive and has m11 guardrails; project settings are not invented; check reports safe local defaults; check report… |
 | `test_m1251_dual_execution.py` | 16 | project defaults distinguish implementation configuration and live; materializer is closed hash bound and does not load pdf; materializer rejects traversal symlink unlisted locato… |
@@ -242,7 +245,7 @@ Total detectado por AST: **498 testes**.
 | `test_m13_system_delivery.py` | 25 | golden ingestion to verified promotion; math gate failure stops before jury or decision; jury math veto beats excellent scores and is rejected; blind presentations invert without … |
 | `test_m14_control_center.py` | 21 | status without run is read only; run projection rebuilds after control plane restart; event cursor backfills and deduplicates; sse serves confirmed event with resumable cursor; ev… |
 | `test_m2_durable_state.py` | 32 | directory fsync tolerates only documented unsupported errors; directory fsync io error fails atomic publication; all valid transitions; all invalid transitions; full event log rep… |
-| `test_m3_ingestion.py` | 22 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash di… |
+| `test_m3_ingestion.py` | 25 | digital pdf creates traceable champion and is idempotent; corrupted multiple and ambiguous pdf are rejected; scanned without ocr fails with actionable issue; malicious zip hash di… |
 | `test_m4_prompts.py` | 13 | all 21 compiled prompts match snapshots; prompt contract sections and required dependencies; structured output fixtures validate; immutable overwrite and unknown version block exe… |
 | `test_m5_blackboard_activation.py` | 17 | claim is stable and all six ledgers are append only; localized and indirect dependency impact; structured changes preserve section equation reference and close dependencies; paths… |
 | `test_m6_orchestration.py` | 45 | sparse tree is reentrant; department admits only planned specialist; duplicate and bad hash receipts; out of order specialist receipts are durable; grandchild cannot message root;… |
@@ -325,8 +328,8 @@ A prova é de sistema offline e de disposição de ciclo. Não certifica matemá
 
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
-- Total: 215 arquivos; runtime=19, text=196.
-- Fingerprint canônico: `d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2`.
+- Total: 219 arquivos; runtime=20, text=199.
+- Fingerprint canônico: `0c2ecddf458ea660521359c04d808331c3f053a87d0a47fd391548d3e0af81a6`.
 
 ## Roteamento para aprofundamento
 

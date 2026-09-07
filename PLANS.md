@@ -10,6 +10,61 @@ champion, challengers e arquivo Pareto.
 A fonte normativa de arquitetura é `docs/architecture.md`; a autoridade da
 integração Prime Agent continua sendo `docs/compatibility.md`.
 
+## Execução local autorizada — 2026-09-06
+
+Implementar uma única CLI project-local para compor M3/M5/M6 routed/M7/M8
+routed/M9/M10, sem Prime Agent. Configuração e evidências ficarão em uma raiz
+canônica nova em `runtime/local-full-cycle/`, preservando os defaults e todo
+estado anterior. M3 exige `ingest-<sha256>`; a identidade da tentativa inclui a
+raiz nova, sem mudar esse contrato. PDF regular original: `input/inbox/artigo.pdf`,
+876312 bytes, SHA-256
+`7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d`.
+
+A autorização `user-authorized-local-loopback-full-cycle-2026-09-06` permite
+somente modelos já instalados via OpenAI-compatible loopback, zero custo
+externo, um ciclo, até 18000 segundos, 1500000 tokens, 96 chamadas e cinco
+chamadas concorrentes. Nenhuma instalação, download, segredo, proxy, redirect,
+fallback remoto, Prime, commit, push ou PR. Pré-envio comprovado pode ter no
+máximo uma tentativa adicional; resultado pós-envio incerto conserva reserva.
+
+Sequência: descoberta de metadados local sem inferência; validação fechada de
+configuração/independência; publicação create-only e hashes; testes offline
+focados, regressão integral, check, compilação e preflight; resumo antes da
+primeira inferência; execução com deadline, STOP/SIGINT e checkpoint canônicos;
+inspeção canônica/Central; encerramento factual uma vez.
+
+Incertezas: disponibilidade de modelo não prova contexto efetivo ou schema;
+nenhuma evidência matemática será inventada. Reprovação de M7 conserva candidato
+em CANDIDATE_BUILT (ou pausa com esse estado de retomada); o contrato proíbe
+fabricar EVALUATED/Decision M10 antes de GATES_PASSED. Timeout, UNCERTAIN,
+payload inválido, evidência ausente e falhas de ingestão são resultados explícitos.
+Testes novos cobrem allowlists, loopback, independência, STOP e inspeção sem
+retomada; a regressão M12/M12.5 existente cobre timeout, `UNCERTAIN`, fronteiras
+de retry e recuperação. A única tentativa real preparada em
+`runtime/local-full-cycle/attempt-55081d47-a57f-4d21-846c-54f0aaa5ef0e` parou
+em M3: `reconstructed.tex` não compilou com segurança. O estado canônico
+permanece `INGESTED`, com PDF congelado e hash preservado; nenhum modelo, reserva,
+receipt, gate, júri ou decisão foi produzido.
+
+## Correção estrutural M3 — 2026-09-07
+
+Endurecer somente a reconstrução auxiliar `reconstructed.tex` e seu diagnóstico
+local. `normalized.json` continua sendo a transcrição textual exata; o TeX deve
+ser ASCII-safe, escapar metacaracteres, representar Unicode e controles por
+marcadores visíveis determinísticos e quebrar linhas em limite fixo. A execução
+de `pdflatex` manterá `-no-shell-escape`, limites de tempo/saída e uma exceção
+classificada, sem incluir texto do artigo em mensagem pública.
+
+Um diagnóstico offline create-only poderá reproduzir a extração para o PDF
+allowlisted e guardar apenas identidade, hashes, tamanho limitado da saída,
+código de retorno, duração e classificação sob `runtime/m3-diagnostics/`.
+Ele não retoma nem altera a tentativa congelada, seus journals, o PDF ou o
+estado canônico. A correção exigirá testes de caracteres, controles, linhas
+longas, falha de compilador, diagnóstico hash-bound e descoberta do run pelo
+status mesmo com `outcome.json` histórico incompleto. A fixture da entrada
+local deve criar seus próprios bytes sintéticos e não depender do PDF ignorado
+do checkout, para que a mesma aceitação rode na CI sem publicar o original.
+
 ## Estado atual
 
 - M13.2 concluída e validada localmente, limitada a quatro lacunas estruturais:
