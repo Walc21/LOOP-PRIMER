@@ -498,6 +498,16 @@ histórico/contexto/commit ocorrem somente no checkpoint explícito. Uma altera�
 somente nesses artefatos gerados não substitui nem exige repetir a regressão
 funcional cuja evidência pertence ao checkpoint funcional precedente.
 
+### Contexto escalonado para agentes
+
+O checkpoint inicial é deliberadamente compacto: contém somente estado,
+frescor, limites transversais, sessões recentes e roteamento. Ele não substitui
+APIs, schemas, histórico, handoffs, planos ou ADRs; cada um permanece fonte
+versionada carregada somente quando o escopo da tarefa o requer. Checkpoints são
+publicados para alteração material ou handoff explícito, não para conversa,
+inspeção read-only ou troca de branch. Essa economia não altera nenhuma
+fronteira científica, de autorização ou de durabilidade.
+
 ## Fluxo de dados e resultados de agentes
 
 A ordem canônica do pipeline é imutável:
