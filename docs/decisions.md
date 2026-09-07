@@ -38,7 +38,7 @@ alcançáveis pelo roteamento do contexto compacto.
 
 ## ADR-039 — Ciclo local autorizado por composição das APIs canônicas
 
-**Status:** Implementado; tentativa real bloqueada em M3. **Data:** 2026-09-06.
+**Status:** Implementado; nova validação real M3 aprovada. **Data:** 2026-09-07.
 
 Uma única entrada local prepara uma raiz create-only em `runtime/local-full-cycle/`
 e compõe os componentes existentes. O identificador M3 continua derivado do PDF;
@@ -91,6 +91,47 @@ retomada, reescrita nem usada para iniciar modelos.
 Os testes da entrada local não dependem do PDF ignorado do checkout: a fixture
 cria bytes sintéticos locais suficientes para validar a fronteira de preparação.
 Isso preserva a separação entre a evidência real e a CI pública.
+
+### Correção do inventário autor--ano na validação real
+
+A primeira nova raiz M3 autorizada confirmou `LATEX_OK`, mas permaneceu em
+`INGESTED` porque `reference_coverage` era 88/142. A causa é interna e
+determinística: o mesmo classificador reconhecia autor--ano apenas como
+candidato, não como referência inventariada, e aplicava `re.I` ao padrão
+inteiro, anulando a intenção de `[A-Z]` no sobrenome.
+
+O inventário passará a reconhecer o formato capitalizado autor--ano que já faz
+parte da gramática fechada de candidatos. A comparação sem distinção de caixa
+ficará restrita aos marcadores explícitos `doi:` e `arXiv:`; texto minúsculo
+genérico seguido de ano não será aceito por esse ramo. Esta decisão não reduz o
+limiar, não ignora candidatos, não introduz OCR ou heurística semântica e não
+altera a transcrição em `normalized.json`; somente torna coerentes as duas
+projeções determinísticas usadas pelo gate.
+
+A tentativa corrigida
+`attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211` chegou a `SOURCE_READY` com
+133 referências inventariadas para 133 candidatas e preservou o PDF de entrada
+sob o SHA-256
+`7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d`.
+Os hashes de diretório publicados foram
+`6bbde95bfed9672d457c80ee313428ff20bc6e1cfaf277688fbb1080b874ff99`
+para o original,
+`4e8807922f5ec6ef63b2e7e6d4db183eae20e770f4a0e1300f731320f641e100`
+para a extração e
+`0e1fdadc31b8f5c877eea7c1105eeeec6a831bafc34bfe0f1f1fa720bfff97a1`
+para o render. A validação não atravessou M3 nem iniciou modelo, backend,
+reserva, rede ou custo.
+
+### Fronteira de publicação da evidência M3 real
+
+As raízes create-only em `runtime/m3-real-attempts/` preservam evidência local
+do PDF real, seus derivados, journals e diagnósticos. Elas não são fonte
+versionada: o `.gitignore` deve impedir sua inclusão acidental em commit ou
+PR. O inventário de handoff as trata como runtime canônico, portanto registra
+somente caminho, tamanho e SHA-256; ele não processa texto extraído, imagens ou
+outros bytes da evidência como arquivos comuns. A evidência permanece no
+checkout e não pode ser movida, removida, reescrita ou substituída por essa
+separação de publicação.
 
 
 

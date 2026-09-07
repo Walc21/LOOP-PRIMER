@@ -85,6 +85,37 @@ status mesmo com `outcome.json` histórico incompleto. A fixture da entrada
 local deve criar seus próprios bytes sintéticos e não depender do PDF ignorado
 do checkout, para que a mesma aceitação rode na CI sem publicar o original.
 
+Na primeira nova tentativa M3 autorizada, a reconstrução compilou, mas o gate
+falhou deterministicamente em `reference_coverage`: o detector classificava
+linhas autor--ano como candidatas sem incorporá-las ao inventário de
+referências, e o `re.I` compartilhado tornava o marcador `[A-Z]` também
+insensível a caixa. A correção deve reconhecer no inventário o formato
+capitalizado autor--ano já declarado pelo detector e limitar a insensibilidade
+a caixa aos marcadores `doi:`/`arXiv:`. O limiar de cobertura, os demais gates
+e o comportamento fail-closed não mudam. Uma regressão de ingestão deve provar
+que uma fonte autor--ano alcança o gate por classificação coerente, sem forçar
+`SOURCE_READY` ou aceitar texto minúsculo genérico como referência.
+
+Resultado da validação real: a tentativa
+`attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74` preservou a falha em
+`INGESTED`, com `LATEX_OK` confirmado pelo diagnóstico create-only
+`diagnostic-0ec899ae-1279-4a3f-af41-58469325fb22`. Após a correção e seus
+testes, a raiz nova `attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211`
+alcançou `SOURCE_READY` para o run canônico
+`ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d`.
+O gate observou 77/77 páginas, cobertura textual 1,0, cobertura de equações
+0,9649507119386638, cobertura de referências 1,0 (133/133) e três amostras
+visuais acima do limiar. A validação foi estritamente M3: não criou reservas,
+receipts, inferência, challengers ou qualquer estado M6+.
+
+As tentativas reais M3 em `runtime/m3-real-attempts/` são evidência local
+create-only: devem permanecer no checkout, mas nunca entrar em commit, push ou
+PR. O inventário de handoff deve percorrê-las somente para tamanho e SHA-256,
+classificando-as como runtime sem ler, resumir ou publicar seus conteúdos. O
+`.gitignore` deve cobrir a raiz inteira para impedir inclusão acidental por
+`git add -A`; nenhuma correção dessa fronteira move, apaga ou reescreve a
+evidência existente.
+
 ## Estado atual
 
 - M13.2 concluída e validada localmente, limitada a quatro lacunas estruturais:

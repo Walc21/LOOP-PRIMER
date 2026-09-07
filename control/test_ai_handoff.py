@@ -249,6 +249,31 @@ class AIHandoffTests(unittest.TestCase):
             self.assertIn("conteúdo não incorporado", inventory["state/events/run.jsonl"]["summary"])
             self.assertRegex(inventory_fingerprint(inventory), r"^[0-9a-f]{64}$")
 
+    def test_real_m3_evidence_is_ignored_and_inventory_only_records_runtime_metadata(self) -> None:
+        ignored_path = "runtime/m3-real-attempts/example/source/text.txt"
+        check = subprocess.run(
+            ["git", "check-ignore", "--quiet", "--no-index", ignored_path],
+            cwd=ROOT,
+            check=False,
+        )
+        self.assertEqual(check.returncode, 0)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            evidence = root / ignored_path
+            evidence.parent.mkdir(parents=True)
+            evidence.write_text("conteúdo local do artigo", encoding="utf-8")
+
+            inventory = build_inventory(root)
+
+            self.assertIn(ignored_path, inventory)
+            self.assertEqual(inventory[ignored_path]["kind"], "runtime")
+            self.assertIsNone(inventory[ignored_path]["lines"])
+            self.assertEqual(
+                inventory[ignored_path]["summary"],
+                "estado/artefato local identificado por hash; conteúdo não incorporado",
+            )
+
     def test_delta_reports_add_modify_delete(self) -> None:
         previous = {
             "gone": {"kind": "text", "bytes": 1, "sha256": "a"},

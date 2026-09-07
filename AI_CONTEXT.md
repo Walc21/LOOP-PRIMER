@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `d7cfbaf096f9c41db7d0741db0b8021a18213abc3313b8ac924e9649cb454406`
-- Baseline da última sessão: `d7cfbaf096f9c41db7d0741db0b8021a18213abc3313b8ac924e9649cb454406`
-- Inventário: 218 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (147096 bytes; SHA-256 `37302c74812624f1`).
+- Fingerprint atual das fontes: `07bd06008d6f89faf1b3b8e83ec95ad0f810430a390a47fd12380e4a539077c5`
+- Baseline da última sessão: `07bd06008d6f89faf1b3b8e83ec95ad0f810430a390a47fd12380e4a539077c5`
+- Inventário: 633 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (311733 bytes; SHA-256 `1a56e26e72b17f80`).
 
 ## Estado e limites atuais
 
@@ -30,22 +30,22 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 46.
-- `commit-pr-m3-local-loopback-20260907` — Revisado, validado, versionado e publicado o conjunto da entrada local isolada e do endurecimento M3.
-  - mudança: Commit edcba66 criado na branch codex/local-loopback-full-cycle com a entrada local loopback-only, diagnóstico M3 e endurecimento da reconstrução.
-  - decisão: A tentativa attempt-55081d47-a57f-4d21-846c-54f0aaa5ef0e permanece evidência imutável em INGESTED; qualquer nova tentativa exige autorização explícita e identidade nova.
-  - risco: O M3 endurecido ainda não foi aplicado ao PDF real em uma nova tentativa; diagnóstico histórico não deve ser confundido com execução.
-  - próximo: Revisar e fazer merge do PR #9; depois, somente com autorização explícita, preparar nova tentativa isolada de M3.
-- `ci-fixture-portability-20260907` — Corrigida a falha de CI da entrada local ao remover a dependência do PDF ignorado do checkout.
-  - mudança: A fixture de control/test_local_loopback_full_cycle.py agora cria bytes sintéticos locais em input/inbox/artigo.pdf.
-  - decisão: Os testes de preparação validam somente regularidade, hash e isolamento; não devem consumir ou publicar a evidência PDF real.
-  - risco: A CI não executa uma tentativa real ou M3 sobre o PDF real; isso permanece corretamente fora do escopo dos testes.
-  - próximo: Aguardar a CI do PR #9 e revisar o merge; uma nova tentativa M3 só poderá ser criada com autorização explícita.
+- Sessões estruturadas registradas: 48.
 - `lean-agent-context-20260907` — O contexto de entrada para agentes foi compactado sem descartar contratos, evidências ou fontes autoritativas.
   - mudança: AI_CONTEXT.md passou a ser gerado como roteador compacto com fingerprint de fontes e histórico, estado, limites, delta, três sessões materiais e fontes por escopo.
   - decisão: Contexto inicial é escalonado: dados detalhados continuam versionados e só são abertos quando o escopo requer, conforme ADR-040.
   - risco: Nenhum modelo, Prime Agent, rede, API paga, PDF real ou ciclo científico foi iniciado; a qualidade futura depende de seguir o roteamento para módulos, schemas, testes e ADRs específicos.
   - próximo: Revisar o diff, decidir se deseja commit/PR e, em tarefa futura, abrir somente as fontes indicadas pelo contexto compacto.
+- `m3-real-source-ready-20260907` — Validação M3 real do PDF preservado alcançou SOURCE_READY em uma segunda raiz isolada após correção determinística do inventário autor--ano.
+  - mudança: Criadas duas tentativas M3-only create-only e um diagnóstico hash-bound; a primeira preserva a falha reference_coverage em INGESTED e a segunda publicou os artefatos M3 e o baseline v0000 em SOURCE_READY.
+  - decisão: Manter o limiar de referência em 0.80 e todos os controles fail-closed; corrigir a inconsistência interna entre candidato e inventário sem OCR, fallback semântico ou force.
+  - risco: A validação comprova somente M3 local; M6+, modelos, backend, reservas, receipts, rede e custo não foram iniciados.
+  - próximo: Revisar as mudanças e evidências; commit, push ou PR dependem de autorização explícita nova.
+- `m3-runtime-evidence-boundary-20260907` — A fronteira de publicação da evidência M3 real foi corrigida sem mover, apagar ou reexecutar tentativas.
+  - mudança: runtime/m3-real-attempts/ passou a ser ignorado pelo Git para impedir inclusão acidental de PDF, texto extraído e imagens em commits ou PRs.
+  - decisão: Evidência M3 real permanece create-only no checkout local; seu conteúdo não é fonte versionada, mas hashes e tamanhos continuam verificáveis no inventário local.
+  - risco: Não houve modelo, Prime Agent, backend, inferência, reserva, receipt, rede, API paga, nova tentativa M3 ou alteração dos artefatos existentes.
+  - próximo: Revisar o diff completo M3 e a fronteira de evidência; commit, push e PR dependem de autorização explícita.
 
 ## Roteamento obrigatório por escopo
 

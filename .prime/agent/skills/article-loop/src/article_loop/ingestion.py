@@ -371,9 +371,11 @@ def _lines(text_pages: list[str]) -> tuple[list[dict[str, Any]], list[dict[str, 
             if re.search(r"(?:=|≤|≥|∫|∑|√|\$[^$]+\$|\b(?:sin|cos|log|lim)\b)", value, re.I):
                 equation_candidates.append(line)
             if re.search(r"(?:=|≤|≥|∫|∑|√|\$[^$]+\$)", value): equations.append(line)
-            if re.search(r"(?:\[[0-9,; -]+\]|doi:|arXiv:|\b[A-Z][A-Za-z-]+,? \d{4})", value, re.I):
+            explicit_reference = re.search(r"(?:\[[0-9,; -]+\]|doi:|arXiv:)", value, re.I)
+            author_year_reference = re.search(r"\b[A-Z][A-Za-z-]+,? \d{4}", value)
+            if explicit_reference or author_year_reference:
                 reference_candidates.append(line)
-            if re.search(r"(?:\[[0-9,; -]+\]|doi:|arXiv:)", value, re.I): references.append(line)
+                references.append(line)
     return lines, equations, references, equation_candidates, reference_candidates
 
 
