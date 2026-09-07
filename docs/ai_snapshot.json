@@ -31,10 +31,10 @@
       "sha256": "bf1d737ea098c709c7037b7ee79a6c2a5d26306bdd1e4a7b42bd108f15e25139"
     },
     ".gitignore": {
-      "bytes": 1143,
+      "bytes": 1193,
       "kind": "text",
-      "lines": 65,
-      "sha256": "35a6d1a41539b066066d1920f4a379be5910de00916591b9367d5c53fe7953fa"
+      "lines": 67,
+      "sha256": "7e4121d149657faf3ad063682578f495ce6d7841fe278c726ce3413f050dcfe2"
     },
     ".prime/agent/APPEND_SYSTEM.md": {
       "bytes": 1867,
@@ -217,10 +217,10 @@
       "sha256": "a538afb419e91decacd1f84fff2e7ecb8b4516229160f4ff77739b32a1532abf"
     },
     ".prime/agent/skills/article-loop/src/article_loop/ingestion.py": {
-      "bytes": 31068,
+      "bytes": 36719,
       "kind": "text",
-      "lines": 517,
-      "sha256": "e33ca846c9cca69de86164bd018ad4809f2948a97dd4ed218b231ed952ff8c4a"
+      "lines": 669,
+      "sha256": "55c34b3b03a2330ae3e96d6211d8bdd9037e8afffde5d6b607eb0f7c648cf638"
     },
     ".prime/agent/skills/article-loop/src/article_loop/observability.py": {
       "bytes": 13906,
@@ -391,10 +391,10 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 59900,
+      "bytes": 63251,
       "kind": "text",
-      "lines": 828,
-      "sha256": "32816308cbda1d069d4be474172285b4765d57ae5dc1c7040045f48cd8209260"
+      "lines": 881,
+      "sha256": "8831f830600e08d06c4ff6249f93e125e7f849ea554c5e2b9dfe779f7486ec9c"
     },
     "README.md": {
       "bytes": 19565,
@@ -822,6 +822,12 @@
       "lines": 886,
       "sha256": "481cd98e5807a732d2d6fa3bd379860ec282ebffacf27337ce25c812e42574f4"
     },
+    "control/test_local_loopback_full_cycle.py": {
+      "bytes": 5140,
+      "kind": "text",
+      "lines": 111,
+      "sha256": "36dbf8b9a9a0e4f84dd158b45c219f268aef4854b7d2b21dc2aae61d01e551b6"
+    },
     "control/test_m10_policy_finalization.py": {
       "bytes": 28099,
       "kind": "text",
@@ -877,10 +883,10 @@
       "sha256": "60f39319fab21cdb733da4118d48e99b09a185013f23d366801ef9d957d8ea8a"
     },
     "control/test_m3_ingestion.py": {
-      "bytes": 18536,
+      "bytes": 22081,
       "kind": "text",
-      "lines": 318,
-      "sha256": "bd9d67d994e4411acbcfbca91a9b2f71268ece8eb4a1422acc0b472177c2ad00"
+      "lines": 376,
+      "sha256": "5d9df83c59719d1a2d9afb7303ef3eea9f15380c0a1ffdba8373e879e269c22a"
     },
     "control/test_m4_prompts.py": {
       "bytes": 15125,
@@ -937,10 +943,10 @@
       "sha256": "2eb9ab85bd98ebf5bac9e5209a1c8fb97dd85181ac32aeff9de3745e8dec1c62"
     },
     "docs/decisions.md": {
-      "bytes": 86334,
+      "bytes": 89518,
       "kind": "text",
-      "lines": 1469,
-      "sha256": "63ccee46aa6fa04bdde478e10fcbfa901de8ef72da3f5264655819254ef21072"
+      "lines": 1523,
+      "sha256": "0978281b10431d6e09d5143341e17348eff6ec025ba4d62e8d52b259d2bb136c"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -977,6 +983,12 @@
       "kind": "runtime",
       "lines": null,
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "input/inbox/artigo.pdf": {
+      "bytes": 876312,
+      "kind": "runtime",
+      "lines": null,
+      "sha256": "7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d"
     },
     "logs/.gitkeep": {
       "bytes": 1,
@@ -1206,11 +1218,23 @@
       "lines": 539,
       "sha256": "0699196206eec70d13cf8defd9bc8f08d8f077f3e5b416a7932c09b6ad5f1141"
     },
+    "scripts/local_loopback_full_cycle.py": {
+      "bytes": 24060,
+      "kind": "text",
+      "lines": 529,
+      "sha256": "2c661369433bc2b0a98b75f97a2a9f7a506d5eaac519aff885795e1d7462fc1e"
+    },
     "scripts/m13_system_check.py": {
       "bytes": 3327,
       "kind": "text",
       "lines": 69,
       "sha256": "5522dba9bbd421801ed5c30700d70859590679c6b8113506b3461c7d95070ebf"
+    },
+    "scripts/m3_reconstruction_diagnostic.py": {
+      "bytes": 5489,
+      "kind": "text",
+      "lines": 156,
+      "sha256": "5861d2384b71db0b24600572e889ae72784f3be9d968e312669245bf5c05b62f"
     },
     "state/checkpoints/.gitkeep": {
       "bytes": 1,
@@ -1291,16 +1315,23 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "d1725eef78664024039b83230a62dd4daba5bf09fe7a4d095d47df45c15d96d2",
+  "fingerprint": "c84a15e353707886cacadfd20fcea2418e27040f55233fc5b9031d8ae762d109",
   "git": {
     "available": true,
-    "branch": "codex/control-center-launcher",
-    "head": "ef39df85f67fb0ea10fa986c82c0cb051a0c5df7",
+    "branch": "codex/local-loopback-full-cycle",
+    "head": "ba90b7847d139bbbc922115df93d8fc07392592f",
     "status": [
-      " M README.md"
+      " M .gitignore",
+      " M .prime/agent/skills/article-loop/src/article_loop/ingestion.py",
+      " M PLANS.md",
+      " M control/test_m3_ingestion.py",
+      " M docs/decisions.md",
+      "?? control/test_local_loopback_full_cycle.py",
+      "?? scripts/local_loopback_full_cycle.py",
+      "?? scripts/m3_reconstruction_diagnostic.py"
     ]
   },
-  "recorded_at": "2026-09-06T08:13:25Z",
+  "recorded_at": "2026-09-07T01:09:49Z",
   "schema_version": "1.0.0",
-  "session_id": "session-d74de28a5971446dc7ab"
+  "session_id": "m3-reconstruction-hardening-20260907"
 }

@@ -6,9 +6,12 @@ import hashlib
 import json
 import os
 import re
+import select
 import shutil
 import subprocess
 import tempfile
+import time
+import unicodedata
 import zipfile
 import zlib
 from datetime import datetime, timezone
@@ -25,6 +28,31 @@ class IngestionError(RuntimeError):
 
 class SourceReadyError(IngestionError):
     """The extracted baseline did not pass the conservative local gate."""
+
+
+class LatexCompileError(IngestionError):
+    """A bounded, article-content-free report of reconstruction compilation."""
+
+    def __init__(self, classification: str, *, returncode: int | None,
+                 duration_ms: int, output_bytes: int, output_sha256: str):
+        self.classification = classification
+        self.returncode = returncode
+        self.duration_ms = duration_ms
+        self.output_bytes = output_bytes
+        self.output_sha256 = output_sha256
+        super().__init__(
+            f"{classification}: returncode={returncode}, duration_ms={duration_ms}, "
+            f"output_bytes={output_bytes}, output_sha256={output_sha256}"
+        )
+
+    def diagnostic(self) -> dict[str, Any]:
+        return {
+            "classification": self.classification,
+            "returncode": self.returncode,
+            "duration_ms": self.duration_ms,
+            "output_bytes": self.output_bytes,
+            "output_sha256": self.output_sha256,
+        }
 
 
 def _utcnow() -> str:
@@ -349,18 +377,71 @@ def _lines(text_pages: list[str]) -> tuple[list[dict[str, Any]], list[dict[str, 
     return lines, equations, references, equation_candidates, reference_candidates
 
 
+_TEX_ESCAPES = {
+    "\\": "\\textbackslash{}", "{": "\\{", "}": "\\}", "$": "\\$",
+    "&": "\\&", "#": "\\#", "^": "\\textasciicircum{}", "_": "\\_",
+    "%": "\\%", "~": "\\textasciitilde{}",
+}
+MAX_TEX_LINE_CHARS = 240
+MAX_LATEX_OUTPUT_BYTES = 65_536
+LATEX_TIMEOUT_SECONDS = 30
+
+
+def _latex_tokens(text: str) -> list[str]:
+    """Encode untrusted extracted text into visible, ASCII-only TeX tokens."""
+    tokens: list[str] = []
+    for character in text:
+        codepoint = ord(character)
+        category = unicodedata.category(character)
+        if category.startswith("C") or codepoint == 0x7F:
+            tokens.append(f"[CTRL-U+{codepoint:04X}]")
+        elif codepoint > 0x7E:
+            tokens.append(f"[U+{codepoint:04X}]")
+        else:
+            tokens.append(_TEX_ESCAPES.get(character, character))
+    return tokens
+
+
 def _latex_escape(text: str) -> str:
-    return "".join({"\\":"\\textbackslash{}", "{":"\\{", "}":"\\}", "$":"\\$", "&":"\\&", "#":"\\#", "^":"\\textasciicircum{}", "_":"\\_", "%":"\\%", "~":"\\textasciitilde{}"}.get(c, " " if ord(c) < 32 and c not in "\t" else c) for c in text)
+    return "".join(_latex_tokens(text))
+
+
+def _latex_lines(text: str) -> list[str]:
+    """Wrap token boundaries so extracted lines cannot exhaust TeX input lines."""
+    result: list[str] = []
+    current = ""
+    for token in _latex_tokens(text):
+        if len(token) > MAX_TEX_LINE_CHARS:
+            raise IngestionError("LATEX_RECONSTRUCTION_UNSAFE: encoded token exceeds line limit")
+        if current and len(current) + len(token) > MAX_TEX_LINE_CHARS:
+            result.append(current)
+            current = token
+        else:
+            current += token
+    if current:
+        result.append(current)
+    return result or [""]
 
 
 def _normalized_latex(lines: list[dict[str, Any]], issues: list[dict[str, Any]]) -> str:
-    body=["% Untrusted PDF extraction: plain text only; formulas require human review.", "\\documentclass{article}", "\\begin{document}"]
-    for line in lines: body.append(_latex_escape(line["text"]) + "\\par")
+    body=[
+        "% Untrusted PDF extraction: plain text only; formulas require human review.",
+        "\\documentclass{article}",
+        # These fixed TeX primitives prevent untrusted layout from producing an
+        # unbounded stream of box warnings.  They neither load files nor derive
+        # commands from the PDF.
+        "\\hbadness=10000",
+        "\\hfuzz=10000pt",
+        "\\begin{document}",
+    ]
+    for line in lines:
+        body.extend(_latex_lines(line["text"]))
+        body.append("\\par")
     if not lines: issues.append({"code":"NO_EXTRACTABLE_TEXT", "message":"PDF has no usable text; OCR is disabled"})
     return "\n".join(body + ["\\end{document}", ""])
 
 
-def _compile_latex(tex: Path, workspace: Path) -> None:
+def _compile_latex(tex: Path, workspace: Path) -> dict[str, Any]:
     """Compile only our escaped reconstruction, in an isolated directory."""
     compiler = shutil.which("pdflatex")
     if compiler is None:
@@ -368,10 +449,81 @@ def _compile_latex(tex: Path, workspace: Path) -> None:
     output = workspace / "latex-check"; output.mkdir()
     checked = output / "reconstructed.tex"; shutil.copy2(tex, checked)
     environment = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "TEXINPUTS": ".:", "openin_any": "p", "openout_any": "p"}
+    command = [compiler, "-no-shell-escape", "-interaction=nonstopmode", "-halt-on-error", "-output-directory", str(output), checked.name]
+    started = time.monotonic()
+    digest = hashlib.sha256()
+    output_bytes = 0
+    timed_out = False
+    oversized = False
     try:
-        subprocess.run([compiler, "-no-shell-escape", "-interaction=nonstopmode", "-halt-on-error", "-output-directory", str(output), checked.name], cwd=output, env=environment, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=30, check=True)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
-        raise IngestionError("reconstructed.tex did not compile safely") from exc
+        process = subprocess.Popen(command, cwd=output, env=environment,
+                                   stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
+    except OSError as exc:
+        raise LatexCompileError("LATEX_RECONSTRUCTION_UNSAFE", returncode=None,
+                                duration_ms=0, output_bytes=0,
+                                output_sha256=hashlib.sha256(b"").hexdigest()) from exc
+    assert process.stdout is not None
+    descriptor = process.stdout.fileno()
+    while True:
+        remaining = LATEX_TIMEOUT_SECONDS - (time.monotonic() - started)
+        if remaining <= 0 and process.poll() is None:
+            timed_out = True
+            process.kill()
+        readable, _, _ = select.select([descriptor], [], [], max(0.0, min(0.1, remaining)))
+        if readable:
+            read_limit = 1 if output_bytes >= MAX_LATEX_OUTPUT_BYTES else min(
+                8192, MAX_LATEX_OUTPUT_BYTES - output_bytes,
+            )
+            block = os.read(descriptor, read_limit)
+            if block:
+                if output_bytes >= MAX_LATEX_OUTPUT_BYTES:
+                    oversized = True
+                    if process.poll() is None:
+                        process.kill()
+                    continue
+                output_bytes += len(block)
+                digest.update(block)
+                if output_bytes >= MAX_LATEX_OUTPUT_BYTES and process.poll() is None:
+                    # The next bounded one-byte read distinguishes an exact
+                    # limit from additional compiler output without retaining
+                    # article-derived terminal content.
+                    continue
+                continue
+            break
+        if process.poll() is not None:
+            # Once its writer is closed, read any buffered tail or EOF directly.
+            block = os.read(descriptor, 1)
+            if not block:
+                break
+            if output_bytes >= MAX_LATEX_OUTPUT_BYTES:
+                oversized = True
+            else:
+                output_bytes += len(block)
+                digest.update(block)
+    returncode = process.wait()
+    process.stdout.close()
+    duration_ms = max(0, round((time.monotonic() - started) * 1000))
+    output_sha256 = digest.hexdigest()
+    if timed_out:
+        raise LatexCompileError("LATEX_TIMEOUT", returncode=returncode,
+                                duration_ms=duration_ms, output_bytes=output_bytes,
+                                output_sha256=output_sha256)
+    if oversized:
+        raise LatexCompileError("LATEX_OUTPUT_TOO_LARGE", returncode=returncode,
+                                duration_ms=duration_ms, output_bytes=output_bytes,
+                                output_sha256=output_sha256)
+    if returncode != 0:
+        raise LatexCompileError("LATEX_EXIT_NONZERO", returncode=returncode,
+                                duration_ms=duration_ms, output_bytes=output_bytes,
+                                output_sha256=output_sha256)
+    return {
+        "classification": "LATEX_OK",
+        "returncode": returncode,
+        "duration_ms": duration_ms,
+        "output_bytes": output_bytes,
+        "output_sha256": output_sha256,
+    }
 
 
 def _load_gates(root: Path) -> dict[str, Any]:

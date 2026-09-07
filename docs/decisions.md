@@ -1,5 +1,59 @@
 # Decisões arquiteturais
 
+## ADR-039 — Ciclo local autorizado por composição das APIs canônicas
+
+**Status:** Implementado; tentativa real bloqueada em M3. **Data:** 2026-09-06.
+
+Uma única entrada local prepara uma raiz create-only em `runtime/local-full-cycle/`
+e compõe os componentes existentes. O identificador M3 continua derivado do PDF;
+a raiz nova isola autorização, configuração e reservas das tentativas anteriores.
+Todos os departamentos usam `routed`. Um produtor local e um jurado local de
+pesos distintos, em grupos distintos, são requisitos anteriores à inferência.
+A consulta de metadados usa somente loopback literal, sem proxy/redirect; não
+inicia servidor de modelo, não instala nem lê credenciais.
+
+A configuração integral, hashes de insumos, autorização explícita, orçamento e
+deadline são publicados antes da primeira chamada. Defaults do checkout
+permanecem inertes. A CLI recebe uma allowlist explícita, impõe um ciclo e os
+tetos autorizados, usa backends locais registrados e oferece inspeção/retomada
+explícita. Reservas incertas são barreira absoluta para novas chamadas;
+nenhuma resposta científica inválida é reparada ou recebe fallback de modelo.
+
+STOP e SIGINT impedem a próxima fronteira; a operação atômica em curso pode
+terminar antes da pausa. O deadline é interno, não reiniciado na retomada.
+Pré-envio comprovado admite no máximo uma tentativa adicional dentro da mesma
+fronteira; pós-envio ambíguo é UNCERTAIN, sem repetição nem reembolso.
+
+M7 reprovado preserva seus artefatos e o estado anterior à avaliação. M8/M10 não
+podem emitir julgamento ou Decision sobre candidato sem gates aprovados.
+Aprovação matemática exige evidência independente real; a CLI não chama
+`record_math_verification` para produzir atestação fictícia. A disposição de
+ciclo validada não equivale a sucesso científico nem ao pacote terminal FINALIZE.
+
+A primeira tentativa isolada, `attempt-55081d47-a57f-4d21-846c-54f0aaa5ef0e`,
+chegou a `INGESTED` para
+`ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d`.
+A reconstrução LaTeX M3 não compilou com segurança; `SOURCE_READY` não foi
+emitido. Esse bloqueio conserva o PDF congelado e os eventos M3 e impede M6--M10:
+não houve inferência, reserva, receipt, gate, júri, decisão nem custo externo.
+
+### Correção M3 posterior autorizada
+
+`reconstructed.tex` é uma representação auxiliar de compilação, distinta de
+`normalized.json`, que preserva o texto extraído. A reconstrução aceitará apenas
+ASCII seguro: cada metacaractere TeX será escapado, cada controle e código Unicode
+não ASCII será convertido em marcador literal e as linhas serão segmentadas sob
+limite fixo. Não há comandos derivados do PDF, `shell-escape`, pacotes extras ou
+acesso dinâmico a arquivos.
+
+Uma falha de compilação permanece fail-closed em `INGESTED`, mas expõe uma
+classificação limitada e hash-bound. O diagnóstico offline correspondente é
+create-only em `runtime/m3-diagnostics/`, usa exclusivamente o PDF allowlisted
+e registra somente metadados técnicos limitados; a tentativa que falhou não é
+retomada, reescrita nem usada para iniciar modelos.
+
+
+
 ## ADR-038 — M14: inicialização exclusivamente pelo servidor local canônico
 
 **Status:** Implementado e validado offline. **Data:** 2026-09-06.
