@@ -6,10 +6,10 @@
 ## Identidade e frescor
 
 - Raiz lógica do repositório: `.` (metadados específicos do checkout não são persistidos).
-- Fingerprint atual das fontes: `c84a15e353707886cacadfd20fcea2418e27040f55233fc5b9031d8ae762d109`
-- Baseline da última sessão: `c84a15e353707886cacadfd20fcea2418e27040f55233fc5b9031d8ae762d109`
+- Fingerprint atual das fontes: `0c2ecddf458ea660521359c04d808331c3f053a87d0a47fd391548d3e0af81a6`
+- Baseline da última sessão: `0c2ecddf458ea660521359c04d808331c3f053a87d0a47fd391548d3e0af81a6`
 - Branch, commit, caminho absoluto e demais metadados voláteis do checkout são deliberadamente omitidos.
-- Inventário: 219 arquivos relevantes, 2827185 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
+- Inventário: 219 arquivos relevantes, 2827780 bytes; estado/runtime canônico entra por hash sem conteúdo, enquanto artefatos de handoff, ambientes, caches e segredos ficam fora do fingerprint.
 
 ## Resumo executivo atual
 
@@ -50,7 +50,7 @@ O delta content-addressed acima é a evidência determinística de alterações;
 
 ## Histórico incorporado
 
-- Fonte lida: `docs/AI_HISTORY.md` (141954 bytes; SHA-256 `4e05cc1eb914ad9d`).
+- Fonte lida: `docs/AI_HISTORY.md` (143692 bytes; SHA-256 `5ab73577234c842b`).
 
 | Marco histórico | Intervalo | Commits | Evolução | Áreas |
 |---|---:|---:|---|---|
@@ -79,22 +79,22 @@ O delta content-addressed acima é a evidência determinística de alterações;
 | M13.2 | 2026-09-06 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/agent/skills/article-loop/src/article_loop/e… |
 | M14 | 2026-09-06 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .gitignore, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/articl… |
 
-- Sessões estruturadas registradas: 44.
-- Índice recente: 2026-09-06T07:01:49Z — Ajuste M14 concluído: a Central de Controle agora tem uma inicialização local oficial e verificável, sem tentar suporta…; 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado es…; 2026-09-06T07:55:00Z — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.; 2026-09-06T07:59:33Z — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, qu…; 2026-09-06T08:13:25Z — Restored the two README compatibility markers required by the AI handoff contract after the documentation refresh cause…; 2026-09-07T00:34:13Z — Implementada a entrada local restrita para ciclo routed e executada uma única tentativa real autorizada.; 2026-09-07T01:09:49Z — Correção estrutural M3 concluída sem retomar a tentativa congelada: a reconstrução auxiliar passou a ser ASCII-safe, li…; 2026-09-07T01:21:13Z — Revisado, validado, versionado e publicado o conjunto da entrada local isolada e do endurecimento M3.. O ledger preserva o índice completo.
+- Sessões estruturadas registradas: 45.
+- Índice recente: 2026-09-06T07:29:57Z — README atualizado para apresentar o LOOP-PRIMER em portugues como sistema local, auditavel e fail-closed, com estado es…; 2026-09-06T07:55:00Z — Restored README.md exactly to the version before the rejected update and removed its unresolved merge-conflict markers.; 2026-09-06T07:59:33Z — Updated the restored README in place while preserving its original badges, table of contents, diagrams, role matrix, qu…; 2026-09-06T08:13:25Z — Restored the two README compatibility markers required by the AI handoff contract after the documentation refresh cause…; 2026-09-07T00:34:13Z — Implementada a entrada local restrita para ciclo routed e executada uma única tentativa real autorizada.; 2026-09-07T01:09:49Z — Correção estrutural M3 concluída sem retomar a tentativa congelada: a reconstrução auxiliar passou a ser ASCII-safe, li…; 2026-09-07T01:21:13Z — Revisado, validado, versionado e publicado o conjunto da entrada local isolada e do endurecimento M3.; 2026-09-07T01:39:39Z — Corrigida a falha de CI da entrada local ao remover a dependência do PDF ignorado do checkout.. O ledger preserva o índice completo.
 
 Detalhe das duas sessões mais recentes:
-- `m3-reconstruction-hardening-20260907` — Correção estrutural M3 concluída sem retomar a tentativa congelada: a reconstrução auxiliar passou a ser ASCII-safe, limitada e diagnosticável offline.
-  - mudanças: Endurecida a reconstrução LaTeX com escape de metacaracteres, marcadores ASCII determinísticos para Unicode e controles, segmentação de linhas e primitivas fixas que evitam avisos de caixa em massa.; Adicionado scripts/m3_reconstruction_diagnostic.py, create-only e hash-bound, e status da entrada loopback agora expõe canonical_run_id derivado dos journals.; Adicionada cobertura M3 para Unicode, controles, metacaracteres, linhas longas, falha limitada em INGESTED e diagnóstico; adicionada cobert…
-  - decisões: normalized.json preserva a transcrição exata; reconstructed.tex é somente representação auxiliar sem comandos derivados do PDF, shell-escape, pacotes ou leitura dinâmica.; O diagnóstico registra somente identificador, hashes, retorno, duração, tamanho e hash da saída e classificação; nenhum texto extraído foi publicado.
-  - validações: python3 -m unittest control.test_m3_ingestion control.test_local_loopback_full_cycle -v: 31 testes OK.; python3 -m unittest discover -s control -p test_*.py: 507 testes OK em 348.030 s.; bin/check.sh: status success; py_compile dos módulos alterados e git diff --check: OK.; Diagnóstico único hash-bound do PDF allowlisted: diagnostic-8962e107-cdf5-4862-8f2e-d7202d9c239c, LATEX_OUTPUT_TOO_LARGE, retorno -9, 65536 bytes, sem conteúdo de artigo.
-  - riscos: A evidência congelada não foi alterada e o diagnóstico único anterior à supressão de avisos confirmou saturação da saída; uma nova tentativa M3 requer autorização explícita e não foi criada.
-  - próximos: Com autorização explícita, criar nova tentativa isolada para validar o M3 endurecido contra o PDF preservado; nunca retomar ou reescrever a tentativa congelada.
 - `commit-pr-m3-local-loopback-20260907` — Revisado, validado, versionado e publicado o conjunto da entrada local isolada e do endurecimento M3.
   - mudanças: Commit edcba66 criado na branch codex/local-loopback-full-cycle com a entrada local loopback-only, diagnóstico M3 e endurecimento da reconstrução.; PR #9 aberto contra main; nenhum artefato da tentativa congelada foi versionado.
   - decisões: A tentativa attempt-55081d47-a57f-4d21-846c-54f0aaa5ef0e permanece evidência imutável em INGESTED; qualquer nova tentativa exige autorização explícita e identidade nova.
   - validações: 31 testes focados, regressão completa de 507 testes, bin/check.sh, py_compile e git diff --check passaram nesta sessão.
   - riscos: O M3 endurecido ainda não foi aplicado ao PDF real em uma nova tentativa; diagnóstico histórico não deve ser confundido com execução.
   - próximos: Revisar e fazer merge do PR #9; depois, somente com autorização explícita, preparar nova tentativa isolada de M3.
+- `ci-fixture-portability-20260907` — Corrigida a falha de CI da entrada local ao remover a dependência do PDF ignorado do checkout.
+  - mudanças: A fixture de control/test_local_loopback_full_cycle.py agora cria bytes sintéticos locais em input/inbox/artigo.pdf.; PLANS.md e ADR-039 registram que a aceitação de preparação é independente do PDF real.
+  - decisões: Os testes de preparação validam somente regularidade, hash e isolamento; não devem consumir ou publicar a evidência PDF real.
+  - validações: python3 -m unittest control.test_local_loopback_full_cycle -v: 6 testes OK; python3 -m unittest discover -s control -p test_*.py -q: 507 testes OK em 381.789s; git diff --check: OK.
+  - riscos: A CI não executa uma tentativa real ou M3 sobre o PDF real; isso permanece corretamente fora do escopo dos testes.
+  - próximos: Aguardar a CI do PR #9 e revisar o merge; uma nova tentativa M3 só poderá ser criada com autorização explícita.
 
 ## Marcos planejados
 
@@ -329,7 +329,7 @@ A prova é de sistema offline e de disposição de ciclo. Não certifica matemá
 O inventário completo permanece em `docs/ai_snapshot.json`; esta visão inclui somente o resumo necessário para evitar consumo excessivo de contexto.
 
 - Total: 219 arquivos; runtime=20, text=199.
-- Fingerprint canônico: `c84a15e353707886cacadfd20fcea2418e27040f55233fc5b9031d8ae762d109`.
+- Fingerprint canônico: `0c2ecddf458ea660521359c04d808331c3f053a87d0a47fd391548d3e0af81a6`.
 
 ## Roteamento para aprofundamento
 

@@ -391,10 +391,10 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 63251,
+      "bytes": 63432,
       "kind": "text",
-      "lines": 881,
-      "sha256": "8831f830600e08d06c4ff6249f93e125e7f849ea554c5e2b9dfe779f7486ec9c"
+      "lines": 883,
+      "sha256": "17f01d5969b07bcc63c404e4e7aaf21b8de73c2e69b1024c89eed95a01ed290a"
     },
     "README.md": {
       "bytes": 19565,
@@ -823,10 +823,10 @@
       "sha256": "481cd98e5807a732d2d6fa3bd379860ec282ebffacf27337ce25c812e42574f4"
     },
     "control/test_local_loopback_full_cycle.py": {
-      "bytes": 5140,
+      "bytes": 5320,
       "kind": "text",
-      "lines": 111,
-      "sha256": "36dbf8b9a9a0e4f84dd158b45c219f268aef4854b7d2b21dc2aae61d01e551b6"
+      "lines": 115,
+      "sha256": "3497ecd554b855f9e126bf1d51b83f5849ff9a1f79f73364adbd09efbd288292"
     },
     "control/test_m10_policy_finalization.py": {
       "bytes": 28099,
@@ -943,10 +943,10 @@
       "sha256": "2eb9ab85bd98ebf5bac9e5209a1c8fb97dd85181ac32aeff9de3745e8dec1c62"
     },
     "docs/decisions.md": {
-      "bytes": 89518,
+      "bytes": 89752,
       "kind": "text",
-      "lines": 1523,
-      "sha256": "0978281b10431d6e09d5143341e17348eff6ec025ba4d62e8d52b259d2bb136c"
+      "lines": 1527,
+      "sha256": "c68d840cb18ee5671c664f674f80d3fe5a9d45d4ab948434642455cfaf2e88c3"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -1315,14 +1315,18 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "c84a15e353707886cacadfd20fcea2418e27040f55233fc5b9031d8ae762d109",
+  "fingerprint": "0c2ecddf458ea660521359c04d808331c3f053a87d0a47fd391548d3e0af81a6",
   "git": {
     "available": true,
     "branch": "codex/local-loopback-full-cycle",
-    "head": "edcba666eb1cf9a8d8d11c6ca81cd1804b957d58",
-    "status": []
+    "head": "6ac799fac683d2db6f006253229deb70f2632769",
+    "status": [
+      " M PLANS.md",
+      " M control/test_local_loopback_full_cycle.py",
+      " M docs/decisions.md"
+    ]
   },
-  "recorded_at": "2026-09-07T01:21:13Z",
+  "recorded_at": "2026-09-07T01:39:39Z",
   "schema_version": "1.0.0",
-  "session_id": "commit-pr-m3-local-loopback-20260907"
+  "session_id": "ci-fixture-portability-20260907"
 }

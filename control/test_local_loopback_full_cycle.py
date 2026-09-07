@@ -29,7 +29,11 @@ class LocalLoopbackEntryTests(unittest.TestCase):
         shutil.copytree(REPOSITORY / "config", self.root / "config")
         shutil.copytree(REPOSITORY / "prompts", self.root / "prompts")
         (self.root / "input/inbox").mkdir(parents=True)
-        shutil.copy2(REPOSITORY / "input/inbox/artigo.pdf", self.root / "input/inbox/artigo.pdf")
+        # This suite exercises preparation only; use a local non-article
+        # regular file so the GitHub checkout never needs the ignored PDF.
+        (self.root / "input/inbox/artigo.pdf").write_bytes(
+            b"%PDF-1.4\n% local synthetic fixture\n%%EOF\n"
+        )
         (self.root / "control").mkdir()
         self.root_patch = patch.object(runner, "ROOT", self.root)
         self.root_patch.start()

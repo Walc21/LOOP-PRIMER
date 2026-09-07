@@ -61,7 +61,9 @@ código de retorno, duração e classificação sob `runtime/m3-diagnostics/`.
 Ele não retoma nem altera a tentativa congelada, seus journals, o PDF ou o
 estado canônico. A correção exigirá testes de caracteres, controles, linhas
 longas, falha de compilador, diagnóstico hash-bound e descoberta do run pelo
-status mesmo com `outcome.json` histórico incompleto.
+status mesmo com `outcome.json` histórico incompleto. A fixture da entrada
+local deve criar seus próprios bytes sintéticos e não depender do PDF ignorado
+do checkout, para que a mesma aceitação rode na CI sem publicar o original.
 
 ## Estado atual
 

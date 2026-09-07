@@ -52,6 +52,10 @@ create-only em `runtime/m3-diagnostics/`, usa exclusivamente o PDF allowlisted
 e registra somente metadados técnicos limitados; a tentativa que falhou não é
 retomada, reescrita nem usada para iniciar modelos.
 
+Os testes da entrada local não dependem do PDF ignorado do checkout: a fixture
+cria bytes sintéticos locais suficientes para validar a fronteira de preparação.
+Isso preserva a separação entre a evidência real e a CI pública.
+
 
 
 ## ADR-038 — M14: inicialização exclusivamente pelo servidor local canônico
