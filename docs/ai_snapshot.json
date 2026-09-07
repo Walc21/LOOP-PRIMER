@@ -1319,19 +1319,10 @@
   "git": {
     "available": true,
     "branch": "codex/local-loopback-full-cycle",
-    "head": "ba90b7847d139bbbc922115df93d8fc07392592f",
-    "status": [
-      " M .gitignore",
-      " M .prime/agent/skills/article-loop/src/article_loop/ingestion.py",
-      " M PLANS.md",
-      " M control/test_m3_ingestion.py",
-      " M docs/decisions.md",
-      "?? control/test_local_loopback_full_cycle.py",
-      "?? scripts/local_loopback_full_cycle.py",
-      "?? scripts/m3_reconstruction_diagnostic.py"
-    ]
+    "head": "edcba666eb1cf9a8d8d11c6ca81cd1804b957d58",
+    "status": []
   },
-  "recorded_at": "2026-09-07T01:09:49Z",
+  "recorded_at": "2026-09-07T01:21:13Z",
   "schema_version": "1.0.0",
-  "session_id": "m3-reconstruction-hardening-20260907"
+  "session_id": "commit-pr-m3-local-loopback-20260907"
 }

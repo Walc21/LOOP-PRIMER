@@ -5,8 +5,8 @@
 ## Baseline registrado
 
 - Fingerprint das fontes: `c84a15e353707886cacadfd20fcea2418e27040f55233fc5b9031d8ae762d109`
-- Registrado em: `2026-09-07T01:09:49Z`
-- Git: branch `codex/local-loopback-full-cycle`, HEAD `ba90b7847d13`
+- Registrado em: `2026-09-07T01:21:13Z`
+- Git: branch `codex/local-loopback-full-cycle`, HEAD `edcba666eb1c`
 - Arquivos relevantes: 219
 
 ## Evolução reconstruída do versionamento
@@ -17,7 +17,7 @@
 | M0.6 | 2026-08-12 | 1 | Completude de paths e ordem transacional do pipeline. | PLANS.md, docs/architecture.md, docs/decisions.md |
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M3 | 2026-08-13 | 5 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, .prime/ha… |
+| M3 | 2026-08-13..2026-09-06 | 6 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.p… |
 | sem marco explícito | 2026-08-13..2026-09-06 | 52 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
@@ -168,6 +168,7 @@
 | `ef39df85f` | 2026-09-06 | M14 | docs(readme): refresh M14 project overview | AI_CONTEXT.md, README.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `b406a9ded` | 2026-09-06 | sem marco explícito | fix(readme): retain handoff contract markers | AI_CONTEXT.md, README.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `ba90b7847` | 2026-09-06 | sem marco explícito | Merge pull request #8 from Walc21/codex/control-center-launcher |  |
+| `edcba666e` | 2026-09-06 | M3 | feat(local): add isolated full-cycle entry and harden M3 | .gitignore, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, AI_CONTEXT.md, PLANS.md, control/test_local_loopback_full_cycle.py, control/test_m3_ingestion.py |
 
 ## Decisões arquiteturais
 
@@ -1974,3 +1975,31 @@
 | modified | `control/test_m3_ingestion.py` | `bd9d67d994e4` | `5d9df83c5971` |
 | modified | `docs/decisions.md` | `6d0ebcacf4a0` | `0978281b1043` |
 | modified | `scripts/local_loopback_full_cycle.py` | `efce1c57e60b` | `2c661369433b` |
+
+### 2026-09-07T01:21:13Z — Revisado, validado, versionado e publicado o conjunto da entrada local isolada e do endurecimento M3.
+
+- Session ID: `commit-pr-m3-local-loopback-20260907`
+- Fingerprint final: `c84a15e353707886cacadfd20fcea2418e27040f55233fc5b9031d8ae762d109`
+- Git final: `edcba666eb1c`; status relevante: 0 item(ns)
+- Delta factual: 0 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Commit edcba66 criado na branch codex/local-loopback-full-cycle com a entrada local loopback-only, diagnóstico M3 e endurecimento da reconstrução.
+- PR #9 aberto contra main; nenhum artefato da tentativa congelada foi versionado.
+
+**Decisões**
+
+- A tentativa attempt-55081d47-a57f-4d21-846c-54f0aaa5ef0e permanece evidência imutável em INGESTED; qualquer nova tentativa exige autorização explícita e identidade nova.
+
+**Validações**
+
+- 31 testes focados, regressão completa de 507 testes, bin/check.sh, py_compile e git diff --check passaram nesta sessão.
+
+**Riscos/limites**
+
+- O M3 endurecido ainda não foi aplicado ao PDF real em uma nova tentativa; diagnóstico histórico não deve ser confundido com execução.
+
+**Próximos passos**
+
+- Revisar e fazer merge do PR #9; depois, somente com autorização explícita, preparar nova tentativa isolada de M3.
