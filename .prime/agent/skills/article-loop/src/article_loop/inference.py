@@ -1056,11 +1056,18 @@ class InferenceReceipt:
 class InferenceStore:
     """Write-once route and receipt storage under one per-run lock."""
 
-    def __init__(self, root: str | Path, run_id: str, *, clock: Any | None = None):
+    def __init__(
+        self, root: str | Path, run_id: str, *, clock: Any | None = None,
+        contract_root: str | Path | None = None,
+    ):
         raw = Path(root)
         if raw.is_symlink() or not raw.is_dir():
             raise InferenceIntegrityError("root must be an existing non-symlink directory")
         self.root = raw.resolve()
+        contract = raw if contract_root is None else Path(contract_root)
+        if contract.is_symlink() or not contract.is_dir():
+            raise InferenceIntegrityError("contract root must be an existing non-symlink directory")
+        self.contract_root = contract.resolve()
         self.run_id = _safe_id(run_id, "run_id")
         self.clock = clock
         self.inference_dir = self.root / "state" / "inference" / self.run_id
@@ -1149,7 +1156,7 @@ class InferenceStore:
             return self._regular_json(path)
 
     def _receipt_schema(self) -> Mapping[str, Any]:
-        path = self.root / "config" / "schemas" / "inference-receipt.schema.json"
+        path = self.contract_root / "config" / "schemas" / "inference-receipt.schema.json"
         if path.is_symlink() or not path.is_file():
             raise InferenceIntegrityError("inference receipt schema is missing or unsafe")
         try:
@@ -1329,11 +1336,12 @@ class InferenceRuntime:
     def __init__(
         self, root: str | Path, ledger: BudgetLedger, registry: ModelRegistry,
         backends: Mapping[str, InferenceBackend], *, clock: Any | None = None,
-        fault: Any | None = None,
+        fault: Any | None = None, contract_root: str | Path | None = None,
     ):
         if ledger.run_id is None:
             raise InferenceConfigError("ledger run identity is invalid")
         self.root = Path(root).resolve()
+        self.contract_root = self.root if contract_root is None else Path(contract_root).resolve()
         self.ledger = ledger
         self.registry = registry
         self.registry.validate_enabled_policy()
@@ -1343,7 +1351,9 @@ class InferenceRuntime:
         self.backends = dict(backends)
         self.clock = clock
         self.fault = fault
-        self.store = InferenceStore(self.root, ledger.run_id, clock=clock)
+        self.store = InferenceStore(
+            self.root, ledger.run_id, clock=clock, contract_root=self.contract_root,
+        )
 
     @staticmethod
     def call_id(request: InferenceRequest, decision: RouteDecision) -> str:
@@ -1375,14 +1385,15 @@ class InferenceRuntime:
         return decision
 
     def _validated_document(self, request: InferenceRequest, response: str) -> dict[str, Any] | None:
+        contract_root = getattr(self, "contract_root", self.root)
         try:
             value = json.loads(response)
             if request.requested_output_schema == "agent-proposal.schema.json":
-                return compose_agent_proposal(self.root, request, value)
+                return compose_agent_proposal(contract_root, request, value)
             if request.judgment_context is not None:
                 from .routed_evaluation import compose_judgment
-                return compose_judgment(self.root, request, value)
-            schema = load_requested_output_schema(self.root, request.requested_output_schema)
+                return compose_judgment(contract_root, request, value)
+            schema = load_requested_output_schema(contract_root, request.requested_output_schema)
             jsonschema.Draft202012Validator(
                 schema, format_checker=jsonschema.FormatChecker(),
             ).validate(value)
@@ -1469,7 +1480,7 @@ class InferenceRuntime:
         if "structured_output" in target.capabilities:
             # Validate the exact project-local schema before reserve/admit so
             # an unsafe generation contract can never consume a backend call.
-            model_output_schema(self.root, request)
+            model_output_schema(self.contract_root, request)
         if not target.local and request.context_hash is None:
             raise InferenceRoutingError("remote routing requires a hash-bound materialized context")
         if target.paid and (

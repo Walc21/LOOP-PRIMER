@@ -21,7 +21,7 @@ from .activation import ActivationMode, ActivationPlan, ActivationEntry, Plannin
 from .adapters import ChildHandle, M6OperationalAdapter, PrimeRLMAdapter
 from .prompts import PromptContractError, compile_prompt, expected_prompt_version, validate_output
 from .store import DurableStore, StoreError, TransitionError
-from .ingestion import _persisted_source_identity, _source_identity, _verify_artifacts, _verify_champion
+from .ingestion import validate_source_ready
 from .state_machine import State
 
 SCHEMA_VERSION = "1.1.0"
@@ -249,29 +249,14 @@ class Orchestrator:
         source = Path(pdf_path)
         if source.is_symlink() or not source.is_file(): raise OrchestrationError("pdf must be a regular file")
         digest = _hash(source.read_bytes()); run = self._run("ingest-" + digest)
-        store = DurableStore(self.root)
-        if store.snapshot(run)["state"] != State.SOURCE_READY.value: raise OrchestrationError("M3 run is not SOURCE_READY")
-        champion = self.root / "versions" / "champion" / "v0000"; manifest = champion / "manifest.json"; ingest = champion / "ingestion-manifest.json"
-        for path in (champion, manifest, ingest, champion / "baseline.pdf", self.root / "artifacts" / "original" / digest):
-            if path.is_symlink() or not path.exists(): raise OrchestrationError("M3 champion is unsafe or missing")
-        try: cm, im = json.loads(manifest.read_text()), json.loads(ingest.read_text())
-        except (OSError, json.JSONDecodeError) as error: raise OrchestrationError("M3 manifests are unreadable") from error
-        if cm.get("run_id") != run or not _SHA.fullmatch(str(cm.get("content_hash", ""))) or im.get("input_sha256") != digest:
-            raise OrchestrationError("PDF, M3 run, champion or manifest diverges")
         try:
-            identity = _persisted_source_identity(store, run)
-            if identity is None: raise OrchestrationError("M3 source identity is missing")
-            # M3's verifier also rejects unsafe descendants and a changed frozen PDF.
-            hashes = _verify_artifacts(self.root / "artifacts" / "original" / digest,
-                                       self.root / "artifacts" / "extracted" / digest,
-                                       self.root / "artifacts" / "rendered" / digest, digest)
-            _verify_champion(champion, digest, hashes, identity)
+            binding = validate_source_ready(self.root, run)
         except Exception as error:
             if isinstance(error, OrchestrationError): raise
             raise OrchestrationError("PDF, M3 artifacts, champion or manifest diverges") from error
         with self._lock(run):
             if self._events(run): return self._snapshot(run)
-            self._append(run, "BOOTSTRAPPED", f"{run}:bootstrap", {"run_id":run, "pdf_path":str(source.resolve()), "pdf_sha256":digest, "base_hash":cm["content_hash"]})
+            self._append(run, "BOOTSTRAPPED", f"{run}:bootstrap", {"run_id":run, "pdf_path":str(source.resolve()), "pdf_sha256":digest, "base_hash":binding["base_hash"]})
             return self._save_snapshot(run)
 
     async def preflight(self) -> Mapping[str, Any]:

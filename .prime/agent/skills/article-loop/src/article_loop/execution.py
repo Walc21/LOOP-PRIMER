@@ -128,11 +128,15 @@ class MaterializedContext:
 class ContextMaterializer:
     """Resolve only locators present in an AgentTask and its closed M5 view."""
 
-    def __init__(self, root: str | Path):
+    def __init__(self, root: str | Path, *, schema_root: str | Path | None = None):
         raw = Path(root)
         if raw.is_symlink() or not raw.is_dir():
             raise ExecutionError("context root must be a regular directory")
         self.root = raw.resolve()
+        contract = raw if schema_root is None else Path(schema_root)
+        if contract.is_symlink() or not contract.is_dir():
+            raise ExecutionError("context schema root must be a regular directory")
+        self.schema_root = contract.resolve()
 
     def _contained(self, raw: str) -> Path:
         path = Path(raw)
@@ -256,7 +260,7 @@ class ContextMaterializer:
     ) -> MaterializedContext:
         if privacy_mode not in PRIVACY_MODES:
             raise ExecutionError("privacy mode is invalid")
-        schema_path = self.root / "config/schemas/agent-task.schema.json"
+        schema_path = self.schema_root / "config/schemas/agent-task.schema.json"
         try:
             schema = json.loads(schema_path.read_text(encoding="utf-8"))
             jsonschema.Draft202012Validator(schema, format_checker=jsonschema.FormatChecker()).validate(task)

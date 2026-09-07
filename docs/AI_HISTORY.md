@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `7f5d99af47fdf9586606a14eb0397d872775508cce61231d6a89c8c0bb2d7b73`
-- Registrado em: `2026-09-07T06:55:09Z`
-- Git: branch `codex/m12-execution-hardening`, HEAD `58a2202cd324`
-- Arquivos relevantes: 633
+- Fingerprint das fontes: `fc0203acbbc0d0eeb4b817d07b61f207a6f03def995a9fd790a7fb54acb9b815`
+- Registrado em: `2026-09-07T23:05:44Z`
+- Git: branch `codex/m6-official-single-task-smoke`, HEAD `2db94e5a0b91`
+- Arquivos relevantes: 637
 
 ## Evolução reconstruída do versionamento
 
@@ -32,7 +32,7 @@
 | M10 | 2026-09-02..2026-09-03 | 2 | Política de compensação, decisão canônica e finalizador transacional. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/ag… |
 | M10.1 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | M11 | 2026-09-03 | 2 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/article-bootstrap.md, .prime/agent/prompts/article-checkpoint.md, .prime/agent/prompts/article-finalize.md, .prime/agent/prompt… |
-| M12 | 2026-09-03 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
+| M12 | 2026-09-03..2026-09-07 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent… |
 | M12.5 | 2026-09-03..2026-09-04 | 9 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/sr… |
 | M13 | 2026-09-04..2026-09-05 | 4 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/workflows/ci.yml, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_lo… |
 | M13.1 | 2026-09-05 | 3 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/evalu… |
@@ -176,9 +176,12 @@
 | `2ff020dfe` | 2026-09-07 | sem marco explícito | Merge pull request #10 from Walc21/codex/lean-agent-context |  |
 | `1e6f7d8e1` | 2026-09-07 | M3 | fix(m3): validate source readiness safely | .gitignore, .prime/agent/skills/article-loop/src/article_loop/ingestion.py, AI_CONTEXT.md, PLANS.md, control/test_ai_handoff.py, control/test_m3_ingestion.py |
 | `58a2202cd` | 2026-09-07 | M3 | Merge pull request #11 from Walc21/codex/m3-real-source-ready |  |
+| `6ff9267b3` | 2026-09-07 | M12 | fix(m12): harden routed execution readiness | .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/execution.py, .prime/agent/skills/article-loop/src/article_loop/infe… |
+| `2db94e5a0` | 2026-09-07 | M12 | Merge pull request #12 from Walc21/codex/m12-execution-hardening |  |
 
 ## Decisões arquiteturais
 
+- ADR-042 — Smoke oficial M6 limitado a uma tarefa routed
 - ADR-040 — Contexto escalonado para agentes sem perda de autoridade
 - ADR-041 — Barreira operacional routed antes do primeiro smoke
 - ADR-039 — Ciclo local autorizado por composição das APIs canônicas
@@ -3075,3 +3078,83 @@
 | Tipo | Caminho | SHA anterior | SHA final |
 |---|---|---|---|
 | modified | `docs/decisions.md` | `91fd9313e492` | `cca89ada3960` |
+
+### 2026-09-07T07:58:08Z — Smoke oficial M6 de uma tarefa routed implementado e validado offline
+
+- Session ID: `m6-official-single-task-smoke-20260907`
+- Fingerprint final: `2158f79d9b7bcf5d27114c3d85590e9dfe8fc02fa1ea27f3ae22da88ed601e19`
+- Git final: `2db94e5a0b91`; status relevante: 11 item(ns)
+- Delta factual: 4 adicionados, 7 modificados, 0 removidos
+
+**Mudanças**
+
+- Entrada create-only para exatamente uma AgentTask S10 ou W11, com defaults inertes e sem M7 ou continuação automática.
+- Validação M3 somente leitura reusa eventos, manifests, hashes e champion canônicos em duas fronteiras anteriores ao backend.
+- Estado routed, task, view, prompt, autorização, receipts, reconciliação, STOP e outcome ficam isolados na nova tentativa.
+
+**Decisões**
+
+- Impor uma chamada, uma unidade concorrente, zero retries, um ciclo, custo zero, deny_remote e endpoint HTTP literal 127.0.0.1 sem fallback.
+- Exigir --execute e --human-authorized em cada invocação live; doubles permanecem autorizáveis somente pela API de teste.
+
+**Validações**
+
+- 11 testes novos e 68 testes focados finais aprovaram; a regressão integral aprovou 525 testes fora do sandbox para sockets loopback M14.
+- bin/check.sh, py_compile de todos os módulos Python alterados e git diff --check aprovaram.
+
+**Riscos/limites**
+
+- Nenhuma execução real ocorreu; modelo local, endpoint loopback e deadline futura ainda exigem decisão e autorização humana novas.
+
+**Próximos passos**
+
+- Revisar o diff sem commit, push ou PR; uma futura execução real depende de autorização operacional separada.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/src/article_loop/m6_smoke.py` | `-` | `4a4d6c46c063` |
+| added | `control/test_m6_official_smoke.py` | `-` | `502f5b283c44` |
+| added | `docs/m6-official-smoke.md` | `-` | `4beffef7fd2d` |
+| added | `scripts/m6_official_smoke.py` | `-` | `4a329d5f6baf` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `90b65b60309b` | `15b85bdf22f1` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/execution.py` | `b9617ecac651` | `d875e151b4e9` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference.py` | `e010645e0f9c` | `f2edeccd833c` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/ingestion.py` | `43df1a932fb3` | `ff3679b5ded9` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/orchestrator.py` | `9c13c891f0d1` | `1d541d68a101` |
+| modified | `PLANS.md` | `12c192b3d5f1` | `f456b3b4b827` |
+| modified | `docs/decisions.md` | `cca89ada3960` | `aa72535c1b61` |
+
+### 2026-09-07T23:05:44Z — Smoke oficial M6 de uma tarefa routed finalizado e validado offline.
+
+- Session ID: `m6-official-single-task-smoke-final-20260907`
+- Fingerprint final: `fc0203acbbc0d0eeb4b817d07b61f207a6f03def995a9fd790a7fb54acb9b815`
+- Git final: `2db94e5a0b91`; status relevante: 11 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- Implementada entrada create-only para uma AgentTask S10 ou W11 com vínculo M3 SOURCE_READY revalidado, limites fixos e STOP terminal.
+
+**Decisões**
+
+- Manter a superfície inerte por padrão, sem M7, retry, fallback ou execução externa implícita.
+
+**Validações**
+
+- 525 testes completos, 11 testes específicos, bin/check.sh e checagens de whitespace aprovados; CLI apenas no modo DISABLED.
+
+**Riscos/limites**
+
+- Modelo local, endpoint loopback, deadline e autorização humana continuam necessários para qualquer execução futura.
+
+**Próximos passos**
+
+- Revisar e autorizar separadamente uma execução M6 real de uma tarefa.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `PLANS.md` | `f456b3b4b827` | `b5911541afda` |

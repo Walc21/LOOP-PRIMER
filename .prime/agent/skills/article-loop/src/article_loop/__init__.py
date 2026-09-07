@@ -1,7 +1,7 @@
 """Public API."""
 from .state_machine import State, TransitionError
 from .store import DurableStore, IntegrityError, StopRequested, StoreError
-from .ingestion import IngestionError, SourceReadyError, ingest
+from .ingestion import IngestionError, SourceReadyError, ingest, validate_source_ready
 from .prompts import CompiledPrompt, INTERNAL_SCHEMAS, OUTPUT_SCHEMAS, PromptContractError, PromptIntegrityError, PromptRegistry, compile_manager_prompt, compile_prompt, expected_prompt_version, validate_output
 from .blackboard import Blackboard, BlackboardError, Impact, ImpactGraph, stable_claim_id
 from .activation import ActivationEntry, ActivationMode, ActivationPlan, ActivationPlanner, PlanningLimits, manager_view, specialist_view, submanager_view
@@ -59,6 +59,7 @@ from .control_center import (
     AuditLedger, ConfigurationRepository, ControlCenterError, ControlPlane,
     IdempotencyStore, LocalControlHTTPServer, active_runs, serve,
 )
+from .m6_smoke import M6SmokeError, SMOKE_ROLES, SmokeConfig, run_official_smoke
 
 __version__ = "0.7.0"
 
@@ -106,7 +107,7 @@ __all__ = [
     "check_inversion_consistency", "classify_cycle_progress", "compare",
     "choose_action", "compile_manager_prompt", "compile_prompt", "decide", "diagnose_cycle",
     "evaluate_candidate", "expected_prompt_version", "finalize", "finalize_decision",
-    "generate_refocus_plan", "ingest", "load_history_series", "load_policy", "load_published_decision", "load_rubric", "pareto_relation",
+    "generate_refocus_plan", "ingest", "validate_source_ready", "load_history_series", "load_policy", "load_published_decision", "load_rubric", "pareto_relation",
     "manager_view", "pause", "preflight", "register_overlay_cas", "resume",
     "run", "run_cycle", "run_gates", "specialist_view", "stable_claim_id",
     "status", "stop", "submanager_view", "tree_hash", "validate_output",
@@ -114,4 +115,5 @@ __all__ = [
     "RoutedJurorAdapter", "RoutedMetaReviewerAdapter",
     "AuditLedger", "ConfigurationRepository", "ControlCenterError", "ControlPlane",
     "IdempotencyStore", "LocalControlHTTPServer", "active_runs", "serve",
+    "M6SmokeError", "SMOKE_ROLES", "SmokeConfig", "run_official_smoke",
 ]
