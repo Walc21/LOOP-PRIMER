@@ -44,6 +44,7 @@ CANONICAL_RUNTIME_DIRS = (
     "workspaces",
     "reports",
     "logs",
+    "runtime/m3-real-attempts",
 )
 SENSITIVE_BASENAMES = {"auth.json", ".env", "credentials.json", "secrets.json"}
 SENSITIVE_SUFFIXES = {".pem", ".key", ".p12", ".pfx"}

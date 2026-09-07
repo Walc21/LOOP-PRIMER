@@ -35,9 +35,11 @@ class IngestionTests(unittest.TestCase):
     def tearDown(self):
         self.temporary.cleanup()
 
-    def fixture(self, name="artigo.pdf"):
+    def fixture(self, name="artigo.pdf", text="Fixture Equation x = 1 [1]"):
         postscript = self.root / "fixture.ps"
-        postscript.write_text("%!PS\n/Courier findfont 18 scalefont setfont 72 700 moveto (Fixture Equation x = 1 [1]) show showpage\n")
+        postscript.write_text(
+            f"%!PS\n/Courier findfont 18 scalefont setfont 72 700 moveto ({text}) show showpage\n"
+        )
         subprocess.run(["gs", "-q", "-dBATCH", "-dNOPAUSE", "-sDEVICE=pdfwrite", f"-sOutputFile={self.root / 'input/inbox' / name}", str(postscript)], check=True)
         return self.root / "input/inbox" / name
 
@@ -256,6 +258,24 @@ class IngestionTests(unittest.TestCase):
         self.assertEqual(r"\textbackslash{}\{\}\$\&\#\textasciicircum{}\_\%\textasciitilde{}", _latex_escape("\\{}$&#^_%~"))
         lines, *_ = _lines(["first", "second"])
         self.assertEqual([1, 2], [line["page"] for line in lines])
+
+    def test_author_year_reference_is_inventory_without_lowercase_false_candidate(self):
+        from article_loop.ingestion import _lines
+
+        lines, _, references, _, candidates = _lines(
+            ["Euler 1748\nauthor 2024\nDOI:10.1000/example"]
+        )
+        self.assertEqual([lines[0], lines[2]], references)
+        self.assertEqual(references, candidates)
+
+        self.fixture(text="Euler 1748")
+        result = ingest(self.root)
+        snapshot = DurableStore(self.root).snapshot(result["run_id"])
+        self.assertEqual(State.SOURCE_READY.value, snapshot["state"])
+        normalized = json.loads(
+            (self.root / "versions/champion/v0000/source/normalized.json").read_text()
+        )
+        self.assertEqual(normalized["references"], normalized["reference_candidates"])
 
     def test_reconstruction_is_ascii_safe_bounded_and_has_no_pdf_commands(self):
         from article_loop.ingestion import MAX_TEX_LINE_CHARS, _normalized_latex

@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `d7cfbaf096f9c41db7d0741db0b8021a18213abc3313b8ac924e9649cb454406`
-- Registrado em: `2026-09-07T03:22:59Z`
-- Git: branch `codex/lean-agent-context`, HEAD `3ae6ab7a60d0`
-- Arquivos relevantes: 218
+- Fingerprint das fontes: `07bd06008d6f89faf1b3b8e83ec95ad0f810430a390a47fd12380e4a539077c5`
+- Registrado em: `2026-09-07T04:57:09Z`
+- Git: branch `codex/m3-real-source-ready`, HEAD `2ff020dfe869`
+- Arquivos relevantes: 633
 
 ## Evolução reconstruída do versionamento
 
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13..2026-09-06 | 6 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.p… |
-| sem marco explícito | 2026-08-13..2026-09-06 | 55 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
+| sem marco explícito | 2026-08-13..2026-09-07 | 57 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
@@ -172,6 +172,8 @@
 | `6ac799fac` | 2026-09-06 | sem marco explícito | docs(ai): checkpoint commit and PR publication | AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `6753f0cd6` | 2026-09-06 | sem marco explícito | test(ci): make local cycle fixture self-contained | AI_CONTEXT.md, PLANS.md, control/test_local_loopback_full_cycle.py, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
 | `3ae6ab7a6` | 2026-09-06 | sem marco explícito | Merge pull request #9 from Walc21/codex/local-loopback-full-cycle |  |
+| `b16fb5205` | 2026-09-07 | sem marco explícito | docs: compact agent context routing | .github/copilot-instructions.md, .prime/agent/APPEND_SYSTEM.md, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/references/api-contracts.md, AGENTS.md,… |
+| `2ff020dfe` | 2026-09-07 | sem marco explícito | Merge pull request #10 from Walc21/codex/lean-agent-context |  |
 
 ## Decisões arquiteturais
 
@@ -2092,3 +2094,906 @@
 | modified | `scripts/article_loop_command.py` | `0699196206ee` | `f847bdc092e9` |
 | deleted | `CLAUDE.md` | `2eb0ae4ce37a` | `-` |
 | deleted | `GEMINI.md` | `058ce9fdb605` | `-` |
+
+### 2026-09-07T04:41:44Z — Validação M3 real do PDF preservado alcançou SOURCE_READY em uma segunda raiz isolada após correção determinística do inventário autor--ano.
+
+- Session ID: `m3-real-source-ready-20260907`
+- Fingerprint final: `04d597be5f85d9712100d709a862e50a8ad94ad2b22e6843f3454553248ca301`
+- Git final: `2ff020dfe869`; status relevante: 414 item(ns)
+- Delta factual: 410 adicionados, 4 modificados, 0 removidos
+
+**Mudanças**
+
+- Criadas duas tentativas M3-only create-only e um diagnóstico hash-bound; a primeira preserva a falha reference_coverage em INGESTED e a segunda publicou os artefatos M3 e o baseline v0000 em SOURCE_READY.
+- Corrigido o classificador M3 para inventariar referências autor--ano capitalizadas e restringir case-insensitive aos marcadores explícitos DOI/arXiv.
+- Adicionada regressão que cobre autor--ano, rejeita falso candidato minúsculo e comprova SOURCE_READY no fluxo de ingestão.
+
+**Decisões**
+
+- Manter o limiar de referência em 0.80 e todos os controles fail-closed; corrigir a inconsistência interna entre candidato e inventário sem OCR, fallback semântico ou force.
+
+**Validações**
+
+- 32 testes M3/entrada local passaram; regressão integral passou fora do sandbox com 509 testes; py_compile, bin/check.sh e git diff --check passaram.
+- PDF, original publicado e baseline têm SHA-256 7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d; journal válido NEW->INGESTED->SOURCE_READY e schemas event/snapshot/candidate-manifest aprovados.
+
+**Riscos/limites**
+
+- A validação comprova somente M3 local; M6+, modelos, backend, reservas, receipts, rede e custo não foram iniciados.
+
+**Próximos passos**
+
+- Revisar as mudanças e evidências; commit, push ou PR dependem de autorização explícita nova.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `-` | `8d3064e2d549` |
+| added | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/config/gates.yaml` | `-` | `2ee0a93dee8e` |
+| added | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/state/events/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.jsonl` | `-` | `31ec00c53e9f` |
+| added | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/state/locks/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.lock` | `-` | `e3b0c44298fc` |
+| added | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/state/snapshots/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.json` | `-` | `df5c2209ad9a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/coordinates.html` | `-` | `f3dfb58dd0c2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `-` | `1597152b815f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/normalized.json` | `-` | `7ceba5b337e9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-01.png` | `-` | `5164607c0873` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-02.png` | `-` | `7f2ca5e57f40` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-03.png` | `-` | `48467c667d58` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-04.png` | `-` | `e74ced835f8d` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-05.png` | `-` | `ecbc55b4e74b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-06.png` | `-` | `936ebc1f1a40` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-07.png` | `-` | `f0149c6908bc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-08.png` | `-` | `ced0ce2331de` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-09.png` | `-` | `3d17ee571b21` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-10.png` | `-` | `f3b3afe0cc5b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-11.png` | `-` | `1cc658f643c6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-12.png` | `-` | `aeb2541f8114` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-13.png` | `-` | `558e81573479` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-14.png` | `-` | `514cddd3db59` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-15.png` | `-` | `ab6b76289179` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-16.png` | `-` | `308c7290dcd3` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-17.png` | `-` | `c23d6c61ce81` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-18.png` | `-` | `23d6afb8e50a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-19.png` | `-` | `c37e7719e531` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-20.png` | `-` | `a8bbd768185c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-21.png` | `-` | `219b429b7fb8` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-22.png` | `-` | `f284202648c5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-23.png` | `-` | `2dc67a648b31` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-24.png` | `-` | `048b8516c292` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-25.png` | `-` | `8e38a57b9a85` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-26.png` | `-` | `f18ad02a4e3f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-27.png` | `-` | `acc74f6e9807` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-28.png` | `-` | `272263eb07a2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-29.png` | `-` | `df1ac8703fda` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-30.png` | `-` | `eb9ca0cfb635` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-31.png` | `-` | `3cf40ca22df2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-32.png` | `-` | `debca3459201` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-33.png` | `-` | `aee15b1fe347` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-34.png` | `-` | `923254aaa20c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-35.png` | `-` | `1c48deb53f20` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-36.png` | `-` | `1ec36ea69760` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-37.png` | `-` | `0070a9703a57` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-38.png` | `-` | `d2a4b4466400` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-39.png` | `-` | `e2c02d228eb0` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-40.png` | `-` | `a59779f6410e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-41.png` | `-` | `787c0d3abba9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-42.png` | `-` | `0b6a12ae228f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-43.png` | `-` | `19120549029c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-44.png` | `-` | `48c9bdc545f8` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-45.png` | `-` | `7c4d8d1e888c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-46.png` | `-` | `b092692f2974` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-47.png` | `-` | `38b31cb00e9c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-48.png` | `-` | `dff92f18a3d5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-49.png` | `-` | `22e000d1dc90` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-50.png` | `-` | `8c725d21b21a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-51.png` | `-` | `4b38e01262a4` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-52.png` | `-` | `ebae884b77c5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-53.png` | `-` | `494938cb91c9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-54.png` | `-` | `7b36dadc22bf` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-55.png` | `-` | `c36ce667896c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-56.png` | `-` | `f17416d246b9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-57.png` | `-` | `9164976dfeae` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-58.png` | `-` | `10d5c501d061` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-59.png` | `-` | `dfcb9fd3eb6a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-60.png` | `-` | `1b3fa518e237` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-61.png` | `-` | `f966f211354e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-62.png` | `-` | `5c8064d7e7ea` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-63.png` | `-` | `f6cc6eec2c04` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-64.png` | `-` | `558c03485dce` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-65.png` | `-` | `d613cade3106` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-66.png` | `-` | `3edc69d16dca` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-67.png` | `-` | `f883b79e525c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-68.png` | `-` | `eeeebcfb20d1` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-69.png` | `-` | `4cab9aa8d996` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-70.png` | `-` | `184971bdba6b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-71.png` | `-` | `5abaf5270764` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-72.png` | `-` | `a4ec57f24c51` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-73.png` | `-` | `8892329413cc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-74.png` | `-` | `54e1b437c74f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-75.png` | `-` | `5adb10b0fb8f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-76.png` | `-` | `ce5d8af85376` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-77.png` | `-` | `92ca120e6645` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/reconstructed.tex` | `-` | `7be05a737bc9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/source_ready.json` | `-` | `9cba70684b67` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-1.txt` | `-` | `e0a4c94e6763` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-10.txt` | `-` | `f6f190e11565` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-11.txt` | `-` | `ad93e8fcf847` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-12.txt` | `-` | `44fea84eced7` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-13.txt` | `-` | `6dc3a8b6e6ce` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-14.txt` | `-` | `0dd221d7fe42` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-15.txt` | `-` | `05080687a263` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-16.txt` | `-` | `47470f482106` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-17.txt` | `-` | `1c76adaec0f6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-18.txt` | `-` | `8fbeef1db877` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-19.txt` | `-` | `473c6db146cf` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-2.txt` | `-` | `2ffaebc3222b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-20.txt` | `-` | `75f3002f9ec6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-21.txt` | `-` | `0a78e85a58e5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-22.txt` | `-` | `c5ee1e9f8883` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-23.txt` | `-` | `047cee02a21a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-24.txt` | `-` | `ced168acb9ec` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-25.txt` | `-` | `fe2a5885221d` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-26.txt` | `-` | `a096227ca7a6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-27.txt` | `-` | `ec37f80d8a27` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-28.txt` | `-` | `0b292bfd3cac` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-29.txt` | `-` | `9817fe6f8089` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-3.txt` | `-` | `f0f674fad649` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-30.txt` | `-` | `6fee76cb5a4a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-31.txt` | `-` | `812f9cec95e3` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-32.txt` | `-` | `1e0469003c4f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-33.txt` | `-` | `7ed43e2c3296` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-34.txt` | `-` | `5147fd4160c1` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-35.txt` | `-` | `c3e808b742a6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-36.txt` | `-` | `79015f2d7951` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-37.txt` | `-` | `0cac1a39aafc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-38.txt` | `-` | `df38257d6425` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-39.txt` | `-` | `0bc46900550b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-4.txt` | `-` | `26fbd9596e36` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-40.txt` | `-` | `fab97c611e12` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-41.txt` | `-` | `9bbd640966f6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-42.txt` | `-` | `eecf3a01541e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-43.txt` | `-` | `1de1f5e98b28` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-44.txt` | `-` | `7aa1d1ae8e83` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-45.txt` | `-` | `043bb47f672e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-46.txt` | `-` | `cb8764beaafe` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-47.txt` | `-` | `e9056da516d9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-48.txt` | `-` | `f15f3e0a1395` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-49.txt` | `-` | `afde326d5f0f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-5.txt` | `-` | `7d5c97c7d92c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-50.txt` | `-` | `45a12bd8c1f7` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-51.txt` | `-` | `806164829e9b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-52.txt` | `-` | `765e5c57dc63` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-53.txt` | `-` | `9e05cd4bac67` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-54.txt` | `-` | `31b85af43259` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-55.txt` | `-` | `145e109e2b95` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-56.txt` | `-` | `79013fa18602` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-57.txt` | `-` | `66d0f2c0aa1d` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-58.txt` | `-` | `2c83ecb78570` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-59.txt` | `-` | `7ec883e5272a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-6.txt` | `-` | `28e634101375` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-60.txt` | `-` | `4512e64906ed` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-61.txt` | `-` | `d2987d34c3fc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-62.txt` | `-` | `28fdf1883361` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-63.txt` | `-` | `1d4ac6ce02a2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-64.txt` | `-` | `c6033665a8b3` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-65.txt` | `-` | `8a44b2b80162` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-66.txt` | `-` | `b8583e033a3a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-67.txt` | `-` | `892d5da1b0d2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-68.txt` | `-` | `6c881d04085c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-69.txt` | `-` | `435714b6b269` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-7.txt` | `-` | `1b9a70b0e22c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-70.txt` | `-` | `b4917e26c0be` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-71.txt` | `-` | `c433b6d389a7` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-72.txt` | `-` | `42116507a396` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-73.txt` | `-` | `16be43e13a2b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-74.txt` | `-` | `a1f53e0af6d9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-75.txt` | `-` | `a8026361fb9d` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-76.txt` | `-` | `578d7e769981` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-77.txt` | `-` | `7c168201fe02` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-8.txt` | `-` | `8db088f136ac` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-9.txt` | `-` | `f4dc4757dbae` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text.txt` | `-` | `cefcc209f1ac` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `-` | `8d3064e2d549` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `-` | `91d527f8f5a5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-01.png` | `-` | `5164607c0873` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-02.png` | `-` | `7f2ca5e57f40` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-03.png` | `-` | `48467c667d58` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-04.png` | `-` | `e74ced835f8d` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-05.png` | `-` | `ecbc55b4e74b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-06.png` | `-` | `936ebc1f1a40` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-07.png` | `-` | `f0149c6908bc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-08.png` | `-` | `ced0ce2331de` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-09.png` | `-` | `3d17ee571b21` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-10.png` | `-` | `f3b3afe0cc5b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-11.png` | `-` | `1cc658f643c6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-12.png` | `-` | `aeb2541f8114` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-13.png` | `-` | `558e81573479` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-14.png` | `-` | `514cddd3db59` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-15.png` | `-` | `ab6b76289179` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-16.png` | `-` | `308c7290dcd3` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-17.png` | `-` | `c23d6c61ce81` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-18.png` | `-` | `23d6afb8e50a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-19.png` | `-` | `c37e7719e531` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-20.png` | `-` | `a8bbd768185c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-21.png` | `-` | `219b429b7fb8` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-22.png` | `-` | `f284202648c5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-23.png` | `-` | `2dc67a648b31` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-24.png` | `-` | `048b8516c292` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-25.png` | `-` | `8e38a57b9a85` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-26.png` | `-` | `f18ad02a4e3f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-27.png` | `-` | `acc74f6e9807` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-28.png` | `-` | `272263eb07a2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-29.png` | `-` | `df1ac8703fda` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-30.png` | `-` | `eb9ca0cfb635` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-31.png` | `-` | `3cf40ca22df2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-32.png` | `-` | `debca3459201` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-33.png` | `-` | `aee15b1fe347` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-34.png` | `-` | `923254aaa20c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-35.png` | `-` | `1c48deb53f20` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-36.png` | `-` | `1ec36ea69760` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-37.png` | `-` | `0070a9703a57` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-38.png` | `-` | `d2a4b4466400` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-39.png` | `-` | `e2c02d228eb0` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-40.png` | `-` | `a59779f6410e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-41.png` | `-` | `787c0d3abba9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-42.png` | `-` | `0b6a12ae228f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-43.png` | `-` | `19120549029c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-44.png` | `-` | `48c9bdc545f8` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-45.png` | `-` | `7c4d8d1e888c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-46.png` | `-` | `b092692f2974` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-47.png` | `-` | `38b31cb00e9c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-48.png` | `-` | `dff92f18a3d5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-49.png` | `-` | `22e000d1dc90` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-50.png` | `-` | `8c725d21b21a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-51.png` | `-` | `4b38e01262a4` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-52.png` | `-` | `ebae884b77c5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-53.png` | `-` | `494938cb91c9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-54.png` | `-` | `7b36dadc22bf` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-55.png` | `-` | `c36ce667896c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-56.png` | `-` | `f17416d246b9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-57.png` | `-` | `9164976dfeae` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-58.png` | `-` | `10d5c501d061` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-59.png` | `-` | `dfcb9fd3eb6a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-60.png` | `-` | `1b3fa518e237` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-61.png` | `-` | `f966f211354e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-62.png` | `-` | `5c8064d7e7ea` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-63.png` | `-` | `f6cc6eec2c04` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-64.png` | `-` | `558c03485dce` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-65.png` | `-` | `d613cade3106` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-66.png` | `-` | `3edc69d16dca` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-67.png` | `-` | `f883b79e525c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-68.png` | `-` | `eeeebcfb20d1` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-69.png` | `-` | `4cab9aa8d996` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-70.png` | `-` | `184971bdba6b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-71.png` | `-` | `5abaf5270764` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-72.png` | `-` | `a4ec57f24c51` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-73.png` | `-` | `8892329413cc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-74.png` | `-` | `54e1b437c74f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-75.png` | `-` | `5adb10b0fb8f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-76.png` | `-` | `ce5d8af85376` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-77.png` | `-` | `92ca120e6645` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/config/gates.yaml` | `-` | `2ee0a93dee8e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/state/events/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.jsonl` | `-` | `c53b3edf94f4` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/state/locks/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.lock` | `-` | `e3b0c44298fc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/state/snapshots/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.json` | `-` | `c0aced74dc5b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/ingestion-manifest.json` | `-` | `6c3a09e76b94` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/manifest.json` | `-` | `3b8b62f1742a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/coordinates.html` | `-` | `f3dfb58dd0c2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/manifest.json` | `-` | `1597152b815f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/normalized.json` | `-` | `7ceba5b337e9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-01.png` | `-` | `5164607c0873` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-02.png` | `-` | `7f2ca5e57f40` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-03.png` | `-` | `48467c667d58` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-04.png` | `-` | `e74ced835f8d` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-05.png` | `-` | `ecbc55b4e74b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-06.png` | `-` | `936ebc1f1a40` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-07.png` | `-` | `f0149c6908bc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-08.png` | `-` | `ced0ce2331de` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-09.png` | `-` | `3d17ee571b21` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-10.png` | `-` | `f3b3afe0cc5b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-11.png` | `-` | `1cc658f643c6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-12.png` | `-` | `aeb2541f8114` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-13.png` | `-` | `558e81573479` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-14.png` | `-` | `514cddd3db59` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-15.png` | `-` | `ab6b76289179` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-16.png` | `-` | `308c7290dcd3` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-17.png` | `-` | `c23d6c61ce81` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-18.png` | `-` | `23d6afb8e50a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-19.png` | `-` | `c37e7719e531` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-20.png` | `-` | `a8bbd768185c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-21.png` | `-` | `219b429b7fb8` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-22.png` | `-` | `f284202648c5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-23.png` | `-` | `2dc67a648b31` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-24.png` | `-` | `048b8516c292` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-25.png` | `-` | `8e38a57b9a85` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-26.png` | `-` | `f18ad02a4e3f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-27.png` | `-` | `acc74f6e9807` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-28.png` | `-` | `272263eb07a2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-29.png` | `-` | `df1ac8703fda` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-30.png` | `-` | `eb9ca0cfb635` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-31.png` | `-` | `3cf40ca22df2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-32.png` | `-` | `debca3459201` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-33.png` | `-` | `aee15b1fe347` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-34.png` | `-` | `923254aaa20c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-35.png` | `-` | `1c48deb53f20` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-36.png` | `-` | `1ec36ea69760` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-37.png` | `-` | `0070a9703a57` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-38.png` | `-` | `d2a4b4466400` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-39.png` | `-` | `e2c02d228eb0` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-40.png` | `-` | `a59779f6410e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-41.png` | `-` | `787c0d3abba9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-42.png` | `-` | `0b6a12ae228f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-43.png` | `-` | `19120549029c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-44.png` | `-` | `48c9bdc545f8` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-45.png` | `-` | `7c4d8d1e888c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-46.png` | `-` | `b092692f2974` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-47.png` | `-` | `38b31cb00e9c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-48.png` | `-` | `dff92f18a3d5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-49.png` | `-` | `22e000d1dc90` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-50.png` | `-` | `8c725d21b21a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-51.png` | `-` | `4b38e01262a4` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-52.png` | `-` | `ebae884b77c5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-53.png` | `-` | `494938cb91c9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-54.png` | `-` | `7b36dadc22bf` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-55.png` | `-` | `c36ce667896c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-56.png` | `-` | `f17416d246b9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-57.png` | `-` | `9164976dfeae` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-58.png` | `-` | `10d5c501d061` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-59.png` | `-` | `dfcb9fd3eb6a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-60.png` | `-` | `1b3fa518e237` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-61.png` | `-` | `f966f211354e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-62.png` | `-` | `5c8064d7e7ea` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-63.png` | `-` | `f6cc6eec2c04` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-64.png` | `-` | `558c03485dce` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-65.png` | `-` | `d613cade3106` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-66.png` | `-` | `3edc69d16dca` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-67.png` | `-` | `f883b79e525c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-68.png` | `-` | `eeeebcfb20d1` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-69.png` | `-` | `4cab9aa8d996` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-70.png` | `-` | `184971bdba6b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-71.png` | `-` | `5abaf5270764` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-72.png` | `-` | `a4ec57f24c51` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-73.png` | `-` | `8892329413cc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-74.png` | `-` | `54e1b437c74f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-75.png` | `-` | `5adb10b0fb8f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-76.png` | `-` | `ce5d8af85376` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-77.png` | `-` | `92ca120e6645` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/reconstructed.tex` | `-` | `7be05a737bc9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/source_ready.json` | `-` | `9cba70684b67` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-1.txt` | `-` | `e0a4c94e6763` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-10.txt` | `-` | `f6f190e11565` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-11.txt` | `-` | `ad93e8fcf847` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-12.txt` | `-` | `44fea84eced7` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-13.txt` | `-` | `6dc3a8b6e6ce` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-14.txt` | `-` | `0dd221d7fe42` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-15.txt` | `-` | `05080687a263` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-16.txt` | `-` | `47470f482106` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-17.txt` | `-` | `1c76adaec0f6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-18.txt` | `-` | `8fbeef1db877` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-19.txt` | `-` | `473c6db146cf` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-2.txt` | `-` | `2ffaebc3222b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-20.txt` | `-` | `75f3002f9ec6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-21.txt` | `-` | `0a78e85a58e5` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-22.txt` | `-` | `c5ee1e9f8883` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-23.txt` | `-` | `047cee02a21a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-24.txt` | `-` | `ced168acb9ec` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-25.txt` | `-` | `fe2a5885221d` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-26.txt` | `-` | `a096227ca7a6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-27.txt` | `-` | `ec37f80d8a27` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-28.txt` | `-` | `0b292bfd3cac` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-29.txt` | `-` | `9817fe6f8089` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-3.txt` | `-` | `f0f674fad649` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-30.txt` | `-` | `6fee76cb5a4a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-31.txt` | `-` | `812f9cec95e3` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-32.txt` | `-` | `1e0469003c4f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-33.txt` | `-` | `7ed43e2c3296` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-34.txt` | `-` | `5147fd4160c1` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-35.txt` | `-` | `c3e808b742a6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-36.txt` | `-` | `79015f2d7951` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-37.txt` | `-` | `0cac1a39aafc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-38.txt` | `-` | `df38257d6425` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-39.txt` | `-` | `0bc46900550b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-4.txt` | `-` | `26fbd9596e36` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-40.txt` | `-` | `fab97c611e12` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-41.txt` | `-` | `9bbd640966f6` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-42.txt` | `-` | `eecf3a01541e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-43.txt` | `-` | `1de1f5e98b28` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-44.txt` | `-` | `7aa1d1ae8e83` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-45.txt` | `-` | `043bb47f672e` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-46.txt` | `-` | `cb8764beaafe` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-47.txt` | `-` | `e9056da516d9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-48.txt` | `-` | `f15f3e0a1395` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-49.txt` | `-` | `afde326d5f0f` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-5.txt` | `-` | `7d5c97c7d92c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-50.txt` | `-` | `45a12bd8c1f7` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-51.txt` | `-` | `806164829e9b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-52.txt` | `-` | `765e5c57dc63` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-53.txt` | `-` | `9e05cd4bac67` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-54.txt` | `-` | `31b85af43259` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-55.txt` | `-` | `145e109e2b95` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-56.txt` | `-` | `79013fa18602` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-57.txt` | `-` | `66d0f2c0aa1d` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-58.txt` | `-` | `2c83ecb78570` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-59.txt` | `-` | `7ec883e5272a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-6.txt` | `-` | `28e634101375` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-60.txt` | `-` | `4512e64906ed` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-61.txt` | `-` | `d2987d34c3fc` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-62.txt` | `-` | `28fdf1883361` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-63.txt` | `-` | `1d4ac6ce02a2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-64.txt` | `-` | `c6033665a8b3` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-65.txt` | `-` | `8a44b2b80162` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-66.txt` | `-` | `b8583e033a3a` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-67.txt` | `-` | `892d5da1b0d2` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-68.txt` | `-` | `6c881d04085c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-69.txt` | `-` | `435714b6b269` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-7.txt` | `-` | `1b9a70b0e22c` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-70.txt` | `-` | `b4917e26c0be` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-71.txt` | `-` | `c433b6d389a7` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-72.txt` | `-` | `42116507a396` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-73.txt` | `-` | `16be43e13a2b` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-74.txt` | `-` | `a1f53e0af6d9` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-75.txt` | `-` | `a8026361fb9d` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-76.txt` | `-` | `578d7e769981` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-77.txt` | `-` | `7c168201fe02` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-8.txt` | `-` | `8db088f136ac` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-9.txt` | `-` | `f4dc4757dbae` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text.txt` | `-` | `cefcc209f1ac` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/ingestion.py` | `55c34b3b03a2` | `43df1a932fb3` |
+| modified | `PLANS.md` | `a835f54a4020` | `abfc292512a8` |
+| modified | `control/test_m3_ingestion.py` | `5d9df83c5971` | `b0874f8c8e3b` |
+| modified | `docs/decisions.md` | `e4da251c4de0` | `094ae31b875a` |
+
+### 2026-09-07T04:57:09Z — A fronteira de publicação da evidência M3 real foi corrigida sem mover, apagar ou reexecutar tentativas.
+
+- Session ID: `m3-runtime-evidence-boundary-20260907`
+- Fingerprint final: `07bd06008d6f89faf1b3b8e83ec95ad0f810430a390a47fd12380e4a539077c5`
+- Git final: `2ff020dfe869`; status relevante: 7 item(ns)
+- Delta factual: 5 adicionados, 415 modificados, 0 removidos
+
+**Mudanças**
+
+- runtime/m3-real-attempts/ passou a ser ignorado pelo Git para impedir inclusão acidental de PDF, texto extraído e imagens em commits ou PRs.
+- O inventário de handoff agora classifica a raiz de tentativas M3 reais como runtime canônico e registra somente hash e tamanho.
+- Adicionada regressão para o ignore e para a classificação metadata-only da evidência M3 real.
+
+**Decisões**
+
+- Evidência M3 real permanece create-only no checkout local; seu conteúdo não é fonte versionada, mas hashes e tamanhos continuam verificáveis no inventário local.
+
+**Validações**
+
+- 40 testes focados de handoff e M3 passaram; regressão integral passou com 510 testes; bin/check.sh, py_compile e git diff --check passaram.
+
+**Riscos/limites**
+
+- Não houve modelo, Prime Agent, backend, inferência, reserva, receipt, rede, API paga, nova tentativa M3 ou alteração dos artefatos existentes.
+
+**Próximos passos**
+
+- Revisar o diff completo M3 e a fronteira de evidência; commit, push e PR dependem de autorização explícita.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/document.pdf` | `-` | `7a888ab15668` |
+| added | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/input/inbox/artigo.pdf` | `-` | `7a888ab15668` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/document.pdf` | `-` | `7a888ab15668` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/input/inbox/artigo.pdf` | `-` | `7a888ab15668` |
+| added | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/baseline.pdf` | `-` | `7a888ab15668` |
+| modified | `.gitignore` | `7e4121d14965` | `5a7c0798e825` |
+| modified | `PLANS.md` | `abfc292512a8` | `7b349bcafaa7` |
+| modified | `control/test_ai_handoff.py` | `aad996d05dc8` | `599a45af2739` |
+| modified | `docs/decisions.md` | `094ae31b875a` | `03ca5c2a8a8c` |
+| modified | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `8d3064e2d549` | `8d3064e2d549` |
+| modified | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/config/gates.yaml` | `2ee0a93dee8e` | `2ee0a93dee8e` |
+| modified | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/state/events/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.jsonl` | `31ec00c53e9f` | `31ec00c53e9f` |
+| modified | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/state/locks/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.lock` | `e3b0c44298fc` | `e3b0c44298fc` |
+| modified | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/state/snapshots/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.json` | `df5c2209ad9a` | `df5c2209ad9a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/coordinates.html` | `f3dfb58dd0c2` | `f3dfb58dd0c2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `1597152b815f` | `1597152b815f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/normalized.json` | `7ceba5b337e9` | `7ceba5b337e9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-01.png` | `5164607c0873` | `5164607c0873` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-02.png` | `7f2ca5e57f40` | `7f2ca5e57f40` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-03.png` | `48467c667d58` | `48467c667d58` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-04.png` | `e74ced835f8d` | `e74ced835f8d` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-05.png` | `ecbc55b4e74b` | `ecbc55b4e74b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-06.png` | `936ebc1f1a40` | `936ebc1f1a40` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-07.png` | `f0149c6908bc` | `f0149c6908bc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-08.png` | `ced0ce2331de` | `ced0ce2331de` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-09.png` | `3d17ee571b21` | `3d17ee571b21` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-10.png` | `f3b3afe0cc5b` | `f3b3afe0cc5b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-11.png` | `1cc658f643c6` | `1cc658f643c6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-12.png` | `aeb2541f8114` | `aeb2541f8114` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-13.png` | `558e81573479` | `558e81573479` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-14.png` | `514cddd3db59` | `514cddd3db59` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-15.png` | `ab6b76289179` | `ab6b76289179` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-16.png` | `308c7290dcd3` | `308c7290dcd3` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-17.png` | `c23d6c61ce81` | `c23d6c61ce81` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-18.png` | `23d6afb8e50a` | `23d6afb8e50a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-19.png` | `c37e7719e531` | `c37e7719e531` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-20.png` | `a8bbd768185c` | `a8bbd768185c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-21.png` | `219b429b7fb8` | `219b429b7fb8` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-22.png` | `f284202648c5` | `f284202648c5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-23.png` | `2dc67a648b31` | `2dc67a648b31` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-24.png` | `048b8516c292` | `048b8516c292` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-25.png` | `8e38a57b9a85` | `8e38a57b9a85` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-26.png` | `f18ad02a4e3f` | `f18ad02a4e3f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-27.png` | `acc74f6e9807` | `acc74f6e9807` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-28.png` | `272263eb07a2` | `272263eb07a2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-29.png` | `df1ac8703fda` | `df1ac8703fda` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-30.png` | `eb9ca0cfb635` | `eb9ca0cfb635` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-31.png` | `3cf40ca22df2` | `3cf40ca22df2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-32.png` | `debca3459201` | `debca3459201` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-33.png` | `aee15b1fe347` | `aee15b1fe347` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-34.png` | `923254aaa20c` | `923254aaa20c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-35.png` | `1c48deb53f20` | `1c48deb53f20` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-36.png` | `1ec36ea69760` | `1ec36ea69760` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-37.png` | `0070a9703a57` | `0070a9703a57` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-38.png` | `d2a4b4466400` | `d2a4b4466400` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-39.png` | `e2c02d228eb0` | `e2c02d228eb0` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-40.png` | `a59779f6410e` | `a59779f6410e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-41.png` | `787c0d3abba9` | `787c0d3abba9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-42.png` | `0b6a12ae228f` | `0b6a12ae228f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-43.png` | `19120549029c` | `19120549029c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-44.png` | `48c9bdc545f8` | `48c9bdc545f8` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-45.png` | `7c4d8d1e888c` | `7c4d8d1e888c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-46.png` | `b092692f2974` | `b092692f2974` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-47.png` | `38b31cb00e9c` | `38b31cb00e9c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-48.png` | `dff92f18a3d5` | `dff92f18a3d5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-49.png` | `22e000d1dc90` | `22e000d1dc90` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-50.png` | `8c725d21b21a` | `8c725d21b21a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-51.png` | `4b38e01262a4` | `4b38e01262a4` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-52.png` | `ebae884b77c5` | `ebae884b77c5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-53.png` | `494938cb91c9` | `494938cb91c9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-54.png` | `7b36dadc22bf` | `7b36dadc22bf` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-55.png` | `c36ce667896c` | `c36ce667896c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-56.png` | `f17416d246b9` | `f17416d246b9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-57.png` | `9164976dfeae` | `9164976dfeae` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-58.png` | `10d5c501d061` | `10d5c501d061` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-59.png` | `dfcb9fd3eb6a` | `dfcb9fd3eb6a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-60.png` | `1b3fa518e237` | `1b3fa518e237` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-61.png` | `f966f211354e` | `f966f211354e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-62.png` | `5c8064d7e7ea` | `5c8064d7e7ea` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-63.png` | `f6cc6eec2c04` | `f6cc6eec2c04` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-64.png` | `558c03485dce` | `558c03485dce` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-65.png` | `d613cade3106` | `d613cade3106` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-66.png` | `3edc69d16dca` | `3edc69d16dca` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-67.png` | `f883b79e525c` | `f883b79e525c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-68.png` | `eeeebcfb20d1` | `eeeebcfb20d1` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-69.png` | `4cab9aa8d996` | `4cab9aa8d996` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-70.png` | `184971bdba6b` | `184971bdba6b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-71.png` | `5abaf5270764` | `5abaf5270764` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-72.png` | `a4ec57f24c51` | `a4ec57f24c51` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-73.png` | `8892329413cc` | `8892329413cc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-74.png` | `54e1b437c74f` | `54e1b437c74f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-75.png` | `5adb10b0fb8f` | `5adb10b0fb8f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-76.png` | `ce5d8af85376` | `ce5d8af85376` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-77.png` | `92ca120e6645` | `92ca120e6645` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/reconstructed.tex` | `7be05a737bc9` | `7be05a737bc9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/source_ready.json` | `9cba70684b67` | `9cba70684b67` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-1.txt` | `e0a4c94e6763` | `e0a4c94e6763` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-10.txt` | `f6f190e11565` | `f6f190e11565` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-11.txt` | `ad93e8fcf847` | `ad93e8fcf847` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-12.txt` | `44fea84eced7` | `44fea84eced7` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-13.txt` | `6dc3a8b6e6ce` | `6dc3a8b6e6ce` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-14.txt` | `0dd221d7fe42` | `0dd221d7fe42` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-15.txt` | `05080687a263` | `05080687a263` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-16.txt` | `47470f482106` | `47470f482106` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-17.txt` | `1c76adaec0f6` | `1c76adaec0f6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-18.txt` | `8fbeef1db877` | `8fbeef1db877` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-19.txt` | `473c6db146cf` | `473c6db146cf` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-2.txt` | `2ffaebc3222b` | `2ffaebc3222b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-20.txt` | `75f3002f9ec6` | `75f3002f9ec6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-21.txt` | `0a78e85a58e5` | `0a78e85a58e5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-22.txt` | `c5ee1e9f8883` | `c5ee1e9f8883` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-23.txt` | `047cee02a21a` | `047cee02a21a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-24.txt` | `ced168acb9ec` | `ced168acb9ec` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-25.txt` | `fe2a5885221d` | `fe2a5885221d` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-26.txt` | `a096227ca7a6` | `a096227ca7a6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-27.txt` | `ec37f80d8a27` | `ec37f80d8a27` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-28.txt` | `0b292bfd3cac` | `0b292bfd3cac` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-29.txt` | `9817fe6f8089` | `9817fe6f8089` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-3.txt` | `f0f674fad649` | `f0f674fad649` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-30.txt` | `6fee76cb5a4a` | `6fee76cb5a4a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-31.txt` | `812f9cec95e3` | `812f9cec95e3` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-32.txt` | `1e0469003c4f` | `1e0469003c4f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-33.txt` | `7ed43e2c3296` | `7ed43e2c3296` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-34.txt` | `5147fd4160c1` | `5147fd4160c1` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-35.txt` | `c3e808b742a6` | `c3e808b742a6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-36.txt` | `79015f2d7951` | `79015f2d7951` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-37.txt` | `0cac1a39aafc` | `0cac1a39aafc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-38.txt` | `df38257d6425` | `df38257d6425` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-39.txt` | `0bc46900550b` | `0bc46900550b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-4.txt` | `26fbd9596e36` | `26fbd9596e36` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-40.txt` | `fab97c611e12` | `fab97c611e12` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-41.txt` | `9bbd640966f6` | `9bbd640966f6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-42.txt` | `eecf3a01541e` | `eecf3a01541e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-43.txt` | `1de1f5e98b28` | `1de1f5e98b28` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-44.txt` | `7aa1d1ae8e83` | `7aa1d1ae8e83` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-45.txt` | `043bb47f672e` | `043bb47f672e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-46.txt` | `cb8764beaafe` | `cb8764beaafe` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-47.txt` | `e9056da516d9` | `e9056da516d9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-48.txt` | `f15f3e0a1395` | `f15f3e0a1395` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-49.txt` | `afde326d5f0f` | `afde326d5f0f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-5.txt` | `7d5c97c7d92c` | `7d5c97c7d92c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-50.txt` | `45a12bd8c1f7` | `45a12bd8c1f7` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-51.txt` | `806164829e9b` | `806164829e9b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-52.txt` | `765e5c57dc63` | `765e5c57dc63` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-53.txt` | `9e05cd4bac67` | `9e05cd4bac67` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-54.txt` | `31b85af43259` | `31b85af43259` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-55.txt` | `145e109e2b95` | `145e109e2b95` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-56.txt` | `79013fa18602` | `79013fa18602` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-57.txt` | `66d0f2c0aa1d` | `66d0f2c0aa1d` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-58.txt` | `2c83ecb78570` | `2c83ecb78570` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-59.txt` | `7ec883e5272a` | `7ec883e5272a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-6.txt` | `28e634101375` | `28e634101375` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-60.txt` | `4512e64906ed` | `4512e64906ed` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-61.txt` | `d2987d34c3fc` | `d2987d34c3fc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-62.txt` | `28fdf1883361` | `28fdf1883361` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-63.txt` | `1d4ac6ce02a2` | `1d4ac6ce02a2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-64.txt` | `c6033665a8b3` | `c6033665a8b3` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-65.txt` | `8a44b2b80162` | `8a44b2b80162` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-66.txt` | `b8583e033a3a` | `b8583e033a3a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-67.txt` | `892d5da1b0d2` | `892d5da1b0d2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-68.txt` | `6c881d04085c` | `6c881d04085c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-69.txt` | `435714b6b269` | `435714b6b269` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-7.txt` | `1b9a70b0e22c` | `1b9a70b0e22c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-70.txt` | `b4917e26c0be` | `b4917e26c0be` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-71.txt` | `c433b6d389a7` | `c433b6d389a7` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-72.txt` | `42116507a396` | `42116507a396` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-73.txt` | `16be43e13a2b` | `16be43e13a2b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-74.txt` | `a1f53e0af6d9` | `a1f53e0af6d9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-75.txt` | `a8026361fb9d` | `a8026361fb9d` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-76.txt` | `578d7e769981` | `578d7e769981` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-77.txt` | `7c168201fe02` | `7c168201fe02` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-8.txt` | `8db088f136ac` | `8db088f136ac` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-9.txt` | `f4dc4757dbae` | `f4dc4757dbae` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text.txt` | `cefcc209f1ac` | `cefcc209f1ac` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `8d3064e2d549` | `8d3064e2d549` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `91d527f8f5a5` | `91d527f8f5a5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-01.png` | `5164607c0873` | `5164607c0873` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-02.png` | `7f2ca5e57f40` | `7f2ca5e57f40` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-03.png` | `48467c667d58` | `48467c667d58` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-04.png` | `e74ced835f8d` | `e74ced835f8d` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-05.png` | `ecbc55b4e74b` | `ecbc55b4e74b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-06.png` | `936ebc1f1a40` | `936ebc1f1a40` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-07.png` | `f0149c6908bc` | `f0149c6908bc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-08.png` | `ced0ce2331de` | `ced0ce2331de` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-09.png` | `3d17ee571b21` | `3d17ee571b21` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-10.png` | `f3b3afe0cc5b` | `f3b3afe0cc5b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-11.png` | `1cc658f643c6` | `1cc658f643c6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-12.png` | `aeb2541f8114` | `aeb2541f8114` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-13.png` | `558e81573479` | `558e81573479` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-14.png` | `514cddd3db59` | `514cddd3db59` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-15.png` | `ab6b76289179` | `ab6b76289179` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-16.png` | `308c7290dcd3` | `308c7290dcd3` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-17.png` | `c23d6c61ce81` | `c23d6c61ce81` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-18.png` | `23d6afb8e50a` | `23d6afb8e50a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-19.png` | `c37e7719e531` | `c37e7719e531` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-20.png` | `a8bbd768185c` | `a8bbd768185c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-21.png` | `219b429b7fb8` | `219b429b7fb8` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-22.png` | `f284202648c5` | `f284202648c5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-23.png` | `2dc67a648b31` | `2dc67a648b31` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-24.png` | `048b8516c292` | `048b8516c292` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-25.png` | `8e38a57b9a85` | `8e38a57b9a85` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-26.png` | `f18ad02a4e3f` | `f18ad02a4e3f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-27.png` | `acc74f6e9807` | `acc74f6e9807` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-28.png` | `272263eb07a2` | `272263eb07a2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-29.png` | `df1ac8703fda` | `df1ac8703fda` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-30.png` | `eb9ca0cfb635` | `eb9ca0cfb635` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-31.png` | `3cf40ca22df2` | `3cf40ca22df2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-32.png` | `debca3459201` | `debca3459201` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-33.png` | `aee15b1fe347` | `aee15b1fe347` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-34.png` | `923254aaa20c` | `923254aaa20c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-35.png` | `1c48deb53f20` | `1c48deb53f20` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-36.png` | `1ec36ea69760` | `1ec36ea69760` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-37.png` | `0070a9703a57` | `0070a9703a57` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-38.png` | `d2a4b4466400` | `d2a4b4466400` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-39.png` | `e2c02d228eb0` | `e2c02d228eb0` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-40.png` | `a59779f6410e` | `a59779f6410e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-41.png` | `787c0d3abba9` | `787c0d3abba9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-42.png` | `0b6a12ae228f` | `0b6a12ae228f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-43.png` | `19120549029c` | `19120549029c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-44.png` | `48c9bdc545f8` | `48c9bdc545f8` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-45.png` | `7c4d8d1e888c` | `7c4d8d1e888c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-46.png` | `b092692f2974` | `b092692f2974` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-47.png` | `38b31cb00e9c` | `38b31cb00e9c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-48.png` | `dff92f18a3d5` | `dff92f18a3d5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-49.png` | `22e000d1dc90` | `22e000d1dc90` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-50.png` | `8c725d21b21a` | `8c725d21b21a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-51.png` | `4b38e01262a4` | `4b38e01262a4` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-52.png` | `ebae884b77c5` | `ebae884b77c5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-53.png` | `494938cb91c9` | `494938cb91c9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-54.png` | `7b36dadc22bf` | `7b36dadc22bf` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-55.png` | `c36ce667896c` | `c36ce667896c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-56.png` | `f17416d246b9` | `f17416d246b9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-57.png` | `9164976dfeae` | `9164976dfeae` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-58.png` | `10d5c501d061` | `10d5c501d061` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-59.png` | `dfcb9fd3eb6a` | `dfcb9fd3eb6a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-60.png` | `1b3fa518e237` | `1b3fa518e237` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-61.png` | `f966f211354e` | `f966f211354e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-62.png` | `5c8064d7e7ea` | `5c8064d7e7ea` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-63.png` | `f6cc6eec2c04` | `f6cc6eec2c04` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-64.png` | `558c03485dce` | `558c03485dce` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-65.png` | `d613cade3106` | `d613cade3106` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-66.png` | `3edc69d16dca` | `3edc69d16dca` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-67.png` | `f883b79e525c` | `f883b79e525c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-68.png` | `eeeebcfb20d1` | `eeeebcfb20d1` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-69.png` | `4cab9aa8d996` | `4cab9aa8d996` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-70.png` | `184971bdba6b` | `184971bdba6b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-71.png` | `5abaf5270764` | `5abaf5270764` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-72.png` | `a4ec57f24c51` | `a4ec57f24c51` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-73.png` | `8892329413cc` | `8892329413cc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-74.png` | `54e1b437c74f` | `54e1b437c74f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-75.png` | `5adb10b0fb8f` | `5adb10b0fb8f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-76.png` | `ce5d8af85376` | `ce5d8af85376` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-77.png` | `92ca120e6645` | `92ca120e6645` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/config/gates.yaml` | `2ee0a93dee8e` | `2ee0a93dee8e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/state/events/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.jsonl` | `c53b3edf94f4` | `c53b3edf94f4` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/state/locks/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.lock` | `e3b0c44298fc` | `e3b0c44298fc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/state/snapshots/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.json` | `c0aced74dc5b` | `c0aced74dc5b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/ingestion-manifest.json` | `6c3a09e76b94` | `6c3a09e76b94` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/manifest.json` | `3b8b62f1742a` | `3b8b62f1742a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/coordinates.html` | `f3dfb58dd0c2` | `f3dfb58dd0c2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/manifest.json` | `1597152b815f` | `1597152b815f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/normalized.json` | `7ceba5b337e9` | `7ceba5b337e9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-01.png` | `5164607c0873` | `5164607c0873` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-02.png` | `7f2ca5e57f40` | `7f2ca5e57f40` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-03.png` | `48467c667d58` | `48467c667d58` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-04.png` | `e74ced835f8d` | `e74ced835f8d` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-05.png` | `ecbc55b4e74b` | `ecbc55b4e74b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-06.png` | `936ebc1f1a40` | `936ebc1f1a40` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-07.png` | `f0149c6908bc` | `f0149c6908bc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-08.png` | `ced0ce2331de` | `ced0ce2331de` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-09.png` | `3d17ee571b21` | `3d17ee571b21` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-10.png` | `f3b3afe0cc5b` | `f3b3afe0cc5b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-11.png` | `1cc658f643c6` | `1cc658f643c6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-12.png` | `aeb2541f8114` | `aeb2541f8114` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-13.png` | `558e81573479` | `558e81573479` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-14.png` | `514cddd3db59` | `514cddd3db59` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-15.png` | `ab6b76289179` | `ab6b76289179` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-16.png` | `308c7290dcd3` | `308c7290dcd3` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-17.png` | `c23d6c61ce81` | `c23d6c61ce81` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-18.png` | `23d6afb8e50a` | `23d6afb8e50a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-19.png` | `c37e7719e531` | `c37e7719e531` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-20.png` | `a8bbd768185c` | `a8bbd768185c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-21.png` | `219b429b7fb8` | `219b429b7fb8` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-22.png` | `f284202648c5` | `f284202648c5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-23.png` | `2dc67a648b31` | `2dc67a648b31` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-24.png` | `048b8516c292` | `048b8516c292` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-25.png` | `8e38a57b9a85` | `8e38a57b9a85` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-26.png` | `f18ad02a4e3f` | `f18ad02a4e3f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-27.png` | `acc74f6e9807` | `acc74f6e9807` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-28.png` | `272263eb07a2` | `272263eb07a2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-29.png` | `df1ac8703fda` | `df1ac8703fda` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-30.png` | `eb9ca0cfb635` | `eb9ca0cfb635` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-31.png` | `3cf40ca22df2` | `3cf40ca22df2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-32.png` | `debca3459201` | `debca3459201` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-33.png` | `aee15b1fe347` | `aee15b1fe347` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-34.png` | `923254aaa20c` | `923254aaa20c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-35.png` | `1c48deb53f20` | `1c48deb53f20` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-36.png` | `1ec36ea69760` | `1ec36ea69760` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-37.png` | `0070a9703a57` | `0070a9703a57` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-38.png` | `d2a4b4466400` | `d2a4b4466400` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-39.png` | `e2c02d228eb0` | `e2c02d228eb0` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-40.png` | `a59779f6410e` | `a59779f6410e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-41.png` | `787c0d3abba9` | `787c0d3abba9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-42.png` | `0b6a12ae228f` | `0b6a12ae228f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-43.png` | `19120549029c` | `19120549029c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-44.png` | `48c9bdc545f8` | `48c9bdc545f8` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-45.png` | `7c4d8d1e888c` | `7c4d8d1e888c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-46.png` | `b092692f2974` | `b092692f2974` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-47.png` | `38b31cb00e9c` | `38b31cb00e9c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-48.png` | `dff92f18a3d5` | `dff92f18a3d5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-49.png` | `22e000d1dc90` | `22e000d1dc90` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-50.png` | `8c725d21b21a` | `8c725d21b21a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-51.png` | `4b38e01262a4` | `4b38e01262a4` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-52.png` | `ebae884b77c5` | `ebae884b77c5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-53.png` | `494938cb91c9` | `494938cb91c9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-54.png` | `7b36dadc22bf` | `7b36dadc22bf` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-55.png` | `c36ce667896c` | `c36ce667896c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-56.png` | `f17416d246b9` | `f17416d246b9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-57.png` | `9164976dfeae` | `9164976dfeae` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-58.png` | `10d5c501d061` | `10d5c501d061` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-59.png` | `dfcb9fd3eb6a` | `dfcb9fd3eb6a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-60.png` | `1b3fa518e237` | `1b3fa518e237` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-61.png` | `f966f211354e` | `f966f211354e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-62.png` | `5c8064d7e7ea` | `5c8064d7e7ea` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-63.png` | `f6cc6eec2c04` | `f6cc6eec2c04` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-64.png` | `558c03485dce` | `558c03485dce` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-65.png` | `d613cade3106` | `d613cade3106` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-66.png` | `3edc69d16dca` | `3edc69d16dca` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-67.png` | `f883b79e525c` | `f883b79e525c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-68.png` | `eeeebcfb20d1` | `eeeebcfb20d1` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-69.png` | `4cab9aa8d996` | `4cab9aa8d996` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-70.png` | `184971bdba6b` | `184971bdba6b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-71.png` | `5abaf5270764` | `5abaf5270764` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-72.png` | `a4ec57f24c51` | `a4ec57f24c51` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-73.png` | `8892329413cc` | `8892329413cc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-74.png` | `54e1b437c74f` | `54e1b437c74f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-75.png` | `5adb10b0fb8f` | `5adb10b0fb8f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-76.png` | `ce5d8af85376` | `ce5d8af85376` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-77.png` | `92ca120e6645` | `92ca120e6645` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/reconstructed.tex` | `7be05a737bc9` | `7be05a737bc9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/source_ready.json` | `9cba70684b67` | `9cba70684b67` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-1.txt` | `e0a4c94e6763` | `e0a4c94e6763` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-10.txt` | `f6f190e11565` | `f6f190e11565` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-11.txt` | `ad93e8fcf847` | `ad93e8fcf847` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-12.txt` | `44fea84eced7` | `44fea84eced7` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-13.txt` | `6dc3a8b6e6ce` | `6dc3a8b6e6ce` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-14.txt` | `0dd221d7fe42` | `0dd221d7fe42` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-15.txt` | `05080687a263` | `05080687a263` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-16.txt` | `47470f482106` | `47470f482106` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-17.txt` | `1c76adaec0f6` | `1c76adaec0f6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-18.txt` | `8fbeef1db877` | `8fbeef1db877` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-19.txt` | `473c6db146cf` | `473c6db146cf` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-2.txt` | `2ffaebc3222b` | `2ffaebc3222b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-20.txt` | `75f3002f9ec6` | `75f3002f9ec6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-21.txt` | `0a78e85a58e5` | `0a78e85a58e5` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-22.txt` | `c5ee1e9f8883` | `c5ee1e9f8883` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-23.txt` | `047cee02a21a` | `047cee02a21a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-24.txt` | `ced168acb9ec` | `ced168acb9ec` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-25.txt` | `fe2a5885221d` | `fe2a5885221d` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-26.txt` | `a096227ca7a6` | `a096227ca7a6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-27.txt` | `ec37f80d8a27` | `ec37f80d8a27` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-28.txt` | `0b292bfd3cac` | `0b292bfd3cac` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-29.txt` | `9817fe6f8089` | `9817fe6f8089` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-3.txt` | `f0f674fad649` | `f0f674fad649` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-30.txt` | `6fee76cb5a4a` | `6fee76cb5a4a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-31.txt` | `812f9cec95e3` | `812f9cec95e3` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-32.txt` | `1e0469003c4f` | `1e0469003c4f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-33.txt` | `7ed43e2c3296` | `7ed43e2c3296` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-34.txt` | `5147fd4160c1` | `5147fd4160c1` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-35.txt` | `c3e808b742a6` | `c3e808b742a6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-36.txt` | `79015f2d7951` | `79015f2d7951` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-37.txt` | `0cac1a39aafc` | `0cac1a39aafc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-38.txt` | `df38257d6425` | `df38257d6425` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-39.txt` | `0bc46900550b` | `0bc46900550b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-4.txt` | `26fbd9596e36` | `26fbd9596e36` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-40.txt` | `fab97c611e12` | `fab97c611e12` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-41.txt` | `9bbd640966f6` | `9bbd640966f6` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-42.txt` | `eecf3a01541e` | `eecf3a01541e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-43.txt` | `1de1f5e98b28` | `1de1f5e98b28` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-44.txt` | `7aa1d1ae8e83` | `7aa1d1ae8e83` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-45.txt` | `043bb47f672e` | `043bb47f672e` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-46.txt` | `cb8764beaafe` | `cb8764beaafe` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-47.txt` | `e9056da516d9` | `e9056da516d9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-48.txt` | `f15f3e0a1395` | `f15f3e0a1395` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-49.txt` | `afde326d5f0f` | `afde326d5f0f` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-5.txt` | `7d5c97c7d92c` | `7d5c97c7d92c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-50.txt` | `45a12bd8c1f7` | `45a12bd8c1f7` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-51.txt` | `806164829e9b` | `806164829e9b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-52.txt` | `765e5c57dc63` | `765e5c57dc63` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-53.txt` | `9e05cd4bac67` | `9e05cd4bac67` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-54.txt` | `31b85af43259` | `31b85af43259` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-55.txt` | `145e109e2b95` | `145e109e2b95` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-56.txt` | `79013fa18602` | `79013fa18602` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-57.txt` | `66d0f2c0aa1d` | `66d0f2c0aa1d` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-58.txt` | `2c83ecb78570` | `2c83ecb78570` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-59.txt` | `7ec883e5272a` | `7ec883e5272a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-6.txt` | `28e634101375` | `28e634101375` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-60.txt` | `4512e64906ed` | `4512e64906ed` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-61.txt` | `d2987d34c3fc` | `d2987d34c3fc` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-62.txt` | `28fdf1883361` | `28fdf1883361` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-63.txt` | `1d4ac6ce02a2` | `1d4ac6ce02a2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-64.txt` | `c6033665a8b3` | `c6033665a8b3` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-65.txt` | `8a44b2b80162` | `8a44b2b80162` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-66.txt` | `b8583e033a3a` | `b8583e033a3a` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-67.txt` | `892d5da1b0d2` | `892d5da1b0d2` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-68.txt` | `6c881d04085c` | `6c881d04085c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-69.txt` | `435714b6b269` | `435714b6b269` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-7.txt` | `1b9a70b0e22c` | `1b9a70b0e22c` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-70.txt` | `b4917e26c0be` | `b4917e26c0be` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-71.txt` | `c433b6d389a7` | `c433b6d389a7` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-72.txt` | `42116507a396` | `42116507a396` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-73.txt` | `16be43e13a2b` | `16be43e13a2b` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-74.txt` | `a1f53e0af6d9` | `a1f53e0af6d9` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-75.txt` | `a8026361fb9d` | `a8026361fb9d` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-76.txt` | `578d7e769981` | `578d7e769981` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-77.txt` | `7c168201fe02` | `7c168201fe02` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-8.txt` | `8db088f136ac` | `8db088f136ac` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-9.txt` | `f4dc4757dbae` | `f4dc4757dbae` |
+| modified | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text.txt` | `cefcc209f1ac` | `cefcc209f1ac` |
+| modified | `scripts/ai_handoff_common.py` | `36c5f8907375` | `383b2f011d5c` |
