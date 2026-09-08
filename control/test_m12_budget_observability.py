@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -262,6 +263,90 @@ class M12LedgerTests(unittest.TestCase):
             ledger.reserve("call-2", 1, provider="other", model="model-1", live=True)
         with self.assertRaises(BudgetAuthorizationError):
             ledger.authorize({**authorization, "token_limit": 40})
+
+    def test_live_authorization_rejects_temporal_and_binding_divergence(self):
+        now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+        def ledger(run_id, *, config_hash="a" * 64, profile=None, cost=None, policy=None):
+            return BudgetLedger(
+                self.root, run_id, limits=BudgetLimits(total_tokens=100),
+                profile=profile, config_hash=config_hash, live_enabled=True,
+                deadline_at="2026-01-01T00:10:00Z",
+                max_run_cost_microunits=cost,
+                currency="USD" if cost is not None else None,
+                inference_policy=policy,
+                clock=ManualClock(current=now),
+            )
+
+        def authorization(run_id, *, approved_at=None, config_hash="a" * 64,
+                          profile=None, provider="local", model="model-1",
+                          token_limit=50, cost=None, routing_policy_hash=None):
+            value = {
+                "run_id": run_id, "profile": profile, "config_hash": config_hash,
+                "provider": provider, "model": model, "token_limit": token_limit,
+                "approved_at": approved_at or now.isoformat(),
+                "approval_reference": "deterministic-clock-regression",
+            }
+            if cost is not None:
+                value.update(max_run_cost_microunits=cost, currency="USD")
+            if routing_policy_hash is not None:
+                value["routing_policy_hash"] = routing_policy_hash
+            return value
+
+        future = ledger("future")
+        future.authorize(authorization(
+            "future", approved_at=(now + timedelta(microseconds=1)).isoformat(),
+        ))
+        with self.assertRaisesRegex(BudgetAuthorizationError, "timestamp is in the future"):
+            future.reserve("future-call", 1, provider="local", model="model-1", live=True)
+
+        expired = ledger("expired")
+        expired.authorize(authorization(
+            "expired", approved_at=(now - timedelta(days=3651)).isoformat(),
+        ))
+        with self.assertRaisesRegex(BudgetAuthorizationError, "authorization is expired"):
+            expired.reserve("expired-call", 1, provider="local", model="model-1", live=True)
+
+        for run_id, changes in (
+            ("wrong-run", {"run_id": "another-run"}),
+            ("wrong-config", {"config_hash": "b" * 64}),
+            ("wrong-profile", {"profile": "calibration"}),
+        ):
+            bound = ledger(run_id)
+            with self.subTest(binding=run_id), self.assertRaises(BudgetAuthorizationError):
+                bound.authorize({**authorization(run_id), **changes})
+
+        target = ledger("target")
+        target.authorize(authorization("target"))
+        for call_id, provider, model in (
+            ("wrong-provider", "other", "model-1"),
+            ("wrong-model", "local", "model-2"),
+        ):
+            with self.subTest(target=call_id), self.assertRaises(BudgetAuthorizationError):
+                target.reserve(call_id, 1, provider=provider, model=model, live=True)
+        with self.assertRaisesRegex(BudgetAuthorizationError, "token ceiling"):
+            target.reserve("wrong-token-limit", 51, provider="local", model="model-1", live=True)
+
+        priced = ledger("priced", cost=10)
+        with self.assertRaisesRegex(BudgetAuthorizationError, "monetary ceiling"):
+            priced.authorize(authorization("priced", cost=9))
+        priced.authorize(authorization("priced", cost=10))
+        with self.assertRaisesRegex(BudgetExceeded, "max_run_cost_microunits"):
+            priced.reserve(
+                "wrong-cost", 1, provider="local", model="model-1", live=True,
+                estimated_cost_microunits=11,
+            )
+
+        policy = {"enabled": True, "targets": {}, "role_routes": {}}
+        policy_hash = hashlib.sha256(json.dumps(
+            policy, ensure_ascii=True, sort_keys=True, separators=(",", ":"),
+        ).encode("utf-8")).hexdigest()
+        routed = ledger("wrong-policy", policy=policy)
+        with self.assertRaisesRegex(BudgetAuthorizationError, "routing policy hash"):
+            routed.authorize(authorization(
+                "wrong-policy", provider=None, model=None,
+                routing_policy_hash=("0" * 64 if policy_hash != "0" * 64 else "1" * 64),
+            ))
 
     def test_pause_stop_and_control_stop_preserve_open_reservations(self):
         ledger = self.ledger(limits={"total_tokens": 20})

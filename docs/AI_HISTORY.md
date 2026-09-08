@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `1af38b5a540d0a29fa0d94beac1884d13a8b3e62ea43ae09e5059ed6e00bea2e`
-- Registrado em: `2026-09-08T01:09:49Z`
-- Git: branch `codex/m6-context-admission-hardening`, HEAD `1a0e34a2b43d`
-- Arquivos relevantes: 639
+- Fingerprint das fontes: `063e320c8267312c207b7586560c47c334c6f289509048cef6a75de37ce5bc53`
+- Registrado em: `2026-09-08T01:59:56Z`
+- Git: branch `codex/m6-budget-authorization-clock`, HEAD `4a137bd836ee`
+- Arquivos relevantes: 655
 
 ## Evolução reconstruída do versionamento
 
@@ -21,7 +21,7 @@
 | sem marco explícito | 2026-08-13..2026-09-07 | 57 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M6 | 2026-08-14..2026-09-07 | 10 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
+| M6 | 2026-08-14..2026-09-07 | 12 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
 | M7 | 2026-08-14..2026-09-01 | 6 | Síntese, merge isolado, challenger write-once e 13 gates locais. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/synthe… |
 | M8 | 2026-08-27..2026-09-01 | 3 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
 | M9 | 2026-08-28..2026-09-01 | 5 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
@@ -180,6 +180,8 @@
 | `2db94e5a0` | 2026-09-07 | M12 | Merge pull request #12 from Walc21/codex/m12-execution-hardening |  |
 | `8d7e5e020` | 2026-09-07 | M6 | feat(m6): add official single-task smoke | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/execution.py, .prime/agent/skills/article-loop/src/article_loop/in… |
 | `1a0e34a2b` | 2026-09-07 | M6 | Merge pull request #13 from Walc21/codex/m6-official-single-task-smoke |  |
+| `4a22054bd` | 2026-09-07 | M6 | fix(m6): admit selected context before attempt | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py, AI_CONTEXT.md, PLANS.md, config/schemas/m6-context-se… |
+| `4a137bd83` | 2026-09-07 | M6 | Merge pull request #14 from Walc21/codex/m6-context-admission-hardening |  |
 
 ## Decisões arquiteturais
 
@@ -3215,3 +3217,100 @@
 | Tipo | Caminho | SHA anterior | SHA final |
 |---|---|---|---|
 | modified | `.prime/agent/skills/article-loop/src/article_loop/m6_smoke.py` | `260443e5c543` | `9cf3df4c07ef` |
+
+### 2026-09-08T01:16:15Z — Seleção explícita das páginas M3 1 e 3 criada e aprovada no preflight M6 sem execução externa.
+
+- Session ID: `m6-selection-pages-1-3-preflight-20260908`
+- Fingerprint final: `88d289a846f04e1a906a37e7dffc93977f6d0a38d8a1e8350cd229f7c9531970`
+- Git final: `4a137bd836ee`; status relevante: 1 item(ns)
+- Delta factual: 1 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Manifesto create-only hash-bound derivado de normalized.json para os blocos integrais das páginas 1 e 3.
+
+**Decisões**
+
+- Usar as páginas 1 e 3 como contexto inicial W11, sujeito à autorização live futura.
+
+**Validações**
+
+- Preflight M6 READY: 4.950 tokens estimados de entrada, 512 reservados de saída, 512 de overhead, total 5.974 de 8.192; zero chamadas e tentativa inexistente.
+
+**Riscos/limites**
+
+- A seleção não autoriza inferência; modelo local, endpoint, deadline atual e autorização humana nova continuam obrigatórios.
+
+**Próximos passos**
+
+- Se autorizada, repetir preflight com a deadline operacional atual e executar exatamente uma chamada W11.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `runtime/m6-context-selections/selection-4ab9e211-0819-4eb0-9269-243ae4630359.json` | `-` | `385345c09ba5` |
+
+### 2026-09-08T01:32:53Z — Primeira smoke M6 W11 autorizada foi bloqueada antes da reserva por erro de relógio na autorização do ledger.
+
+- Session ID: `m6-w11-budget-clock-pre-admission-20260908`
+- Fingerprint final: `b3aff3c433fa6a288eda593ddd8113dc7c3a06c15e151624126bf3d03b22bcbb`
+- Git final: `4a137bd836ee`; status relevante: 16 item(ns)
+- Delta factual: 15 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Nenhuma alteração de código nesta sessão; preservada tentativa create-only m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67 e manifesto de seleção M3.
+
+**Decisões**
+
+- Não repetir a execução nem contornar a autorização; corrigir a fronteira temporal do BudgetLedger em uma nova branch antes de nova autorização.
+
+**Validações**
+
+- Preflight READY com 5.974 de 8.192 tokens; execução retornou FAILED_CLOSED com zero chamadas, zero receipts, zero reservas e sem inferência externa.
+
+**Riscos/limites**
+
+- A rota foi persistida antes da reserva; a tentativa permanece congelada como evidência. A causa reproduzida offline é authorization timestamp is in the future por relógio default capturado antes da autorização.
+
+**Próximos passos**
+
+- Implementar e testar correção de relógio/autorizações M6 sem executar modelo; uma nova run exigirá autorização humana nova.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/authorization.json` | `-` | `ca957e812d24` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/context-selection.json` | `-` | `385345c09ba5` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/prompt-manifest.json` | `-` | `5ebdde5e14ba` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/prompt.txt` | `-` | `58964652ff38` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/task.json` | `-` | `2c256a92fa13` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/view.json` | `-` | `1c4ec88cef55` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/logs/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.jsonl` | `-` | `71a75bf40d65` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/outcome.json` | `-` | `1b3984c63b92` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/smoke-config.json` | `-` | `011f1c867fb9` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/source-binding.json` | `-` | `4f993e1edceb` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/budgets/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.jsonl` | `-` | `72e2bf8d4737` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/inference/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/routes/e2a841e4dc3461cbc48f3426e35f222346292f…` | `-` | `9bb9bafabcfc` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.budget.lock` | `-` | `e3b0c44298fc` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.inference.lock` | `-` | `e3b0c44298fc` |
+| added | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.observability.lock` | `-` | `e3b0c44298fc` |
+
+### 2026-09-08T01:59:56Z — Corrigido o falso timestamp futuro da autorização M6 vinculando approved_at ao relógio canônico do BudgetLedger; testes offline preservam recusas reais e a tentativa congelada sem backend ou custo.
+
+- Session ID: `session-ea39b4514e8b99554053`
+- Fingerprint final: `063e320c8267312c207b7586560c47c334c6f289509048cef6a75de37ce5bc53`
+- Git final: `4a137bd836ee`; status relevante: 21 item(ns)
+- Delta factual: 0 adicionados, 5 modificados, 0 removidos
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/agent/skills/article-loop/src/article_loop/m6_smoke.py` | `9cf3df4c07ef` | `8d68c9bd09a8` |
+| modified | `PLANS.md` | `e6a4caad1dc4` | `f16b82df531c` |
+| modified | `control/test_m12_budget_observability.py` | `4c49c8587939` | `e58cc66f415a` |
+| modified | `control/test_m6_official_smoke.py` | `72b2c5771409` | `b1d4446c2efa` |
+| modified | `docs/decisions.md` | `d8475f18204d` | `010b2ab8ac4b` |

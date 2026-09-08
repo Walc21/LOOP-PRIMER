@@ -152,6 +152,31 @@ a raiz M6 permaneceu ausente e a árvore M3 conservou o mesmo SHA-256 agregado
 Essa inspeção não construiu backend, não acessou endpoint e não iniciou modelo,
 Ollama, Prime, rede ou run científica.
 
+### Correção do relógio da autorização M6 — 2026-09-08
+
+A primeira tentativa autorizada do smoke W11, isolada em
+`runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67`,
+terminou `FAILED_CLOSED` antes de reserva, admissão ou backend. A rota foi
+persistida, mas não houve chamada ao modelo ou endpoint, receipt, custo,
+refund, release ou início de M7. A tentativa é evidência congelada e não será
+retomada, alterada ou repetida; qualquer smoke futura exigirá nova identidade
+e nova autorização humana.
+
+A causa foi um desacoplamento local de relógios: com o relógio padrão, o
+`BudgetLedger` capturava sua hora no construtor, enquanto `m6_smoke.py` emitia
+`approved_at` microssegundos depois por uma segunda leitura independente do
+relógio de parede. A reserva comparava essa autorização nova com a hora
+anterior congelada no ledger e a rejeitava como futura.
+
+A correção será estritamente localizada no M6: depois de criar o ledger, a
+autorização live derivará `approved_at` da própria fonte canônica de tempo do
+ledger que executará `reserve`. Não haverá tolerância, margem temporal ou
+alteração global de `BudgetLedger`; autorizações realmente futuras, expiradas
+ou divergentes continuarão falhando fechadas. Testes sem rede reproduzirão a
+captura anterior seguida da emissão posterior, atravessarão
+`route -> reserve -> admit` com backend de teste explicitamente autorizado e
+preservarão zero retry, zero fallback e a evidência histórica byte a byte.
+
 ## Execução local autorizada — 2026-09-06
 
 Implementar uma única CLI project-local para compor M3/M5/M6 routed/M7/M8

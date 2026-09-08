@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `1af38b5a540d0a29fa0d94beac1884d13a8b3e62ea43ae09e5059ed6e00bea2e`
-- Baseline da última sessão: `1af38b5a540d0a29fa0d94beac1884d13a8b3e62ea43ae09e5059ed6e00bea2e`
-- Inventário: 639 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (323071 bytes; SHA-256 `4d99f1aa3a20da56`).
+- Fingerprint atual das fontes: `063e320c8267312c207b7586560c47c334c6f289509048cef6a75de37ce5bc53`
+- Baseline da última sessão: `063e320c8267312c207b7586560c47c334c6f289509048cef6a75de37ce5bc53`
+- Inventário: 655 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (329419 bytes; SHA-256 `c084be40629a0efa`).
 
 ## Estado e limites atuais
 
@@ -30,18 +30,18 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 54.
-- `m6-official-single-task-smoke-final-20260907` — Smoke oficial M6 de uma tarefa routed finalizado e validado offline.
-  - mudança: Implementada entrada create-only para uma AgentTask S10 ou W11 com vínculo M3 SOURCE_READY revalidado, limites fixos e STOP terminal.
-  - decisão: Manter a superfície inerte por padrão, sem M7, retry, fallback ou execução externa implícita.
-  - risco: Modelo local, endpoint loopback, deadline e autorização humana continuam necessários para qualquer execução futura.
-  - próximo: Revisar e autorizar separadamente uma execução M6 real de uma tarefa.
-- `session-640b5fd098dcc8978999` — Endurecimento M6: seleção estrutural M3 hash-bound e admissão completa agora bloqueiam overflow antes da criação da tentativa; 533 testes offline aprovados e evidência real permaneceu inalterada.
-- `m6-context-admission-hardening-final-20260907` — Admissão de contexto do smoke M6 endurecida para selecionar blocos M3 explícitos e bloquear overflow antes de criar tentativa.
-  - mudança: Adicionada seleção hash-bound de blocos integrais de normalized.json, preflight read-only e persistência write-once da seleção usada.
-  - decisão: Não enviar text.txt integral nem aumentar contexto por padrão; exigir seleção explícita e admissão total antes da raiz attempt.
-  - risco: Uma futura chamada real ainda depende de escolha humana dos blocos, manifesto create-only, endpoint, modelo, deadline e autorização nova.
-  - próximo: Revisar e mesclar a correção; depois gerar e revisar uma seleção M3 limitada antes do preflight M6.
+- Sessões estruturadas registradas: 57.
+- `m6-selection-pages-1-3-preflight-20260908` — Seleção explícita das páginas M3 1 e 3 criada e aprovada no preflight M6 sem execução externa.
+  - mudança: Manifesto create-only hash-bound derivado de normalized.json para os blocos integrais das páginas 1 e 3.
+  - decisão: Usar as páginas 1 e 3 como contexto inicial W11, sujeito à autorização live futura.
+  - risco: A seleção não autoriza inferência; modelo local, endpoint, deadline atual e autorização humana nova continuam obrigatórios.
+  - próximo: Se autorizada, repetir preflight com a deadline operacional atual e executar exatamente uma chamada W11.
+- `m6-w11-budget-clock-pre-admission-20260908` — Primeira smoke M6 W11 autorizada foi bloqueada antes da reserva por erro de relógio na autorização do ledger.
+  - mudança: Nenhuma alteração de código nesta sessão; preservada tentativa create-only m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67 e manifesto de seleção M3.
+  - decisão: Não repetir a execução nem contornar a autorização; corrigir a fronteira temporal do BudgetLedger em uma nova branch antes de nova autorização.
+  - risco: A rota foi persistida antes da reserva; a tentativa permanece congelada como evidência. A causa reproduzida offline é authorization timestamp is in the future por relógio default capturado antes da autorização.
+  - próximo: Implementar e testar correção de relógio/autorizações M6 sem executar modelo; uma nova run exigirá autorização humana nova.
+- `session-ea39b4514e8b99554053` — Corrigido o falso timestamp futuro da autorização M6 vinculando approved_at ao relógio canônico do BudgetLedger; testes offline preservam recusas reais e a tentativa congelada sem backend ou custo.
 
 ## Roteamento obrigatório por escopo
 

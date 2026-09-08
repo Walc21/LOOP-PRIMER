@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import shutil
 import subprocess
@@ -170,7 +171,6 @@ class OfficialM6SmokeTests(unittest.TestCase):
             allowed_m3_parent=self.m3_parent,
             allowed_selection_parent=self.selection_parent,
         )
-        from datetime import datetime, timezone
         self.clock = ManualClock(current=datetime(2026, 1, 1, tzinfo=timezone.utc))
 
     def tearDown(self) -> None:
@@ -530,6 +530,66 @@ class OfficialM6SmokeTests(unittest.TestCase):
         self.assertEqual(1, len(backend.calls))
         self.assertFalse((self.attempt / "versions/challengers").exists())
 
+    def test_default_clock_authorization_uses_the_ledgers_canonical_time(self) -> None:
+        """Reproduce the pre-reservation microsecond split without bypassing reserve."""
+        import article_loop.m6_smoke as smoke_module
+        from article_loop.budget import BudgetLedger as RealBudgetLedger
+
+        captured = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        independently_emitted = captured + timedelta(microseconds=1)
+        real_now = smoke_module._now
+        ledgers = []
+
+        def ledger_with_captured_default(*args, **kwargs):  # type: ignore[no-untyped-def]
+            self.assertIsNone(kwargs["clock"])
+            kwargs["clock"] = ManualClock(current=captured)
+            ledger = RealBudgetLedger(*args, **kwargs)
+            real_reserve = ledger.reserve
+
+            def reserve_with_live_authorization(*reserve_args, **reserve_kwargs):  # type: ignore[no-untyped-def]
+                # The fake backend must remain non-live to prevent I/O, but this
+                # regression must exercise the real live authorization gate.
+                reserve_kwargs["live"] = True
+                return real_reserve(*reserve_args, **reserve_kwargs)
+
+            ledger.reserve = reserve_with_live_authorization  # type: ignore[method-assign]
+            ledgers.append(ledger)
+            return ledger
+
+        def split_wall_clock(clock):  # type: ignore[no-untyped-def]
+            if clock is None:
+                return independently_emitted.isoformat().replace("+00:00", "Z")
+            return real_now(clock)
+
+        backend = self.backend()
+        with (
+            mock.patch.object(smoke_module, "BudgetLedger", side_effect=ledger_with_captured_default),
+            mock.patch.object(smoke_module, "_now", side_effect=split_wall_clock),
+        ):
+            result = run_official_smoke(
+                ROOT, SmokeConfig.from_mapping(self.mapping()),
+                allowed_m3_parent=self.m3_parent,
+                allowed_attempt_parent=self.attempt_parent,
+                allowed_selection_parent=self.selection_parent,
+                human_authorized=True, allow_test_doubles=True,
+                backend=backend, clock=None,
+            )
+
+        self.assertEqual("STOPPED_AFTER_ONE_TASK", result["status"])
+        self.assertEqual(1, len(ledgers))
+        self.assertEqual(1, len(backend.calls))
+        events = _budget_events(self.attempt, str(result["run_id"]))
+        kinds = [event["event_type"] for event in events]
+        self.assertEqual(captured.isoformat().replace("+00:00", "Z"), events[0]["payload"]["approved_at"])
+        reserved = next(event for event in events if event["event_type"] == "RESERVED")
+        self.assertIs(True, reserved["payload"]["live"])
+        self.assertLess(kinds.index("AUTHORIZATION"), kinds.index("RESERVED"))
+        self.assertLess(kinds.index("RESERVED"), kinds.index("ADMITTED"))
+        self.assertLess(kinds.index("ADMITTED"), kinds.index("RECONCILED"))
+        self.assertNotIn("RELEASED", kinds)
+        self.assertFalse(result["retry_performed"])
+        self.assertFalse(result["refund_performed"])
+
     def test_persisted_selection_and_admission_are_exactly_the_prompt_inputs(self) -> None:
         result = self.execute_smoke(self.backend())
         persisted = self.attempt / "inputs/context-selection.json"
@@ -625,6 +685,17 @@ class OfficialM6SmokeTests(unittest.TestCase):
         self.assertEqual(before_existing, _tree_hash(existing))
         self.assertEqual(before_m3, _tree_hash(self.m3))
         self.assertEqual(completed, _tree_hash(self.attempt))
+
+    def test_frozen_real_attempt_remains_byte_for_byte_unchanged(self) -> None:
+        frozen = ROOT / "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67"
+        if not frozen.is_dir():
+            self.skipTest("local frozen operational evidence is not present")
+        before = _tree_hash(frozen)
+        names_before = sorted(item.relative_to(frozen).as_posix() for item in frozen.rglob("*"))
+        result = self.execute_smoke(self.backend())
+        self.assertEqual("STOPPED_AFTER_ONE_TASK", result["status"])
+        self.assertEqual(names_before, sorted(item.relative_to(frozen).as_posix() for item in frozen.rglob("*")))
+        self.assertEqual(before, _tree_hash(frozen))
 
 
 if __name__ == "__main__":
