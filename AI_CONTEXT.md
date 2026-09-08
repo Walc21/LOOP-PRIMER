@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `11fcd61ba770693d84729f5fc17bfefd56d15b99177ef5988c7e1bfdf467340d`
-- Baseline da última sessão: `11fcd61ba770693d84729f5fc17bfefd56d15b99177ef5988c7e1bfdf467340d`
-- Inventário: 671 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (336659 bytes; SHA-256 `ea32d1e4a40f436e`).
+- Fingerprint atual das fontes: `d61df35bb698360b32237fcafd5a3830619e519126c155ffba7f57981cfd50cc`
+- Baseline da última sessão: `d61df35bb698360b32237fcafd5a3830619e519126c155ffba7f57981cfd50cc`
+- Inventário: 639 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (343190 bytes; SHA-256 `31913baef8f8c3c1`).
 
 ## Estado e limites atuais
 
@@ -30,8 +30,7 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 59.
-- `session-ea39b4514e8b99554053` — Corrigido o falso timestamp futuro da autorização M6 vinculando approved_at ao relógio canônico do BudgetLedger; testes offline preservam recusas reais e a tentativa congelada sem backend ou custo.
+- Sessões estruturadas registradas: 60.
 - `m6-w11-live-output-schema-failure-20260908` — A smoke W11 local autorizada alcançou receipt e reconcile, mas terminou FAILED_OUTPUT porque a unica resposta do modelo nao satisfez o schema cientifico.
   - mudança: Criada tentativa isolada attempt-ac648a70-42b6-4560-a01b-58402edcdb4d com uma chamada local ao modelo deepscaler-m14-context:latest e contexto M3 das paginas 1 e 3.
   - decisão: Nao repetir, retomar ou alterar a tentativa: receipt schema_invalid e evidencia duravel permanecem congelados.
@@ -42,6 +41,11 @@
   - decisão: Adotado apenas o dialeto openai_chat_completions_json_schema no path exato /v1/chat/completions, sem API nativa ou fallback.
   - risco: A prova offline cobre o envelope suportado pelo binário, não garante obediência do modelo; resposta inválida continua FAILED_OUTPUT após uma única chamada.
   - próximo: Se houver nova autorização humana, o operador deverá criar uma nova seleção M3 create-only mais compacta antes de qualquer smoke.
+- `gitignore-m6-runtime-evidence-20260908` — Ajustado o Git para preservar localmente, sem exibir como alteracao, os manifestos de selecao M6 e as evidencias create-only de smokes.
+  - mudança: Adicionadas regras .gitignore para runtime/m6-context-selections e runtime/m6-official-smokes; nenhum artefato existente foi movido, removido ou reescrito.
+  - decisão: Evidencia operacional M6 permanece local e nao versionada, mas deixa de tornar a arvore Git visualmente suja.
+  - risco: Os artefatos ignorados permanecem dependentes do disco local e nao sao backup ou publicacao Git.
+  - próximo: Revisar e, se desejado, publicar esta regra Git isolada em commit e PR.
 
 ## Roteamento obrigatório por escopo
 

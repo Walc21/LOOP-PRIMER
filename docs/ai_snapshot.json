@@ -31,10 +31,10 @@
       "sha256": "bf1d737ea098c709c7037b7ee79a6c2a5d26306bdd1e4a7b42bd108f15e25139"
     },
     ".gitignore": {
-      "bytes": 1219,
+      "bytes": 1350,
       "kind": "text",
-      "lines": 68,
-      "sha256": "5a7c0798e82524337b7a3cdac5071f30de93b7ebf664145bc89e88b52c0325bc"
+      "lines": 72,
+      "sha256": "015270132dca408e4bc72a179b9500b56eee0d155dcfc32f38731e1514ba9f05"
     },
     ".prime/agent/APPEND_SYSTEM.md": {
       "bytes": 918,
@@ -3672,198 +3672,6 @@
       "lines": null,
       "sha256": "cefcc209f1acad588dc7221becc7405625fb9e0256e723c2f9fee6e75e2549a0"
     },
-    "runtime/m6-context-selections/selection-4ab9e211-0819-4eb0-9269-243ae4630359.json": {
-      "bytes": 1125,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "385345c09ba51df7dab87facbde2905622421d1edff56bfe60c70cbbae0a7354"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/authorization.json": {
-      "bytes": 189,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "9255406b8db604dbc591dba537b0a524279a06bdc48667a57c926c119be7e282"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/context-selection.json": {
-      "bytes": 1125,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "385345c09ba51df7dab87facbde2905622421d1edff56bfe60c70cbbae0a7354"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/prompt-manifest.json": {
-      "bytes": 558,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "0c138c28c6efe1cad6557462cf8e31023a9b30646aee7275cfbef36ea309c555"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/prompt.txt": {
-      "bytes": 19798,
-      "kind": "text",
-      "lines": 49,
-      "sha256": "aa480c515b6f47a772fceb0e08b4e7ee8194e99db50b29f9848fa4ae4def1f96"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/task.json": {
-      "bytes": 803,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "5cede03339e88a978329cf9404c011846d589b901b08572fdfafff81f4c726b9"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/view.json": {
-      "bytes": 1059,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "5e7cbff5903212d1654b3569be78517c3c3f5d98730de63d546effe8d75645d9"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/logs/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.jsonl": {
-      "bytes": 18476,
-      "kind": "text",
-      "lines": 29,
-      "sha256": "d2ee2a3391886cffea15118478acf307990040503e002ad774999f9bf6be2cdd"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/outcome.json": {
-      "bytes": 263,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "3fcc71dcd60ff7f260b82be26ed5483b9646e0f1d19b2b0ea87e53e657a7bc67"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/smoke-config.json": {
-      "bytes": 729,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "21b111d9e92e695c012d7a19079c205d949463e3b7c83c9e7af3bc5074365b0f"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/source-binding.json": {
-      "bytes": 1633,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "4f993e1edceb5a99a53cb355216399768223b8cbbf418c98c98ff93c4d77ddbd"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/budgets/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.jsonl": {
-      "bytes": 19658,
-      "kind": "text",
-      "lines": 27,
-      "sha256": "72a84a3c5ba64347bb7c3baa681b8ec7415226c5e3c209121b451e28711ca493"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/inference/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d/receipts/ic-9676bade4caff0cd06b1db16cfb96e249c42f7982c875bda.json": {
-      "bytes": 1477,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "39602b95935f4b2b1fdbaa2852734440b595678a2e8d0dc60172cc725fc04ce7"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/inference/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d/routes/a3cb6ea7b4f679fa5ba5827554e067e79642f2ecd3065b1f592a53c71e9c0e79.json": {
-      "bytes": 884,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "d4f06016e09d75a4a585f3242c6aad27577a5711b255876a6d884e2c55882f3b"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.budget.lock": {
-      "bytes": 0,
-      "kind": "text",
-      "lines": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.inference.lock": {
-      "bytes": 0,
-      "kind": "text",
-      "lines": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.observability.lock": {
-      "bytes": 0,
-      "kind": "text",
-      "lines": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/authorization.json": {
-      "bytes": 189,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "ca957e812d240db5187083132b469da4b635a7a6cbe319f0aa22c1fc6f69ab31"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/context-selection.json": {
-      "bytes": 1125,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "385345c09ba51df7dab87facbde2905622421d1edff56bfe60c70cbbae0a7354"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/prompt-manifest.json": {
-      "bytes": 558,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "5ebdde5e14ba529177120de5bbd62ec3d93ff52b1093583daf1fcef4b6eb60e8"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/prompt.txt": {
-      "bytes": 19798,
-      "kind": "text",
-      "lines": 49,
-      "sha256": "58964652ff38fa8ffb3758fc447f42764fab80cc518897ce47dacbd90624c162"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/task.json": {
-      "bytes": 803,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "2c256a92fa13e1ac85f5059a2fb08869329d868674df7965455100f13191a1c4"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/view.json": {
-      "bytes": 1059,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "1c4ec88cef55077d53975cafb097a3870662bdf0708e24d89ac018b7baecf5f8"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/logs/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.jsonl": {
-      "bytes": 1952,
-      "kind": "text",
-      "lines": 3,
-      "sha256": "71a75bf40d650f85945a9819d369daa945f8aaad4a64b9b028c3cbc2f43d623c"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/outcome.json": {
-      "bytes": 268,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "1b3984c63b92d17b439230fbfd9034154c1eb9232d625bf1c8e62ea00b5cb1dd"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/smoke-config.json": {
-      "bytes": 729,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "011f1c867fb98fdc05f51a40d0153815f493e4915e2ceb8b9b728ddda19464d7"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/source-binding.json": {
-      "bytes": 1633,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "4f993e1edceb5a99a53cb355216399768223b8cbbf418c98c98ff93c4d77ddbd"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/budgets/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.jsonl": {
-      "bytes": 1559,
-      "kind": "text",
-      "lines": 2,
-      "sha256": "72e2bf8d473797428d9fe5d377c24f19c1114807f29ab512146a185d91ef6de2"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/inference/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/routes/e2a841e4dc3461cbc48f3426e35f222346292f4481345495198fb4c538ed2009.json": {
-      "bytes": 884,
-      "kind": "text",
-      "lines": 1,
-      "sha256": "9bb9bafabcfcac9c8cb21c597873958ed1775381417c8e489a8b620299cc8318"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.budget.lock": {
-      "bytes": 0,
-      "kind": "text",
-      "lines": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.inference.lock": {
-      "bytes": 0,
-      "kind": "text",
-      "lines": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.observability.lock": {
-      "bytes": 0,
-      "kind": "text",
-      "lines": 0,
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
     "scripts/01_external_evaluator.py": {
       "bytes": 4757,
       "kind": "text",
@@ -4027,57 +3835,16 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "11fcd61ba770693d84729f5fc17bfefd56d15b99177ef5988c7e1bfdf467340d",
+  "fingerprint": "d61df35bb698360b32237fcafd5a3830619e519126c155ffba7f57981cfd50cc",
   "git": {
     "available": true,
-    "branch": "codex/m6-structured-output-admission-hardening",
-    "head": "af1187aa330882cff6e0eeda4b315258917deafa",
+    "branch": "codex/ignore-m6-runtime-evidence",
+    "head": "9757786bb608fd7fbffa5af9dd961a06b0e8b32d",
     "status": [
-      " M .prime/agent/skills/article-loop/src/article_loop/inference_backends.py",
-      " M .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py",
-      " M PLANS.md",
-      " M control/test_m1251_dual_execution.py",
-      " M control/test_m125_inference_routing.py",
-      " M control/test_m6_official_smoke.py",
-      " M docs/decisions.md",
-      " M docs/m6-official-smoke.md",
-      " M scripts/local_loopback_full_cycle.py",
-      " M scripts/m6_official_smoke.py",
-      "?? runtime/m6-context-selections/selection-4ab9e211-0819-4eb0-9269-243ae4630359.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/authorization.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/context-selection.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/prompt-manifest.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/prompt.txt",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/task.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/view.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/logs/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.jsonl",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/outcome.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/smoke-config.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/source-binding.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/budgets/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.jsonl",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/inference/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d/receipts/ic-9676bade4caff0cd06b1db16cfb96e249c42f7982c875bda.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/inference/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d/routes/a3cb6ea7b4f679fa5ba5827554e067e79642f2ecd3065b1f592a53c71e9c0e79.json",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.budget.lock",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.inference.lock",
-      "?? runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.observability.lock",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/authorization.json",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/context-selection.json",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/prompt-manifest.json",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/prompt.txt",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/task.json",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/view.json",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/logs/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.jsonl",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/outcome.json",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/smoke-config.json",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/source-binding.json",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/budgets/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.jsonl",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/inference/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/routes/e2a841e4dc3461cbc48f3426e35f222346292f4481345495198fb4c538ed2009.json",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.budget.lock",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.inference.lock",
-      "?? runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.observability.lock"
+      " M .gitignore"
     ]
   },
-  "recorded_at": "2026-09-08T03:48:36Z",
+  "recorded_at": "2026-09-08T04:30:31Z",
   "schema_version": "1.0.0",
-  "session_id": "m6-structured-output-admission-hardening-20260908"
+  "session_id": "gitignore-m6-runtime-evidence-20260908"
 }
