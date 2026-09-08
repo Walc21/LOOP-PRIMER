@@ -68,6 +68,29 @@ pós-envio permanece `UNCERTAIN`, sem retry, fallback, release ou refund. Esta
 emenda não adiciona M7, segunda chamada ou autorização real e deixa ao operador
 a decisão científica futura de quais blocos estruturais selecionar.
 
+### Emenda: relógio canônico da autorização live
+
+A primeira tentativa W11 autorizada foi bloqueada com
+`BudgetAuthorizationError` antes da reserva e do backend. O ledger padrão
+capturava seu relógio no construtor; o smoke produzia `approved_at` depois com
+uma segunda leitura independente de `datetime.now()`. A diferença de
+microssegundos tornava a autorização da própria execução aparentemente futura
+para o relógio anterior do ledger.
+
+O M6 passa a emitir `approved_at` pela mesma instância de relógio canônica que
+o `BudgetLedger` usará para validar a reserva. A regra geral do ledger não muda:
+não existe tolerância temporal e autorização realmente futura ou expirada,
+assim como qualquer divergência de run, configuração, perfil, política de
+rota, target, tokens, custo ou deadline, continua falhando fechada. A ordem
+`route -> reserve -> admit -> backend -> receipt -> reconcile`, o limite de
+uma chamada, zero retry/fallback e `UNCERTAIN` pós-envio permanecem intactos.
+
+A tentativa
+`attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67` permanece congelada e não será
+retomada nem repetida. Ela persistiu somente a rota: não criou reserva ou
+receipt, não chamou modelo, backend ou endpoint e não gerou custo nem M7. Uma
+execução futura requer tentativa nova e autorização humana nova.
+
 ## ADR-040 — Contexto escalonado para agentes sem perda de autoridade
 
 **Status:** Implementado localmente. **Data:** 2026-09-07.

@@ -787,7 +787,7 @@ def run_official_smoke(
     )
     ledger.authorize(RunAuthorization(
         run_id, None, config_hash, None, None, config.context_limit,
-        _now(clock), "fresh-human-authorization-current-invocation",
+        _now(ledger.clock), "fresh-human-authorization-current-invocation",
         registry.policy_hash, 0, "USD",
     ))
     selected_backend = backend or LocalOpenAICompatibleBackend(project_root=contracts)
