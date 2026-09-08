@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import http.client
 import json
 import math
@@ -9,9 +10,11 @@ import os
 import socket
 import time
 from pathlib import Path
+import re
 from typing import Any, Mapping
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 
 from .inference import (
     InferenceBackendError,
@@ -20,7 +23,124 @@ from .inference import (
     InferenceResult,
     InferenceTarget,
     model_output_schema,
+    sha256,
 )
+
+
+OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA = "openai_chat_completions_json_schema"
+STRUCTURED_OUTPUT_DIALECTS = frozenset({OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA})
+_SCHEMA_NAME = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_-]{0,63}\Z")
+
+
+def _http_json_bytes(value: Any) -> bytes:
+    """Return the canonical UTF-8 JSON representation used on the wire."""
+    return json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")
+
+
+@dataclass(frozen=True)
+class StructuredHTTPBody:
+    """One deterministic structured-output body and its measurable parts."""
+
+    dialect: str
+    endpoint: str
+    schema_name: str
+    body_bytes: bytes
+    prompt_bytes: bytes
+    messages_bytes: bytes
+    schema_bytes: bytes
+    response_format_bytes: bytes
+    response_format_envelope_bytes: int
+    request_envelope_bytes: int
+
+    def manifest(self) -> dict[str, Any]:
+        return {
+            "schema_version": "1.0.0",
+            "dialect": self.dialect,
+            "method": "POST",
+            "endpoint": self.endpoint,
+            "content_type": "application/json",
+            "schema_name": self.schema_name,
+            "prompt_bytes": len(self.prompt_bytes),
+            "prompt_sha256": sha256(self.prompt_bytes),
+            "messages_bytes": len(self.messages_bytes),
+            "messages_sha256": sha256(self.messages_bytes),
+            "structured_schema_bytes": len(self.schema_bytes),
+            "structured_schema_sha256": sha256(self.schema_bytes),
+            "response_format_bytes": len(self.response_format_bytes),
+            "response_format_sha256": sha256(self.response_format_bytes),
+            "response_format_envelope_bytes": self.response_format_envelope_bytes,
+            "request_envelope_bytes": self.request_envelope_bytes,
+            "request_body_bytes": len(self.body_bytes),
+            "request_body_sha256": sha256(self.body_bytes),
+        }
+
+
+def build_openai_structured_request(
+    *, dialect: str, endpoint: str, model: str, prompt: str,
+    max_output_tokens: int, target_max_output_tokens: int,
+    schema_name: str, schema: Mapping[str, Any],
+) -> StructuredHTTPBody:
+    """Purely build the exact OpenAI-compatible JSON Schema request body."""
+    if dialect != OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA:
+        raise InferenceIntegrityError("structured output dialect is unsupported")
+    try:
+        parsed = urlsplit(endpoint)
+    except (TypeError, ValueError) as error:
+        raise InferenceIntegrityError("structured output endpoint is invalid") from error
+    if parsed.path != "/v1/chat/completions" or parsed.query or parsed.fragment:
+        raise InferenceIntegrityError(
+            "OpenAI-compatible JSON Schema requires exact /v1/chat/completions endpoint",
+        )
+    if not isinstance(model, str) or not model or "\x00" in model:
+        raise InferenceIntegrityError("structured output model is invalid")
+    if not isinstance(prompt, str) or not prompt or "\x00" in prompt:
+        raise InferenceIntegrityError("structured output prompt is invalid")
+    if (
+        type(max_output_tokens) is not int or max_output_tokens < 1
+        or type(target_max_output_tokens) is not int
+        or max_output_tokens > target_max_output_tokens
+    ):
+        raise InferenceIntegrityError("structured output token ceiling is invalid")
+    if not isinstance(schema_name, str) or _SCHEMA_NAME.fullmatch(schema_name) is None:
+        raise InferenceIntegrityError("structured output schema name is invalid")
+    if not isinstance(schema, Mapping):
+        raise InferenceIntegrityError("structured output schema is invalid")
+
+    messages = [{"role": "user", "content": prompt}]
+    response_format = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": schema_name,
+            "strict": True,
+            "schema": dict(schema),
+        },
+    }
+    body = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_output_tokens,
+        "response_format": response_format,
+        "stream": False,
+        "temperature": 0,
+    }
+    prompt_bytes = prompt.encode("utf-8")
+    messages_bytes = _http_json_bytes(messages)
+    schema_bytes = _http_json_bytes(schema)
+    response_format_bytes = _http_json_bytes(response_format)
+    body_bytes = _http_json_bytes(body)
+    response_format_envelope_bytes = len(response_format_bytes) - len(schema_bytes)
+    request_envelope_bytes = (
+        len(body_bytes) - len(messages_bytes) - len(response_format_bytes)
+    )
+    if response_format_envelope_bytes < 0 or request_envelope_bytes < 0:
+        raise InferenceIntegrityError("structured request component accounting failed")
+    return StructuredHTTPBody(
+        dialect, endpoint, schema_name, body_bytes, prompt_bytes,
+        messages_bytes, schema_bytes, response_format_bytes,
+        response_format_envelope_bytes, request_envelope_bytes,
+    )
 
 
 class FakeInferenceBackend:
@@ -69,11 +189,18 @@ class LocalOpenAICompatibleBackend:
     def __init__(
         self, *, project_root: str | Path | None = None,
         max_response_bytes: int = 1_048_576,
+        structured_output_dialect: str | None = None,
     ):
         if type(max_response_bytes) is not int or max_response_bytes < 1024:
             raise ValueError("max_response_bytes must be an integer >= 1024")
         self.max_response_bytes = max_response_bytes
         self.project_root = None if project_root is None else Path(project_root).resolve()
+        if (
+            structured_output_dialect is not None
+            and structured_output_dialect not in STRUCTURED_OUTPUT_DIALECTS
+        ):
+            raise ValueError("structured_output_dialect is unsupported")
+        self.structured_output_dialect = structured_output_dialect
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
     def preflight(self, target: InferenceTarget) -> Mapping[str, Any]:
@@ -87,7 +214,18 @@ class LocalOpenAICompatibleBackend:
             raise InferenceBackendError("BACKEND_FAILURE", "local endpoint is not loopback", sent=False)
         if target.timeout_seconds <= 0:
             raise InferenceBackendError("BACKEND_FAILURE", "local timeout is invalid", sent=False)
-        return {"ready": True, "test_double": False, "network": "loopback_only", "redirects": False}
+        if (
+            "structured_output" in target.capabilities
+            and self.structured_output_dialect is None
+        ):
+            raise InferenceBackendError(
+                "BACKEND_FAILURE", "structured output dialect is not explicit", sent=False,
+            )
+        return {
+            "ready": True, "test_double": False, "network": "loopback_only",
+            "redirects": False,
+            "structured_output_dialect": self.structured_output_dialect,
+        }
 
     @staticmethod
     def _integer(value: Any) -> int | None:
@@ -97,12 +235,7 @@ class LocalOpenAICompatibleBackend:
         self.preflight(target)
         if len(request.prompt.encode("utf-8")) > max(4096, target.context_limit * 16):
             raise InferenceBackendError("BACKEND_FAILURE", "prompt exceeds the target request bound", sent=False)
-        request_body: dict[str, Any] = {
-            "model": target.model,
-            "messages": [{"role": "user", "content": request.prompt}],
-            "max_tokens": min(request.max_output_tokens, target.max_output_tokens),
-            "stream": False,
-        }
+        body: bytes
         if "structured_output" in target.capabilities:
             if self.project_root is None:
                 raise InferenceBackendError(
@@ -123,24 +256,34 @@ class LocalOpenAICompatibleBackend:
                 raw_name[:-len(suffix)] if raw_name.endswith(suffix)
                 else Path(raw_name).stem
             ).replace("-", "_")
-            request_body["temperature"] = 0
-            request_body["response_format"] = {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": schema_name,
-                    "strict": True,
-                    "schema": schema,
-                },
-            }
+            try:
+                structured = build_openai_structured_request(
+                    dialect=str(self.structured_output_dialect),
+                    endpoint=str(target.endpoint), model=target.model,
+                    prompt=request.prompt,
+                    max_output_tokens=request.max_output_tokens,
+                    target_max_output_tokens=target.max_output_tokens,
+                    schema_name=schema_name, schema=schema,
+                )
+            except InferenceIntegrityError as error:
+                raise InferenceBackendError(
+                    "BACKEND_FAILURE", "structured request contract is invalid",
+                    sent=False,
+                ) from error
+            body = structured.body_bytes
         elif "structured_output" in request.required_capabilities:
             raise InferenceBackendError(
                 "ROUTE_CAPABILITY_INSUFFICIENT",
                 "target does not support the requested structured output",
                 sent=False,
             )
-        body = json.dumps(
-            request_body, ensure_ascii=False, separators=(",", ":"),
-        ).encode("utf-8")
+        else:
+            body = _http_json_bytes({
+                "model": target.model,
+                "messages": [{"role": "user", "content": request.prompt}],
+                "max_tokens": request.max_output_tokens,
+                "stream": False,
+            })
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         if target.api_key_env is not None:
             secret = os.environ.get(target.api_key_env)
@@ -222,5 +365,7 @@ class RemoteOpenAICompatibleBackend(LocalOpenAICompatibleBackend):
 
 __all__ = [
     "FakeInferenceBackend", "LocalOpenAICompatibleBackend",
-    "RemoteOpenAICompatibleBackend",
+    "OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA", "RemoteOpenAICompatibleBackend",
+    "STRUCTURED_OUTPUT_DIALECTS", "StructuredHTTPBody",
+    "build_openai_structured_request",
 ]

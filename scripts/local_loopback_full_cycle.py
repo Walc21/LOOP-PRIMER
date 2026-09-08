@@ -43,7 +43,9 @@ from article_loop.budget import BudgetLedger, RunAuthorization
 from article_loop.control_center import run_detail
 from article_loop.execution import DualExecutionAdapter, DualExecutionController, ExecutionPolicy
 from article_loop.inference import InferenceRuntime, ModelRegistry, sha256
-from article_loop.inference_backends import LocalOpenAICompatibleBackend
+from article_loop.inference_backends import (
+    OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA, LocalOpenAICompatibleBackend,
+)
 from article_loop.ingestion import ingest
 from article_loop.orchestrator import Orchestrator
 from article_loop.state_machine import State
@@ -344,7 +346,10 @@ def preflight(attempt_id: str) -> dict[str, Any]:
             or any(not target.local or target.paid or target.backend_type != "local_openai_compatible" for target in registry.targets.values())
             or any(policy.layer(department) != "routed" for department in DEPARTMENTS)):
         raise LocalCycleError("attempt configuration does not satisfy local-only policy")
-    backend = LocalOpenAICompatibleBackend(project_root=attempt)
+    backend = LocalOpenAICompatibleBackend(
+        project_root=attempt,
+        structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+    )
     backend_status = {target_id: dict(backend.preflight(target)) for target_id, target in registry.targets.items()}
     return {"attempt_id": attempt_id, "models_detected": names, "selected_models": selected, "endpoint": ENDPOINT, "config_sha256": plan["config_sha256"], "routing_policy_sha256": plan["routing_policy_sha256"], "backend": backend_status, "local_only": True}
 
@@ -433,7 +438,10 @@ def run(attempt_id: str) -> dict[str, Any]:
         ledger = BudgetLedger.from_project(attempt, run_id, profile=PROFILE)
         _authorize(ledger)
         registry = ModelRegistry.from_project(attempt)
-        backend = LocalOpenAICompatibleBackend(project_root=attempt)
+        backend = LocalOpenAICompatibleBackend(
+            project_root=attempt,
+            structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+        )
         runtime = InferenceRuntime(attempt, ledger, registry, {"local_openai_compatible": backend})
         runtime_preflight = runtime.preflight()
         _atomic_json(attempt / "runtime-preflight.json", runtime_preflight)

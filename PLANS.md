@@ -177,6 +177,61 @@ captura anterior seguida da emissão posterior, atravessarão
 `route -> reserve -> admit` com backend de teste explicitamente autorizado e
 preservarão zero retry, zero fallback e a evidência histórica byte a byte.
 
+### Admissão da requisição estruturada M6 e contrato W11 — 2026-09-08
+
+A tentativa W11 autorizada
+`attempt-ac648a70-42b6-4560-a01b-58402edcdb4d` alcançou backend, receipt e
+reconciliação, mas a única resposta terminou `schema_invalid` após usar 7.198
+tokens de entrada e exatamente os 512 tokens de saída reservados. A tentativa
+fica congelada, assim como a tentativa anterior
+`attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67`: não haverá retomada, retry,
+fallback, refund, reescrita ou inferência diagnóstica. A resposta inválida não
+foi persistida, portanto sua causa interna específica não será inventada.
+
+O preflight oficial deixará de estimar somente os bytes do prompt. Uma função
+pura e determinística construirá o corpo HTTP estruturado que o backend também
+usará byte a byte, incluindo mensagem materializada, modelo, teto de saída,
+`temperature=0` e o schema científico projetado. A admissão registrará hashes
+e tamanhos do prompt, mensagens, schema, `response_format`, envelope e corpo
+total. Como não há tokenizer local comprovadamente equivalente ao runner, o
+limite de entrada será o teto explícito `ceil(bytes_do_corpo / 4 * 2)`, seguido
+da saída reservada e de 512 tokens de margem fixa. Overflow ou contrato de
+compatibilidade ausente falhará antes de criar tentativa, rota, reserva,
+backend ou receipt; uso observado depois da chamada nunca recalibrará outra
+tentativa.
+
+O único dialeto desta superfície será
+`openai_chat_completions_json_schema`, coerente com o endpoint exato
+`/v1/chat/completions` e com `response_format.type=json_schema`, `strict=true`.
+A auditoria local do Ollama 0.33.2, binário SHA-256
+`20cca6e293efd5bbed05b26abba891df7dec75ac3edc640caa5f60eed95c6292`,
+encontrou estaticamente a rota, o tipo OpenAI `ResponseFormat` e os campos
+`json_schema`, `strict` e `schema`, sem iniciar servidor ou consultar endpoint.
+O preflight verificará offline o hash, os marcadores e a versão vinculada ao
+hash desse perfil auditado;
+mudança do binário ou ausência dessa prova bloqueará a execução até nova
+auditoria. Essa prova cobre a compatibilidade do envelope, não a obediência do
+modelo, que continuará sujeita ao parser JSON e ao schema fechado após a única
+resposta. API nativa e fallback entre dialetos não serão implementados.
+
+Para W11, 2.048 tokens serão simultaneamente recomendação e mínimo contratual;
+o contexto operacional continuará em 8.192. Se a requisição conservadora com
+2.048 não couber para as páginas 1 e 3, uma execução futura dependerá de nova
+seleção M3 mais compacta, create-only e escolhida pelo operador. Esta tarefa
+não cria nem altera manifesto em `runtime/`, não modifica o schema canônico nem
+o `BudgetLedger` e não autoriza Ollama, endpoint, modelo, Prime, rede ou ciência.
+
+Implementação e validação offline concluídas: 114 testes focados M6/M12/
+M12.5/M12.5.1 e a regressão integral de 543 testes aprovaram. `py_compile` dos
+módulos, scripts e testes alterados, `bin/check.sh` e `git diff --check` também
+aprovaram; o check manteve `live_ready=false`, execução de modelo e APIs pagas
+desabilitadas. O preflight read-only da seleção existente das páginas 1 e 3,
+com W11 em 2.048, bloqueou antes da tentativa: 12.010 tokens conservadores de
+entrada + 2.048 de saída + 512 de margem = 14.570, acima de 8.192. A tentativa
+de diagnóstico permaneceu ausente, os dois manifests congelados conservaram
+seus 16 e 15 arquivos e seus hashes agregados anteriores, e não houve chamada
+ao endpoint nem inferência.
+
 ## Execução local autorizada — 2026-09-06
 
 Implementar uma única CLI project-local para compor M3/M5/M6 routed/M7/M8

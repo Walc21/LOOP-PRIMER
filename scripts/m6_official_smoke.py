@@ -17,6 +17,7 @@ if str(SRC) not in sys.path:
 from article_loop.m6_smoke import (
     M6SmokeError, SmokeConfig, preflight_official_smoke, run_official_smoke,
 )
+from article_loop.inference_backends import OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -28,6 +29,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--role", choices=("S10", "W11"), required=True)
     parser.add_argument("--model", required=True)
     parser.add_argument("--endpoint", required=True)
+    parser.add_argument(
+        "--structured-output-dialect",
+        choices=(OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,), required=True,
+    )
     parser.add_argument("--deadline-utc", required=True)
     parser.add_argument("--timeout-seconds", required=True, type=int)
     parser.add_argument("--context-limit", required=True, type=int)
@@ -47,11 +52,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         config = SmokeConfig.from_mapping({
-            "schema_version": "1.0.0", "enabled": args.execute,
+            "schema_version": "1.1.0", "enabled": args.execute,
             "m3_root": args.m3_root, "m3_run_id": args.m3_run_id,
             "attempt_root": args.attempt_root, "role_id": args.role,
             "selection_manifest": args.selection_manifest,
             "model": args.model, "endpoint": args.endpoint,
+            "structured_output_dialect": args.structured_output_dialect,
             "deadline_utc": args.deadline_utc,
             "timeout_seconds": args.timeout_seconds,
             "context_limit": args.context_limit,

@@ -62,6 +62,8 @@ from article_loop.inference import (  # noqa: E402
 from article_loop.inference_backends import (  # noqa: E402
     FakeInferenceBackend,
     LocalOpenAICompatibleBackend,
+    OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+    build_openai_structured_request,
 )
 
 
@@ -742,31 +744,32 @@ class _FixtureHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", "0"))
         self.server.last_body = self.rfile.read(length)
-        if self.path == "/timeout":
+        mode = getattr(self.server, "fixture_mode", self.path)
+        if mode == "/timeout":
             time.sleep(1.3)
             return
-        if self.path == "/closed":
+        if mode == "/closed":
             self.connection.shutdown(socket.SHUT_RDWR)
             self.connection.close()
             return
-        if self.path == "/redirect":
+        if mode == "/redirect":
             self.send_response(302)
             self.send_header("Location", "/valid")
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
-        if self.path == "/error":
+        if mode == "/error":
             self.send_response(500)
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
-        if self.path == "/malformed":
+        if mode == "/malformed":
             raw = b"not-json"
-        elif self.path == "/oversize":
+        elif mode == "/oversize":
             raw = b"x" * 2048
         else:
             envelope = {"choices": [{"message": {"content": json.dumps(scientific_payload())}, "finish_reason": "stop"}]}
-            if self.path == "/valid":
+            if mode == "/valid":
                 envelope["usage"] = {"prompt_tokens": 3, "completion_tokens": 4, "prompt_tokens_details": {"cached_tokens": 1}}
             raw = json.dumps(envelope).encode()
         self.send_response(200)
@@ -797,12 +800,17 @@ class M125LoopbackBackendTests(M125Base):
 
     def local_target(self, path: str) -> object:
         port = self.server.server_address[1]
-        value = target("http", backend_type="local_openai_compatible", endpoint=f"http://127.0.0.1:{port}{path}")
+        self.server.fixture_mode = path
+        value = target(
+            "http", backend_type="local_openai_compatible",
+            endpoint=f"http://127.0.0.1:{port}/v1/chat/completions",
+        )
         return ModelRegistry(policy(value)).target("http")
 
     def test_request_valid_response_and_usage(self):
         backend = LocalOpenAICompatibleBackend(
             project_root=self.root, max_response_bytes=4096,
+            structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
         )
         result = backend.complete(self.request(), self.local_target("/valid"))
         self.assertTrue(result.usage_available)
@@ -812,7 +820,10 @@ class M125LoopbackBackendTests(M125Base):
         self.assertEqual(sent["messages"][0]["content"], self.request().prompt)
 
     def test_usage_absent_remains_unknown(self):
-        result = LocalOpenAICompatibleBackend(project_root=self.root).complete(
+        result = LocalOpenAICompatibleBackend(
+            project_root=self.root,
+            structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+        ).complete(
             self.request(), self.local_target("/usage-absent"),
         )
         self.assertFalse(result.usage_available)
@@ -831,6 +842,7 @@ class M125LoopbackBackendTests(M125Base):
             with self.subTest(path=path):
                 backend = LocalOpenAICompatibleBackend(
                     project_root=self.root, max_response_bytes=1024,
+                    structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
                 )
                 with self.assertRaises(InferenceBackendError) as caught:
                     backend.complete(self.request(), self.local_target(path))
@@ -880,6 +892,7 @@ class M125BackendUnitTests(M125Base):
         opener = self.Opener(self.Response(json.dumps(envelope).encode()))
         backend = LocalOpenAICompatibleBackend(
             project_root=self.root, max_response_bytes=4096,
+            structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
         )
         backend._opener = opener
         result = backend.complete(self.request(), self.local_target())
@@ -890,6 +903,24 @@ class M125BackendUnitTests(M125Base):
             .read_text(encoding="utf-8")
         )
         payload_schema = model_output_schema(self.root, self.request())
+        built = build_openai_structured_request(
+            dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+            endpoint=self.local_target().endpoint,
+            model=self.local_target().model,
+            prompt=self.request().prompt,
+            max_output_tokens=self.request().max_output_tokens,
+            target_max_output_tokens=self.local_target().max_output_tokens,
+            schema_name="agent_proposal", schema=payload_schema,
+        )
+        self.assertEqual(built.body_bytes, opener.request.data)
+        manifest = built.manifest()
+        self.assertEqual(len(built.body_bytes), manifest["request_body_bytes"])
+        self.assertEqual(
+            manifest["request_body_bytes"],
+            manifest["messages_bytes"] + manifest["structured_schema_bytes"]
+            + manifest["response_format_envelope_bytes"]
+            + manifest["request_envelope_bytes"],
+        )
         self.assertEqual(sent["temperature"], 0)
         self.assertEqual(sent["response_format"], {
             "type": "json_schema",
@@ -898,6 +929,45 @@ class M125BackendUnitTests(M125Base):
             },
         })
         self.assertEqual((result.input_tokens, result.output_tokens, result.cache_tokens), (3, 4, 1))
+
+    def test_historical_prompt_only_estimate_fits_while_real_request_does_not(self):
+        prompt = "x" * 16_000
+        schema = model_output_schema(self.root, self.request())
+        built = build_openai_structured_request(
+            dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+            endpoint=self.local_target().endpoint,
+            model=self.local_target().model, prompt=prompt,
+            max_output_tokens=2048, target_max_output_tokens=2048,
+            schema_name="agent_proposal", schema=schema,
+        )
+        old_prompt_only = (len(prompt.encode("utf-8")) + 3) // 4 + 2048 + 512
+        request_upper_bound = (len(built.body_bytes) * 2 + 3) // 4 + 2048 + 512
+        self.assertLessEqual(old_prompt_only, 8192)
+        self.assertGreater(request_upper_bound, 8192)
+        self.assertGreater(len(built.body_bytes), len(prompt.encode("utf-8")))
+
+    def test_structured_dialect_and_endpoint_are_explicit_and_fail_closed(self):
+        target_value = self.local_target()
+        backend = LocalOpenAICompatibleBackend(project_root=self.root)
+        backend._opener = self.Opener(self.Response(b"{}"))
+        with self.assertRaises(InferenceBackendError) as missing:
+            backend.complete(self.request(), target_value)
+        self.assertFalse(missing.exception.sent)
+        self.assertIsNone(backend._opener.request)
+        with self.assertRaises(ValueError):
+            LocalOpenAICompatibleBackend(
+                project_root=self.root, structured_output_dialect="automatic",
+            )
+        with self.assertRaises(InferenceIntegrityError):
+            build_openai_structured_request(
+                dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+                endpoint="http://127.0.0.1:9999/api/chat",
+                model=target_value.model, prompt=self.request().prompt,
+                max_output_tokens=100,
+                target_max_output_tokens=target_value.max_output_tokens,
+                schema_name="agent_proposal",
+                schema=model_output_schema(self.root, self.request()),
+            )
 
     def test_non_structured_target_is_backward_compatible_but_cannot_fake_capability(self):
         envelope = {"choices": [{"message": {"content": json.dumps(scientific_payload())}, "finish_reason": "stop"}]}
@@ -934,6 +1004,7 @@ class M125BackendUnitTests(M125Base):
 
         backend = LocalOpenAICompatibleBackend(
             project_root=self.root, max_response_bytes=4096,
+            structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
         )
         for raw in (
             None,
@@ -957,6 +1028,7 @@ class M125BackendUnitTests(M125Base):
         no_usage = {"choices": [{"message": {"content": json.dumps(scientific_payload())}, "finish_reason": "stop"}]}
         backend = LocalOpenAICompatibleBackend(
             project_root=self.root, max_response_bytes=4096,
+            structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
         )
         backend._opener = self.Opener(self.Response(json.dumps(no_usage).encode()))
         self.assertFalse(backend.complete(self.request(), self.local_target()).usage_available)
@@ -972,6 +1044,7 @@ class M125BackendUnitTests(M125Base):
             with self.subTest(reason=reason, error=type(error).__name__ if error else "response"):
                 candidate = LocalOpenAICompatibleBackend(
                     project_root=self.root, max_response_bytes=1024,
+                    structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
                 )
                 candidate._opener = self.Opener(response, error)
                 try:
