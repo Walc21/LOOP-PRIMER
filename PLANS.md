@@ -103,6 +103,55 @@ também aprovaram. A CLI foi exercitada apenas no default inerte, retornando
 `DISABLED` com zero chamadas. Nenhum modelo, Prime Agent, endpoint, rede
 externa, PDF real ou run científica foi iniciado.
 
+### Endurecimento da seleção e admissão de contexto M6 — 2026-09-07
+
+Corrigir o P1 observado no preflight da evidência M3 real: o agregado
+`text.txt` possui 316.739 bytes, enquanto `context_limit=8192`, saída reservada
+de 512 tokens e overhead de 512 tokens deixam no máximo 28.672 bytes para a
+materialização preliminar. Aumentar o limite do target não será a correção
+padrão e nenhum conteúdo será truncado implicitamente. O smoke passará a exigir
+uma seleção explícita, vazia por padrão, sobre os blocos de página já
+declarados por M3 em `normalized.json`; não escolherá primeiras páginas,
+intervalos por bytes, OCR, aproximação semântica ou fallback.
+
+Uma ferramenta offline e create-only produzirá um manifesto canônico sob a
+raiz allowlisted de seleções. Cada unidade registrará o locator estrutural do
+bloco, página e intervalo integral de linhas, tamanho e SHA-256 dos bytes
+canônicos derivados. O manifesto também vinculará run M3, binding integral,
+hash do artefato extraído e hash de `normalized.json`; não aceitará texto do
+operador, paths de conteúdo ou unidades fora dos blocos M3. A execução relerá a
+fonte canônica somente leitura e reconstruirá exatamente os fragmentos antes de
+aceitar o manifesto.
+
+Task, view, prompt compilado, wrapper de contexto, saída reservada e overhead
+serão materializados e contabilizados integralmente em memória antes de criar
+`runtime/m6-official-smokes/attempt-*`. Seleção ausente, inválida, adulterada,
+insegura ou excessiva retornará `BLOCKED` estruturado e não poderá produzir
+attempt, route, reserva, ledger, receipt, backend ou custo. Somente depois desse
+preflight a raiz create-only poderá nascer e conservará a cópia exata do
+manifesto, seus hashes, o prompt e a decomposição da admissão. A revalidação M3
+e da seleção continuará imediatamente adjacente a route/reserve/backend; falhas
+posteriores à criação receberão outcome terminal quando a publicação permitir,
+sem esconder falha real de I/O. Pós-envio permanece `UNCERTAIN`, sem retry,
+release ou refund.
+
+Os testes são inteiramente sintéticos e provam a regressão do agregado grande,
+seleção explícita válida, adulteração/hash/path/symlink, identidade
+entre seleção persistida e prompt, cálculo completo da admissão e preservação
+dos limites de uma chamada sem M7. Esta alteração prepara uma decisão humana
+futura sobre quais blocos documentais são pertinentes; não escolhe conteúdo
+científico e não autoriza modelo, endpoint, Ollama, Prime, rede, PDF real ou
+run científica.
+
+Validação concluída: 19 testes focados M6, 36 testes conjuntos de
+smoke/materialização, 52 testes contratuais e a regressão integral de 533 testes
+aprovaram. Um preflight read-only adicional selecionou explicitamente os 77
+blocos da evidência M3 indicada e retornou `BLOCKED` por excesso de contexto;
+a raiz M6 permaneceu ausente e a árvore M3 conservou o mesmo SHA-256 agregado
+`8f78b8b8cb34835dd75302d1907e0b35af57666c599b9656a470c43a90e0aeb7`.
+Essa inspeção não construiu backend, não acessou endpoint e não iniciou modelo,
+Ollama, Prime, rede ou run científica.
+
 ## Execução local autorizada — 2026-09-06
 
 Implementar uma única CLI project-local para compor M3/M5/M6 routed/M7/M8

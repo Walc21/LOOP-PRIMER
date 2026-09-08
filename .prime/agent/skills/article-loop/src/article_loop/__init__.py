@@ -59,7 +59,10 @@ from .control_center import (
     AuditLedger, ConfigurationRepository, ControlCenterError, ControlPlane,
     IdempotencyStore, LocalControlHTTPServer, active_runs, serve,
 )
-from .m6_smoke import M6SmokeError, SMOKE_ROLES, SmokeConfig, run_official_smoke
+from .m6_smoke import (
+    M6SmokeError, SMOKE_ROLES, SmokeConfig, create_context_selection,
+    preflight_official_smoke, run_official_smoke,
+)
 
 __version__ = "0.7.0"
 
@@ -115,5 +118,6 @@ __all__ = [
     "RoutedJurorAdapter", "RoutedMetaReviewerAdapter",
     "AuditLedger", "ConfigurationRepository", "ControlCenterError", "ControlPlane",
     "IdempotencyStore", "LocalControlHTTPServer", "active_runs", "serve",
-    "M6SmokeError", "SMOKE_ROLES", "SmokeConfig", "run_official_smoke",
+    "M6SmokeError", "SMOKE_ROLES", "SmokeConfig", "create_context_selection",
+    "preflight_official_smoke", "run_official_smoke",
 ]

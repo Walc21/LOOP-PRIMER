@@ -14,7 +14,9 @@ SRC = ROOT / ".prime" / "agent" / "skills" / "article-loop" / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from article_loop.m6_smoke import M6SmokeError, SmokeConfig, run_official_smoke
+from article_loop.m6_smoke import (
+    M6SmokeError, SmokeConfig, preflight_official_smoke, run_official_smoke,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,6 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--m3-root", required=True)
     parser.add_argument("--m3-run-id", required=True)
     parser.add_argument("--attempt-root", required=True)
+    parser.add_argument("--selection-manifest")
     parser.add_argument("--role", choices=("S10", "W11"), required=True)
     parser.add_argument("--model", required=True)
     parser.add_argument("--endpoint", required=True)
@@ -37,12 +40,17 @@ def main(argv: list[str] | None = None) -> int:
         "--human-authorized", action="store_true",
         help="fresh boolean authorization for this one invocation",
     )
+    parser.add_argument(
+        "--preflight-only", action="store_true",
+        help="validate exact selection and admission without creating an attempt",
+    )
     args = parser.parse_args(argv)
     try:
         config = SmokeConfig.from_mapping({
             "schema_version": "1.0.0", "enabled": args.execute,
             "m3_root": args.m3_root, "m3_run_id": args.m3_run_id,
             "attempt_root": args.attempt_root, "role_id": args.role,
+            "selection_manifest": args.selection_manifest,
             "model": args.model, "endpoint": args.endpoint,
             "deadline_utc": args.deadline_utc,
             "timeout_seconds": args.timeout_seconds,
@@ -52,12 +60,18 @@ def main(argv: list[str] | None = None) -> int:
             "max_cycles": 1, "max_cost_microunits": 0,
             "deny_remote": True,
         })
-        result = run_official_smoke(
-            ROOT, config,
-            allowed_m3_parent=ROOT / "runtime" / "m3-real-attempts",
-            allowed_attempt_parent=ROOT / "runtime" / "m6-official-smokes",
-            human_authorized=args.human_authorized,
-        )
+        common = {
+            "allowed_m3_parent": ROOT / "runtime" / "m3-real-attempts",
+            "allowed_attempt_parent": ROOT / "runtime" / "m6-official-smokes",
+            "allowed_selection_parent": ROOT / "runtime" / "m6-context-selections",
+        }
+        if args.preflight_only:
+            result = preflight_official_smoke(ROOT, config, **common)
+        else:
+            result = run_official_smoke(
+                ROOT, config, **common,
+                human_authorized=args.human_authorized,
+            )
     except M6SmokeError as error:
         print(json.dumps({"status": "BLOCKED", "cause": str(error)}, sort_keys=True))
         return 2

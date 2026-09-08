@@ -56,7 +56,7 @@ SCHEMA_FILES = {
     "final-gate-report.schema.json", "final-report.schema.json",
     "budget-event.schema.json", "observability-event.schema.json",
     "inference-receipt.schema.json", "control-center-audit.schema.json",
-    "control-center-draft.schema.json",
+    "control-center-draft.schema.json", "m6-context-selection.schema.json",
 }
 
 

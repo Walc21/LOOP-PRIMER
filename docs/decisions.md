@@ -2,7 +2,7 @@
 
 ## ADR-042 — Smoke oficial M6 limitado a uma tarefa routed
 
-**Status:** Implementado e validado offline. **Data:** 2026-09-07.
+**Status:** Endurecimento implementado e validado offline. **Data:** 2026-09-07.
 
 O primeiro smoke M6 terá uma entrada própria e executará exatamente uma
 `AgentTask`, restrita a `S10` ou `W11`, numa raiz nova, isolada e create-only.
@@ -33,6 +33,40 @@ na nova tentativa; a origem M3 e tentativas anteriores nunca são escritas.
 Falha pré-envio não produz receipt nem gasto. Erro ambíguo pós-envio permanece
 `UNCERTAIN`, sem retry, release ou refund automático. Esta implementação é
 preparação operacional: não autoriza modelo, endpoint ou run científica.
+
+### Emenda: seleção estrutural M3 e barreira pré-attempt
+
+A evidência M3 real mostrou que enviar o pacote extraído integral não é uma
+admissão operacional válida: `text.txt` tem 316.739 bytes e, com
+`context_limit=8192`, `max_output_tokens=512` e overhead de 512 tokens, o teto
+materializável preliminar é 28.672 bytes. Aumentar contexto não é a correção
+padrão porque apenas deslocaria o limite, ampliaria custo e não tornaria a
+escolha documental explícita ou auditável. Truncamento automático também é
+proibido.
+
+M3 já fornece em `normalized.json` blocos integrais por página, cada qual com
+`page`, `line_start` e `line_end`. O smoke adotará essa unidade estrutural
+existente: o operador escolhe explicitamente um ou mais blocos, e uma ferramenta
+offline create-only deriva um manifesto canônico sem texto livre ou paths de
+conteúdo. Run, binding M3, hash do artefato extraído, hash de `normalized.json`,
+locator de cada bloco e SHA-256 dos bytes canônicos de cada fragmento tornam a
+correspondência verificável. Selecionar “as primeiras N páginas”, cortar por
+tamanho, usar OCR, semântica aproximada ou inventar fallback não é permitido.
+
+A barreira definitiva acontece antes da criação da tentativa: M3, manifesto,
+schema da tarefa, prompt compilado, wrapper, contexto selecionado, saída
+reservada e overhead precisam passar juntos. Falta, adulteração, hash
+divergente, locator não permitido, traversal, symlink ou overflow resulta em
+`BLOCKED` JSON sem criar `attempt-*` e sem route, reserva, ledger, backend,
+receipt ou custo. A tentativa só pode ser criada após essa prova; então guarda
+write-once o manifesto exato, hashes e decomposição de admissão usados. M3 e a
+seleção são revalidados outra vez imediatamente antes de route/reserve/backend.
+
+Falha depois da criação e antes do envio conserva outcome terminal durável
+quando o I/O permitir; falha real de publicação continua propagada. Ambiguidade
+pós-envio permanece `UNCERTAIN`, sem retry, fallback, release ou refund. Esta
+emenda não adiciona M7, segunda chamada ou autorização real e deixa ao operador
+a decisão científica futura de quais blocos estruturais selecionar.
 
 ## ADR-040 — Contexto escalonado para agentes sem perda de autoridade
 
