@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `11fcd61ba770693d84729f5fc17bfefd56d15b99177ef5988c7e1bfdf467340d`
-- Registrado em: `2026-09-08T03:48:36Z`
-- Git: branch `codex/m6-structured-output-admission-hardening`, HEAD `af1187aa3308`
-- Arquivos relevantes: 671
+- Fingerprint das fontes: `d61df35bb698360b32237fcafd5a3830619e519126c155ffba7f57981cfd50cc`
+- Registrado em: `2026-09-08T04:30:31Z`
+- Git: branch `codex/ignore-m6-runtime-evidence`, HEAD `9757786bb608`
+- Arquivos relevantes: 639
 
 ## Evolução reconstruída do versionamento
 
@@ -21,7 +21,7 @@
 | sem marco explícito | 2026-08-13..2026-09-07 | 57 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M6 | 2026-08-14..2026-09-07 | 14 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
+| M6 | 2026-08-14..2026-09-08 | 16 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
 | M7 | 2026-08-14..2026-09-01 | 6 | Síntese, merge isolado, challenger write-once e 13 gates locais. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/synthe… |
 | M8 | 2026-08-27..2026-09-01 | 3 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
 | M9 | 2026-08-28..2026-09-01 | 5 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
@@ -184,6 +184,8 @@
 | `4a137bd83` | 2026-09-07 | M6 | Merge pull request #14 from Walc21/codex/m6-context-admission-hardening |  |
 | `72e430606` | 2026-09-07 | M6 | fix(m6): bind authorization to ledger clock | .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py, AI_CONTEXT.md, PLANS.md, control/test_m12_budget_observability.py, control/test_m6_official_smoke.py, docs/AI_HISTOR… |
 | `af1187aa3` | 2026-09-07 | M6 | Merge pull request #15 from Walc21/codex/m6-budget-authorization-clock |  |
+| `061d2124a` | 2026-09-08 | M6 | fix(m6): harden structured output admission | .prime/agent/skills/article-loop/src/article_loop/inference_backends.py, .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py, AI_CONTEXT.md, PLANS.md, control/test_m1251… |
+| `9757786bb` | 2026-09-08 | M6 | Merge pull request #16 from Walc21/codex/m6-structured-output-admission-hardening |  |
 
 ## Decisões arquiteturais
 
@@ -3412,3 +3414,68 @@
 | modified | `docs/m6-official-smoke.md` | `bce0444cf63f` | `053d2061aafe` |
 | modified | `scripts/local_loopback_full_cycle.py` | `2c661369433b` | `95bc5a336e32` |
 | modified | `scripts/m6_official_smoke.py` | `3d49a6eee838` | `22afe3ff0e66` |
+
+### 2026-09-08T04:30:31Z — Ajustado o Git para preservar localmente, sem exibir como alteracao, os manifestos de selecao M6 e as evidencias create-only de smokes.
+
+- Session ID: `gitignore-m6-runtime-evidence-20260908`
+- Fingerprint final: `d61df35bb698360b32237fcafd5a3830619e519126c155ffba7f57981cfd50cc`
+- Git final: `9757786bb608`; status relevante: 1 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 32 removidos
+
+**Mudanças**
+
+- Adicionadas regras .gitignore para runtime/m6-context-selections e runtime/m6-official-smokes; nenhum artefato existente foi movido, removido ou reescrito.
+
+**Decisões**
+
+- Evidencia operacional M6 permanece local e nao versionada, mas deixa de tornar a arvore Git visualmente suja.
+
+**Validações**
+
+- git check-ignore confirmou as duas tentativas congeladas e o manifesto; git diff --check aprovou.
+
+**Riscos/limites**
+
+- Os artefatos ignorados permanecem dependentes do disco local e nao sao backup ou publicacao Git.
+
+**Próximos passos**
+
+- Revisar e, se desejado, publicar esta regra Git isolada em commit e PR.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.gitignore` | `5a7c0798e825` | `015270132dca` |
+| deleted | `runtime/m6-context-selections/selection-4ab9e211-0819-4eb0-9269-243ae4630359.json` | `385345c09ba5` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/authorization.json` | `9255406b8db6` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/context-selection.json` | `385345c09ba5` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/prompt-manifest.json` | `0c138c28c6ef` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/prompt.txt` | `aa480c515b6f` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/task.json` | `5cede03339e8` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/view.json` | `5e7cbff59032` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/logs/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.jsonl` | `d2ee2a339188` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/outcome.json` | `3fcc71dcd60f` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/smoke-config.json` | `21b111d9e92e` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/source-binding.json` | `4f993e1edceb` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/budgets/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.jsonl` | `72a84a3c5ba6` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/inference/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d/receipts/ic-9676bade4caff0cd06b1db16cfb96e249…` | `39602b95935f` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/inference/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d/routes/a3cb6ea7b4f679fa5ba5827554e067e79642f2…` | `d4f06016e09d` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.budget.lock` | `e3b0c44298fc` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.inference.lock` | `e3b0c44298fc` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.observability.lock` | `e3b0c44298fc` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/authorization.json` | `ca957e812d24` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/context-selection.json` | `385345c09ba5` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/prompt-manifest.json` | `5ebdde5e14ba` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/prompt.txt` | `58964652ff38` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/task.json` | `2c256a92fa13` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/inputs/view.json` | `1c4ec88cef55` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/logs/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.jsonl` | `71a75bf40d65` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/outcome.json` | `1b3984c63b92` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/smoke-config.json` | `011f1c867fb9` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/source-binding.json` | `4f993e1edceb` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/budgets/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.jsonl` | `72e2bf8d4737` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/inference/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/routes/e2a841e4dc3461cbc48f3426e35f222346292f…` | `9bb9bafabcfc` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.budget.lock` | `e3b0c44298fc` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.inference.lock` | `e3b0c44298fc` | `-` |
+| deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.observability.lock` | `e3b0c44298fc` | `-` |

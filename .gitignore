@@ -66,3 +66,7 @@ docs/ai_history.lock
 runtime/local-full-cycle/
 runtime/m3-diagnostics/
 runtime/m3-real-attempts/
+
+# Create-only M6 smoke evidence and explicit M3 selections stay local.
+runtime/m6-context-selections/
+runtime/m6-official-smokes/
