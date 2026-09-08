@@ -2,58 +2,111 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "m6-context-selection.schema.json",
   "title": "M6ContextSelection",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "selection_id",
-    "m3_run_id",
-    "m3_binding_sha256",
-    "extracted_artifact_sha256",
-    "normalized_locator",
-    "normalized_sha256",
-    "units",
-    "selection_hash"
-  ],
-  "properties": {
-    "schema_version": {"const": "1.0.0"},
-    "selection_id": {
+  "$defs": {
+    "selectionId": {
       "type": "string",
       "pattern": "^selection-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
     },
-    "m3_run_id": {"type": "string", "pattern": "^ingest-[a-f0-9]{64}$"},
-    "m3_binding_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "extracted_artifact_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "normalized_locator": {
+    "runId": {"type": "string", "pattern": "^ingest-[a-f0-9]{64}$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "normalizedLocator": {
       "type": "string",
       "pattern": "^artifacts/extracted/[a-f0-9]{64}/normalized\\.json$"
     },
-    "normalized_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "units": {
-      "type": "array",
-      "minItems": 1,
-      "maxItems": 10000,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "unit_id", "locator", "page", "line_start", "line_end",
-          "content_bytes", "content_sha256"
-        ],
-        "properties": {
-          "unit_id": {"type": "string", "pattern": "^page-[0-9]{4}$"},
-          "locator": {
-            "type": "string",
-            "pattern": "^m3-normalized:block:page-[0-9]{4}:lines-[0-9]{6}-[0-9]{6}$"
-          },
-          "page": {"type": "integer", "minimum": 1, "maximum": 9999},
-          "line_start": {"type": "integer", "minimum": 0},
-          "line_end": {"type": "integer", "minimum": 0},
-          "content_bytes": {"type": "integer", "minimum": 1},
-          "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
-        }
+    "pageUnit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id", "locator", "page", "line_start", "line_end",
+        "content_bytes", "content_sha256"
+      ],
+      "properties": {
+        "unit_id": {"type": "string", "pattern": "^page-[0-9]{4}$"},
+        "locator": {
+          "type": "string",
+          "pattern": "^m3-normalized:block:page-[0-9]{4}:lines-[0-9]{6}-[0-9]{6}$"
+        },
+        "page": {"type": "integer", "minimum": 1, "maximum": 9999},
+        "line_start": {"type": "integer", "minimum": 0},
+        "line_end": {"type": "integer", "minimum": 0},
+        "content_bytes": {"type": "integer", "minimum": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
       }
     },
-    "selection_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
-  }
+    "segmentUnit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id", "locator", "page", "line_start", "line_end",
+        "content_bytes", "content_sha256"
+      ],
+      "properties": {
+        "unit_id": {
+          "type": "string",
+          "pattern": "^segment-[0-9]{4}-[0-9]{6}-[0-9]{6}$"
+        },
+        "locator": {
+          "type": "string",
+          "pattern": "^m3-normalized:segment:page-[0-9]{4}:lines-[0-9]{6}-[0-9]{6}$"
+        },
+        "page": {"type": "integer", "minimum": 1, "maximum": 9999},
+        "line_start": {"type": "integer", "minimum": 0, "maximum": 999999},
+        "line_end": {"type": "integer", "minimum": 0, "maximum": 999999},
+        "content_bytes": {"type": "integer", "minimum": 1},
+        "content_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "selection_id", "m3_run_id",
+        "m3_binding_sha256", "extracted_artifact_sha256",
+        "normalized_locator", "normalized_sha256", "units", "selection_hash"
+      ],
+      "properties": {
+        "schema_version": {"const": "1.0.0"},
+        "selection_id": {"$ref": "#/$defs/selectionId"},
+        "m3_run_id": {"$ref": "#/$defs/runId"},
+        "m3_binding_sha256": {"$ref": "#/$defs/sha256"},
+        "extracted_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "normalized_locator": {"$ref": "#/$defs/normalizedLocator"},
+        "normalized_sha256": {"$ref": "#/$defs/sha256"},
+        "units": {
+          "type": "array", "minItems": 1, "maxItems": 10000,
+          "items": {"$ref": "#/$defs/pageUnit"}
+        },
+        "selection_hash": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "selection_kind", "selection_id", "m3_run_id",
+        "m3_binding_sha256", "extracted_artifact_sha256",
+        "normalized_locator", "normalized_sha256", "units",
+        "selected_content_bytes", "selected_content_sha256", "selection_hash"
+      ],
+      "properties": {
+        "schema_version": {"const": "2.0.0"},
+        "selection_kind": {"const": "line_segments"},
+        "selection_id": {"$ref": "#/$defs/selectionId"},
+        "m3_run_id": {"$ref": "#/$defs/runId"},
+        "m3_binding_sha256": {"$ref": "#/$defs/sha256"},
+        "extracted_artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "normalized_locator": {"$ref": "#/$defs/normalizedLocator"},
+        "normalized_sha256": {"$ref": "#/$defs/sha256"},
+        "units": {
+          "type": "array", "minItems": 1, "maxItems": 10000,
+          "items": {"$ref": "#/$defs/segmentUnit"}
+        },
+        "selected_content_bytes": {"type": "integer", "minimum": 2},
+        "selected_content_sha256": {"$ref": "#/$defs/sha256"},
+        "selection_hash": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  ]
 }

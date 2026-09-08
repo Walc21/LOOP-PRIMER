@@ -21,10 +21,13 @@ o tokenizer do runner. Aumentar o limite apenas deslocaria a fronteira e não
 registraria por que determinado conteúdo foi escolhido. O smoke também não
 trunca texto, escolhe primeiras páginas, usa OCR ou inventa fallback.
 
-Antes do preflight, o operador precisa decidir quais blocos integrais de página
-já registrados em `normalized.json` são pertinentes. Não existe seleção
-default. A ferramenta abaixo é inerte sem `--create`; com a flag, cria uma única
-vez um manifesto `selection-UUID.json` sob a raiz allowlisted, sem modificar M3:
+Antes do preflight, o operador precisa decidir quais páginas integrais ou quais
+segmentos de linhas canônicas já registrados em `normalized.json` são
+pertinentes. Não existe seleção default, e a ferramenta não toma essa decisão
+científica. Ela é inerte sem `--create`; com a flag, cria uma única vez um
+manifesto `selection-UUID.json` sob a raiz allowlisted, sem modificar M3.
+
+Seleção histórica por página integral:
 
 ```bash
 python3 scripts/m6_context_selection.py \
@@ -41,6 +44,42 @@ manifesto não contém texto livre nem path de conteúdo fornecido pelo operador
 ele registra locators estruturais, intervalos integrais de linhas, tamanhos e
 hashes derivados de M3, além dos hashes do binding, do artefato extraído e de
 `normalized.json`.
+
+Seleção nova por segmentos inclusivos de linhas:
+
+```bash
+python3 scripts/m6_context_selection.py \
+  --m3-root 'runtime/m3-real-attempts/attempt-<UUID>' \
+  --m3-run-id 'ingest-<sha256-do-pdf>' \
+  --output 'runtime/m6-context-selections/selection-<UUID>.json' \
+  --segment '<pagina>:<linha-inicial>:<linha-final>' \
+  --create
+```
+
+`--segment` pode ser repetido, mas não pode ser misturado com `--page`.
+Página e linhas são identificadores numéricos canônicos do M3; os limites são
+inclusivos e as linhas são os índices globais que `normalized.json` associa à
+página. Segmento de uma linha, como `1:17:17`, é válido. Intervalo invertido,
+vazio, fora da página, inexistente, duplicado ou sobreposto é recusado. A ordem
+persistida é sempre `(página, linha inicial, linha final)`. Segmentos
+adjacentes continuam distintos: não existe merge, expansão, preenchimento de
+lacuna ou contexto adicional implícito.
+
+O manifesto de página inteira mantém a versão `1.0.0` e continua legível
+exatamente como foi criado. Ele não é reescrito, migrado ou reinterpretado.
+O manifesto de segmentos usa `2.0.0`, `selection_kind=line_segments` e cada
+unidade contém `unit_id`, locator, página, limites, tamanho e SHA-256 dos
+bytes reconstruídos. O topo vincula run, binding M3, artefato extraído e
+`normalized.json`, além do tamanho e SHA-256 do agregado canônico ordenado
+dos fragmentos. `selection_hash` vincula o manifesto inteiro sem seu próprio
+campo de hash.
+
+A CLI de criação aceita somente paths relativos contidos nas raízes runtime
+allowlisted. Path absoluto, travessia, barra invertida, symlink, arquivo não
+regular, raiz externa ou destino existente falha fechado. A API interna recebe
+as allowlists explicitamente e aplica a mesma contenção. O operador nunca
+fornece texto do artigo, bytes, hash, prompt, path de conteúdo, intervalo por
+byte nem consulta semântica.
 
 ## Contrato do comando
 
@@ -69,7 +108,11 @@ o manifesto, reconstrói os fragmentos, valida task/schema e compila o prompt
 final com wrapper. A resposta `READY` informa, sem conteúdo científico, hashes
 e tamanhos do prompt, mensagens, schema científico, `response_format`,
 envelope e corpo HTTP, além do teto conservador de entrada, saída reservada,
-margem e total. Uso reportado por uma chamada anterior nunca ajusta essa
+margem e total. Também informa versão/tipo da seleção, segmentos, páginas,
+limites, hashes, tamanhos dos fragmentos e do contexto materializado e
+`headroom_tokens`. Em overflow, `BLOCKED` inclui a mesma decomposição, com
+headroom negativo e o motivo, sem expor texto, prompt completo, PDF, resposta,
+segredo ou credencial. Uso reportado por uma chamada anterior nunca ajusta essa
 admissão. Ele não exige autorização live, não cria a tentativa e não chama
 endpoint. Uma falha prevista responde JSON `BLOCKED` com exit 2 e sem
 traceback.

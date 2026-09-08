@@ -1,5 +1,48 @@
 # Decisões arquiteturais
 
+## ADR-043 — Segmentos canônicos de linhas na seleção de contexto M6
+
+**Status:** Implementado e validado offline. **Data:** 2026-09-08.
+
+O contrato de seleção M6 passa a ter duas versões explícitas. `1.0.0` preserva
+sem migração o manifesto histórico cuja unidade é uma página integral.
+`2.0.0` seleciona somente segmentos inclusivos de linhas contíguas já presentes
+em `normalized.json`, identificados pela tripla numérica fornecida pelo operador
+`página:linha_inicial:linha_final`. O operador não fornece texto, bytes, prompt,
+hash, path de conteúdo, intervalo por byte ou instrução para escolha automática.
+
+O segmento `2.0.0` contém locator estrutural derivado, página, limites, tamanho
+e SHA-256 dos bytes canônicos reconstruídos. O topo do manifesto vincula run e
+binding M3, artefato extraído e bytes de `normalized.json`, além de tamanho e
+SHA-256 agregados da sequência exata dos fragmentos em ordem canônica por
+`(página, linha_inicial, linha_final)`. Segmentos vazios, invertidos, ausentes,
+duplicados ou sobrepostos são recusados. Segmentos adjacentes continuam
+distintos: não existe merge, expansão, preenchimento de lacuna ou inclusão de
+contexto não declarado.
+
+Um único parser/materializador versionado revalida `SOURCE_READY`, identidade
+M3, locator, limites, associação linha-página, hashes individuais, hash
+agregado, ordem e manifesto canônico. Essa mesma materialização é consumida
+pelo preflight e pelo caminho de execução; o corpo HTTP estruturado construído
+a partir dela permanece a fonte da admissão. A inspeção offline expõe somente
+metadados, hashes e tamanhos, inclusive headroom, nunca texto científico,
+prompt, resposta, PDF ou credencial.
+
+A ferramenta de criação continua inerte sem `--create`, publica somente em
+destino novo sob a allowlist e rejeita symlink, traversal, path absoluto,
+arquivo não regular e destino existente. O M3 e manifests `1.0.0` não são
+reescritos. Toda falha determinística ou overflow antecede attempt, route,
+ledger, reserva, receipt e backend. Permanecem inalterados
+`context_limit=8192`, mínimo W11 de 2.048 tokens, margem 512 e a fórmula
+`ceil(bytes_do_corpo_HTTP / 4 * 2) + saída_reservada + 512`, assim como uma
+chamada, zero retry/fallback/refund implícito, `FAILED_OUTPUT`, `UNCERTAIN`,
+ordem operacional e defaults fail-closed.
+
+Segmentos menores podem melhorar admissão e rastreabilidade, mas não determinam
+quais trechos são cientificamente pertinentes. Essa escolha continua humana e
+uma seleção criada não autoriza modelo, Ollama, Prime Agent, endpoint, rede,
+API paga ou execução científica.
+
 ## ADR-042 — Smoke oficial M6 limitado a uma tarefa routed
 
 **Status:** Endurecimento implementado e validado offline. **Data:** 2026-09-07.

@@ -232,6 +232,47 @@ de diagnóstico permaneceu ausente, os dois manifests congelados conservaram
 seus 16 e 15 arquivos e seus hashes agregados anteriores, e não houve chamada
 ao endpoint nem inferência.
 
+### Seleção M6 por segmentos canônicos de linhas — 2026-09-08
+
+Evoluir offline a granularidade da seleção explícita sem alterar o M3 ou
+qualquer evidência runtime. O manifesto `1.0.0` de páginas inteiras permanecerá
+legível e imutável; um manifesto `2.0.0` distinto representará exclusivamente
+segmentos inclusivos delimitados por linhas já existentes em
+`normalized.json`. A interface aceitará somente a tripla numérica
+`página:linha_inicial:linha_final`; texto, bytes, hashes, paths de conteúdo,
+intervalos por byte e instruções semânticas não serão entradas do operador.
+
+Cada segmento registrará página, limites, locator estrutural, tamanho e SHA-256
+dos bytes reconstruídos. O manifesto também registrará tamanho e hash agregado
+da sequência canônica exata dos fragmentos. Criação e leitura revalidarão raiz
+M3 allowlisted, run `SOURCE_READY`, artefato extraído, `normalized.json`,
+existência e associação de cada linha à página, ordem `(página, início, fim)`,
+unicidade e ausência de sobreposição. Não haverá ordenação científica, merge,
+expansão, preenchimento de lacunas ou contexto adicional implícito.
+
+O mesmo carregador/materializador versionado alimentará preflight e futura
+execução. A inspeção offline continuará sem exibir conteúdo e acrescentará
+versão/tipo de seleção, segmentos, limites, hashes, tamanhos, bytes de contexto,
+corpo HTTP completo, estimativa conservadora, saída, margem, total e headroom.
+Overflow permanecerá `BLOCKED` antes de attempt, route, ledger, reserva,
+receipt ou backend, com `context_limit=8192`, saída W11 mínima de 2.048 e fórmula
+`ceil(bytes_do_corpo_HTTP / 4 * 2) + saída_reservada + 512` inalterados.
+
+Testes sintéticos cobrirão segmento parcial exato, ordem, duplicação,
+sobreposição, limites inválidos, página ausente, adulteração, mudança M3,
+fronteiras de path e arquivo, compatibilidade `1.0.0`, admissão compacta,
+overflow sem efeitos e identidade entre materialização, hashes e corpo usado
+por preflight/execução. Nenhum teste ou ferramenta deste escopo iniciará PDF
+real, modelo, Ollama, Prime Agent, endpoint, rede, API paga ou smoke real.
+
+Implementação offline concluída: o schema aceita por `oneOf` os contratos
+`1.0.0` e `2.0.0`; o gerador cria segmentos somente pela tripla numérica; o
+carregador compartilhado reconstrói e revalida unidades e agregado; e preflight
+e execução passam pelo mesmo `_prepare_smoke`, corpo estruturado e fórmula de
+admissão. Os 58 testes M6 oficial/M3 diretamente afetados aprovaram, incluindo
+uma página sintética excessiva recusada e um segmento curto da mesma página
+admitido, sem endpoint ou modelo. Nenhum arquivo em `runtime/` foi alterado.
+
 ## Execução local autorizada — 2026-09-06
 
 Implementar uma única CLI project-local para compor M3/M5/M6 routed/M7/M8

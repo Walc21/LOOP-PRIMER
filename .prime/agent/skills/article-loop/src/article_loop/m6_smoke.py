@@ -46,6 +46,9 @@ _RUN = re.compile(r"ingest-[a-f0-9]{64}\Z")
 _UNIT_LOCATOR = re.compile(
     r"m3-normalized:block:page-([0-9]{4}):lines-([0-9]{6})-([0-9]{6})\Z"
 )
+_SEGMENT_LOCATOR = re.compile(
+    r"m3-normalized:segment:page-([0-9]{4}):lines-([0-9]{6})-([0-9]{6})\Z"
+)
 CONTEXT_OVERHEAD_TOKENS = 512
 W11_MIN_OUTPUT_TOKENS = 2048
 REQUEST_BYTES_PER_TOKEN = 4
@@ -75,6 +78,10 @@ _CONFIG_FIELDS = {
 
 class M6SmokeError(RuntimeError):
     """The official single-task smoke contract was not satisfied."""
+
+    def __init__(self, message: str, *, inspection: Mapping[str, Any] | None = None):
+        super().__init__(message)
+        self.inspection = dict(inspection) if inspection is not None else None
 
 
 def audit_local_ollama_compatibility(
@@ -467,7 +474,7 @@ def _normalized_source(
     return value, raw, locator
 
 
-def _unit_fragment(
+def _page_fragment(
     normalized: Mapping[str, Any], page: int,
 ) -> tuple[dict[str, Any], bytes]:
     block = normalized["blocks"][page - 1]
@@ -487,6 +494,72 @@ def _unit_fragment(
         "content_bytes": len(raw), "content_sha256": sha256(raw),
     }
     return unit, raw
+
+
+def _segment_fragment(
+    normalized: Mapping[str, Any], page: int, line_start: int, line_end: int,
+) -> tuple[dict[str, Any], bytes]:
+    if page < 1 or page > normalized["pages"]:
+        raise M6SmokeError("selected M3 segment page does not exist")
+    if line_start < 0 or line_end < line_start or line_end > 999999:
+        raise M6SmokeError("selected M3 segment bounds are invalid")
+    lines = [
+        line for line in normalized["lines"]
+        if line["page"] == page and line_start <= line["line"] <= line_end
+    ]
+    if [line["line"] for line in lines] != list(range(line_start, line_end + 1)):
+        raise M6SmokeError(
+            "selected M3 segment is empty, non-contiguous, or outside its page bounds",
+        )
+    locator = (
+        f"m3-normalized:segment:page-{page:04d}:"
+        f"lines-{line_start:06d}-{line_end:06d}"
+    )
+    fragment = {
+        "schema_version": "2.0.0", "locator": locator, "page": page,
+        "line_start": line_start, "line_end": line_end, "lines": lines,
+    }
+    raw = canonical_bytes(fragment)
+    unit = {
+        "unit_id": f"segment-{page:04d}-{line_start:06d}-{line_end:06d}",
+        "locator": locator, "page": page,
+        "line_start": line_start, "line_end": line_end,
+        "content_bytes": len(raw), "content_sha256": sha256(raw),
+    }
+    return unit, raw
+
+
+def _aggregate_fragment_bytes(fragments: list[bytes] | tuple[bytes, ...]) -> bytes:
+    """Frame the exact ordered fragments as one canonical aggregate."""
+    return canonical_bytes([json.loads(fragment) for fragment in fragments])
+
+
+def _validated_segments(
+    segments: list[tuple[int, int, int]] | tuple[tuple[int, int, int], ...],
+) -> list[tuple[int, int, int]]:
+    if not isinstance(segments, (list, tuple)) or not segments:
+        raise M6SmokeError("at least one explicit numeric M3 line segment is required")
+    checked: list[tuple[int, int, int]] = []
+    for segment in segments:
+        if (
+            not isinstance(segment, (list, tuple)) or len(segment) != 3
+            or any(type(number) is not int for number in segment)
+        ):
+            raise M6SmokeError("M3 segments must be numeric page:start:end triples")
+        page, line_start, line_end = segment
+        if page < 1 or page > 9999 or line_start < 0 or line_end < line_start or line_end > 999999:
+            raise M6SmokeError("selected M3 segment bounds are invalid")
+        checked.append((page, line_start, line_end))
+    ordered = sorted(checked)
+    if len(set(ordered)) != len(ordered):
+        raise M6SmokeError("M3 line segments must be unique")
+    previous_by_page: dict[int, tuple[int, int]] = {}
+    for page, line_start, line_end in ordered:
+        previous = previous_by_page.get(page)
+        if previous is not None and line_start <= previous[1]:
+            raise M6SmokeError("M3 line segments must not overlap")
+        previous_by_page[page] = (line_start, line_end)
+    return ordered
 
 
 def _selection_hash(value: Mapping[str, Any]) -> str:
@@ -509,7 +582,8 @@ def _validate_selection_schema(contracts: Path, value: Any) -> None:
 
 def create_context_selection(
     contract_root: str | Path, m3_root: str | Path, m3_run_id: str,
-    output: str | Path, pages: list[int] | tuple[int, ...], *,
+    output: str | Path, pages: list[int] | tuple[int, ...] = (), *,
+    segments: list[tuple[int, int, int]] | tuple[tuple[int, int, int], ...] = (),
     allowed_m3_parent: str | Path, allowed_selection_parent: str | Path,
 ) -> dict[str, Any]:
     """Create one canonical selection manifest without changing M3."""
@@ -517,14 +591,21 @@ def create_context_selection(
     if contracts.is_symlink() or not contracts.is_dir():
         raise M6SmokeError("contract root is missing or unsafe")
     m3 = _direct_child(Path(m3_root), Path(allowed_m3_parent), must_exist=True)
-    if not isinstance(pages, (list, tuple)) or not pages or any(type(page) is not int for page in pages):
-        raise M6SmokeError("at least one explicit integer M3 page block is required")
-    if len(set(pages)) != len(pages):
-        raise M6SmokeError("M3 page blocks must be unique")
-    selected_pages = sorted(pages)
+    if pages and segments:
+        raise M6SmokeError("page blocks and line segments cannot be mixed")
+    if segments:
+        selected_segments = _validated_segments(segments)
+        selected_pages: list[int] = []
+    else:
+        if not isinstance(pages, (list, tuple)) or not pages or any(type(page) is not int for page in pages):
+            raise M6SmokeError("at least one explicit integer M3 page block is required")
+        if len(set(pages)) != len(pages):
+            raise M6SmokeError("M3 page blocks must be unique")
+        selected_pages = sorted(pages)
+        selected_segments = []
     binding = _source_binding(m3, m3_run_id)
     normalized, normalized_raw, normalized_locator = _normalized_source(m3, binding)
-    if selected_pages[0] < 1 or selected_pages[-1] > normalized["pages"]:
+    if selected_pages and (selected_pages[0] < 1 or selected_pages[-1] > normalized["pages"]):
         raise M6SmokeError("selected M3 page block does not exist")
     parent = Path(allowed_selection_parent).absolute()
     if not parent.exists():
@@ -534,22 +615,46 @@ def create_context_selection(
     if parent.is_symlink() or not parent.is_dir():
         raise M6SmokeError("selection runtime root is unsafe")
     target = _direct_selection_file(Path(output), parent, must_exist=False)
-    units = [_unit_fragment(normalized, page)[0] for page in selected_pages]
+    if selected_segments:
+        materialized = [
+            _segment_fragment(normalized, page, line_start, line_end)
+            for page, line_start, line_end in selected_segments
+        ]
+        units = [unit for unit, _ in materialized]
+        fragments = [raw for _, raw in materialized]
+        aggregate = _aggregate_fragment_bytes(fragments)
+        schema_version = "2.0.0"
+    else:
+        units = [_page_fragment(normalized, page)[0] for page in selected_pages]
+        aggregate = b""
+        schema_version = "1.0.0"
     manifest: dict[str, Any] = {
-        "schema_version": "1.0.0", "selection_id": target.stem,
+        "schema_version": schema_version, "selection_id": target.stem,
         "m3_run_id": m3_run_id,
         "m3_binding_sha256": sha256(canonical_bytes(binding)),
         "extracted_artifact_sha256": binding["artifact_hashes"]["extracted"],
         "normalized_locator": normalized_locator,
         "normalized_sha256": sha256(normalized_raw), "units": units,
     }
+    if selected_segments:
+        manifest.update({
+            "selection_kind": "line_segments",
+            "selected_content_bytes": len(aggregate),
+            "selected_content_sha256": sha256(aggregate),
+        })
     manifest["selection_hash"] = _selection_hash(manifest)
     _validate_selection_schema(contracts.resolve(), manifest)
     _write_once(target, manifest)
     return {
         "status": "CREATED", "selection_manifest": str(target),
         "selection_id": target.stem, "selection_hash": manifest["selection_hash"],
-        "selected_pages": selected_pages, "m3_modified": False,
+        "selection_version": schema_version,
+        "selected_pages": selected_pages,
+        "selected_segments": [
+            {"page": page, "line_start": line_start, "line_end": line_end}
+            for page, line_start, line_end in selected_segments
+        ],
+        "m3_modified": False,
     }
 
 
@@ -579,21 +684,67 @@ def _load_selection(
         or value["normalized_sha256"] != sha256(normalized_raw)
     ):
         raise M6SmokeError("selection manifest M3 binding diverges")
-    pages = [unit["page"] for unit in value["units"]]
-    if pages != sorted(set(pages)):
-        raise M6SmokeError("selection units must be unique and canonically ordered")
+    version = value["schema_version"]
     items: list[ContextItem] = []
+    fragments: list[bytes] = []
+    if version == "1.0.0":
+        pages = [unit["page"] for unit in value["units"]]
+        if pages != sorted(set(pages)):
+            raise M6SmokeError("selection units must be unique and canonically ordered")
+    else:
+        triples = [
+            (unit["page"], unit["line_start"], unit["line_end"])
+            for unit in value["units"]
+        ]
+        if triples != _validated_segments(triples):
+            raise M6SmokeError("selection segments are not canonically ordered")
     for recorded in value["units"]:
         if recorded["page"] > normalized["pages"]:
             raise M6SmokeError("selection unit references a missing M3 block")
-        expected, fragment_raw = _unit_fragment(normalized, recorded["page"])
-        if recorded != expected or _UNIT_LOCATOR.fullmatch(recorded["locator"]) is None:
-            raise M6SmokeError("selection unit differs from its canonical M3 block")
+        if version == "1.0.0":
+            expected, fragment_raw = _page_fragment(normalized, recorded["page"])
+            locator_valid = _UNIT_LOCATOR.fullmatch(recorded["locator"]) is not None
+            label = "canonical M3 block"
+        else:
+            expected, fragment_raw = _segment_fragment(
+                normalized, recorded["page"], recorded["line_start"], recorded["line_end"],
+            )
+            locator_valid = _SEGMENT_LOCATOR.fullmatch(recorded["locator"]) is not None
+            label = "canonical M3 segment"
+        if recorded != expected or not locator_valid:
+            raise M6SmokeError(f"selection unit differs from its {label}")
+        fragments.append(fragment_raw)
         items.append(ContextItem(
             recorded["locator"], normalized_locator,
             recorded["content_sha256"], fragment_raw.decode("ascii"),
         ))
+    if version == "2.0.0":
+        aggregate = _aggregate_fragment_bytes(fragments)
+        if (
+            value["selected_content_bytes"] != len(aggregate)
+            or value["selected_content_sha256"] != sha256(aggregate)
+        ):
+            raise M6SmokeError("selection aggregate differs from canonical M3 segments")
     return value, raw, tuple(items)
+
+
+def _selection_inspection(
+    selection: Mapping[str, Any], items: tuple[ContextItem, ...],
+) -> dict[str, Any]:
+    fragments = [item.text.encode("ascii") for item in items]
+    aggregate = _aggregate_fragment_bytes(fragments)
+    return {
+        "schema_version": selection["schema_version"],
+        "selection_kind": (
+            "whole_pages" if selection["schema_version"] == "1.0.0"
+            else selection["selection_kind"]
+        ),
+        "unit_count": len(selection["units"]),
+        "units": [dict(unit) for unit in selection["units"]],
+        "fragment_content_bytes": sum(len(fragment) for fragment in fragments),
+        "selected_content_bytes": len(aggregate),
+        "selected_content_sha256": sha256(aggregate),
+    }
 
 
 @dataclass(frozen=True)
@@ -607,6 +758,7 @@ class _PreparedSmoke:
     selection: dict[str, Any]
     selection_bytes: bytes
     selection_manifest_sha256: str
+    selection_inspection: dict[str, Any]
     admission: dict[str, Any]
     request_manifest: dict[str, Any]
     compatibility_proof: dict[str, Any]
@@ -683,6 +835,7 @@ def _prepare_smoke(
         contracts, m3_root, binding, config.selection_manifest,
         allowed_selection_parent,
     )
+    selection_inspection = _selection_inspection(selection, items)
     suffix = attempt.name.removeprefix("attempt-")
     run_id = f"m6-smoke-{suffix}"
     locators = [item.locator for item in items]
@@ -701,6 +854,9 @@ def _prepare_smoke(
     context_tokens = (len(canonical_bytes(identity)) + 3) // 4
     context = MaterializedContext(
         task["task_id"], "deny_remote", items, (), context_hash, context_tokens,
+    )
+    selection_inspection["materialized_context_bytes"] = len(
+        context.prompt_fragment().encode("ascii")
     )
     try:
         compiled = compile_prompt(
@@ -773,6 +929,9 @@ def _prepare_smoke(
         request_body_bytes * REQUEST_TOKEN_SAFETY_MULTIPLIER
         + REQUEST_BYTES_PER_TOKEN - 1
     ) // REQUEST_BYTES_PER_TOKEN)
+    total_admission_tokens = (
+        safe_input_tokens + config.max_output_tokens + CONTEXT_OVERHEAD_TOKENS
+    )
     admission = {
         "compiled_prompt_and_context_bytes": len(prompt.encode("utf-8")),
         "request_body_bytes": request_body_bytes,
@@ -784,8 +943,10 @@ def _prepare_smoke(
         "reserved_output_tokens": config.max_output_tokens,
         "overhead_tokens": CONTEXT_OVERHEAD_TOKENS,
         "context_margin_tokens": CONTEXT_OVERHEAD_TOKENS,
-        "total_admission_tokens": safe_input_tokens + config.max_output_tokens + CONTEXT_OVERHEAD_TOKENS,
+        "total_admission_tokens": total_admission_tokens,
         "context_limit": config.context_limit,
+        "headroom_tokens": config.context_limit - total_admission_tokens,
+        "status": "READY" if total_admission_tokens <= config.context_limit else "BLOCKED",
     }
     if admission["total_admission_tokens"] > config.context_limit:
         raise M6SmokeError(
@@ -795,6 +956,12 @@ def _prepare_smoke(
             f"margin={CONTEXT_OVERHEAD_TOKENS}, "
             f"total={admission['total_admission_tokens']}, "
             f"limit={config.context_limit})",
+            inspection={
+                "selection": selection_inspection,
+                "context_hash": context.context_hash,
+                "request": structured.manifest(),
+                "admission": admission,
+            },
         )
     request = replace(provisional, estimate_tokens=safe_input_tokens)
     request_manifest: dict[str, Any] = {
@@ -806,7 +973,8 @@ def _prepare_smoke(
     request_manifest["request_manifest_sha256"] = sha256(canonical_bytes(request_manifest))
     return _PreparedSmoke(
         binding, task, view, context, prompt, request, selection, selection_raw,
-        sha256(selection_raw), admission, request_manifest, compatibility,
+        sha256(selection_raw), selection_inspection, admission, request_manifest,
+        compatibility,
     )
 
 
@@ -836,6 +1004,7 @@ def preflight_official_smoke(
         "selection_id": prepared.selection["selection_id"],
         "selection_hash": prepared.selection["selection_hash"],
         "selection_manifest_sha256": prepared.selection_manifest_sha256,
+        "selection": prepared.selection_inspection,
         "m3_binding_sha256": sha256(canonical_bytes(prepared.binding)),
         "context_hash": prepared.context.context_hash,
         "admission": prepared.admission,

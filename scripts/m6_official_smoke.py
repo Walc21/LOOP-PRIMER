@@ -79,7 +79,10 @@ def main(argv: list[str] | None = None) -> int:
                 human_authorized=args.human_authorized,
             )
     except M6SmokeError as error:
-        print(json.dumps({"status": "BLOCKED", "cause": str(error)}, sort_keys=True))
+        blocked = {"status": "BLOCKED", "cause": str(error)}
+        if error.inspection is not None:
+            blocked["inspection"] = error.inspection
+        print(json.dumps(blocked, sort_keys=True))
         return 2
     print(json.dumps(result, sort_keys=True))
     return 0

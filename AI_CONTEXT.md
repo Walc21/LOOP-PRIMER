@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `d61df35bb698360b32237fcafd5a3830619e519126c155ffba7f57981cfd50cc`
-- Baseline da última sessão: `d61df35bb698360b32237fcafd5a3830619e519126c155ffba7f57981cfd50cc`
+- Fingerprint atual das fontes: `b4b16e26ba7716b9813aea34c350262b826a84f53a4040943b531a8b1313eda5`
+- Baseline da última sessão: `b4b16e26ba7716b9813aea34c350262b826a84f53a4040943b531a8b1313eda5`
 - Inventário: 639 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (343190 bytes; SHA-256 `31913baef8f8c3c1`).
+- Histórico detalhado: `docs/AI_HISTORY.md` (345880 bytes; SHA-256 `041bb0aad2002681`).
 
 ## Estado e limites atuais
 
@@ -30,12 +30,7 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 60.
-- `m6-w11-live-output-schema-failure-20260908` — A smoke W11 local autorizada alcançou receipt e reconcile, mas terminou FAILED_OUTPUT porque a unica resposta do modelo nao satisfez o schema cientifico.
-  - mudança: Criada tentativa isolada attempt-ac648a70-42b6-4560-a01b-58402edcdb4d com uma chamada local ao modelo deepscaler-m14-context:latest e contexto M3 das paginas 1 e 3.
-  - decisão: Nao repetir, retomar ou alterar a tentativa: receipt schema_invalid e evidencia duravel permanecem congelados.
-  - risco: A saida invalida nao foi publicada e output_sha256 e nulo; a causa especifica dentro da resposta nao pode ser inferida sem criar contrato fragil. Nova tentativa exige autorizacao humana nova.
-  - próximo: Diagnosticar offline o contrato de prompt e schema para tornar uma futura smoke mais capaz de produzir JSON valido, sem repetir esta tentativa.
+- Sessões estruturadas registradas: 61.
 - `m6-structured-output-admission-hardening-20260908` — Endurecida offline a admissão e o contrato de saída da smoke oficial M6 W11 após a tentativa congelada FAILED_OUTPUT.
   - mudança: Criada construção pura e compartilhada do corpo OpenAI-compatible JSON Schema, com hashes e tamanhos persistidos em request-manifest write-once.
   - decisão: Adotado apenas o dialeto openai_chat_completions_json_schema no path exato /v1/chat/completions, sem API nativa ou fallback.
@@ -46,6 +41,11 @@
   - decisão: Evidencia operacional M6 permanece local e nao versionada, mas deixa de tornar a arvore Git visualmente suja.
   - risco: Os artefatos ignorados permanecem dependentes do disco local e nao sao backup ou publicacao Git.
   - próximo: Revisar e, se desejado, publicar esta regra Git isolada em commit e PR.
+- `session-8247cc84d3866873df82` — Selecao M6 por segmentos canonicos de linhas implementada offline
+  - mudança: Adicionado manifesto 2.0.0 create-only com segmentos inclusivos vinculados ao normalized.json, hashes por unidade e agregado, preservando leitura do manifesto 1.0.0 de pagina inteira.
+  - decisão: ADR-043 preserva 1.0.0 sem migracao e adota 2.0.0 apenas para segmentos numericos explicitos, ordenados e nao sobrepostos.
+  - risco: Segmentos nao escolhem relevancia cientifica e nenhuma execucao live foi autorizada; runtime e evidencias existentes permaneceram inalterados.
+  - próximo: Revisao humana do diff local antes de qualquer commit ou futura selecao/runtime autorizados.
 
 ## Roteamento obrigatório por escopo
 
