@@ -13,10 +13,12 @@ substituem essa autorização. A CLI não oferece opção para autorizar doubles
 ## Seleção M3 explícita
 
 O agregado M3 não é um contexto padrão. Na evidência de 77 páginas,
-`text.txt` possui 316.739 bytes; com `context_limit=8192`, saída reservada de
-512 tokens e overhead de 512 tokens, restam aproximadamente 28.672 bytes para
-a materialização preliminar. Aumentar o limite apenas desloca essa fronteira e
-não registra por que determinado conteúdo foi escolhido. O smoke também não
+`text.txt` possui 316.739 bytes. A admissão não usa mais apenas bytes do prompt:
+ela constrói o corpo HTTP estruturado completo e aplica o teto conservador
+`ceil(bytes_do_corpo / 4 * 2) + saída_reservada + 512`. O multiplicador é uma
+margem explícita, porque não foi provada equivalência entre a contagem local e
+o tokenizer do runner. Aumentar o limite apenas deslocaria a fronteira e não
+registraria por que determinado conteúdo foi escolhido. O smoke também não
 trunca texto, escolhe primeiras páginas, usa OCR ou inventa fallback.
 
 Antes do preflight, o operador precisa decidir quais blocos integrais de página
@@ -51,10 +53,11 @@ python3 scripts/m6_official_smoke.py \
   --role W11 \
   --model '<modelo-local-explicito>' \
   --endpoint 'http://127.0.0.1:<porta>/v1/chat/completions' \
+  --structured-output-dialect openai_chat_completions_json_schema \
   --deadline-utc '<data-hora-UTC-absoluta>' \
   --timeout-seconds '<segundos>' \
   --context-limit '<tokens>' \
-  --max-output-tokens '<tokens>'
+  --max-output-tokens 2048
 ```
 
 Esse exemplo não executa nada porque omite deliberadamente `--execute` e
@@ -63,16 +66,42 @@ modelo, endpoint e deadline atuais confirmados pelo operador.
 
 Antes dessa decisão, acrescente somente `--preflight-only`. Esse modo relê M3 e
 o manifesto, reconstrói os fragmentos, valida task/schema e compila o prompt
-final com wrapper. A resposta `READY` informa, sem conteúdo científico, bytes
-do prompt/contexto, estimativa de entrada, saída reservada, overhead e total.
-Ele não exige autorização live, não cria a tentativa e não chama endpoint. Uma
-falha prevista responde JSON `BLOCKED` com exit 2 e sem traceback.
+final com wrapper. A resposta `READY` informa, sem conteúdo científico, hashes
+e tamanhos do prompt, mensagens, schema científico, `response_format`,
+envelope e corpo HTTP, além do teto conservador de entrada, saída reservada,
+margem e total. Uso reportado por uma chamada anterior nunca ajusta essa
+admissão. Ele não exige autorização live, não cria a tentativa e não chama
+endpoint. Uma falha prevista responde JSON `BLOCKED` com exit 2 e sem
+traceback.
+
+O dialeto é obrigatório e único: `openai_chat_completions_json_schema`, com
+path exato `/v1/chat/completions`, `temperature=0` e
+`response_format.type=json_schema`, `strict=true`. Antes de admitir, o comando
+verifica offline que o executável Ollama corresponde ao perfil local auditado
+por SHA-256, versão vinculada ao hash e marcadores estáticos da rota e dos
+campos OpenAI. Essa
+verificação não inicia servidor, não consulta endpoint e não prova que o modelo
+obedecerá ao schema; uma resposta fora do contrato ainda termina
+`FAILED_OUTPUT`. Binário ausente, atualizado ou divergente exige nova auditoria
+e bloqueia antes da tentativa. Não existe API nativa ou fallback automático de
+dialeto.
 
 Os limites não são opções ajustáveis: `max_calls=1`, `max_concurrency=1`,
 `max_retries=0`, `max_cycles=1`, custo máximo zero, `deny_remote=true`, target
 único e nenhum fallback. O endpoint aceita somente HTTP com host textual exato
 `127.0.0.1` e porta explícita. `localhost`, IPv6, `0.0.0.0`, interface LAN,
 URL remota e `file://` são recusados.
+
+Para W11, 2.048 tokens são o teto recomendado para a próxima smoke e o mínimo
+aceito pelo contrato oficial. `context_limit` continua 8.192. Se a requisição
+com 2.048 tokens não comportar a seleção existente das páginas 1 e 3, o
+operador precisará escolher e criar, sob nova decisão, outro manifesto M3
+create-only mais compacto. O smoke não altera nem substitui seleções existentes.
+
+No preflight offline de 2026-09-08, a seleção existente das páginas 1 e 3 foi
+recusada antes de criar a tentativa: 12.010 tokens conservadores de entrada,
+2.048 de saída e 512 de margem totalizaram 14.570 para um limite de 8.192. Esse
+resultado não escolhe automaticamente outra evidência e não autoriza nova run.
 
 ## Evidência e parada
 
@@ -89,7 +118,9 @@ A raiz M3 é somente leitura. A raiz M6 deve não existir e é criada uma única
 vez; reentrada, retomada e sobrescrita são recusadas. Ela preserva configuração,
 autorização da invocação, binding M3, cópia byte a byte do manifesto de seleção,
 task, view, prompt, decomposição da admissão, route, budget events, output,
-inference receipt e outcome. M3 e seleção são revalidados uma segunda vez
+inference receipt e outcome. `inputs/request-manifest.json` vincula dialeto,
+endpoint, formato, prova de compatibilidade, hashes e tamanhos da requisição.
+M3 e seleção são revalidados uma segunda vez
 imediatamente antes de route/reserve/backend. A ordem operacional permanece
 `route -> reserve -> admit -> backend -> receipt -> reconcile -> stop`.
 Ambiguidade pós-envio permanece `UNCERTAIN`, sem release, refund ou retry.

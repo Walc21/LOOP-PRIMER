@@ -7,12 +7,13 @@ scientific stage.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
 import re
+import shutil
 import stat
 import tempfile
 from typing import Any, Mapping
@@ -24,9 +25,12 @@ from .budget import BudgetError, BudgetLedger, BudgetLimits, RunAuthorization
 from .execution import ContextItem, MaterializedContext
 from .inference import (
     InferenceBackendError, InferenceError, InferenceOutputError, InferenceRequest,
-    InferenceRuntime, ModelRegistry, canonical_bytes, sha256,
+    InferenceRuntime, ModelRegistry, canonical_bytes, model_output_schema, sha256,
 )
-from .inference_backends import LocalOpenAICompatibleBackend
+from .inference_backends import (
+    OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA, LocalOpenAICompatibleBackend,
+    build_openai_structured_request,
+)
 from .ingestion import IngestionError, validate_source_ready
 from .prompts import (
     PromptContractError, PromptIntegrityError, compile_prompt,
@@ -43,12 +47,27 @@ _UNIT_LOCATOR = re.compile(
     r"m3-normalized:block:page-([0-9]{4}):lines-([0-9]{6})-([0-9]{6})\Z"
 )
 CONTEXT_OVERHEAD_TOKENS = 512
+W11_MIN_OUTPUT_TOKENS = 2048
+REQUEST_BYTES_PER_TOKEN = 4
+REQUEST_TOKEN_SAFETY_MULTIPLIER = 2
+AUDITED_OLLAMA_VERSION = "0.33.2"
+AUDITED_OLLAMA_SHA256 = "20cca6e293efd5bbed05b26abba891df7dec75ac3edc640caa5f60eed95c6292"
+MAX_OLLAMA_EXECUTABLE_BYTES = 128 * 1024 * 1024
+_OLLAMA_COMPATIBILITY_MARKERS = (
+    b"/v1/chat/completions",
+    b"github.com/ollama/ollama/openai.ToChatCompletion",
+    b'json:"response_format"',
+    b'json:"json_schema,omitempty"',
+    b'json:"strict,omitempty"',
+    b'json:"schema,omitempty"',
+)
 MAX_SELECTION_MANIFEST_BYTES = 4 * 1024 * 1024
 MAX_NORMALIZED_BYTES = 64 * 1024 * 1024
 _CONFIG_FIELDS = {
     "schema_version", "enabled", "m3_root", "m3_run_id", "attempt_root",
     "selection_manifest",
-    "role_id", "model", "endpoint", "deadline_utc", "timeout_seconds",
+    "role_id", "model", "endpoint", "structured_output_dialect",
+    "deadline_utc", "timeout_seconds",
     "context_limit", "max_output_tokens", "max_calls", "max_concurrency",
     "max_retries", "max_cycles", "max_cost_microunits", "deny_remote",
 }
@@ -56,6 +75,57 @@ _CONFIG_FIELDS = {
 
 class M6SmokeError(RuntimeError):
     """The official single-task smoke contract was not satisfied."""
+
+
+def audit_local_ollama_compatibility(
+    endpoint: str, dialect: str, *, executable: str | Path | None = None,
+) -> dict[str, Any]:
+    """Prove the pinned Ollama OpenAI schema surface without server I/O."""
+    if dialect != OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA:
+        raise M6SmokeError("structured output dialect is not approved")
+    try:
+        parsed = urlsplit(endpoint)
+    except ValueError as error:
+        raise M6SmokeError("structured output endpoint is invalid") from error
+    if parsed.path != "/v1/chat/completions" or parsed.query or parsed.fragment:
+        raise M6SmokeError(
+            "OpenAI-compatible structured output requires exact /v1/chat/completions endpoint",
+        )
+    selected = str(executable) if executable is not None else shutil.which("ollama")
+    if not selected:
+        raise M6SmokeError("offline Ollama compatibility proof is unavailable")
+    path = Path(selected)
+    try:
+        info = path.lstat()
+        if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
+            raise M6SmokeError("audited Ollama executable is unsafe")
+        if info.st_size < 1 or info.st_size > MAX_OLLAMA_EXECUTABLE_BYTES:
+            raise M6SmokeError("audited Ollama executable size is invalid")
+        binary = path.read_bytes()
+    except OSError as error:
+        raise M6SmokeError("audited Ollama executable is unreadable") from error
+    executable_sha = sha256(binary)
+    if executable_sha != AUDITED_OLLAMA_SHA256:
+        raise M6SmokeError("installed Ollama binary differs from the offline audited profile")
+    missing = [marker.decode("ascii") for marker in _OLLAMA_COMPATIBILITY_MARKERS if marker not in binary]
+    if missing:
+        raise M6SmokeError("installed Ollama lacks the audited OpenAI JSON Schema surface")
+    marker_names = [marker.decode("ascii") for marker in _OLLAMA_COMPATIBILITY_MARKERS]
+    proof: dict[str, Any] = {
+        "schema_version": "1.0.0",
+        "status": "supported_verified_offline",
+        "implementation": "ollama",
+        "version_binding": "pinned_by_executable_sha256",
+        "implementation_version": AUDITED_OLLAMA_VERSION,
+        "executable_sha256": executable_sha,
+        "executable_size_bytes": len(binary),
+        "dialect": dialect,
+        "endpoint_path": parsed.path,
+        "evidence_markers_sha256": sha256(canonical_bytes(marker_names)),
+        "server_contacted": False,
+    }
+    proof["compatibility_proof_sha256"] = sha256(canonical_bytes(proof))
+    return proof
 
 
 def _utc(value: Any, *, label: str) -> str:
@@ -138,6 +208,7 @@ class SmokeConfig:
     role_id: str
     model: str
     endpoint: str
+    structured_output_dialect: str
     deadline_utc: str
     timeout_seconds: int
     context_limit: int
@@ -153,7 +224,7 @@ class SmokeConfig:
     def from_mapping(cls, value: Mapping[str, Any]) -> "SmokeConfig":
         if not isinstance(value, Mapping) or set(value) != _CONFIG_FIELDS:
             raise M6SmokeError("smoke configuration fields are invalid")
-        if value.get("schema_version") != "1.0.0":
+        if value.get("schema_version") != "1.1.0":
             raise M6SmokeError("smoke configuration version is invalid")
         if type(value.get("enabled")) is not bool:
             raise M6SmokeError("enabled must be boolean")
@@ -186,10 +257,15 @@ class SmokeConfig:
         output = _integer(value.get("max_output_tokens"), label="max_output_tokens", minimum=1)
         if output >= context:
             raise M6SmokeError("max_output_tokens must be smaller than context_limit")
+        if role == "W11" and output < W11_MIN_OUTPUT_TOKENS:
+            raise M6SmokeError("W11 max_output_tokens must be at least 2048")
+        dialect = value.get("structured_output_dialect")
+        if dialect != OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA:
+            raise M6SmokeError("structured_output_dialect is not approved")
         return cls(
-            "1.0.0", value["enabled"], Path(value["m3_root"]), run,
+            "1.1.0", value["enabled"], Path(value["m3_root"]), run,
             Path(value["attempt_root"]), Path(value["selection_manifest"]),
-            role, model, _endpoint(value["endpoint"]),
+            role, model, _endpoint(value["endpoint"]), dialect,
             _utc(value["deadline_utc"], label="deadline_utc"), timeout, context,
             output, 1, 1, 0, 1, 0, True,
         )
@@ -201,6 +277,7 @@ class SmokeConfig:
             "attempt_root": str(self.attempt_root), "role_id": self.role_id,
             "selection_manifest": str(self.selection_manifest),
             "model": self.model, "endpoint": self.endpoint,
+            "structured_output_dialect": self.structured_output_dialect,
             "deadline_utc": self.deadline_utc,
             "timeout_seconds": self.timeout_seconds,
             "context_limit": self.context_limit,
@@ -526,10 +603,13 @@ class _PreparedSmoke:
     view: dict[str, Any]
     context: MaterializedContext
     prompt: str
+    request: InferenceRequest
     selection: dict[str, Any]
     selection_bytes: bytes
     selection_manifest_sha256: str
-    admission: dict[str, int]
+    admission: dict[str, Any]
+    request_manifest: dict[str, Any]
+    compatibility_proof: dict[str, Any]
 
 
 def _policy(config: SmokeConfig, *, test_double: bool) -> dict[str, Any]:
@@ -632,27 +712,101 @@ def _prepare_smoke(
         )
     except (PromptContractError, PromptIntegrityError) as error:
         raise M6SmokeError("compiled prompt validation failed") from error
-    prompt = compiled.text + "\n# Materialized authorized M3 selection\n" + context.prompt_fragment()
+    prompt_prefix = compiled.text
     if config.role_id == "W11":
-        prompt += (
-            "\n# Routed output ownership\nEmit only the scientific AgentProposal payload; "
-            "LOOP derives protocol identity from the validated AgentTask.\n"
+        provisional_prompt = compiled.text
+        provisional = InferenceRequest.from_agent_task(
+            contracts, task, prompt=provisional_prompt,
+            required_capabilities=("language", "structured_output"),
+            estimate_tokens=0, max_output_tokens=config.max_output_tokens,
+            context_hash=context.context_hash, privacy_mode="deny_remote",
         )
-    prompt_bytes = len(prompt.encode("utf-8"))
-    prompt_tokens = max(1, (prompt_bytes + 3) // 4)
+        payload_schema = model_output_schema(contracts, provisional)
+        marker = "\n# Schema de saída\n"
+        before_schema, separator, _ = compiled.text.rpartition(marker)
+        if not separator:
+            raise M6SmokeError("compiled prompt lacks its output schema boundary")
+        prompt_prefix = (
+            before_schema + marker
+            + json.dumps(
+                payload_schema, ensure_ascii=False, sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n\n# Contrato routed de saída\n"
+            + "Retorne exatamente um objeto JSON e nenhum texto, Markdown ou bloco "
+              "fora dele. Inclua todos e somente os campos científicos exigidos "
+              "pelo schema acima. Não inclua campos de identidade ou protocolo; "
+              "LOOP os deriva da AgentTask validada.\n"
+        )
+    prompt = prompt_prefix + "\n# Materialized authorized M3 selection\n" + context.prompt_fragment()
+    provisional = InferenceRequest.from_agent_task(
+        contracts, task, prompt=prompt,
+        required_capabilities=("language", "structured_output"),
+        estimate_tokens=0, max_output_tokens=config.max_output_tokens,
+        context_hash=context.context_hash, privacy_mode="deny_remote",
+    )
+    schema = model_output_schema(contracts, provisional)
+    registry = ModelRegistry(_policy(config, test_double=False), privacy_mode="deny_remote")
+    target = registry.target("official-local-single-task")
+    suffix_schema = ".schema.json"
+    raw_schema_name = task["requested_output_schema"]
+    schema_name = (
+        raw_schema_name[:-len(suffix_schema)]
+        if raw_schema_name.endswith(suffix_schema)
+        else Path(raw_schema_name).stem
+    ).replace("-", "_")
+    try:
+        structured = build_openai_structured_request(
+            dialect=config.structured_output_dialect,
+            endpoint=config.endpoint, model=config.model, prompt=prompt,
+            max_output_tokens=config.max_output_tokens,
+            target_max_output_tokens=target.max_output_tokens,
+            schema_name=schema_name, schema=schema,
+        )
+    except InferenceError as error:
+        raise M6SmokeError("structured request construction failed") from error
+    compatibility = audit_local_ollama_compatibility(
+        config.endpoint, config.structured_output_dialect,
+    )
+    request_body_bytes = len(structured.body_bytes)
+    safe_input_tokens = max(1, (
+        request_body_bytes * REQUEST_TOKEN_SAFETY_MULTIPLIER
+        + REQUEST_BYTES_PER_TOKEN - 1
+    ) // REQUEST_BYTES_PER_TOKEN)
     admission = {
-        "compiled_prompt_and_context_bytes": prompt_bytes,
-        "estimated_input_tokens": prompt_tokens,
+        "compiled_prompt_and_context_bytes": len(prompt.encode("utf-8")),
+        "request_body_bytes": request_body_bytes,
+        "request_body_sha256": sha256(structured.body_bytes),
+        "bytes_per_token_assumption": REQUEST_BYTES_PER_TOKEN,
+        "token_safety_multiplier": REQUEST_TOKEN_SAFETY_MULTIPLIER,
+        "estimated_input_tokens": safe_input_tokens,
+        "safe_input_token_upper_bound": safe_input_tokens,
         "reserved_output_tokens": config.max_output_tokens,
         "overhead_tokens": CONTEXT_OVERHEAD_TOKENS,
-        "total_admission_tokens": prompt_tokens + config.max_output_tokens + CONTEXT_OVERHEAD_TOKENS,
+        "context_margin_tokens": CONTEXT_OVERHEAD_TOKENS,
+        "total_admission_tokens": safe_input_tokens + config.max_output_tokens + CONTEXT_OVERHEAD_TOKENS,
         "context_limit": config.context_limit,
     }
     if admission["total_admission_tokens"] > config.context_limit:
-        raise M6SmokeError("selected M3 context exceeds context_limit before attempt creation")
+        raise M6SmokeError(
+            "structured request exceeds context_limit before attempt creation "
+            f"(safe_input={safe_input_tokens}, "
+            f"reserved_output={config.max_output_tokens}, "
+            f"margin={CONTEXT_OVERHEAD_TOKENS}, "
+            f"total={admission['total_admission_tokens']}, "
+            f"limit={config.context_limit})",
+        )
+    request = replace(provisional, estimate_tokens=safe_input_tokens)
+    request_manifest: dict[str, Any] = {
+        "schema_version": "1.0.0",
+        "request": structured.manifest(),
+        "compatibility": compatibility,
+        "admission": admission,
+    }
+    request_manifest["request_manifest_sha256"] = sha256(canonical_bytes(request_manifest))
     return _PreparedSmoke(
-        binding, task, view, context, prompt, selection, selection_raw,
-        sha256(selection_raw), admission,
+        binding, task, view, context, prompt, request, selection, selection_raw,
+        sha256(selection_raw), admission, request_manifest, compatibility,
     )
 
 
@@ -685,6 +839,7 @@ def preflight_official_smoke(
         "m3_binding_sha256": sha256(canonical_bytes(prepared.binding)),
         "context_hash": prepared.context.context_hash,
         "admission": prepared.admission,
+        "request_manifest": prepared.request_manifest,
     }
 
 
@@ -764,7 +919,10 @@ def run_official_smoke(
         "selection_hash": prepared.selection["selection_hash"],
         "selection_manifest_sha256": prepared.selection_manifest_sha256,
         "admission": prepared.admission,
+        "request_manifest_sha256": prepared.request_manifest["request_manifest_sha256"],
+        "compatibility_proof_sha256": prepared.compatibility_proof["compatibility_proof_sha256"],
     })
+    _write_once(attempt / "inputs" / "request-manifest.json", prepared.request_manifest)
 
     policy = _policy(config, test_double=is_double)
     registry = ModelRegistry(policy, privacy_mode="deny_remote")
@@ -790,18 +948,16 @@ def run_official_smoke(
         _now(ledger.clock), "fresh-human-authorization-current-invocation",
         registry.policy_hash, 0, "USD",
     ))
-    selected_backend = backend or LocalOpenAICompatibleBackend(project_root=contracts)
+    selected_backend = backend or LocalOpenAICompatibleBackend(
+        project_root=contracts,
+        structured_output_dialect=config.structured_output_dialect,
+    )
     runtime = InferenceRuntime(
         attempt, ledger, registry,
         {"fake" if is_double else "local_openai_compatible": selected_backend},
         clock=clock, contract_root=contracts,
     )
-    request = InferenceRequest.from_agent_task(
-        contracts, task, prompt=prompt,
-        required_capabilities=("language", "structured_output"),
-        estimate_tokens=estimate, max_output_tokens=config.max_output_tokens,
-        context_hash=context.context_hash, privacy_mode="deny_remote",
-    )
+    request = prepared.request
 
     try:
         # The second full M3 check is deliberately adjacent to route/reserve/send.
@@ -872,6 +1028,7 @@ def run_official_smoke(
 
 
 __all__ = [
-    "M6SmokeError", "SMOKE_ROLES", "SmokeConfig", "create_context_selection",
+    "M6SmokeError", "SMOKE_ROLES", "SmokeConfig", "W11_MIN_OUTPUT_TOKENS",
+    "audit_local_ollama_compatibility", "create_context_selection",
     "preflight_official_smoke", "run_official_smoke",
 ]

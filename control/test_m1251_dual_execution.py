@@ -28,6 +28,7 @@ from article_loop import (  # noqa: E402
 from article_loop.activation import ActivationPlanner  # noqa: E402
 from article_loop.blackboard import Impact  # noqa: E402
 from article_loop.orchestrator import OrchestrationError  # noqa: E402
+from article_loop.inference_backends import OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA  # noqa: E402
 
 
 def target(target_id, *, model=None, local=True, paid=False, pricing=None):
@@ -477,6 +478,7 @@ class RemoteBackendContractTests(unittest.TestCase):
         selected = ModelRegistry(routing_policy([remote], {"W11": ["https"]})).target("https")
         backend = RemoteOpenAICompatibleBackend(
             project_root=ROOT, max_response_bytes=100_000,
+            structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
         )
         current = task(ROOT)
         request = InferenceRequest.from_agent_task(ROOT, current, prompt="bounded", required_capabilities=["language"], estimate_tokens=1, max_output_tokens=1, context_hash="d" * 64, privacy_mode="scoped_remote")

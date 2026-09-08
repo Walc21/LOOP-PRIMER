@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `063e320c8267312c207b7586560c47c334c6f289509048cef6a75de37ce5bc53`
-- Registrado em: `2026-09-08T01:59:56Z`
-- Git: branch `codex/m6-budget-authorization-clock`, HEAD `4a137bd836ee`
-- Arquivos relevantes: 655
+- Fingerprint das fontes: `11fcd61ba770693d84729f5fc17bfefd56d15b99177ef5988c7e1bfdf467340d`
+- Registrado em: `2026-09-08T03:48:36Z`
+- Git: branch `codex/m6-structured-output-admission-hardening`, HEAD `af1187aa3308`
+- Arquivos relevantes: 671
 
 ## Evolução reconstruída do versionamento
 
@@ -21,7 +21,7 @@
 | sem marco explícito | 2026-08-13..2026-09-07 | 57 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M6 | 2026-08-14..2026-09-07 | 12 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
+| M6 | 2026-08-14..2026-09-07 | 14 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
 | M7 | 2026-08-14..2026-09-01 | 6 | Síntese, merge isolado, challenger write-once e 13 gates locais. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/synthe… |
 | M8 | 2026-08-27..2026-09-01 | 3 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
 | M9 | 2026-08-28..2026-09-01 | 5 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
@@ -182,6 +182,8 @@
 | `1a0e34a2b` | 2026-09-07 | M6 | Merge pull request #13 from Walc21/codex/m6-official-single-task-smoke |  |
 | `4a22054bd` | 2026-09-07 | M6 | fix(m6): admit selected context before attempt | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py, AI_CONTEXT.md, PLANS.md, config/schemas/m6-context-se… |
 | `4a137bd83` | 2026-09-07 | M6 | Merge pull request #14 from Walc21/codex/m6-context-admission-hardening |  |
+| `72e430606` | 2026-09-07 | M6 | fix(m6): bind authorization to ledger clock | .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py, AI_CONTEXT.md, PLANS.md, control/test_m12_budget_observability.py, control/test_m6_official_smoke.py, docs/AI_HISTOR… |
+| `af1187aa3` | 2026-09-07 | M6 | Merge pull request #15 from Walc21/codex/m6-budget-authorization-clock |  |
 
 ## Decisões arquiteturais
 
@@ -3314,3 +3316,99 @@
 | modified | `control/test_m12_budget_observability.py` | `4c49c8587939` | `e58cc66f415a` |
 | modified | `control/test_m6_official_smoke.py` | `72b2c5771409` | `b1d4446c2efa` |
 | modified | `docs/decisions.md` | `d8475f18204d` | `010b2ab8ac4b` |
+
+### 2026-09-08T02:35:13Z — A smoke W11 local autorizada alcançou receipt e reconcile, mas terminou FAILED_OUTPUT porque a unica resposta do modelo nao satisfez o schema cientifico.
+
+- Session ID: `m6-w11-live-output-schema-failure-20260908`
+- Fingerprint final: `99bd58161f57200c24161cd4f9d8f9b85767d2b6affbcf66e4489ed004962995`
+- Git final: `af1187aa3308`; status relevante: 32 item(ns)
+- Delta factual: 16 adicionados, 0 modificados, 0 removidos
+
+**Mudanças**
+
+- Criada tentativa isolada attempt-ac648a70-42b6-4560-a01b-58402edcdb4d com uma chamada local ao modelo deepscaler-m14-context:latest e contexto M3 das paginas 1 e 3.
+
+**Decisões**
+
+- Nao repetir, retomar ou alterar a tentativa: receipt schema_invalid e evidencia duravel permanecem congelados.
+
+**Validações**
+
+- Preflight READY: 5974 de 8192 tokens; receipt com 7198 tokens de entrada, 512 de saida, custo zero e 37 segundos; budget registrou AUTHORIZATION, RESERVED, ADMITTED, RECONCILED e STOPPED.
+
+**Riscos/limites**
+
+- A saida invalida nao foi publicada e output_sha256 e nulo; a causa especifica dentro da resposta nao pode ser inferida sem criar contrato fragil. Nova tentativa exige autorizacao humana nova.
+
+**Próximos passos**
+
+- Diagnosticar offline o contrato de prompt e schema para tornar uma futura smoke mais capaz de produzir JSON valido, sem repetir esta tentativa.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/authorization.json` | `-` | `9255406b8db6` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/context-selection.json` | `-` | `385345c09ba5` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/prompt-manifest.json` | `-` | `0c138c28c6ef` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/prompt.txt` | `-` | `aa480c515b6f` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/task.json` | `-` | `5cede03339e8` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/inputs/view.json` | `-` | `5e7cbff59032` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/logs/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.jsonl` | `-` | `d2ee2a339188` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/outcome.json` | `-` | `3fcc71dcd60f` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/smoke-config.json` | `-` | `21b111d9e92e` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/source-binding.json` | `-` | `4f993e1edceb` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/budgets/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.jsonl` | `-` | `72a84a3c5ba6` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/inference/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d/receipts/ic-9676bade4caff0cd06b1db16cfb96e249…` | `-` | `39602b95935f` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/inference/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d/routes/a3cb6ea7b4f679fa5ba5827554e067e79642f2…` | `-` | `d4f06016e09d` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.budget.lock` | `-` | `e3b0c44298fc` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.inference.lock` | `-` | `e3b0c44298fc` |
+| added | `runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d/state/locks/m6-smoke-ac648a70-42b6-4560-a01b-58402edcdb4d.observability.lock` | `-` | `e3b0c44298fc` |
+
+### 2026-09-08T03:48:36Z — Endurecida offline a admissão e o contrato de saída da smoke oficial M6 W11 após a tentativa congelada FAILED_OUTPUT.
+
+- Session ID: `m6-structured-output-admission-hardening-20260908`
+- Fingerprint final: `11fcd61ba770693d84729f5fc17bfefd56d15b99177ef5988c7e1bfdf467340d`
+- Git final: `af1187aa3308`; status relevante: 42 item(ns)
+- Delta factual: 0 adicionados, 10 modificados, 0 removidos
+
+**Mudanças**
+
+- Criada construção pura e compartilhada do corpo OpenAI-compatible JSON Schema, com hashes e tamanhos persistidos em request-manifest write-once.
+- Admissão passou a considerar o corpo estruturado real com multiplicador conservador 2, saída reservada e margem fixa de 512 tokens antes da tentativa.
+- W11 exige mínimo e recomendação de 2048 tokens; prompt routed expõe somente o schema científico e proíbe texto extra e campos de protocolo.
+
+**Decisões**
+
+- Adotado apenas o dialeto openai_chat_completions_json_schema no path exato /v1/chat/completions, sem API nativa ou fallback.
+- O perfil Ollama 0.33.2 fica vinculado ao SHA-256 e a marcadores estáticos auditados offline; divergência bloqueia antes de efeitos.
+
+**Validações**
+
+- 114 testes focados e 543 testes integrais passaram; py_compile, bin/check.sh e git diff --check passaram.
+- Preflight read-only das páginas 1 e 3 bloqueou antes da tentativa: 12010 + 2048 + 512 = 14570 > 8192.
+- As tentativas congeladas ac648 e ae383 permaneceram byte a byte idênticas, com 16 e 15 arquivos.
+
+**Riscos/limites**
+
+- A prova offline cobre o envelope suportado pelo binário, não garante obediência do modelo; resposta inválida continua FAILED_OUTPUT após uma única chamada.
+- A seleção atual das páginas 1 e 3 não cabe com W11 em 2048 e o contexto operacional permanece 8192.
+
+**Próximos passos**
+
+- Se houver nova autorização humana, o operador deverá criar uma nova seleção M3 create-only mais compacta antes de qualquer smoke.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` | `a538afb419e9` | `332948b6f203` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/m6_smoke.py` | `8d68c9bd09a8` | `8fa30b5628a8` |
+| modified | `PLANS.md` | `f16b82df531c` | `afcef552f124` |
+| modified | `control/test_m1251_dual_execution.py` | `b6f73ce0cded` | `f9bcf67e74d2` |
+| modified | `control/test_m125_inference_routing.py` | `623838c2edb0` | `6edfde6c9e84` |
+| modified | `control/test_m6_official_smoke.py` | `b1d4446c2efa` | `f44b964f7e06` |
+| modified | `docs/decisions.md` | `010b2ab8ac4b` | `74030603a023` |
+| modified | `docs/m6-official-smoke.md` | `bce0444cf63f` | `053d2061aafe` |
+| modified | `scripts/local_loopback_full_cycle.py` | `2c661369433b` | `95bc5a336e32` |
+| modified | `scripts/m6_official_smoke.py` | `3d49a6eee838` | `22afe3ff0e66` |

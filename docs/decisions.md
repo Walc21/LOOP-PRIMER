@@ -91,6 +91,45 @@ retomada nem repetida. Ela persistiu somente a rota: não criou reserva ou
 receipt, não chamou modelo, backend ou endpoint e não gerou custo nem M7. Uma
 execução futura requer tentativa nova e autorização humana nova.
 
+### Emenda: corpo estruturado admissível, dialeto explícito e mínimo W11
+
+A admissão oficial passa a ser calculada sobre o mesmo corpo HTTP canônico que
+o backend enviaria, não apenas sobre `prompt.encode()/4`. Uma função pura
+compõe mensagem, envelope OpenAI-compatible, modelo, teto de saída,
+`temperature=0` e o schema científico projetado; preflight e backend consomem
+os mesmos bytes. A tentativa registra hashes e tamanhos separados de prompt,
+mensagens, schema, `response_format`, envelope e corpo, vinculados por um hash
+do manifesto de requisição.
+
+Não existe prova de equivalência entre a aproximação local e o tokenizer do
+runner. Por isso, o teto determinístico de entrada é
+`ceil(bytes_do_corpo / 4 * 2)`. Somam-se a ele a saída integral reservada e
+512 tokens de margem de contexto explicitamente documentada. A contagem de uso
+de uma resposta anterior não participa da fórmula. Se o total exceder o limite,
+a recusa ocorre antes da criação da tentativa e, portanto, antes de rota,
+reserva, backend ou receipt.
+
+O dialeto único é `openai_chat_completions_json_schema`, permitido somente com
+o path exato `/v1/chat/completions` e o formato
+`response_format={type: json_schema, json_schema: {name, strict: true, schema}}`.
+O Ollama local 0.33.2, binário SHA-256
+`20cca6e293efd5bbed05b26abba891df7dec75ac3edc640caa5f60eed95c6292`,
+foi auditado offline: o executável contém a rota e os tipos/campos OpenAI
+`ResponseFormat`, `json_schema`, `strict` e `schema`. O preflight relê hash e
+marcadores e vincula a versão auditada a esse hash, sem iniciar o servidor ou
+fazer requisição. Ausência ou
+divergência bloqueia antes de efeitos; upgrade exige nova auditoria. A prova é
+da superfície do envelope, não da conformidade da resposta de um modelo.
+Ollama nativo, fallback de dialeto e segunda chamada corretiva ficam fora.
+
+W11 exige `max_output_tokens >= 2048`, sendo 2.048 também o teto recomendado
+para a próxima smoke. `context_limit` permanece 8.192; ele não será aumentado
+para acomodar a saída. Caso as páginas M3 1 e 3 não caibam sob a nova fórmula,
+o operador deverá escolher e criar uma seleção nova, mais compacta e
+create-only, sob autorização separada. O payload do modelo continua contendo
+somente campos científicos; LOOP deriva identidade e protocolo, e o schema
+canônico fechado permanece inalterado.
+
 ## ADR-040 — Contexto escalonado para agentes sem perda de autoridade
 
 **Status:** Implementado localmente. **Data:** 2026-09-07.

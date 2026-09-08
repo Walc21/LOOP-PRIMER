@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `063e320c8267312c207b7586560c47c334c6f289509048cef6a75de37ce5bc53`
-- Baseline da última sessão: `063e320c8267312c207b7586560c47c334c6f289509048cef6a75de37ce5bc53`
-- Inventário: 655 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (329419 bytes; SHA-256 `c084be40629a0efa`).
+- Fingerprint atual das fontes: `11fcd61ba770693d84729f5fc17bfefd56d15b99177ef5988c7e1bfdf467340d`
+- Baseline da última sessão: `11fcd61ba770693d84729f5fc17bfefd56d15b99177ef5988c7e1bfdf467340d`
+- Inventário: 671 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (336659 bytes; SHA-256 `ea32d1e4a40f436e`).
 
 ## Estado e limites atuais
 
@@ -30,18 +30,18 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 57.
-- `m6-selection-pages-1-3-preflight-20260908` — Seleção explícita das páginas M3 1 e 3 criada e aprovada no preflight M6 sem execução externa.
-  - mudança: Manifesto create-only hash-bound derivado de normalized.json para os blocos integrais das páginas 1 e 3.
-  - decisão: Usar as páginas 1 e 3 como contexto inicial W11, sujeito à autorização live futura.
-  - risco: A seleção não autoriza inferência; modelo local, endpoint, deadline atual e autorização humana nova continuam obrigatórios.
-  - próximo: Se autorizada, repetir preflight com a deadline operacional atual e executar exatamente uma chamada W11.
-- `m6-w11-budget-clock-pre-admission-20260908` — Primeira smoke M6 W11 autorizada foi bloqueada antes da reserva por erro de relógio na autorização do ledger.
-  - mudança: Nenhuma alteração de código nesta sessão; preservada tentativa create-only m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67 e manifesto de seleção M3.
-  - decisão: Não repetir a execução nem contornar a autorização; corrigir a fronteira temporal do BudgetLedger em uma nova branch antes de nova autorização.
-  - risco: A rota foi persistida antes da reserva; a tentativa permanece congelada como evidência. A causa reproduzida offline é authorization timestamp is in the future por relógio default capturado antes da autorização.
-  - próximo: Implementar e testar correção de relógio/autorizações M6 sem executar modelo; uma nova run exigirá autorização humana nova.
+- Sessões estruturadas registradas: 59.
 - `session-ea39b4514e8b99554053` — Corrigido o falso timestamp futuro da autorização M6 vinculando approved_at ao relógio canônico do BudgetLedger; testes offline preservam recusas reais e a tentativa congelada sem backend ou custo.
+- `m6-w11-live-output-schema-failure-20260908` — A smoke W11 local autorizada alcançou receipt e reconcile, mas terminou FAILED_OUTPUT porque a unica resposta do modelo nao satisfez o schema cientifico.
+  - mudança: Criada tentativa isolada attempt-ac648a70-42b6-4560-a01b-58402edcdb4d com uma chamada local ao modelo deepscaler-m14-context:latest e contexto M3 das paginas 1 e 3.
+  - decisão: Nao repetir, retomar ou alterar a tentativa: receipt schema_invalid e evidencia duravel permanecem congelados.
+  - risco: A saida invalida nao foi publicada e output_sha256 e nulo; a causa especifica dentro da resposta nao pode ser inferida sem criar contrato fragil. Nova tentativa exige autorizacao humana nova.
+  - próximo: Diagnosticar offline o contrato de prompt e schema para tornar uma futura smoke mais capaz de produzir JSON valido, sem repetir esta tentativa.
+- `m6-structured-output-admission-hardening-20260908` — Endurecida offline a admissão e o contrato de saída da smoke oficial M6 W11 após a tentativa congelada FAILED_OUTPUT.
+  - mudança: Criada construção pura e compartilhada do corpo OpenAI-compatible JSON Schema, com hashes e tamanhos persistidos em request-manifest write-once.
+  - decisão: Adotado apenas o dialeto openai_chat_completions_json_schema no path exato /v1/chat/completions, sem API nativa ou fallback.
+  - risco: A prova offline cobre o envelope suportado pelo binário, não garante obediência do modelo; resposta inválida continua FAILED_OUTPUT após uma única chamada.
+  - próximo: Se houver nova autorização humana, o operador deverá criar uma nova seleção M3 create-only mais compacta antes de qualquer smoke.
 
 ## Roteamento obrigatório por escopo
 

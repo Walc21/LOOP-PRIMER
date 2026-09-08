@@ -25,9 +25,13 @@ from article_loop.budget import ManualClock
 from article_loop.inference import InferenceResult
 from article_loop.inference import canonical_bytes
 from article_loop.inference_backends import FakeInferenceBackend
+from article_loop.inference_backends import (
+    OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+)
 from article_loop.ingestion import IngestionError, _directory_hash
 from article_loop.m6_smoke import (
     CONTEXT_OVERHEAD_TOKENS, M6SmokeError, SmokeConfig,
+    W11_MIN_OUTPUT_TOKENS,
     create_context_selection, preflight_official_smoke, run_official_smoke,
 )
 from article_loop.state_machine import State
@@ -172,19 +176,37 @@ class OfficialM6SmokeTests(unittest.TestCase):
             allowed_selection_parent=self.selection_parent,
         )
         self.clock = ManualClock(current=datetime(2026, 1, 1, tzinfo=timezone.utc))
+        self.compatibility_proof = {
+            "schema_version": "1.0.0", "status": "supported_verified_offline",
+            "implementation": "ollama", "implementation_version": "test",
+            "version_binding": "pinned_by_executable_sha256",
+            "executable_sha256": "a" * 64, "executable_size_bytes": 1,
+            "dialect": OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+            "endpoint_path": "/v1/chat/completions",
+            "evidence_markers_sha256": "b" * 64,
+            "server_contacted": False,
+            "compatibility_proof_sha256": "c" * 64,
+        }
+        self.compatibility_patcher = mock.patch(
+            "article_loop.m6_smoke.audit_local_ollama_compatibility",
+            return_value=self.compatibility_proof,
+        )
+        self.compatibility_patcher.start()
 
     def tearDown(self) -> None:
+        self.compatibility_patcher.stop()
         self.temporary.cleanup()
 
     def mapping(self, **changes: object) -> dict[str, object]:
         value: dict[str, object] = {
-            "schema_version": "1.0.0", "enabled": True,
+            "schema_version": "1.1.0", "enabled": True,
             "m3_root": str(self.m3), "m3_run_id": self.run_id,
             "attempt_root": str(self.attempt), "role_id": "W11",
             "selection_manifest": str(self.selection),
             "model": "operator-model", "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
+            "structured_output_dialect": OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
             "deadline_utc": "2026-01-01T00:10:00Z", "timeout_seconds": 30,
-            "context_limit": 8192, "max_output_tokens": 512,
+            "context_limit": 8192, "max_output_tokens": W11_MIN_OUTPUT_TOKENS,
             "max_calls": 1, "max_concurrency": 1, "max_retries": 0,
             "max_cycles": 1, "max_cost_microunits": 0, "deny_remote": True,
         }
@@ -271,6 +293,12 @@ class OfficialM6SmokeTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(M6SmokeError):
                 SmokeConfig.from_mapping(self.mapping(**{field: value}))
 
+    def test_w11_rejects_output_below_the_official_minimum(self) -> None:
+        with self.assertRaisesRegex(M6SmokeError, "at least 2048"):
+            SmokeConfig.from_mapping(self.mapping(max_output_tokens=2047))
+        accepted = SmokeConfig.from_mapping(self.mapping(max_output_tokens=2048))
+        self.assertEqual(2048, accepted.max_output_tokens)
+
     def test_deadline_missing_invalid_expired_or_insufficient_blocks_before_route(self) -> None:
         invalid = (None, "not-a-date", "2026-01-01T00:00:00Z", "2026-01-01T00:00:10Z")
         for index, deadline in enumerate(invalid):
@@ -339,7 +367,32 @@ class OfficialM6SmokeTests(unittest.TestCase):
             + admission["overhead_tokens"],
         )
         self.assertEqual(CONTEXT_OVERHEAD_TOKENS, admission["overhead_tokens"])
+        self.assertEqual(admission["estimated_input_tokens"], admission["safe_input_token_upper_bound"])
+        self.assertEqual(
+            result["request_manifest"]["request"]["request_body_sha256"],
+            admission["request_body_sha256"],
+        )
         self.assertLessEqual(admission["total_admission_tokens"], admission["context_limit"])
+
+    def test_missing_compatibility_proof_blocks_before_any_durable_effect(self) -> None:
+        backend = self.backend()
+        with mock.patch(
+            "article_loop.m6_smoke.audit_local_ollama_compatibility",
+            side_effect=M6SmokeError("offline Ollama compatibility proof is unavailable"),
+        ), self.assertRaisesRegex(M6SmokeError, "compatibility proof"):
+            run_official_smoke(
+                ROOT, SmokeConfig.from_mapping(self.mapping()),
+                allowed_m3_parent=self.m3_parent,
+                allowed_attempt_parent=self.attempt_parent,
+                allowed_selection_parent=self.selection_parent,
+                human_authorized=True, allow_test_doubles=True,
+                backend=backend, clock=self.clock,
+            )
+        self.assertFalse(self.attempt.exists())
+        self.assertEqual([], backend.calls)
+        self.assertFalse(any(self.attempt_parent.rglob("routes")))
+        self.assertFalse(any(self.attempt_parent.rglob("budgets")))
+        self.assertFalse(any(self.attempt_parent.rglob("receipts")))
 
     def test_selection_missing_tampered_unsafe_or_noncanonical_blocks_before_attempt(self) -> None:
         with self.assertRaisesRegex(M6SmokeError, "selection paths"):
@@ -422,9 +475,10 @@ class OfficialM6SmokeTests(unittest.TestCase):
             "--selection-manifest", str(self.selection), "--role", "W11",
             "--model", "operator-model",
             "--endpoint", "http://127.0.0.1:11434/v1/chat/completions",
+            "--structured-output-dialect", OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
             "--deadline-utc", "2026-01-01T00:10:00Z",
             "--timeout-seconds", "30", "--context-limit", "8192",
-            "--max-output-tokens", "512", "--preflight-only",
+            "--max-output-tokens", "2048", "--preflight-only",
         ]
         output = io.StringIO()
         with mock.patch.object(
@@ -599,10 +653,46 @@ class OfficialM6SmokeTests(unittest.TestCase):
         prompt_manifest = json.loads(
             (self.attempt / "inputs/prompt-manifest.json").read_text(encoding="utf-8")
         )
+        request_manifest = json.loads(
+            (self.attempt / "inputs/request-manifest.json").read_text(encoding="utf-8")
+        )
         self.assertEqual(hashlib.sha256(self.selection.read_bytes()).hexdigest(), prompt_manifest["selection_manifest_sha256"])
         self.assertEqual(manifest["selection_hash"], prompt_manifest["selection_hash"])
         self.assertEqual(hashlib.sha256(prompt).hexdigest(), prompt_manifest["prompt_sha256"])
-        admission = prompt_manifest["admission"]
+        request_without_hash = {
+            key: value for key, value in request_manifest.items()
+            if key != "request_manifest_sha256"
+        }
+        self.assertEqual(
+            hashlib.sha256(canonical_bytes(request_without_hash)).hexdigest(),
+            request_manifest["request_manifest_sha256"],
+        )
+        self.assertEqual(
+            request_manifest["request_manifest_sha256"],
+            prompt_manifest["request_manifest_sha256"],
+        )
+        self.assertEqual(
+            self.compatibility_proof["compatibility_proof_sha256"],
+            prompt_manifest["compatibility_proof_sha256"],
+        )
+        request_record = request_manifest["request"]
+        self.assertEqual(len(prompt), request_record["prompt_bytes"])
+        self.assertEqual(hashlib.sha256(prompt).hexdigest(), request_record["prompt_sha256"])
+        self.assertEqual(admission := prompt_manifest["admission"], request_manifest["admission"])
+        self.assertEqual(admission["request_body_bytes"], request_record["request_body_bytes"])
+        self.assertEqual(admission["request_body_sha256"], request_record["request_body_sha256"])
+        prompt_text = prompt.decode("utf-8")
+        projected_text = prompt_text.split("# Schema de saída\n", 1)[1].split(
+            "\n\n# Contrato routed de saída", 1,
+        )[0]
+        projected = json.loads(projected_text)
+        self.assertEqual(set(_scientific_payload()), set(projected["properties"]))
+        self.assertFalse({
+            "schema_version", "proposal_id", "role_id", "cycle_id",
+            "base_hash", "prompt_version",
+        } & set(projected["properties"]))
+        self.assertIn("exatamente um objeto JSON", prompt_text)
+        self.assertIn("nenhum texto, Markdown ou bloco", prompt_text)
         self.assertEqual(len(prompt), admission["compiled_prompt_and_context_bytes"])
         self.assertEqual(
             admission["total_admission_tokens"],
@@ -610,6 +700,43 @@ class OfficialM6SmokeTests(unittest.TestCase):
             + self.mapping()["max_output_tokens"] + CONTEXT_OVERHEAD_TOKENS,
         )
         self.assertEqual("STOPPED_AFTER_ONE_TASK", result["status"])
+
+    def test_invalid_structured_responses_remain_failed_output_without_retry(self) -> None:
+        payload_with_protocol = _scientific_payload()
+        payload_with_protocol["role_id"] = "W11"
+        missing_science = _scientific_payload()
+        missing_science.pop("scope")
+        invalid_science = _scientific_payload()
+        invalid_science["scope"] = []
+        responses = (
+            json.dumps(_scientific_payload()) + " trailing text",
+            "not-json",
+            json.dumps(payload_with_protocol),
+            json.dumps(missing_science),
+            json.dumps(invalid_science),
+        )
+        for index, response in enumerate(responses):
+            attempt = self.attempt_parent / f"attempt-72345678-1234-4123-8123-123456789ab{index}"
+            backend = FakeInferenceBackend(result=InferenceResult(
+                response, 10, 5, 0, True, wall_time_seconds=1,
+                finish_reason="stop",
+            ))
+            result = run_official_smoke(
+                ROOT, SmokeConfig.from_mapping(self.mapping(attempt_root=str(attempt))),
+                allowed_m3_parent=self.m3_parent,
+                allowed_attempt_parent=self.attempt_parent,
+                allowed_selection_parent=self.selection_parent,
+                human_authorized=True, allow_test_doubles=True,
+                backend=backend, clock=self.clock,
+            )
+            with self.subTest(index=index):
+                self.assertEqual("FAILED_OUTPUT", result["status"])
+                self.assertTrue(result["receipt_created"])
+                self.assertEqual(1, len(backend.calls))
+                self.assertFalse(result["retry_performed"])
+                self.assertFalse(result["refund_performed"])
+                events = _budget_events(attempt, str(result["run_id"]))
+                self.assertIn("RECONCILED", [event["event_type"] for event in events])
 
     def test_m3_and_selection_are_revalidated_immediately_before_route(self) -> None:
         import article_loop.m6_smoke as smoke_module
@@ -686,16 +813,72 @@ class OfficialM6SmokeTests(unittest.TestCase):
         self.assertEqual(before_m3, _tree_hash(self.m3))
         self.assertEqual(completed, _tree_hash(self.attempt))
 
-    def test_frozen_real_attempt_remains_byte_for_byte_unchanged(self) -> None:
-        frozen = ROOT / "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67"
-        if not frozen.is_dir():
+    def test_frozen_real_attempts_remain_byte_for_byte_unchanged(self) -> None:
+        frozen_attempts = (
+            ROOT / "runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67",
+            ROOT / "runtime/m6-official-smokes/attempt-ac648a70-42b6-4560-a01b-58402edcdb4d",
+        )
+        if any(not frozen.is_dir() for frozen in frozen_attempts):
             self.skipTest("local frozen operational evidence is not present")
-        before = _tree_hash(frozen)
-        names_before = sorted(item.relative_to(frozen).as_posix() for item in frozen.rglob("*"))
+        before = {frozen: _tree_hash(frozen) for frozen in frozen_attempts}
+        names_before = {
+            frozen: sorted(item.relative_to(frozen).as_posix() for item in frozen.rglob("*"))
+            for frozen in frozen_attempts
+        }
         result = self.execute_smoke(self.backend())
         self.assertEqual("STOPPED_AFTER_ONE_TASK", result["status"])
-        self.assertEqual(names_before, sorted(item.relative_to(frozen).as_posix() for item in frozen.rglob("*")))
-        self.assertEqual(before, _tree_hash(frozen))
+        for frozen in frozen_attempts:
+            self.assertEqual(
+                names_before[frozen],
+                sorted(item.relative_to(frozen).as_posix() for item in frozen.rglob("*")),
+            )
+            self.assertEqual(before[frozen], _tree_hash(frozen))
+
+
+class OllamaCompatibilityAuditTests(unittest.TestCase):
+    def test_pinned_binary_surface_is_verified_without_server_contact(self) -> None:
+        import article_loop.m6_smoke as smoke_module
+
+        with tempfile.TemporaryDirectory() as directory:
+            executable = Path(directory) / "ollama-fixture"
+            executable.write_text(
+                "# /v1/chat/completions\n"
+                "# github.com/ollama/ollama/openai.ToChatCompletion\n"
+                "# json:\"response_format\"\n"
+                "# json:\"json_schema,omitempty\"\n"
+                "# json:\"strict,omitempty\"\n"
+                "# json:\"schema,omitempty\"\n",
+                encoding="utf-8",
+            )
+            digest = hashlib.sha256(executable.read_bytes()).hexdigest()
+            with mock.patch.object(smoke_module, "AUDITED_OLLAMA_SHA256", digest):
+                proof = smoke_module.audit_local_ollama_compatibility(
+                    "http://127.0.0.1:11434/v1/chat/completions",
+                    OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+                    executable=executable,
+                )
+            self.assertEqual("supported_verified_offline", proof["status"])
+            self.assertFalse(proof["server_contacted"])
+            self.assertEqual(digest, proof["executable_sha256"])
+
+    def test_missing_or_changed_offline_proof_fails_closed(self) -> None:
+        import article_loop.m6_smoke as smoke_module
+
+        with self.assertRaisesRegex(M6SmokeError, "exact /v1/chat/completions"):
+            smoke_module.audit_local_ollama_compatibility(
+                "http://127.0.0.1:11434/api/chat",
+                OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+                executable="/missing-not-reached",
+            )
+        with tempfile.TemporaryDirectory() as directory:
+            executable = Path(directory) / "ollama-changed"
+            executable.write_text("changed binary fixture\n", encoding="utf-8")
+            with self.assertRaisesRegex(M6SmokeError, "differs"):
+                smoke_module.audit_local_ollama_compatibility(
+                    "http://127.0.0.1:11434/v1/chat/completions",
+                    OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+                    executable=executable,
+                )
 
 
 if __name__ == "__main__":
