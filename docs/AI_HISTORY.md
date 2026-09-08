@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `fc0203acbbc0d0eeb4b817d07b61f207a6f03def995a9fd790a7fb54acb9b815`
-- Registrado em: `2026-09-07T23:05:44Z`
-- Git: branch `codex/m6-official-single-task-smoke`, HEAD `2db94e5a0b91`
-- Arquivos relevantes: 637
+- Fingerprint das fontes: `1af38b5a540d0a29fa0d94beac1884d13a8b3e62ea43ae09e5059ed6e00bea2e`
+- Registrado em: `2026-09-08T01:09:49Z`
+- Git: branch `codex/m6-context-admission-hardening`, HEAD `1a0e34a2b43d`
+- Arquivos relevantes: 639
 
 ## Evolução reconstruída do versionamento
 
@@ -21,7 +21,7 @@
 | sem marco explícito | 2026-08-13..2026-09-07 | 57 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M6 | 2026-08-14..2026-09-01 | 8 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
+| M6 | 2026-08-14..2026-09-07 | 10 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
 | M7 | 2026-08-14..2026-09-01 | 6 | Síntese, merge isolado, challenger write-once e 13 gates locais. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/synthe… |
 | M8 | 2026-08-27..2026-09-01 | 3 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
 | M9 | 2026-08-28..2026-09-01 | 5 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
@@ -178,6 +178,8 @@
 | `58a2202cd` | 2026-09-07 | M3 | Merge pull request #11 from Walc21/codex/m3-real-source-ready |  |
 | `6ff9267b3` | 2026-09-07 | M12 | fix(m12): harden routed execution readiness | .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/execution.py, .prime/agent/skills/article-loop/src/article_loop/infe… |
 | `2db94e5a0` | 2026-09-07 | M12 | Merge pull request #12 from Walc21/codex/m12-execution-hardening |  |
+| `8d7e5e020` | 2026-09-07 | M6 | feat(m6): add official single-task smoke | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/execution.py, .prime/agent/skills/article-loop/src/article_loop/in… |
+| `1a0e34a2b` | 2026-09-07 | M6 | Merge pull request #13 from Walc21/codex/m6-official-single-task-smoke |  |
 
 ## Decisões arquiteturais
 
@@ -3158,3 +3160,58 @@
 | Tipo | Caminho | SHA anterior | SHA final |
 |---|---|---|---|
 | modified | `PLANS.md` | `f456b3b4b827` | `b5911541afda` |
+
+### 2026-09-08T00:27:11Z — Endurecimento M6: seleção estrutural M3 hash-bound e admissão completa agora bloqueiam overflow antes da criação da tentativa; 533 testes offline aprovados e evidência real permaneceu inalterada.
+
+- Session ID: `session-640b5fd098dcc8978999`
+- Fingerprint final: `3b97fc7a74d36432ca61ba870a090575549077828eee0d757ee7885bfc314e05`
+- Git final: `1a0e34a2b43d`; status relevante: 10 item(ns)
+- Delta factual: 2 adicionados, 8 modificados, 0 removidos
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `config/schemas/m6-context-selection.schema.json` | `-` | `39f44979c89c` |
+| added | `scripts/m6_context_selection.py` | `-` | `56d89d39eefc` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/__init__.py` | `15b85bdf22f1` | `3ef7ad262fc4` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/m6_smoke.py` | `4a4d6c46c063` | `260443e5c543` |
+| modified | `PLANS.md` | `b5911541afda` | `e6a4caad1dc4` |
+| modified | `control/test_contracts.py` | `481cd98e5807` | `9fdba0f111b2` |
+| modified | `control/test_m6_official_smoke.py` | `502f5b283c44` | `72b2c5771409` |
+| modified | `docs/decisions.md` | `aa72535c1b61` | `d8475f18204d` |
+| modified | `docs/m6-official-smoke.md` | `4beffef7fd2d` | `bce0444cf63f` |
+| modified | `scripts/m6_official_smoke.py` | `4a329d5f6baf` | `3d49a6eee838` |
+
+### 2026-09-08T01:09:49Z — Admissão de contexto do smoke M6 endurecida para selecionar blocos M3 explícitos e bloquear overflow antes de criar tentativa.
+
+- Session ID: `m6-context-admission-hardening-final-20260907`
+- Fingerprint final: `1af38b5a540d0a29fa0d94beac1884d13a8b3e62ea43ae09e5059ed6e00bea2e`
+- Git final: `1a0e34a2b43d`; status relevante: 10 item(ns)
+- Delta factual: 0 adicionados, 1 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionada seleção hash-bound de blocos integrais de normalized.json, preflight read-only e persistência write-once da seleção usada.
+
+**Decisões**
+
+- Não enviar text.txt integral nem aumentar contexto por padrão; exigir seleção explícita e admissão total antes da raiz attempt.
+
+**Validações**
+
+- 533 testes completos, testes focados, bin/check.sh, py_compile e checagens de whitespace aprovados offline.
+
+**Riscos/limites**
+
+- Uma futura chamada real ainda depende de escolha humana dos blocos, manifesto create-only, endpoint, modelo, deadline e autorização nova.
+
+**Próximos passos**
+
+- Revisar e mesclar a correção; depois gerar e revisar uma seleção M3 limitada antes do preflight M6.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/agent/skills/article-loop/src/article_loop/m6_smoke.py` | `260443e5c543` | `9cf3df4c07ef` |

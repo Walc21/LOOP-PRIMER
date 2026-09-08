@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `fc0203acbbc0d0eeb4b817d07b61f207a6f03def995a9fd790a7fb54acb9b815`
-- Baseline da última sessão: `fc0203acbbc0d0eeb4b817d07b61f207a6f03def995a9fd790a7fb54acb9b815`
-- Inventário: 637 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (319934 bytes; SHA-256 `952ef5c411504f65`).
+- Fingerprint atual das fontes: `1af38b5a540d0a29fa0d94beac1884d13a8b3e62ea43ae09e5059ed6e00bea2e`
+- Baseline da última sessão: `1af38b5a540d0a29fa0d94beac1884d13a8b3e62ea43ae09e5059ed6e00bea2e`
+- Inventário: 639 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (323071 bytes; SHA-256 `4d99f1aa3a20da56`).
 
 ## Estado e limites atuais
 
@@ -30,22 +30,18 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 52.
-- `m12-execution-hardening-adr-number-fix-20260907` — Correção documental da numeração do ADR de endurecimento M12/M12.5.
-  - mudança: Renumerado o ADR novo de 040 para 041 para preservar a identidade do ADR-040 já existente sobre contexto de agentes.
-  - decisão: Nenhum contrato de código, configuração, execução ou evidência foi alterado por esta correção documental.
-  - risco: Execução real continua desautorizada; seleção de excertos M3 e smoke M6 permanecem pendentes.
-  - próximo: Projetar continuação M3/M6 create-only e entrypoint de smoke de uma tarefa, com autorização nova e sem M7.
-- `m6-official-single-task-smoke-20260907` — Smoke oficial M6 de uma tarefa routed implementado e validado offline
-  - mudança: Entrada create-only para exatamente uma AgentTask S10 ou W11, com defaults inertes e sem M7 ou continuação automática.
-  - decisão: Impor uma chamada, uma unidade concorrente, zero retries, um ciclo, custo zero, deny_remote e endpoint HTTP literal 127.0.0.1 sem fallback.
-  - risco: Nenhuma execução real ocorreu; modelo local, endpoint loopback e deadline futura ainda exigem decisão e autorização humana novas.
-  - próximo: Revisar o diff sem commit, push ou PR; uma futura execução real depende de autorização operacional separada.
+- Sessões estruturadas registradas: 54.
 - `m6-official-single-task-smoke-final-20260907` — Smoke oficial M6 de uma tarefa routed finalizado e validado offline.
   - mudança: Implementada entrada create-only para uma AgentTask S10 ou W11 com vínculo M3 SOURCE_READY revalidado, limites fixos e STOP terminal.
   - decisão: Manter a superfície inerte por padrão, sem M7, retry, fallback ou execução externa implícita.
   - risco: Modelo local, endpoint loopback, deadline e autorização humana continuam necessários para qualquer execução futura.
   - próximo: Revisar e autorizar separadamente uma execução M6 real de uma tarefa.
+- `session-640b5fd098dcc8978999` — Endurecimento M6: seleção estrutural M3 hash-bound e admissão completa agora bloqueiam overflow antes da criação da tentativa; 533 testes offline aprovados e evidência real permaneceu inalterada.
+- `m6-context-admission-hardening-final-20260907` — Admissão de contexto do smoke M6 endurecida para selecionar blocos M3 explícitos e bloquear overflow antes de criar tentativa.
+  - mudança: Adicionada seleção hash-bound de blocos integrais de normalized.json, preflight read-only e persistência write-once da seleção usada.
+  - decisão: Não enviar text.txt integral nem aumentar contexto por padrão; exigir seleção explícita e admissão total antes da raiz attempt.
+  - risco: Uma futura chamada real ainda depende de escolha humana dos blocos, manifesto create-only, endpoint, modelo, deadline e autorização nova.
+  - próximo: Revisar e mesclar a correção; depois gerar e revisar uma seleção M3 limitada antes do preflight M6.
 
 ## Roteamento obrigatório por escopo
 
