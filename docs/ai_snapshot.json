@@ -229,10 +229,10 @@
       "sha256": "ff3679b5ded99bd6d96ada25eea0dde567fdb5f6e2debc6d12dc99656d35d100"
     },
     ".prime/agent/skills/article-loop/src/article_loop/m6_smoke.py": {
-      "bytes": 46252,
+      "bytes": 53515,
       "kind": "text",
-      "lines": 1034,
-      "sha256": "8fa30b5628a8295f08ada2453925c34d999239bc38527d749900f54d4db917ff"
+      "lines": 1203,
+      "sha256": "d9b544589c553d6c97af779bda8670b8de4c62c8226b546e0d351263cad19796"
     },
     ".prime/agent/skills/article-loop/src/article_loop/observability.py": {
       "bytes": 13906,
@@ -391,16 +391,16 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 79568,
+      "bytes": 82307,
       "kind": "text",
-      "lines": 1136,
-      "sha256": "afcef552f124b9baa968fc1856f54ce67fd1d7246d4bd834f05edcd8f1339431"
+      "lines": 1177,
+      "sha256": "32ac068d198b376e7dfa56bab7c02b724ee4d74a55e9d8eb84dabd9e441b7591"
     },
     "README.md": {
-      "bytes": 19565,
+      "bytes": 47021,
       "kind": "text",
-      "lines": 353,
-      "sha256": "9db883c90233cf34e8e1136a699865c88e303164bf562240ec63121bc7ebe86b"
+      "lines": 797,
+      "sha256": "ebfacfb31d6d100033d8e60e3f967ff8903017ad4c3605d84c6e8c713e6bdabb"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -721,10 +721,10 @@
       "sha256": "6eec116240c5d34651a33735ab1c6ca2e7f9a3be4b27c861bdc0f4e08bfdd410"
     },
     "config/schemas/m6-context-selection.schema.json": {
-      "bytes": 2047,
+      "bytes": 4295,
       "kind": "text",
-      "lines": 59,
-      "sha256": "39f44979c89c1c4f5fd446df4f84b712ef71b178a8b604b937d3266ebfe18d2b"
+      "lines": 112,
+      "sha256": "4c36824267dae178e1f59a339c7b262f5f8bb5d32126a211a26478ec1d516523"
     },
     "config/schemas/math-evidence.schema.json": {
       "bytes": 1070,
@@ -907,10 +907,10 @@
       "sha256": "318f74718d236119a551707012d2451c1a18bf7b002f083038968aae5e98f027"
     },
     "control/test_m6_official_smoke.py": {
-      "bytes": 44267,
+      "bytes": 57623,
       "kind": "text",
-      "lines": 885,
-      "sha256": "f44b964f7e063815322ea703e0dc10a6fe2432c1130ed3b036b55d0e0ab69c0d"
+      "lines": 1187,
+      "sha256": "ab18520d5e8fdb265550b5853e8aa64860686dce56a83494b3f8d44498815683"
     },
     "control/test_m6_orchestration.py": {
       "bytes": 41501,
@@ -955,10 +955,10 @@
       "sha256": "2eb9ab85bd98ebf5bac9e5209a1c8fb97dd85181ac32aeff9de3745e8dec1c62"
     },
     "docs/decisions.md": {
-      "bytes": 103949,
+      "bytes": 106589,
       "kind": "text",
-      "lines": 1767,
-      "sha256": "74030603a02336bcd53fb908b23f49010c9d8560eee3757075c6048672b44b63"
+      "lines": 1810,
+      "sha256": "61e12cf9ba2e57b11d9c81baec7290feb5a4cf82fdd7cfbc16b2e5233fa0fff0"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -979,10 +979,10 @@
       "sha256": "da913ee40db235467952620cdb2bba78e71f60cdd80087e80fb0c98119c1e5c9"
     },
     "docs/m6-official-smoke.md": {
-      "bytes": 7198,
+      "bytes": 9528,
       "kind": "text",
-      "lines": 129,
-      "sha256": "053d2061aafe10176d874179f3fb84717d3036581894a9e693d28b94f1b985aa"
+      "lines": 172,
+      "sha256": "01732e99e8f35c329c5a71039f407a2e2ae11dbea240056c7e6229d08b0e1791"
     },
     "docs/model-driven-surfaces.md": {
       "bytes": 2385,
@@ -3745,16 +3745,16 @@
       "sha256": "5861d2384b71db0b24600572e889ae72784f3be9d968e312669245bf5c05b62f"
     },
     "scripts/m6_context_selection.py": {
-      "bytes": 1641,
+      "bytes": 2649,
       "kind": "text",
-      "lines": 48,
-      "sha256": "56d89d39eefc6c42d6efe2b4bc8d3a14cb1b8b09ae58b232681ef8243ed1e2ff"
+      "lines": 74,
+      "sha256": "df289d1edbe93516b8e675a46fe0aeef44bd4c13741f4d179b8124d8d8328501"
     },
     "scripts/m6_official_smoke.py": {
-      "bytes": 3557,
+      "bytes": 3677,
       "kind": "text",
-      "lines": 89,
-      "sha256": "22afe3ff0e662d1d39104b2f4f141e47b6fabf5e8d78587abf258859ac05456e"
+      "lines": 92,
+      "sha256": "dc8887c1d0e2759e81165aa2dfd2d6020b31bfc474c0030ffd59124b5652f6eb"
     },
     "state/checkpoints/.gitkeep": {
       "bytes": 1,
@@ -3835,16 +3835,23 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "d61df35bb698360b32237fcafd5a3830619e519126c155ffba7f57981cfd50cc",
+  "fingerprint": "b4b16e26ba7716b9813aea34c350262b826a84f53a4040943b531a8b1313eda5",
   "git": {
     "available": true,
-    "branch": "codex/ignore-m6-runtime-evidence",
-    "head": "9757786bb608fd7fbffa5af9dd961a06b0e8b32d",
+    "branch": "codex/m6-bounded-context-selection",
+    "head": "bc0aaa753958f018590ac6c00506a261eb37f352",
     "status": [
-      " M .gitignore"
+      " M .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py",
+      " M PLANS.md",
+      " M config/schemas/m6-context-selection.schema.json",
+      " M control/test_m6_official_smoke.py",
+      " M docs/decisions.md",
+      " M docs/m6-official-smoke.md",
+      " M scripts/m6_context_selection.py",
+      " M scripts/m6_official_smoke.py"
     ]
   },
-  "recorded_at": "2026-09-08T04:30:31Z",
+  "recorded_at": "2026-09-08T06:34:55Z",
   "schema_version": "1.0.0",
-  "session_id": "gitignore-m6-runtime-evidence-20260908"
+  "session_id": "session-8247cc84d3866873df82"
 }

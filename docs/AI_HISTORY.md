@@ -4,9 +4,9 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `d61df35bb698360b32237fcafd5a3830619e519126c155ffba7f57981cfd50cc`
-- Registrado em: `2026-09-08T04:30:31Z`
-- Git: branch `codex/ignore-m6-runtime-evidence`, HEAD `9757786bb608`
+- Fingerprint das fontes: `b4b16e26ba7716b9813aea34c350262b826a84f53a4040943b531a8b1313eda5`
+- Registrado em: `2026-09-08T06:34:55Z`
+- Git: branch `codex/m6-bounded-context-selection`, HEAD `bc0aaa753958`
 - Arquivos relevantes: 639
 
 ## Evolução reconstruída do versionamento
@@ -18,10 +18,10 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13..2026-09-07 | 8 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.p… |
-| sem marco explícito | 2026-08-13..2026-09-07 | 57 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
+| sem marco explícito | 2026-08-13..2026-09-08 | 59 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M6 | 2026-08-14..2026-09-08 | 16 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py, .prime/age… |
+| M6 | 2026-08-14..2026-09-08 | 18 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py… |
 | M7 | 2026-08-14..2026-09-01 | 6 | Síntese, merge isolado, challenger write-once e 13 gates locais. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/synthe… |
 | M8 | 2026-08-27..2026-09-01 | 3 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
 | M9 | 2026-08-28..2026-09-01 | 5 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
@@ -186,9 +186,14 @@
 | `af1187aa3` | 2026-09-07 | M6 | Merge pull request #15 from Walc21/codex/m6-budget-authorization-clock |  |
 | `061d2124a` | 2026-09-08 | M6 | fix(m6): harden structured output admission | .prime/agent/skills/article-loop/src/article_loop/inference_backends.py, .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py, AI_CONTEXT.md, PLANS.md, control/test_m1251… |
 | `9757786bb` | 2026-09-08 | M6 | Merge pull request #16 from Walc21/codex/m6-structured-output-admission-hardening |  |
+| `967bcf038` | 2026-09-08 | M6 | Ignore M6 runtime evidence locally | .gitignore, AI_CONTEXT.md, docs/AI_HISTORY.md, docs/ai_sessions.jsonl, docs/ai_snapshot.json |
+| `2030a1b9d` | 2026-09-08 | M6 | Merge pull request #17 from Walc21/codex/ignore-m6-runtime-evidence |  |
+| `d3848378e` | 2026-09-08 | sem marco explícito | docs: expand system architecture README | README.md |
+| `bc0aaa753` | 2026-09-08 | sem marco explícito | Merge pull request #18 from Walc21/codex/readme-system-architecture-reference |  |
 
 ## Decisões arquiteturais
 
+- ADR-043 — Segmentos canônicos de linhas na seleção de contexto M6
 - ADR-042 — Smoke oficial M6 limitado a uma tarefa routed
 - ADR-040 — Contexto escalonado para agentes sem perda de autoridade
 - ADR-041 — Barreira operacional routed antes do primeiro smoke
@@ -3479,3 +3484,45 @@
 | deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.budget.lock` | `e3b0c44298fc` | `-` |
 | deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.inference.lock` | `e3b0c44298fc` | `-` |
 | deleted | `runtime/m6-official-smokes/attempt-ae3833b6-2e37-4e8a-86d1-e4f288f56d67/state/locks/m6-smoke-ae3833b6-2e37-4e8a-86d1-e4f288f56d67.observability.lock` | `e3b0c44298fc` | `-` |
+
+### 2026-09-08T06:34:55Z — Selecao M6 por segmentos canonicos de linhas implementada offline
+
+- Session ID: `session-8247cc84d3866873df82`
+- Fingerprint final: `b4b16e26ba7716b9813aea34c350262b826a84f53a4040943b531a8b1313eda5`
+- Git final: `bc0aaa753958`; status relevante: 8 item(ns)
+- Delta factual: 0 adicionados, 9 modificados, 0 removidos
+
+**Mudanças**
+
+- Adicionado manifesto 2.0.0 create-only com segmentos inclusivos vinculados ao normalized.json, hashes por unidade e agregado, preservando leitura do manifesto 1.0.0 de pagina inteira.
+- Preflight e execucao compartilham a mesma preparacao, materializacao e corpo HTTP; a inspecao sanitizada inclui limites, hashes, tamanhos, admissao e headroom.
+
+**Decisões**
+
+- ADR-043 preserva 1.0.0 sem migracao e adota 2.0.0 apenas para segmentos numericos explicitos, ordenados e nao sobrepostos.
+
+**Validações**
+
+- 103 testes focados M6/M3 e 549 testes integrais aprovaram; bin/check.sh, py_compile, JSON schema e git diff --check aprovaram.
+
+**Riscos/limites**
+
+- Segmentos nao escolhem relevancia cientifica e nenhuma execucao live foi autorizada; runtime e evidencias existentes permaneceram inalterados.
+
+**Próximos passos**
+
+- Revisao humana do diff local antes de qualquer commit ou futura selecao/runtime autorizados.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.prime/agent/skills/article-loop/src/article_loop/m6_smoke.py` | `8fa30b5628a8` | `d9b544589c55` |
+| modified | `PLANS.md` | `afcef552f124` | `32ac068d198b` |
+| modified | `README.md` | `9db883c90233` | `ebfacfb31d6d` |
+| modified | `config/schemas/m6-context-selection.schema.json` | `39f44979c89c` | `4c36824267da` |
+| modified | `control/test_m6_official_smoke.py` | `f44b964f7e06` | `ab18520d5e8f` |
+| modified | `docs/decisions.md` | `74030603a023` | `61e12cf9ba2e` |
+| modified | `docs/m6-official-smoke.md` | `053d2061aafe` | `01732e99e8f3` |
+| modified | `scripts/m6_context_selection.py` | `56d89d39eefc` | `df289d1edbe9` |
+| modified | `scripts/m6_official_smoke.py` | `22afe3ff0e66` | `dc8887c1d0e2` |

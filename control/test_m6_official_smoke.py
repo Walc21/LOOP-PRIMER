@@ -516,6 +516,308 @@ class OfficialM6SmokeTests(unittest.TestCase):
                 allowed_selection_parent=self.selection_parent,
             )
 
+    def test_line_segment_materializes_exact_canonical_subset(self) -> None:
+        segmented_m3 = self.m3_parent / "segmented-m3"
+        segmented_run = _build_m3(
+            segmented_m3, page_texts=("alpha\nbeta\ngamma",),
+        )
+        selection = (
+            self.selection_parent
+            / "selection-13345678-1234-4123-8123-123456789abc.json"
+        )
+        result = create_context_selection(
+            ROOT, segmented_m3, segmented_run, selection,
+            segments=[(1, 2, 2)],
+            allowed_m3_parent=self.m3_parent,
+            allowed_selection_parent=self.selection_parent,
+        )
+        self.assertEqual("2.0.0", result["selection_version"])
+        self.assertEqual(
+            [{"page": 1, "line_start": 2, "line_end": 2}],
+            result["selected_segments"],
+        )
+
+        import article_loop.m6_smoke as smoke_module
+        binding = smoke_module._source_binding(segmented_m3, segmented_run)
+        manifest, _, items = smoke_module._load_selection(
+            ROOT, segmented_m3, binding, selection, self.selection_parent,
+        )
+        expected_fragment = canonical_bytes({
+            "schema_version": "2.0.0",
+            "locator": "m3-normalized:segment:page-0001:lines-000002-000002",
+            "page": 1, "line_start": 2, "line_end": 2,
+            "lines": [{"page": 1, "line": 2, "text": "beta"}],
+        })
+        self.assertEqual(expected_fragment.decode("ascii"), items[0].text)
+        self.assertEqual(hashlib.sha256(expected_fragment).hexdigest(), items[0].sha256)
+        self.assertLess(manifest["units"][0]["content_bytes"], len(
+            canonical_bytes({
+                "schema_version": "1.0.0",
+                "locator": "m3-normalized:block:page-0001:lines-000001-000003",
+                "page": 1, "line_start": 1, "line_end": 3,
+                "lines": [
+                    {"page": 1, "line": 1, "text": "alpha"},
+                    {"page": 1, "line": 2, "text": "beta"},
+                    {"page": 1, "line": 3, "text": "gamma"},
+                ],
+            })
+        ))
+
+    def test_line_segments_are_sorted_without_merge_and_overlap_is_rejected(self) -> None:
+        segmented_m3 = self.m3_parent / "ordered-m3"
+        segmented_run = _build_m3(
+            segmented_m3, page_texts=("one\ntwo\nthree\nfour",),
+        )
+        selection = (
+            self.selection_parent
+            / "selection-14345678-1234-4123-8123-123456789abc.json"
+        )
+        create_context_selection(
+            ROOT, segmented_m3, segmented_run, selection,
+            segments=[(1, 4, 4), (1, 1, 2)],
+            allowed_m3_parent=self.m3_parent,
+            allowed_selection_parent=self.selection_parent,
+        )
+        manifest = json.loads(selection.read_text(encoding="utf-8"))
+        self.assertEqual(
+            [(1, 1, 2), (1, 4, 4)],
+            [
+                (unit["page"], unit["line_start"], unit["line_end"])
+                for unit in manifest["units"]
+            ],
+        )
+        self.assertEqual(2, len(manifest["units"]), "adjacent/gapped units are never merged")
+
+        invalid = (
+            ([(1, 1, 2), (1, 1, 2)], "unique"),
+            ([(1, 1, 3), (1, 3, 4)], "overlap"),
+            ([(1, 3, 2)], "bounds"),
+            ([(1, 8, 8)], "empty"),
+            ([(2, 1, 1)], "page does not exist"),
+        )
+        for index, (segments, message) in enumerate(invalid):
+            output = (
+                self.selection_parent
+                / f"selection-15345678-1234-4123-8123-123456789ab{index}.json"
+            )
+            with self.subTest(segments=segments), self.assertRaisesRegex(
+                M6SmokeError, message,
+            ):
+                create_context_selection(
+                    ROOT, segmented_m3, segmented_run, output,
+                    segments=segments,
+                    allowed_m3_parent=self.m3_parent,
+                    allowed_selection_parent=self.selection_parent,
+                )
+            self.assertFalse(output.exists())
+
+    def test_segment_manifest_tampering_and_m3_change_invalidate_selection(self) -> None:
+        segmented_m3 = self.m3_parent / "tamper-m3"
+        segmented_run = _build_m3(segmented_m3, page_texts=("one\ntwo",))
+        selection = (
+            self.selection_parent
+            / "selection-16345678-1234-4123-8123-123456789abc.json"
+        )
+        create_context_selection(
+            ROOT, segmented_m3, segmented_run, selection,
+            segments=[(1, 1, 1)],
+            allowed_m3_parent=self.m3_parent,
+            allowed_selection_parent=self.selection_parent,
+        )
+        value = json.loads(selection.read_text(encoding="utf-8"))
+        value["selected_content_sha256"] = "f" * 64
+        value["selection_hash"] = hashlib.sha256(canonical_bytes({
+            key: item for key, item in value.items() if key != "selection_hash"
+        })).hexdigest()
+        selection.write_bytes(canonical_bytes(value) + b"\n")
+        attempt = (
+            self.attempt_parent
+            / "attempt-16345678-1234-4123-8123-123456789abc"
+        )
+        with self.assertRaisesRegex(M6SmokeError, "aggregate"):
+            preflight_official_smoke(
+                ROOT, SmokeConfig.from_mapping(self.mapping(
+                    m3_root=str(segmented_m3), m3_run_id=segmented_run,
+                    selection_manifest=str(selection), attempt_root=str(attempt),
+                )),
+                allowed_m3_parent=self.m3_parent,
+                allowed_attempt_parent=self.attempt_parent,
+                allowed_selection_parent=self.selection_parent,
+                clock=self.clock,
+            )
+        self.assertFalse(attempt.exists())
+
+        changed_m3 = self.m3_parent / "changed-m3"
+        changed_run = _build_m3(changed_m3, page_texts=("one\ntwo",))
+        changed_selection = (
+            self.selection_parent
+            / "selection-17345678-1234-4123-8123-123456789abc.json"
+        )
+        create_context_selection(
+            ROOT, changed_m3, changed_run, changed_selection,
+            segments=[(1, 1, 1)],
+            allowed_m3_parent=self.m3_parent,
+            allowed_selection_parent=self.selection_parent,
+        )
+        normalized = (
+            changed_m3 / "artifacts/extracted"
+            / changed_run.removeprefix("ingest-") / "normalized.json"
+        )
+        normalized_value = json.loads(normalized.read_text(encoding="utf-8"))
+        normalized_value["lines"][0]["text"] = "changed"
+        _json(normalized, normalized_value)
+        with self.assertRaisesRegex(M6SmokeError, "M3 validation failed"):
+            preflight_official_smoke(
+                ROOT, SmokeConfig.from_mapping(self.mapping(
+                    m3_root=str(changed_m3), m3_run_id=changed_run,
+                    selection_manifest=str(changed_selection),
+                    attempt_root=str(attempt),
+                )),
+                allowed_m3_parent=self.m3_parent,
+                allowed_attempt_parent=self.attempt_parent,
+                allowed_selection_parent=self.selection_parent,
+                clock=self.clock,
+            )
+        self.assertFalse(attempt.exists())
+
+    def test_selection_paths_reject_nonregular_absolute_and_traversal_inputs(self) -> None:
+        nonregular = (
+            self.selection_parent
+            / "selection-18345678-1234-4123-8123-123456789abc.json"
+        )
+        nonregular.mkdir()
+        with self.assertRaisesRegex(M6SmokeError, "missing or unsafe"):
+            preflight_official_smoke(
+                ROOT, SmokeConfig.from_mapping(self.mapping(
+                    selection_manifest=str(nonregular),
+                )),
+                allowed_m3_parent=self.m3_parent,
+                allowed_attempt_parent=self.attempt_parent,
+                allowed_selection_parent=self.selection_parent,
+                clock=self.clock,
+            )
+        for raw in (str(self.m3), "../runtime/m3-real-attempts/attempt-invalid"):
+            result = subprocess.run(
+                [
+                    sys.executable, str(ROOT / "scripts/m6_context_selection.py"),
+                    "--m3-root", raw, "--m3-run-id", self.run_id,
+                    "--output", "runtime/m6-context-selections/"
+                    "selection-19345678-1234-4123-8123-123456789abc.json",
+                    "--segment", "1:1:1", "--create",
+                ],
+                cwd=ROOT, check=False, text=True, capture_output=True,
+            )
+            with self.subTest(raw=raw):
+                self.assertEqual(2, result.returncode)
+                self.assertEqual("BLOCKED", json.loads(result.stdout)["status"])
+
+    def test_page_manifest_version_one_remains_explicitly_compatible(self) -> None:
+        manifest = json.loads(self.selection.read_text(encoding="utf-8"))
+        self.assertEqual("1.0.0", manifest["schema_version"])
+        self.assertNotIn("selection_kind", manifest)
+        result = preflight_official_smoke(
+            ROOT, SmokeConfig.from_mapping(self.mapping()),
+            allowed_m3_parent=self.m3_parent,
+            allowed_attempt_parent=self.attempt_parent,
+            allowed_selection_parent=self.selection_parent,
+            clock=self.clock,
+        )
+        self.assertEqual("1.0.0", result["selection"]["schema_version"])
+        self.assertEqual("page-0001", result["selection"]["units"][0]["unit_id"])
+
+    def test_compact_segment_preflight_and_execution_share_exact_request(self) -> None:
+        large_m3 = self.m3_parent / "compact-m3"
+        large_run = _build_m3(
+            large_m3, page_texts=("pertinent line\n" + "x" * 40_000,),
+        )
+        compact = (
+            self.selection_parent
+            / "selection-20345678-1234-4123-8123-123456789abc.json"
+        )
+        whole = (
+            self.selection_parent
+            / "selection-21345678-1234-4123-8123-123456789abc.json"
+        )
+        create_context_selection(
+            ROOT, large_m3, large_run, compact,
+            segments=[(1, 1, 1)],
+            allowed_m3_parent=self.m3_parent,
+            allowed_selection_parent=self.selection_parent,
+        )
+        create_context_selection(
+            ROOT, large_m3, large_run, whole, [1],
+            allowed_m3_parent=self.m3_parent,
+            allowed_selection_parent=self.selection_parent,
+        )
+        compact_attempt = (
+            self.attempt_parent
+            / "attempt-20345678-1234-4123-8123-123456789abc"
+        )
+        compact_config = SmokeConfig.from_mapping(self.mapping(
+            m3_root=str(large_m3), m3_run_id=large_run,
+            selection_manifest=str(compact), attempt_root=str(compact_attempt),
+        ))
+        preflight = preflight_official_smoke(
+            ROOT, compact_config,
+            allowed_m3_parent=self.m3_parent,
+            allowed_attempt_parent=self.attempt_parent,
+            allowed_selection_parent=self.selection_parent,
+            clock=self.clock,
+        )
+        self.assertEqual("READY", preflight["status"])
+        self.assertGreaterEqual(preflight["admission"]["headroom_tokens"], 0)
+        self.assertEqual(
+            preflight["admission"]["estimated_input_tokens"],
+            (
+                preflight["admission"]["request_body_bytes"] * 2 + 3
+            ) // 4,
+        )
+
+        backend = self.backend()
+        outcome = run_official_smoke(
+            ROOT, compact_config,
+            allowed_m3_parent=self.m3_parent,
+            allowed_attempt_parent=self.attempt_parent,
+            allowed_selection_parent=self.selection_parent,
+            human_authorized=True, allow_test_doubles=True,
+            backend=backend, clock=self.clock,
+        )
+        self.assertEqual("STOPPED_AFTER_ONE_TASK", outcome["status"])
+        persisted = json.loads(
+            (compact_attempt / "inputs/request-manifest.json").read_text(
+                encoding="utf-8",
+            )
+        )
+        self.assertEqual(
+            preflight["request_manifest"]["request"]["request_body_sha256"],
+            persisted["request"]["request_body_sha256"],
+        )
+        self.assertEqual(preflight["admission"], persisted["admission"])
+        self.assertEqual(1, len(backend.calls))
+
+        blocked_attempt = (
+            self.attempt_parent
+            / "attempt-21345678-1234-4123-8123-123456789abc"
+        )
+        blocked_config = SmokeConfig.from_mapping(self.mapping(
+            m3_root=str(large_m3), m3_run_id=large_run,
+            selection_manifest=str(whole), attempt_root=str(blocked_attempt),
+        ))
+        with self.assertRaisesRegex(M6SmokeError, "before attempt creation") as raised:
+            preflight_official_smoke(
+                ROOT, blocked_config,
+                allowed_m3_parent=self.m3_parent,
+                allowed_attempt_parent=self.attempt_parent,
+                allowed_selection_parent=self.selection_parent,
+                clock=self.clock,
+            )
+        self.assertEqual("BLOCKED", raised.exception.inspection["admission"]["status"])
+        self.assertLess(raised.exception.inspection["admission"]["headroom_tokens"], 0)
+        self.assertFalse(blocked_attempt.exists())
+        self.assertFalse(any(blocked_attempt.rglob("routes")))
+        self.assertFalse(any(blocked_attempt.rglob("budgets")))
+        self.assertFalse(any(blocked_attempt.rglob("receipts")))
+
     def test_source_ready_hash_symlink_and_traversal_fail_before_backend(self) -> None:
         cases: list[tuple[str, Callable[[Path], str]]] = []
         cases.append(("state", lambda root: _build_m3(root, source_ready=False)))
