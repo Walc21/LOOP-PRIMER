@@ -20,6 +20,7 @@ from typing import Any
 import jsonschema
 import yaml
 
+from .schema_validation import validator
 from .diagnosis import DiagnosisError, load_history_series, verify_published_diagnosis
 from .evaluation import DIMENSIONS
 from .state_machine import State
@@ -54,9 +55,6 @@ class PolicyError(RuntimeError):
 def _canonical(value: Mapping[str, Any]) -> bytes:
     return _json(value)
 
-
-def _hash_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _contained(root: Path, relative: str, *, exists: bool = False) -> Path:
@@ -94,7 +92,7 @@ def _read_canonical_json(path: Path, label: str) -> dict[str, Any]:
 def _validate_schema(root: Path, schema_name: str, value: Mapping[str, Any]) -> None:
     try:
         schema = json.loads((root / "config" / "schemas" / schema_name).read_text(encoding="utf-8"))
-        jsonschema.Draft202012Validator(schema, format_checker=jsonschema.FormatChecker()).validate(value)
+        validator(schema).validate(value)
     except (OSError, json.JSONDecodeError, jsonschema.ValidationError) as exc:
         raise PolicyError(f"{schema_name} validation failed") from exc
 

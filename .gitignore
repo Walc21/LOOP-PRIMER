@@ -47,6 +47,7 @@ local-smoke/config/*.local.json
 
 # Python/editor caches and local environments
 __pycache__/
+*.egg-info/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/

@@ -1064,6 +1064,7 @@ class M125PrimeBoundaryTests(unittest.TestCase):
         self.assertEqual(PRIME_PER_CHILD_MODEL_SELECTION, "unknown_on_current_version")
         self.assertEqual(list(inspect.signature(PrimeRLMAdapter.spawn).parameters), ["self", "prompt", "name"])
         source = inspect.getsource(PrimeRLMAdapter.spawn)
+        self.assertIn("self.rlm_api.spawn", source)
         self.assertNotIn("model=", source)
 
 

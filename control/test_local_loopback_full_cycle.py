@@ -20,6 +20,8 @@ runner = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = runner
 SPEC.loader.exec_module(runner)
 
+from article_loop.state_machine import State  # noqa: E402
+
 
 class LocalLoopbackEntryTests(unittest.TestCase):
     def setUp(self):
@@ -100,7 +102,7 @@ class LocalLoopbackEntryTests(unittest.TestCase):
         store = runner.DurableStore(attempt)
         store.create_run(run_id, actor_id="m3")
         store.record(
-            run_id, runner.State.INGESTED, event_id=run_id + ":ingested",
+            run_id, State.INGESTED, event_id=run_id + ":ingested",
             idempotency_key=run_id + ":ingested", actor_id="m3",
             payload={"source_identity": {"input_sha256": "a" * 64}},
         )

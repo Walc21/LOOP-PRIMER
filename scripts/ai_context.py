@@ -19,28 +19,6 @@ OUTPUT_RELATIVE = Path("AI_CONTEXT.md")
 HISTORY_RELATIVE = Path("docs/AI_HISTORY.md")
 _CONTEXT_FINGERPRINT = re.compile(r"^- Fingerprint atual das fontes: `([0-9a-f]{64})`$", re.MULTILINE)
 
-MODULE_PURPOSES = {
-    "state_machine.py": "grafo fechado dos 16 estados e validação de transições",
-    "store.py": "event log JSONL encadeado, snapshots derivados, locks e replay",
-    "ingestion.py": "congelamento de PDF/ZIP, derivados e publicação do baseline v0000",
-    "prompts.py": "registro content-addressed, overlays, composição e validação de prompts",
-    "blackboard.py": "ledgers append-only de claims/issues e grafo conservador de impacto",
-    "activation.py": "planejador puro RUN/CHECK/SHIFT/FREEZE e views de contexto fechado",
-    "adapters.py": "fronteira PrimeRLMAdapter/FakeRLMAdapter e handles documentados",
-    "orchestrator.py": "árvore M00→Sxx→Wxx reentrante, journal e receipts M6",
-    "synthesis.py": "congelamento de propostas, merge isolado e challenger write-once",
-    "gates.py": "13 verificadores locais, evidência matemática e GateReport canônico",
-    "evaluation.py": "comparação A/B cega, júri, meta-review e publicação M8",
-    "diagnosis.py": "série histórica validada, 7 classificações e publicação M9",
-    "refocus.py": "planos/overlays reversíveis sob CAS para plateau/oscilação",
-    "policy.py": "política M10 fechada, Decision content-addressed, Pareto e checkpoints técnicos",
-    "finalization.py": "finalizador M10 com lock, journal, fsync, CAS e receipt imutável",
-    "delivery.py": "auditoria M13 somente leitura da cadeia de evidência e disposição publicada",
-    "inference.py": "registry/router M12.5, runtime transacional e rotas/receipts write-once",
-    "inference_backends.py": "backends fake explícito e OpenAI-compatible restrito a loopback",
-    "__init__.py": "fachada pública assíncrona e exportações do pacote article_loop",
-}
-
 
 def _read(root: Path, relative: str, default: str = "") -> str:
     path = root / relative

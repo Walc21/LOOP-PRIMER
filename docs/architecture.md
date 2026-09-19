@@ -16,7 +16,7 @@ reexecuta inferência. A revalidação M9 aceita explicitamente um evento
 `FINALIZATION_APPLIED` do mesmo ciclo para essa auditoria; a autorização de
 refoco continua limitada a `DIAGNOSED`.
 
-O comando é `python3 scripts/m13_system_check.py`; detalhes, matriz de aceitação
+O comando é `.venv/bin/python scripts/m13_system_check.py`; detalhes, matriz de aceitação
 e limites estão em `docs/m13-system-acceptance.md`. Os 21 papéis, 16 estados,
 9 ações e schemas científicos permanecem os mesmos.
 

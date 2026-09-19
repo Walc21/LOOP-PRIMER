@@ -11,4 +11,5 @@ if [[ ! -f "$ROOT/AGENTS.md" ]]; then
     exit 1
 fi
 
-exec python3 "$ROOT/scripts/article_loop_command.py" check --root "$ROOT"
+"$ROOT/bin/python-runtime.sh" "$ROOT"
+exec "$ROOT/.venv/bin/python" "$ROOT/scripts/article_loop_command.py" check --root "$ROOT"

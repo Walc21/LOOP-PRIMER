@@ -25,6 +25,7 @@ from urllib.parse import urlsplit
 
 import jsonschema
 
+from .schema_validation import validator
 from .budget import BudgetLedger
 
 
@@ -595,7 +596,7 @@ class InferenceRequest:
             raise InferenceConfigError("AgentTask schema is missing or unsafe")
         try:
             schema = json.loads(schema_path.read_text(encoding="utf-8"))
-            jsonschema.Draft202012Validator(schema, format_checker=jsonschema.FormatChecker()).validate(task)
+            validator(schema).validate(task)
         except (OSError, json.JSONDecodeError, jsonschema.ValidationError) as error:
             raise InferenceConfigError("AgentTask is invalid") from error
         if not isinstance(prompt, str) or not prompt or "\x00" in prompt:
@@ -824,18 +825,13 @@ def compose_agent_proposal(
     if not isinstance(payload, Mapping):
         raise InferenceOutputError("model payload must be an object")
     try:
-        jsonschema.Draft202012Validator(
-            agent_proposal_payload_schema(canonical),
-            format_checker=jsonschema.FormatChecker(),
-        ).validate(payload)
+        validator(agent_proposal_payload_schema(canonical)).validate(payload)
     except jsonschema.ValidationError as error:
         raise InferenceOutputError("model payload violates scientific payload schema") from error
     envelope = trusted_protocol_envelope(root, request, payload)
     proposal = {**envelope, **deepcopy(dict(payload))}
     try:
-        jsonschema.Draft202012Validator(
-            canonical, format_checker=jsonschema.FormatChecker(),
-        ).validate(proposal)
+        validator(canonical).validate(proposal)
     except jsonschema.ValidationError as error:
         raise InferenceIntegrityError("composed AgentProposal violates canonical schema") from error
     if not output_identity_matches(request, proposal):
@@ -1171,7 +1167,7 @@ class InferenceStore:
         value = receipt.public()
         value["receipt_hash"] = sha256(canonical_bytes(value))
         try:
-            jsonschema.Draft202012Validator(self._receipt_schema(), format_checker=jsonschema.FormatChecker()).validate(value)
+            validator(self._receipt_schema()).validate(value)
         except jsonschema.ValidationError as error:
             raise InferenceIntegrityError("inference receipt violates schema") from error
         path = self.receipts_dir / f"{receipt.call_id}.json"
@@ -1299,7 +1295,7 @@ class InferenceStore:
             return None
         value = self._regular_json(path)
         try:
-            jsonschema.Draft202012Validator(self._receipt_schema(), format_checker=jsonschema.FormatChecker()).validate(value)
+            validator(self._receipt_schema()).validate(value)
         except jsonschema.ValidationError as error:
             raise InferenceIntegrityError("persisted inference receipt violates schema") from error
         advertised = value.get("receipt_hash")
@@ -1394,17 +1390,12 @@ class InferenceRuntime:
                 from .routed_evaluation import compose_judgment
                 return compose_judgment(contract_root, request, value)
             schema = load_requested_output_schema(contract_root, request.requested_output_schema)
-            jsonschema.Draft202012Validator(
-                schema, format_checker=jsonschema.FormatChecker(),
-            ).validate(value)
+            validator(schema).validate(value)
         except (json.JSONDecodeError, jsonschema.ValidationError, InferenceOutputError):
             return None
         if not isinstance(value, dict) or not output_identity_matches(request, value):
             return None
         return value
-
-    def _validate_response_schema(self, request: InferenceRequest, response: str) -> bool:
-        return self._validated_document(request, response) is not None
 
     @staticmethod
     def _receipt_from_manifest(manifest: Mapping[str, Any]) -> InferenceReceipt:

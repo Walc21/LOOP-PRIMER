@@ -154,6 +154,7 @@ class M11CommandBridgeTests(unittest.TestCase):
         api.assert_called_once()
 
 
+@unittest.skipUnless(sys.version_info[:2] == (3, 14), "canonical launchers require CPython 3.14")
 class M11ShellTests(unittest.TestCase):
     def run_shell(self, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -191,6 +192,14 @@ class M11ShellTests(unittest.TestCase):
         result = self.run_shell("--root", tempfile.gettempdir())
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("prime_started", result.stdout)
+
+    def test_launcher_passes_real_skill_and_template_paths(self):
+        source = (ROOT / "bin/start-prime.sh").read_text(encoding="utf-8")
+        self.assertIn('SKILL_PATH="$ROOT/.prime/agent/skills/article-loop/SKILL.md"', source)
+        self.assertIn('TEMPLATE_PATH="$ROOT/.prime/agent/prompts/$TEMPLATE.md"', source)
+        self.assertIn('--skill "$SKILL_PATH"', source)
+        self.assertIn('--prompt-template "$TEMPLATE_PATH"', source)
+        self.assertNotIn("--skill article-loop", source)
 
 
 if __name__ == "__main__":

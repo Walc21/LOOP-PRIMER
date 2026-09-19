@@ -20,7 +20,8 @@ A clear and concise description of what you expected to happen.
 
 **Environment Information:**
  - OS: (e.g. Ubuntu 22.04 / Debian 12)
- - Python Version: (e.g. 3.11 / 3.12 / 3.14)
+ - Local runtime (`.venv/bin/python --version`; must be CPython 3.14):
+ - CI compatibility version, if applicable (3.11 / 3.12 / 3.13 / 3.14):
  - TeX Live / Poppler Version (if applicable):
 
 **Additional Context**

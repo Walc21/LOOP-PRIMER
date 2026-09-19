@@ -13,13 +13,12 @@ import tempfile
 import time
 import unicodedata
 import zipfile
-import zlib
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
 from .state_machine import State
-from .store import DurableStore, StoreError
+from .store import DurableStore
 
 
 class IngestionError(RuntimeError):
@@ -76,12 +75,6 @@ def _fsync_dir(path: Path) -> None:
     else:
         os.close(fd)
 
-
-def _safe_child(root: Path, relative: str) -> Path:
-    path = (root / relative).resolve()
-    if root != path and root not in path.parents:
-        raise IngestionError("derived path escapes project root")
-    return path
 
 
 _MANAGED_DIRECTORIES = (

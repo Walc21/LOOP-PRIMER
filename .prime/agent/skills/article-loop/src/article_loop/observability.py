@@ -44,7 +44,6 @@ _SAFE_KEYS = frozenset({
     "backend_type", "finish_reason", "independence_group", "receipt_id",
     "route_decision_hash", "routing_policy_hash", "target_id", "usage_available",
 })
-_SAFE_SCALARS = (str, int, float, bool)
 
 
 class ObservabilityError(RuntimeError):

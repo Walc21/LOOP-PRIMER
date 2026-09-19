@@ -8,12 +8,12 @@ on:
 
 jobs:
   test:
-    name: M0-M13 Contract & System Tests (Python ${{ matrix.python-version }})
+    name: Compatibility tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
       - name: Checkout repository
@@ -23,23 +23,29 @@ jobs:
         uses: actions/setup-python@v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Create isolated compatibility venv
+        run: python -m venv .venv
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y ghostscript poppler-utils texlive-latex-base
-          python -m pip install --upgrade pip
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements-dev.txt
 
-      - name: Syntax & bytecode compilation check
+      - name: Syntax, shell, and JavaScript checks
         run: |
-          python -m py_compile scripts/*.py control/*.py .prime/agent/skills/article-loop/src/article_loop/*.py
+          .venv/bin/python -m py_compile scripts/*.py control/*.py .prime/agent/skills/article-loop/src/article_loop/*.py
+          bash -n bin/*.sh
+          dash -n bin/bootstrap-deps.sh bin/preflight.sh bin/python-runtime.sh
+          node --check .prime/agent/skills/article-loop/src/article_loop/control_center_static/app.js
 
-      - name: Check project-local shell and fail-closed configuration
-        run: |
-          bash -n bin/check.sh bin/start-prime.sh
-          bin/check.sh
+      - name: Check canonical local runtime policy
+        if: matrix.python-version == '3.14'
+        run: bin/check.sh
 
-      - name: Run complete M0-M13 regression suite
-        run: python -m unittest discover -s control -p 'test_*.py' -q
+      - name: Run complete M0-M14 regression suite
+        run: .venv/bin/python -m unittest discover -s control -p 'test_*.py' -q

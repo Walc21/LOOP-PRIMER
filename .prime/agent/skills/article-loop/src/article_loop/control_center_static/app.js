@@ -91,8 +91,6 @@
   }
 
   async function topology() {
-    const query = activeRun ? `?run_id=${encodeURIComponent(activeRun)}` : "";
-    const data = await request(`/runs${query}`).catch(() => null);
     let topology;
     if (activeRun) topology = await request(`/runs/${encodeURIComponent(activeRun)}/topology`);
     else {
@@ -101,7 +99,6 @@
       else { view.innerHTML = "<h2>Topologia e atividade</h2><p class=\"empty\">A árvore lógica existe, mas não há execução para exibir atividade.</p>"; return; }
     }
     view.innerHTML = `<h2>Topologia e atividade dos 21 papéis</h2><p class="muted">A topologia exibe atividade operacional. Ela nunca liga um candidato da avaliação cega à autoria de um papel.</p><div class="role-tree">${topology.roles.map((role) => `<article class="role" data-kind="${esc(role.kind)}"><strong>${esc(role.role_id)}</strong><span>${esc(role.department)}</span><span>${state(role.state)}</span><span>${esc(role.activation_mode || "sem ativação")}<br><small class="muted">Receipt: ${hash(role.receipt)}</small></span></article>`).join("")}</div>`;
-    void data;
   }
 
   async function evidence() {

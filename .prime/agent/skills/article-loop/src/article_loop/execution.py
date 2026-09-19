@@ -18,17 +18,18 @@ from pathlib import Path
 import re
 import stat
 import tempfile
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 import jsonschema
 
+from .schema_validation import validator
 from .adapters import ChildHandle, M6OperationalAdapter, PrimeRLMAdapter
 from .budget import load_budget_config
 from .inference import (
-    InferenceConfigError, InferenceIntegrityError, InferenceRequest,
-    InferenceRuntime, ModelRegistry, PRIVACY_MODES, canonical_bytes, sha256,
+    InferenceRequest, InferenceRuntime, ModelRegistry, PRIVACY_MODES,
+    canonical_bytes, sha256,
 )
-from .orchestrator import Orchestrator, OrchestrationError, SCHEMA_VERSION as M6_SCHEMA_VERSION
+from .orchestrator import Orchestrator, SCHEMA_VERSION as M6_SCHEMA_VERSION
 
 
 DEPARTMENTS = frozenset({f"S{number}0" for number in range(1, 6)})
@@ -263,7 +264,7 @@ class ContextMaterializer:
         schema_path = self.schema_root / "config/schemas/agent-task.schema.json"
         try:
             schema = json.loads(schema_path.read_text(encoding="utf-8"))
-            jsonschema.Draft202012Validator(schema, format_checker=jsonschema.FormatChecker()).validate(task)
+            validator(schema).validate(task)
         except (OSError, json.JSONDecodeError, jsonschema.ValidationError) as error:
             raise ExecutionError("AgentTask is invalid") from error
         if not isinstance(view, Mapping) or view.get("task") != task:

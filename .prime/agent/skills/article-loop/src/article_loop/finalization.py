@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import fcntl
 import hashlib
-import json
 import os
 import re
 import shutil
@@ -20,13 +19,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
-import jsonschema
-
 from .diagnosis import load_history_series, verify_published_diagnosis
 from .policy import PolicyError, _candidate, _canonical, _contained, _read_canonical_json, _validate_schema, load_policy, pareto_relation, validate_decision_disposition, verify_finalization_evidence
 from .state_machine import State
-from .store import DurableStore, StoreError
-from .synthesis import _fsync, _fsync_tree_dirs, _inventory, _json, _sha, _walk, tree_hash
+from .store import DurableStore
+from .synthesis import _fsync, _fsync_tree_dirs, _sha, _walk, tree_hash
 
 
 RECEIPT_SCHEMA = "finalization-receipt.schema.json"

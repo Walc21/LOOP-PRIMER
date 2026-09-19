@@ -21,6 +21,7 @@ from urllib.parse import urlsplit
 
 import jsonschema
 
+from .schema_validation import validator
 from .budget import BudgetError, BudgetLedger, BudgetLimits, RunAuthorization
 from .execution import ContextItem, MaterializedContext
 from .inference import (
@@ -573,9 +574,7 @@ def _validate_selection_schema(contracts: Path, value: Any) -> None:
                 encoding="utf-8",
             )
         )
-        jsonschema.Draft202012Validator(
-            schema, format_checker=jsonschema.FormatChecker(),
-        ).validate(value)
+        validator(schema).validate(value)
     except (OSError, UnicodeError, json.JSONDecodeError, jsonschema.ValidationError) as error:
         raise M6SmokeError("selection manifest is invalid") from error
 

@@ -395,6 +395,9 @@ class ControlCenterTests(unittest.TestCase):
             self.assertIn("polling local ativo", script)
             self.assertIn("target[name] = defaultFor(schema);", script)
             self.assertNotIn("target[name] = defaultFor(schema?.additionalProperties);", script)
+            topology_body = script[script.index("async function topology()") : script.index("async function evidence()")]
+            self.assertNotIn("request(`/runs${query}`)", topology_body)
+            self.assertEqual(topology_body.count("/topology`"), 2)
         finally:
             server.shutdown()
             server.server_close()
@@ -403,7 +406,7 @@ class ControlCenterTests(unittest.TestCase):
     def test_launcher_is_limited_to_the_canonical_loopback_server(self):
         launcher = ROOT / "bin/start-control-center.sh"
         source = launcher.read_text(encoding="utf-8")
-        self.assertIn("exec python3 -m article_loop.control_center", source)
+        self.assertIn('exec "$ROOT/.venv/bin/python" -m article_loop.control_center', source)
         self.assertIn("--host 127.0.0.1", source)
         self.assertIn('export PYTHONPATH="$ROOT/.prime/agent/skills/article-loop/src"', source)
         for forbidden in ("prime-agent", "ollama", "run_cycle", "bootstrap", "curl", "wget"):

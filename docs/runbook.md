@@ -6,14 +6,17 @@ externo. O PDF de entrada e versões publicadas são imutáveis.
 
 ## Preparação e verificação
 
-Na raiz do projeto, execute:
+Na raiz do projeto, prepare a `.venv` canônica do checkout e execute:
 
 ```sh
+bash bin/bootstrap-deps.sh
 bash bin/check.sh
-python3 scripts/article_loop_command.py preflight --root .
+.venv/bin/python scripts/article_loop_command.py preflight --root .
 ```
 
-`check.sh` é local e determinístico: valida os templates planos, os arquivos
+`.python-version` fixa CPython 3.14 e os launchers usam somente
+`$ROOT/.venv/bin/python`; a matriz 3.11--3.13 da CI é apenas compatibilidade de
+pacote. `check.sh` é local e determinístico: valida os templates planos, os arquivos
 canônicos, a profundidade 2, os defaults fail-closed e os contratos M12 de
 orçamento/observabilidade. `article-preflight` é
 read-only quando executado fora de uma sessão Prime e informa que não há
@@ -30,14 +33,14 @@ modo `run` é dry-run por padrão. Um ID pode ser passado por argumento ou por u
 objeto JSON em `--input`; campos desconhecidos são recusados.
 
 ```sh
-python3 scripts/article_loop_command.py bootstrap --root . --pdf input/inbox/artigo.pdf
-python3 scripts/article_loop_command.py status --root . [--run-id RUN_ID]
-python3 scripts/article_loop_command.py checkpoint --root . [--run-id RUN_ID]
-python3 scripts/article_loop_command.py pause --root . [--run-id RUN_ID]
-python3 scripts/article_loop_command.py resume --root . [--run-id RUN_ID]
-python3 scripts/article_loop_command.py stop --root . [--run-id RUN_ID]
-python3 scripts/article_loop_command.py run --root . [--run-id RUN_ID] [--cycle-id N] [--dry-run]
-python3 scripts/article_loop_command.py finalize --root . [--run-id RUN_ID] [--cycle-id N]
+.venv/bin/python scripts/article_loop_command.py bootstrap --root . --pdf input/inbox/artigo.pdf
+.venv/bin/python scripts/article_loop_command.py status --root . [--run-id RUN_ID]
+.venv/bin/python scripts/article_loop_command.py checkpoint --root . [--run-id RUN_ID]
+.venv/bin/python scripts/article_loop_command.py pause --root . [--run-id RUN_ID]
+.venv/bin/python scripts/article_loop_command.py resume --root . [--run-id RUN_ID]
+.venv/bin/python scripts/article_loop_command.py stop --root . [--run-id RUN_ID]
+.venv/bin/python scripts/article_loop_command.py run --root . [--run-id RUN_ID] [--cycle-id N] [--dry-run]
+.venv/bin/python scripts/article_loop_command.py finalize --root . [--run-id RUN_ID] [--cycle-id N]
 ```
 
 `bootstrap` pode publicar os artefatos M3 e, por isso, só deve receber um PDF
@@ -117,7 +120,7 @@ operador:
 
 ```sh
 touch control/STOP
-python3 scripts/article_loop_command.py status --root .
+.venv/bin/python scripts/article_loop_command.py status --root .
 ```
 
 Não remova o sentinel durante trabalho ativo. Após a confirmação de parada e
@@ -162,7 +165,7 @@ acima da estimativa bloqueia novas reservas.
 O status JSON pode ser consultado junto ao estado existente com um `run_id`:
 
 ```sh
-python3 scripts/article_loop_command.py status --root . --run-id RUN_ID --cycle-id N
+.venv/bin/python scripts/article_loop_command.py status --root . --run-id RUN_ID --cycle-id N
 ```
 
 Ele expõe `usage_by_limit` e `balance` para total, ciclo, departamento, papel,
@@ -203,9 +206,9 @@ em `api_key_env`.
 Antes de habilitar qualquer chamada:
 
 ```sh
-python3 scripts/article_loop_command.py check --root .
-python3 scripts/article_loop_command.py preflight --root .
-python3 scripts/article_loop_command.py status --root . --run-id RUN_ID
+.venv/bin/python scripts/article_loop_command.py check --root .
+.venv/bin/python scripts/article_loop_command.py preflight --root .
+.venv/bin/python scripts/article_loop_command.py status --root . --run-id RUN_ID
 ```
 
 `check` valida schema, duplicatas, referências, ciclos, capacidades, endpoint,
@@ -281,8 +284,8 @@ overrun. Esta Phase A não executou nenhum desses smokes.
 Para inspecionar o estado sem tocar em credenciais ou iniciar backends:
 
 ```sh
-python3 scripts/article_loop_command.py check --root .
-python3 scripts/article_loop_command.py preflight --root .
+.venv/bin/python scripts/article_loop_command.py check --root .
+.venv/bin/python scripts/article_loop_command.py preflight --root .
 ```
 
 O exemplo estrutural fica em `docs/examples/m1251-human-configuration.yaml` e
@@ -290,7 +293,7 @@ não é configuração ativa.
 
 ## Aceitação e auditoria M13
 
-Execute `python3 scripts/m13_system_check.py` para a suíte offline completa de
+Execute `.venv/bin/python scripts/m13_system_check.py` para a suíte offline completa de
 aceitação M13. `--keep-workspace CAMINHO_NOVO` conserva evidência sintética fora
 do Git. Para auditar somente a evidência existente, use `--verify-root CAMINHO
 --run-id ID` (opcionalmente `--cycle-id N`), em workspace quiescente e no caminho

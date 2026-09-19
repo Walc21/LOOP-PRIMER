@@ -5,7 +5,8 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 from .activation import DEPARTMENTS
 import jsonschema
-from .prompts import FORMAT_CHECKER, PromptContractError, validate_output
+from .prompts import PromptContractError, validate_output
+from .schema_validation import validator
 from .store import DurableStore, IntegrityError
 from .state_machine import State
 
@@ -13,7 +14,7 @@ class SynthesisError(RuntimeError): pass
 def _json(v: Any) -> bytes: return json.dumps(v, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
 def _sha(v: bytes) -> str: return hashlib.sha256(v).hexdigest()
 def _validate_schema(root: Path,schema: str,value: Mapping[str,Any]):
-    try: definition=json.loads((Path(root)/"config/schemas"/schema).read_text(encoding="utf-8")); jsonschema.Draft202012Validator(definition,format_checker=FORMAT_CHECKER).validate(dict(value))
+    try: definition=json.loads((Path(root)/"config/schemas"/schema).read_text(encoding="utf-8")); validator(definition).validate(dict(value))
     except (OSError,json.JSONDecodeError,jsonschema.ValidationError,jsonschema.SchemaError) as exc: raise SynthesisError(f"invalid {schema}") from exc
 def _rel(name: str) -> PurePosixPath:
     p=PurePosixPath(name) if isinstance(name,str) else None

@@ -10,12 +10,13 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping
 
 import jsonschema
 import yaml
+
+from .schema_validation import validator
 
 
 class PromptIntegrityError(RuntimeError):
@@ -38,20 +39,6 @@ INTERNAL_SCHEMAS = OUTPUT_SCHEMAS | frozenset({"agent-task.schema.json"})
 TASK_CONTEXT_FIELDS = (
     "run_id", "cycle_id", "base_hash", "activation_mode", "scope", "input_locators",
 )
-FORMAT_CHECKER = jsonschema.FormatChecker()
-
-
-@FORMAT_CHECKER.checks("date-time")
-def _is_rfc3339_datetime(value: object) -> bool:
-    """Supply date-time checking even when jsonschema optional extras are absent."""
-    if not isinstance(value, str) or "T" not in value:
-        return False
-    try:
-        parsed = datetime.fromisoformat(value[:-1] + "+00:00" if value.endswith("Z") else value)
-    except ValueError:
-        return False
-    return parsed.tzinfo is not None
-
 
 def _sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
@@ -280,7 +267,7 @@ def validate_output(root: str | Path, schema_name: str, output: Mapping[str, Any
     if schema_name not in OUTPUT_SCHEMAS:
         raise PromptContractError("unsupported output schema")
     try:
-        jsonschema.Draft202012Validator(_schema(Path(root), schema_name), format_checker=FORMAT_CHECKER).validate(dict(output))
+        validator(_schema(Path(root), schema_name)).validate(dict(output))
     except jsonschema.ValidationError as error:
         raise PromptContractError(f"invalid structured output: {error.message}") from error
 
@@ -293,7 +280,7 @@ def compile_prompt(root: str | Path, task: Mapping[str, Any], cycle_context: Map
         raise PromptContractError("AgentTask must target a configured non-M00 role")
     task_schema = _schema(root, "agent-task.schema.json")
     try:
-        jsonschema.Draft202012Validator(task_schema, format_checker=FORMAT_CHECKER).validate(dict(task))
+        validator(task_schema).validate(dict(task))
     except jsonschema.ValidationError as error:
         raise PromptContractError(f"invalid AgentTask: {error.message}") from error
     if set(cycle_context) - set(TASK_CONTEXT_FIELDS):

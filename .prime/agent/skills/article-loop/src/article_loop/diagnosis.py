@@ -43,15 +43,6 @@ SCHEMA_VERSION = "1.1.0"
 DIAGNOSIS_SCHEMA = "diagnosis.schema.json"
 DIAGNOSIS_MANIFEST_SCHEMA = "diagnosis-manifest.schema.json"
 
-VALID_CLASSIFICATIONS = frozenset({
-    "EVOLVING",
-    "LOCAL_PLATEAU",
-    "GLOBAL_PLATEAU",
-    "OSCILLATING",
-    "REGRESSING",
-    "INCONCLUSIVE",
-    "TECHNICAL_FAILURE",
-})
 
 DEFAULT_WINDOW_SIZE = 3
 DEFAULT_MDE = 0.25  # Minimum Detectable Effect on 0..5 scale

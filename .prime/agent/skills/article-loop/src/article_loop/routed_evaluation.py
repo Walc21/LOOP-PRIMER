@@ -12,6 +12,7 @@ import re
 
 import jsonschema
 
+from .schema_validation import validator
 from .evaluation import (
     BlindComparisonBundle, DIMENSIONS, EvaluationError, JUROR_SPECIALTIES,
     RUBRIC_VERSION, _json, _sha, _validate_juror_verdict_response,
@@ -141,9 +142,9 @@ def compose_judgment(root, request, payload):
     canonical = load_requested_output_schema(root, name)
     _bounded_json(payload)
     try:
-        jsonschema.Draft202012Validator(judgment_payload_schema(canonical)).validate(payload)
+        validator(judgment_payload_schema(canonical)).validate(payload)
         document = {**judgment_envelope(request, payload), **deepcopy(payload)}
-        jsonschema.Draft202012Validator(canonical, format_checker=jsonschema.FormatChecker()).validate(document)
+        validator(canonical).validate(document)
         bundle = BlindComparisonBundle(
             comparison_id=document["comparison_id"], candidate_neutral_ids=["A", "B"],
             content_hashes=document.get("content_hashes", []), rubric_version=document.get("rubric_version", RUBRIC_VERSION),
