@@ -206,23 +206,76 @@ class M6OrchestrationTests(unittest.TestCase):
         self.assertEqual(journal.read_bytes(), before)
         self.assertFalse((self.root / "workspaces" / self.run).exists())
 
-    def test_prime_documented_handle_and_preflight_are_closed(self):
-        class Handle:
-            rlm_child_id="prime-1"; name="named"; session_dir="/session"; model="model"
+    def test_prime_095_handles_and_preflight_are_closed(self):
+        class SpawnHandle:
+            rlm_child_id = "prime-1"
+            name = "named"
+            session_dir = Path("/session")
+            model = "model"
+
+        class ListedChild:
+            rlm_child_id = "prime-1"
+            session_name = "named"
+            session_dir = "/session"
+
         class API:
-            async def __call__(self, prompt, *, name): return Handle()
-            async def list_subagents(self): return [Handle()]
-            async def delete_subagent(self, child): self.deleted=child
+            async def spawn(self, prompt, *, name):
+                return SpawnHandle()
+
+            async def list_subagents(self):
+                return [ListedChild()]
+
+            async def delete_subagent(self, child_id):
+                self.deleted = child_id
+
         class Message:
-            async def send(self, message, *, receiver_role): pass
-        api=API(); prime=PrimeRLMAdapter(api, Message(), actor_role="M00", actor_id="root", depth=0)
-        self.assertEqual(asyncio.run(prime.preflight())["required_session_command"], "/rlm-max-depth 2")
-        child=asyncio.run(prime.spawn("p",name="named")); self.assertEqual((child.child_id,child.name,child.session_dir,child.model),("prime-1","named","/session","model"))
-        asyncio.run(prime.delete_subagent("prime-1")); self.assertEqual(api.deleted,"prime-1")
-        class Bad: name="named"; session_dir="/session"; model="model"
-        async def bad_list(): return [Bad()]
+            async def send(self, message, *, receiver_role):
+                pass
+
+        api = API()
+        prime = PrimeRLMAdapter(
+            api, Message(), actor_role="M00", actor_id="root", depth=0,
+        )
+        preflight = asyncio.run(prime.preflight())
+        self.assertEqual(preflight["required_session_command"], "/rlm-max-depth 2")
+        self.assertTrue(preflight["surfaces"]["rlm.spawn"])
+        child = asyncio.run(prime.spawn("p", name="named"))
+        self.assertEqual(
+            (child.child_id, child.name, child.session_dir, child.model),
+            ("prime-1", "named", "/session", "model"),
+        )
+        listed = asyncio.run(prime.list_subagents())
+        self.assertEqual((listed[0].name, listed[0].model), ("named", None))
+        asyncio.run(prime.delete_subagent("prime-1"))
+        self.assertEqual(api.deleted, "prime-1")
+
+        class LegacyCallable:
+            async def __call__(self, prompt, *, name):
+                return SpawnHandle()
+
+            async def list_subagents(self):
+                return []
+
+            async def delete_subagent(self, child_id):
+                pass
+
+        legacy = PrimeRLMAdapter(
+            LegacyCallable(), Message(), actor_role="M00", actor_id="root", depth=0,
+        )
+        with self.assertRaisesRegex(ValueError, "0.9.5"):
+            asyncio.run(legacy.preflight())
+
+        class Bad:
+            name = "named"
+            session_dir = "/session"
+            model = "model"
+
+        async def bad_list():
+            return [Bad()]
+
         api.list_subagents = bad_list
-        with self.assertRaises(ValueError): asyncio.run(prime.list_subagents())
+        with self.assertRaises(ValueError):
+            asyncio.run(prime.list_subagents())
 
     def test_pause_resume_pause_stop_and_finalize_are_canonical(self):
         self.cycle(); asyncio.run(self.o.pause(self.run)); first=asyncio.run(self.o.status(self.run))["pause_id"]

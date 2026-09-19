@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `b4b16e26ba7716b9813aea34c350262b826a84f53a4040943b531a8b1313eda5`
-- Baseline da última sessão: `b4b16e26ba7716b9813aea34c350262b826a84f53a4040943b531a8b1313eda5`
-- Inventário: 639 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (345880 bytes; SHA-256 `041bb0aad2002681`).
+- Fingerprint atual das fontes: `070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4`
+- Baseline da última sessão: `070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4`
+- Inventário: 649 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (352577 bytes; SHA-256 `79c061d475f7fa8f`).
 
 ## Estado e limites atuais
 
@@ -30,12 +30,7 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 61.
-- `m6-structured-output-admission-hardening-20260908` — Endurecida offline a admissão e o contrato de saída da smoke oficial M6 W11 após a tentativa congelada FAILED_OUTPUT.
-  - mudança: Criada construção pura e compartilhada do corpo OpenAI-compatible JSON Schema, com hashes e tamanhos persistidos em request-manifest write-once.
-  - decisão: Adotado apenas o dialeto openai_chat_completions_json_schema no path exato /v1/chat/completions, sem API nativa ou fallback.
-  - risco: A prova offline cobre o envelope suportado pelo binário, não garante obediência do modelo; resposta inválida continua FAILED_OUTPUT após uma única chamada.
-  - próximo: Se houver nova autorização humana, o operador deverá criar uma nova seleção M3 create-only mais compacta antes de qualquer smoke.
+- Sessões estruturadas registradas: 62.
 - `gitignore-m6-runtime-evidence-20260908` — Ajustado o Git para preservar localmente, sem exibir como alteracao, os manifestos de selecao M6 e as evidencias create-only de smokes.
   - mudança: Adicionadas regras .gitignore para runtime/m6-context-selections e runtime/m6-official-smokes; nenhum artefato existente foi movido, removido ou reescrito.
   - decisão: Evidencia operacional M6 permanece local e nao versionada, mas deixa de tornar a arvore Git visualmente suja.
@@ -46,6 +41,11 @@
   - decisão: ADR-043 preserva 1.0.0 sem migracao e adota 2.0.0 apenas para segmentos numericos explicitos, ordenados e nao sobrepostos.
   - risco: Segmentos nao escolhem relevancia cientifica e nenhuma execucao live foi autorizada; runtime e evidencias existentes permaneceram inalterados.
   - próximo: Revisao humana do diff local antes de qualquer commit ou futura selecao/runtime autorizados.
+- `session-00fbbe2e74f802a4fd2d` — Auditoria multiagente do código, saneamento de partes mortas e unificação do runtime Python concluídos offline.
+  - mudança: Criada equipe project-local maint-* efêmera com coordenador, escritor único e verificador read-only.
+  - decisão: Preservado o texto histórico do ADR-038 e adicionada emenda atual vinculada ao ADR-044.
+  - risco: Prime live, modelos, endpoints, ciclo científico e CI remota não foram iniciados.
+  - próximo: Revisão humana do diff e commit separado, se autorizado.
 
 ## Roteamento obrigatório por escopo
 

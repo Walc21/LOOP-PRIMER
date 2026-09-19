@@ -635,6 +635,15 @@ desabilitados até configuração e consentimento explícitos.
 
 ## Operação segura
 
+### Runtime local canônico
+
+Este checkout usa CPython 3.14, declarado em `.python-version`, e somente
+`$ROOT/.venv/bin/python` para comandos Python operacionais. Prepare o ambiente
+com `bash bin/bootstrap-deps.sh`. O bootstrap recusa uma `.venv` movida,
+quebrada ou criada por outra linha minor; remova-a e recrie-a em vez de usar
+`python3` ou `pip` do sistema. Python 3.11--3.13 permanece apenas como matriz de
+compatibilidade de pacote na CI.
+
 ### Validação offline
 
 ```bash

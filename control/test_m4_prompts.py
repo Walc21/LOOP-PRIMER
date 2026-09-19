@@ -119,7 +119,7 @@ class PromptContractsTests(unittest.TestCase):
         proposal["confidence"] = 2
         with self.assertRaises(PromptContractError):
             validate_output(ROOT, "agent-proposal.schema.json", proposal)
-        packet["created_at"] = "not a timestamp"
+        packet["created_at"] = "not-a-date"
         with self.assertRaises(PromptContractError):
             validate_output(ROOT, "department-packet.schema.json", packet)
 
@@ -216,7 +216,7 @@ class PromptContractsTests(unittest.TestCase):
         with self.assertRaisesRegex(PromptContractError, "prompt_version"):
             compile_prompt(ROOT, task, context_for(task))
         invalid_timestamp = task_for("W11")
-        invalid_timestamp["created_at"] = "not a timestamp"
+        invalid_timestamp["created_at"] = "not-a-date"
         with self.assertRaisesRegex(PromptContractError, "AgentTask"):
             compile_prompt(ROOT, invalid_timestamp, context_for(invalid_timestamp))
 

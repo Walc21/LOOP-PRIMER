@@ -17,7 +17,7 @@ import yaml
 
 from .gates import verify_gate_report
 from .ingestion import _directory_hash, _fsync_dir
-from .prompts import FORMAT_CHECKER
+from .schema_validation import validator
 from .state_machine import State
 from .store import DurableStore
 from .synthesis import (
@@ -63,7 +63,7 @@ def _validate_schema(root: Path, schema: str, value: Mapping[str, Any]) -> None:
     """Validate data against Draft 2020-12 schema."""
     try:
         definition = json.loads((Path(root) / "config/schemas" / schema).read_text(encoding="utf-8"))
-        jsonschema.Draft202012Validator(definition, format_checker=FORMAT_CHECKER).validate(dict(value))
+        validator(definition).validate(dict(value))
     except (OSError, json.JSONDecodeError, jsonschema.ValidationError, jsonschema.SchemaError) as exc:
         raise EvaluationError(f"invalid {schema}: {exc}") from exc
 

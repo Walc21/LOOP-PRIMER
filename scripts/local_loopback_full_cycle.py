@@ -11,8 +11,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from dataclasses import asdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import hashlib
 import http.client
 import json
@@ -42,13 +41,12 @@ from article_loop.blackboard import Blackboard, Impact
 from article_loop.budget import BudgetLedger, RunAuthorization
 from article_loop.control_center import run_detail
 from article_loop.execution import DualExecutionAdapter, DualExecutionController, ExecutionPolicy
-from article_loop.inference import InferenceRuntime, ModelRegistry, sha256
+from article_loop.inference import InferenceRuntime, ModelRegistry
 from article_loop.inference_backends import (
     OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA, LocalOpenAICompatibleBackend,
 )
 from article_loop.ingestion import ingest
 from article_loop.orchestrator import Orchestrator
-from article_loop.state_machine import State
 from article_loop.store import DurableStore
 from article_loop.synthesis import M7Pipeline, SynthesisError
 from article_loop.gates import run_gates

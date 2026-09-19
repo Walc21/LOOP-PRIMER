@@ -27,12 +27,9 @@ Thank you for your interest in contributing to **LOOP-PRIMER**! We welcome contr
    ```bash
    bash bin/bootstrap-deps.sh
    ```
-   Or set up a virtual environment manually:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements-dev.txt
-   ```
+   O bootstrap valida `.python-version`, cria a `.venv` com CPython 3.14 e
+   instala com `.venv/bin/python -m pip`. Não mova nem reutilize a `.venv` de
+   outro checkout.
 
 3. **Run Contract Tests**:
    ```bash
@@ -57,7 +54,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 ## Pull Request Checklist
 
 Before submitting a Pull Request:
-- [ ] All contract and unit tests pass (`python3 -m unittest discover -s control`).
-- [ ] Code compiles without warnings (`python3 -m py_compile ...`).
+- [ ] All contract and unit tests pass (`.venv/bin/python -m unittest discover -s control`).
+- [ ] Code compiles without warnings (`.venv/bin/python -m py_compile ...`).
 - [ ] All JSON schemas validate correctly against sample manifests.
 - [ ] `AI_CONTEXT.md` and documentation are updated if architectural signatures changed.

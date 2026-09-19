@@ -1,3 +1,3 @@
-# Dependências de validação do Marco 1; não instalar globalmente.
-PyYAML==6.0.1
-jsonschema==4.10.3
+# Dependências runtime e de validação; instalar somente na .venv do checkout.
+PyYAML==6.0.3
+jsonschema==4.26.0

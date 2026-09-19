@@ -1,5 +1,56 @@
 # Decisões arquiteturais
 
+## ADR-044 — Equipe efêmera de manutenção e runtime Python canônico
+
+**Status:** Aceito; implementação em andamento. **Data:** 2026-09-18.
+
+A manutenção de código passa a ter uma topologia operacional própria, separada
+dos 21 papéis científicos e de `PrimeRLMAdapter`. A sessão raiz atua como
+`maint-coordinator`; cada rodada admite no máximo um `maint-implementer`, único
+escritor nos paths explicitamente permitidos, e depois um
+`maint-verifier` novo e somente leitura. Filhos são efêmeros, folhas e
+recriados por tarefa. O handoff fecha versão, tarefa, papel, fase, estado
+`PASS|BLOCKED|UNCERTAIN`, arquivos, comandos com exit codes, riscos e próximo
+passo, sem cadeia de raciocínio ou segredo.
+
+A estrutura durável é documentação e skill Markdown project-local. Não serão
+criados roster, daemon, `.prime/agent/agents/`, `team.yaml`, configuração global
+ou estado canônico paralelo. A execução usa somente as superfícies confirmadas
+no Prime Agent local: `rlm.spawn`, handle de admissão,
+`rlm.list_subagents`, `rlm.delete_subagent` e `agent_message.send`. Cada uso
+continua dependente de autorização humana explícita, limites e profundidade 2
+apenas na sessão raiz, nunca global. Os papéis `maint-*` não acessam
+`config/roles/`, champion, challenger ou autoridade do ciclo científico.
+
+CPython 3.14 é a linha operacional canônica deste checkout, registrada em
+`.python-version`; todos os launchers Python do projeto usam exclusivamente
+`$ROOT/.venv/bin/python`. O bootstrap cria ou valida essa linha e recusa uma
+`.venv` movida, quebrada ou de outra minor, em vez de cair para `python3` ou
+`pip` do sistema. `requires-python >=3.11` continua sendo o piso do pacote e a
+CI conserva 3.11--3.13, acrescentando 3.14. Esses jobs provam compatibilidade
+em venvs próprios; não constituem múltiplos runtimes simultâneos de uma
+operação local.
+
+A skill declara suas dependências runtime e mantém uma fonte única de versão.
+A validação de schemas usa um checker RFC 3339 estrito do projeto em todas as
+fronteiras, independentemente de extras opcionais do jsonschema. Pins podem
+avançar apenas para versões já disponíveis e exercitadas localmente nesta
+mudança; a ausência de consulta remota será relatada, portanto nenhum pin será
+chamado de “mais recente” sem nova auditoria autorizada.
+
+A compatibilidade Prime anterior fica supersedida para a instalação local
+0.9.5. Spawn usa `await rlm.spawn(prompt, name=...)`; o objeto listado por
+`list_subagents()` é normalizado por contrato distinto do handle de admissão;
+e o launcher fornece paths reais para skill e prompt. Presença e assinatura
+da API não provam execução live, seleção de modelo bem-sucedida ou autorização.
+Nenhuma sessão científica ou modelo será iniciado durante a implementação.
+
+A limpeza remove apenas código privado, imports e requisições sem consumidor
+comprovado. Scripts numerados, APIs públicas dormentes, hooks de framework,
+endpoints, schemas e os 21 papéis permanecem até ADR específico. Toda mudança
+será coberta offline por testes focados, regressão, compilação, shells, JS,
+`bin/check.sh`, `git diff --check` e o checkpoint canônico.
+
 ## ADR-043 — Segmentos canônicos de linhas na seleção de contexto M6
 
 **Status:** Implementado e validado offline. **Data:** 2026-09-08.
@@ -370,6 +421,14 @@ Não há servidor HTTP alternativo, CDN, telemetria, proxy, acesso remoto,
 terminal, bootstrap, `run_cycle`, inferência ou Prime Agent. O bind e as
 verificações Host/Origin do `LocalControlHTTPServer` permanecem a fronteira de
 segurança; trocar somente a porta não relaxa essas proteções.
+
+### Emenda de runtime canônico — 2026-09-18
+
+A ADR-044 supersede somente o interpretador operacional desta decisão: o
+launcher atual executa
+`$ROOT/.venv/bin/python -m article_loop.control_center`. A decisão original e o
+comando `python3 -m article_loop.control_center` permanecem acima como registro
+histórico. Servidor, host, porta e limites de segurança não mudam.
 
 ## ADR-037 — M14: Central de Controle local como camada de projeção e comando canônico
 

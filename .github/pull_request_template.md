@@ -12,9 +12,9 @@ Briefly describe the context, problem, and solution implemented in this Pull Req
 
 ## Verification Checklist
 
-- [ ] All contract tests pass (`python -m unittest control.test_contracts`)
-- [ ] Milestone-specific tests pass (`python -m unittest discover -s control`)
-- [ ] Python syntax verified (`python -m py_compile ...`)
+- [ ] All contract tests pass (`.venv/bin/python -m unittest control.test_contracts`)
+- [ ] Milestone-specific tests pass (`.venv/bin/python -m unittest discover -s control`)
+- [ ] Python syntax verified (`.venv/bin/python -m py_compile ...`)
 - [ ] No unauthenticated external network/LLM calls introduced
 - [ ] Architecture invariants (RLM depth $\le 2$, append-only event log) preserved
 - [ ] ADR added to `docs/decisions.md` (if architectural changes were introduced)

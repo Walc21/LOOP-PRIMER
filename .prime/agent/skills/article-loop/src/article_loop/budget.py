@@ -20,7 +20,7 @@ from pathlib import Path
 import re
 import tempfile
 import time
-from typing import Any, Callable, Iterable, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 try:
     import yaml
@@ -781,49 +781,6 @@ class BudgetLedger:
     @staticmethod
     def _open(item: Mapping[str, Any]) -> bool:
         return item.get("status") in {"RESERVED", "ADMITTED", "UNCERTAIN"}
-
-    def _aggregates(self, state: Mapping[str, Any]) -> dict[str, Any]:
-        reservations = list(state["reservations"].values())
-        confirmed = [item for item in reservations if item.get("status") == "RECONCILED"]
-        open_items = [item for item in reservations if self._open(item)]
-
-        def sum_field(items: Iterable[Mapping[str, Any]], field: str, default: int = 0) -> int:
-            total = 0
-            for item in items:
-                value = item.get(field, default)
-                if value is None:
-                    value = default
-                total = _add(total, _integer(value, field) or 0, field)
-            return total
-
-        def scoped(items: Iterable[Mapping[str, Any]], field: str, value: str | None) -> int:
-            return sum_field((item for item in items if value is not None and item.get(field) == value), "usage_tokens")
-
-        confirmed_tokens = sum_field(confirmed, "usage_tokens")
-        reserved_tokens = sum_field(open_items, "estimate_tokens")
-        confirmed_wall = sum_field(confirmed, "wall_time_seconds")
-        reserved_wall = sum_field(open_items, "estimated_wall_time_seconds")
-        confirmed_cost = sum_field(confirmed, "cost_microunits")
-        reserved_cost = sum_field(open_items, "estimated_cost_microunits")
-        return {
-            "confirmed_tokens": confirmed_tokens,
-            "reserved_tokens": reserved_tokens,
-            "available_tokens": max(0, (self.limits.total_tokens - confirmed_tokens - reserved_tokens) if self.limits.total_tokens is not None else MAX_INTEGER),
-            "confirmed_wall_time_seconds": confirmed_wall,
-            "reserved_wall_time_seconds": reserved_wall,
-            "confirmed_cost_microunits": confirmed_cost,
-            "reserved_cost_microunits": reserved_cost,
-            "available_cost_microunits": max(
-                0,
-                self.max_run_cost_microunits - confirmed_cost - reserved_cost,
-            ) if self.max_run_cost_microunits is not None else MAX_INTEGER,
-            "calls": len(reservations),
-            "active_calls": len(open_items),
-            "retries": sum(item.get("attempt", 0) for item in reservations),
-            "active_children": sum(item.get("children", 0) for item in open_items),
-            "extra_judgments": sum(1 for item in reservations if item.get("extra_judgment") is True),
-            "scope_usage": scoped(confirmed, "department_id", None),
-        }
 
     def _check_deadline(self) -> None:
         if self.deadline_at and _parse_datetime(self.clock.now_utc()) >= _parse_datetime(self.deadline_at):

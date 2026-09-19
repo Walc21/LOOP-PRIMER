@@ -1,5 +1,7 @@
 # Smoke oficial M6 de uma tarefa
 
+Os comandos Python abaixo usam a `.venv` CPython 3.14 canônica deste checkout.
+
 Esta entrada prepara uma futura prova operacional mínima do caminho routed. Ela
 executa no máximo uma `AgentTask`, para `S10` ou `W11`, e termina sem iniciar
 M7, síntese, júri, novo ciclo, continuação ou retry.
@@ -30,7 +32,7 @@ manifesto `selection-UUID.json` sob a raiz allowlisted, sem modificar M3.
 Seleção histórica por página integral:
 
 ```bash
-python3 scripts/m6_context_selection.py \
+.venv/bin/python scripts/m6_context_selection.py \
   --m3-root '<raiz-direta-runtime/m3-real-attempts/attempt-UUID>' \
   --m3-run-id 'ingest-<sha256-do-pdf>' \
   --output 'runtime/m6-context-selections/selection-<UUID>.json' \
@@ -48,7 +50,7 @@ hashes derivados de M3, além dos hashes do binding, do artefato extraído e de
 Seleção nova por segmentos inclusivos de linhas:
 
 ```bash
-python3 scripts/m6_context_selection.py \
+.venv/bin/python scripts/m6_context_selection.py \
   --m3-root 'runtime/m3-real-attempts/attempt-<UUID>' \
   --m3-run-id 'ingest-<sha256-do-pdf>' \
   --output 'runtime/m6-context-selections/selection-<UUID>.json' \
@@ -84,7 +86,7 @@ byte nem consulta semântica.
 ## Contrato do comando
 
 ```bash
-python3 scripts/m6_official_smoke.py \
+.venv/bin/python scripts/m6_official_smoke.py \
   --m3-root '<raiz-direta-runtime/m3-real-attempts/attempt-UUID>' \
   --m3-run-id 'ingest-<sha256-do-pdf>' \
   --attempt-root '<raiz-direta-runtime/m6-official-smokes/attempt-UUID-novo>' \

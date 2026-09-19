@@ -2,14 +2,15 @@
 
 ## Escopo e autoridade
 
-Auditoria realizada em 2026-08-12, no diretório do projeto
-`/home/victor/EXECLOOP`. Nenhuma sessão, agente filho, modelo, `/autonomous` ou
-`/refine` foi iniciado. Não foram lidos arquivos de autenticação nem outras
-credenciais.
+A auditoria histórica inicial foi realizada em 2026-08-12, no diretório do
+projeto `/home/victor/EXECLOOP`. Nenhuma sessão, agente filho, modelo,
+`/autonomous` ou `/refine` foi iniciado. Não foram lidos arquivos de
+autenticação nem outras credenciais.
 
-Regra deste projeto: o comportamento observado na instalação `0.7.1` é a
-autoridade de execução. A documentação de `main` foi conferida como referência
-atual, mas não autoriza código que a instalação não exponha.
+Regra deste projeto: o contrato estático observado na instalação local `0.9.5`
+é a autoridade atual de execução. As observações de `0.7.1`, `0.9.1` e a
+documentação de `main` permanecem abaixo como histórico, mas não substituem a
+superfície local atual nem autorizam execução live.
 
 ## Evidência da instalação
 
@@ -90,8 +91,29 @@ quando uma versão foi auditada e a superfície não existe;
 `unknown_on_current_version` quando só a versão atual foi observada; e
 `supported_verified` somente após prova local da superfície. Como para 0.9.1
 foi executado apenas `--version`, a seleção de modelo por filho é hoje
-`unknown_on_current_version`. M12.5.1 não explora essa incerteza: o caminho
-Prime preserva `await rlm(prompt, name=name)` sem argumento adicional.
+`unknown_on_current_version`. Naquele marco histórico, M12.5.1 não explorou essa incerteza: o caminho
+Prime preservava `await rlm(prompt, name=name)` sem argumento adicional.
+
+### Revalidação estática local — Prime Agent 0.9.5 — 2026-09-18
+
+A instalação local `0.9.5` foi inspecionada sem iniciar sessão, filho, modelo,
+endpoint ou rede. Esta observação supersede o contrato operacional antigo do
+adaptador, mas preserva as seções anteriores como histórico:
+
+- criação: `await rlm.spawn(prompt, name=...)`;
+- handle de admissão: `rlm_child_id`, `name`, `session_dir` (`Path` ou `str`) e
+  `model`;
+- item de `await rlm.list_subagents()`: `rlm_child_id`, `session_name`,
+  `session_dir` (`Path` ou `str`) e `model` opcional;
+- remoção: `await rlm.delete_subagent(child_id)`, com o id string do filho
+  direto;
+- resultado: continua chegando por `agent_message.send` explícito ou arquivo,
+  nunca como retorno de `spawn`.
+
+O `__call__` legado de `rlm` não é aceito pelo preflight atual. Presença e
+assinatura dessas superfícies não provam autorização, seleção de modelo nem
+execução live. O launcher atual passa paths reais de `SKILL.md` e do template,
+e não nomes dependentes de descoberta.
 
 ## Documentação oficial consultada
 
@@ -119,8 +141,8 @@ Também foram examinados, somente para esclarecer contrato já instalado, os arq
 | Templates | `.prime/agent/prompts/*.md`, não recursivo; frontmatter YAML opcional com `description` e `argument-hint`; nome do arquivo vira `/nome`; suporta `$1`, `$@`, `$ARGUMENTS` e cortes de argumentos. | suportada |
 | Local de skills | Skill de projeto em `.prime/agent/skills/`; diretórios com `SKILL.md` são descobertos recursivamente. | suportada |
 | Skill Python | Requer `SKILL.md`, `pyproject.toml`, `src/<nome_com_underscore>/__init__.py`; hífens do nome viram underscores no import. `run()` torna o módulo chamável assíncrono. | suportada; não instalar nesta fase |
-| `rlm(...)` | `await rlm(prompt, name=...)` devolve imediatamente handle de admissão com `rlm_child_id`, `name`, `session_dir`, `model`; nunca devolve resposta do filho. | suportada |
-| Seleção de modelo | O handle permite observar `model`; seleção de sessão não foi revalidada e seleção provider/model por filho/chamada não está exposta no contrato confirmado. | 0.7.1: `unsupported_on_verified_version`; 0.9.1 atual: `unknown_on_current_version` |
+| `rlm.spawn(...)` | Em 0.9.5, `await rlm.spawn(prompt, name=...)` devolve imediatamente handle de admissão com `rlm_child_id`, `name`, `session_dir`, `model`; nunca devolve resposta do filho. | suportada em 0.9.5 |
+| Seleção de modelo | O handle permite observar `model`; seleção de sessão não foi revalidada e seleção provider/model por filho/chamada não está exposta no contrato confirmado. | 0.7.1 histórico: `unsupported_on_verified_version`; 0.9.1 histórico e 0.9.5 atual: `unknown_on_current_version` |
 | Resultados de filhos | Chegam por `agent_message` explícito ou arquivos; `rlm.list_subagents()` recupera filhos diretos; `rlm.delete_subagent(...)` os remove quando não necessários. | suportada |
 | `agent_message` | `list_agents()` é restrito à família. Assinatura segura: `send(message, receiver_role="parent"|"sibling"|"child", receiver_name=...)`; pai não recebe nome, irmãos/filhos exigem nome. | suportada com ressalva abaixo |
 | `/goal` | Cria/meta persistentemente objetivo explícito; possui status, pause, resume, clear e orçamento. No kernel, `goal.get()`, `goal.create()` e `goal.complete()`. | suportada; proibida nesta fase |
@@ -147,9 +169,10 @@ não documentada.
 
 ## Incompatibilidades e adaptador obrigatório
 
-1. **Defasagem de versão:** o executável é `0.7.1`; a documentação `main` de
-   configurações contém exemplo de manifesto `0.73.1`. Não se presume que todo
-   exemplo de `main` exista no binário. O adaptador usa apenas a tabela acima.
+1. **Defasagem histórica:** a auditoria inicial encontrou `0.7.1`, e a
+   documentação `main` continha exemplo de manifesto `0.73.1`. Não se presume
+   que exemplos de `main` existam em `0.9.5`. O adaptador atual usa somente a
+   revalidação estática local de 0.9.5 acima.
 2. **Profundidade padrão:** a instalação padrão é 1, enquanto a arquitetura
    exige 2. O adaptador faz preflight por sessão e configura 2 localmente; falha
    de forma explícita se não conseguir.
@@ -177,8 +200,8 @@ não documentada.
   strings de API de Prime Agent pelos papéis.
 - Persistir envelopes de pedido/resultado antes de atualizar champion,
   challenger ou Pareto.
-- Usar `await rlm(prompt, name=...)`, guardar o handle e terminar o turno; não
-  fazer polling fictício nem esperar uma resposta como retorno.
+- Usar `await rlm.spawn(prompt, name=...)`, guardar o handle e terminar o turno;
+  não fazer polling fictício nem esperar uma resposta como retorno.
 - Para mensagens, usar somente `receiver_role` e `receiver_name` conforme a
   assinatura mínima. Para informação longa, escrever arquivo imutável e enviar
   apenas referência/identificador por mensagem.

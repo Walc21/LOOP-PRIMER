@@ -1,9 +1,11 @@
 # M13 — aceitação offline e auditoria de entrega
 
+Os comandos Python abaixo usam a `.venv` CPython 3.14 canônica deste checkout.
+
 ## Comando de aceitação
 
 ```sh
-python3 scripts/m13_system_check.py
+.venv/bin/python scripts/m13_system_check.py
 ```
 
 Executa `control.test_m13_system_delivery` e emite JSON com resultado e contagens.
@@ -18,7 +20,7 @@ Para conservar uma execução sintética routed após a aceitação, use um cami
 novo, fora da árvore Git:
 
 ```sh
-python3 scripts/m13_system_check.py --keep-workspace /tmp/m13-evidence-new
+.venv/bin/python scripts/m13_system_check.py --keep-workspace /tmp/m13-evidence-new
 ```
 
 O comando recusa um caminho existente. Cada teste usa diretório temporário
@@ -29,7 +31,7 @@ permanecem fechados.
 ## Auditoria independente
 
 ```sh
-python3 scripts/m13_system_check.py \
+.venv/bin/python scripts/m13_system_check.py \
   --verify-root /tmp/m13-evidence-new \
   --run-id ingest-1a491e111064f6daae4011f46337a188de4e91337d692b3cc74b4b221d17501f
 ```

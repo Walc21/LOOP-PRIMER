@@ -53,5 +53,6 @@ if ((PORT < 1024 || PORT > 65535)); then
     exit 2
 fi
 
+"$ROOT/bin/python-runtime.sh" "$ROOT"
 export PYTHONPATH="$ROOT/.prime/agent/skills/article-loop/src"
-exec python3 -m article_loop.control_center --root "$ROOT" --host 127.0.0.1 --port "$PORT"
+exec "$ROOT/.venv/bin/python" -m article_loop.control_center --root "$ROOT" --host 127.0.0.1 --port "$PORT"

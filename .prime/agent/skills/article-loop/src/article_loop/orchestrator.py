@@ -17,7 +17,8 @@ import tempfile
 from typing import Any, Mapping
 import jsonschema
 
-from .activation import ActivationMode, ActivationPlan, ActivationEntry, PlanningLimits, CHILDREN, DEPARTMENTS, specialist_view, submanager_view
+from .schema_validation import validator
+from .activation import ActivationMode, ActivationPlan, PlanningLimits, CHILDREN, DEPARTMENTS, specialist_view, submanager_view
 from .adapters import ChildHandle, M6OperationalAdapter, PrimeRLMAdapter
 from .prompts import PromptContractError, compile_prompt, expected_prompt_version, validate_output
 from .store import DurableStore, StoreError, TransitionError
@@ -38,8 +39,6 @@ def _now() -> str: return datetime.now(timezone.utc).isoformat()
 def _bytes(value: Any) -> bytes: return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
 def _hash(value: bytes) -> str: return hashlib.sha256(value).hexdigest()
 def _name(run: str, cycle: int, role: str) -> str: return f"article-loop-{run}-c{cycle:04d}-{role.lower()}"
-def _dept(role: str) -> str: return f"S{role[1]}0" if role.startswith("W") else role
-
 
 class Orchestrator:
     def __init__(self, root: str | Path, adapter: Any | None = None):
@@ -511,7 +510,7 @@ class Orchestrator:
             task = self._task(state, role, workspace)
             try:
                 task_schema = json.loads((self.root / "config" / "schemas" / "agent-task.schema.json").read_text(encoding="utf-8"))
-                jsonschema.Draft202012Validator(task_schema).validate(task)
+                validator(task_schema).validate(task)
             except (OSError, json.JSONDecodeError, jsonschema.ValidationError) as error:
                 raise OrchestrationError("AgentTask is invalid") from error
             task_bytes = _bytes(task) + b"\n"; task_hash = _hash(task_bytes)

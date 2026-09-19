@@ -1,10 +1,10 @@
 {
   "files": {
     ".github/ISSUE_TEMPLATE/bug_report.md": {
-      "bytes": 647,
+      "bytes": 745,
       "kind": "text",
-      "lines": 27,
-      "sha256": "6e7f0c070911f45a74ce315caf68279f7fef6ca27100c976a96d313c6c202a9d"
+      "lines": 28,
+      "sha256": "faf6da294c2afd85f09da67912d29896beee53cf75c8b819cfe34546c93a17a0"
     },
     ".github/ISSUE_TEMPLATE/feature_request.md": {
       "bytes": 745,
@@ -19,22 +19,22 @@
       "sha256": "776217ed43802f886c6c76bf8bd46f00461c9244be8dce6fc0c1f48e404dedeb"
     },
     ".github/pull_request_template.md": {
-      "bytes": 871,
+      "bytes": 901,
       "kind": "text",
       "lines": 20,
-      "sha256": "42ee22ace252ae0d24e011b09507b877f0238d6fd0eb1bab8790b48728ba7957"
+      "sha256": "2fc55c8d5cb5a99a3decdb9a633db5bb140598df3588a41c9a9e0f5bc3cdfc3b"
     },
     ".github/workflows/ci.yml": {
-      "bytes": 1355,
+      "bytes": 1669,
       "kind": "text",
-      "lines": 45,
-      "sha256": "bf1d737ea098c709c7037b7ee79a6c2a5d26306bdd1e4a7b42bd108f15e25139"
+      "lines": 51,
+      "sha256": "92d8ddd87080554db969d589e6e443d1821f39c1a16f27aacdac18aa4d097f05"
     },
     ".gitignore": {
-      "bytes": 1350,
+      "bytes": 1362,
       "kind": "text",
-      "lines": 72,
-      "sha256": "015270132dca408e4bc72a179b9500b56eee0d155dcfc32f38731e1514ba9f05"
+      "lines": 73,
+      "sha256": "91b4eb29e6471e541717574ff8345252372941ff86de1ba3f3d1a7fcbb789573"
     },
     ".prime/agent/APPEND_SYSTEM.md": {
       "bytes": 918,
@@ -109,10 +109,10 @@
       "sha256": "8f1e7d84bb8868fff2e710883d5cd30f03e12865b108ba2b794113bd66174530"
     },
     ".prime/agent/skills/article-loop/pyproject.toml": {
-      "bytes": 304,
+      "bytes": 429,
       "kind": "text",
-      "lines": 13,
-      "sha256": "3a6e28296b26a6724897df658b0eba77add92e9f10bc228644f48f1d89d12bf3"
+      "lines": 19,
+      "sha256": "c9f0c8af81ece85547ad80ca42679e7a420c20a17233533ab7acb0b180d3cbe5"
     },
     ".prime/agent/skills/article-loop/references/api-contracts.md": {
       "bytes": 15060,
@@ -133,10 +133,10 @@
       "sha256": "f9d38a4532208de6ad81674244f86b21abe0573ed8966caf593c13205b173642"
     },
     ".prime/agent/skills/article-loop/src/article_loop/adapters.py": {
-      "bytes": 6871,
+      "bytes": 7936,
       "kind": "text",
-      "lines": 143,
-      "sha256": "69abdcbb18f77f6ba93c8a24f08a329336600b77bc4ccdc7b7cd1afa44ca1368"
+      "lines": 164,
+      "sha256": "862ef378f7752c68c77b40e9e2ad519586bf9c3badadfe6b8fe70eeaa0977a4e"
     },
     ".prime/agent/skills/article-loop/src/article_loop/blackboard.py": {
       "bytes": 11731,
@@ -145,22 +145,22 @@
       "sha256": "764d6a1441a9f233f336310eec067147f4a824a293920b88aef19a75ae732df2"
     },
     ".prime/agent/skills/article-loop/src/article_loop/budget.py": {
-      "bytes": 85536,
+      "bytes": 83081,
       "kind": "text",
-      "lines": 1651,
-      "sha256": "6d7166c3d59495ce08077d56a00dd322e94b5b22878603e42ab3a2b398ffe1bf"
+      "lines": 1608,
+      "sha256": "8a8194b61366e8e7b6db7fa84ab429e52916eb25d1fcca63cff865593c7dbcbf"
     },
     ".prime/agent/skills/article-loop/src/article_loop/control_center.py": {
-      "bytes": 74748,
+      "bytes": 74646,
       "kind": "text",
       "lines": 1459,
-      "sha256": "a91cb370be06f62604cd5d13e6c7611f3fa3bdb8fc4ff4883b07abb46fadfe01"
+      "sha256": "7ebedf881948ba693890599aa2ea3884f61c808be1f73a106a5b6be5be7d6eda"
     },
     ".prime/agent/skills/article-loop/src/article_loop/control_center_static/app.js": {
-      "bytes": 22505,
+      "bytes": 22344,
       "kind": "text",
-      "lines": 243,
-      "sha256": "f20913c8a3fa6c2b244e2d212eddcf7b33011e8f0be9a064cc25ffaa655f796f"
+      "lines": 240,
+      "sha256": "9930b3715d9c0fd22dce2b1157cba18a21f0e5e77dcbf6763de9d0925c93aa6e"
     },
     ".prime/agent/skills/article-loop/src/article_loop/control_center_static/index.html": {
       "bytes": 1809,
@@ -181,40 +181,40 @@
       "sha256": "a02991dcb9ea1e6474693b8e2ea32457bfbe59ac868d1912ac1a934e0765435a"
     },
     ".prime/agent/skills/article-loop/src/article_loop/diagnosis.py": {
-      "bytes": 52995,
+      "bytes": 52815,
       "kind": "text",
-      "lines": 1185,
-      "sha256": "fcb74adb45014d2bfbf7395ab8f3de3abc244e0cadeb4944e02e98db1789837e"
+      "lines": 1176,
+      "sha256": "96d778ea9eef96dee98e4fd50f9d6d7e6408fd8373d0bcd1f4ccc1f81d4ffdb0"
     },
     ".prime/agent/skills/article-loop/src/article_loop/evaluation.py": {
-      "bytes": 72273,
+      "bytes": 72225,
       "kind": "text",
       "lines": 1616,
-      "sha256": "0ef24de6bb89a0faa46a47b52225e7ff88bb629d4cfd77479826e07248230767"
+      "sha256": "084f48f0117da7d12e10b725d45ee1cb2ee517eab5558fda69296fe00cfe35f6"
     },
     ".prime/agent/skills/article-loop/src/article_loop/execution.py": {
-      "bytes": 36178,
+      "bytes": 36077,
       "kind": "text",
-      "lines": 740,
-      "sha256": "d875e151b4e9055252b883819ef12c1f26f775c47f8eb1312e9f0fa5ee28f9e8"
+      "lines": 741,
+      "sha256": "42beddda01854a4178b6c8b54af210453d6c2eee83b61dd1116c1580621a255c"
     },
     ".prime/agent/skills/article-loop/src/article_loop/finalization.py": {
-      "bytes": 29899,
+      "bytes": 29837,
       "kind": "text",
-      "lines": 562,
-      "sha256": "0a7f109e9e2edf61a960e389b22bb229c238beba7eae58f4753f4d90ce3077fb"
+      "lines": 559,
+      "sha256": "0e5329b5b9fb23191b434936de4c5527be424ef30f21555b86e863449145d548"
     },
     ".prime/agent/skills/article-loop/src/article_loop/gates.py": {
-      "bytes": 36015,
+      "bytes": 35978,
       "kind": "text",
-      "lines": 616,
-      "sha256": "0f7376d992db558f17460b08c2d501cb84ed7b2479938bcf37ef06c917010bac"
+      "lines": 615,
+      "sha256": "2f1cbe64693475d0840a71f699e449327ed5d9525cdc290a5d481e70e035415a"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference.py": {
-      "bytes": 85385,
+      "bytes": 84784,
       "kind": "text",
-      "lines": 1687,
-      "sha256": "f2edeccd833cb9a76e86f7c87bbf9a7c365347fb8b42f4ec0c8f8d5cc55adfbf"
+      "lines": 1678,
+      "sha256": "e02d46402e3d6ff6a7797a3c165db9984d95722cb3eafbca06596821bedc1c6c"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference_backends.py": {
       "bytes": 17494,
@@ -223,40 +223,40 @@
       "sha256": "332948b6f20381cd352d6964aa04b43e1b9fda74991031be14af7dab126caa06"
     },
     ".prime/agent/skills/article-loop/src/article_loop/ingestion.py": {
-      "bytes": 40060,
+      "bytes": 39812,
       "kind": "text",
-      "lines": 738,
-      "sha256": "ff3679b5ded99bd6d96ada25eea0dde567fdb5f6e2debc6d12dc99656d35d100"
+      "lines": 731,
+      "sha256": "e4ab281984e41723b4466f875cddc0830653351ae0e82c165a5e2e46bca4c67d"
     },
     ".prime/agent/skills/article-loop/src/article_loop/m6_smoke.py": {
-      "bytes": 53515,
+      "bytes": 53468,
       "kind": "text",
-      "lines": 1203,
-      "sha256": "d9b544589c553d6c97af779bda8670b8de4c62c8226b546e0d351263cad19796"
+      "lines": 1202,
+      "sha256": "7827618cf902d8cb9c2ad475aad89454885ea2038058f017de3414f57b95c71e"
     },
     ".prime/agent/skills/article-loop/src/article_loop/observability.py": {
-      "bytes": 13906,
+      "bytes": 13866,
       "kind": "text",
-      "lines": 336,
-      "sha256": "6c4cb2259d89a1b4effd1a1d084de6934691fd8d7ddd004900dc6359bfa41e93"
+      "lines": 335,
+      "sha256": "ff382175ad864b635ae65f81a053ed08675bdf5506f5f9dc39fc084999276519"
     },
     ".prime/agent/skills/article-loop/src/article_loop/orchestrator.py": {
-      "bytes": 61200,
+      "bytes": 61116,
       "kind": "text",
-      "lines": 817,
-      "sha256": "1d541d68a101c6250b7d0f9ecd0ba3e87a5caf865f3790b7dbabbea309ecebab"
+      "lines": 816,
+      "sha256": "4ca630cb1ec4782a1aefb42bc773d4e0d79c4b2afd7fd4606832e03e664bd6cc"
     },
     ".prime/agent/skills/article-loop/src/article_loop/policy.py": {
-      "bytes": 35034,
+      "bytes": 34917,
       "kind": "text",
-      "lines": 737,
-      "sha256": "cda534151c1ccc0026e4a67ae8e65cfcee62e5df57e0de684b1fe2e9bc46d218"
+      "lines": 735,
+      "sha256": "cb343fa46700f4055d20decfdee54f6ea7c32aa1cdd4cdc7a0c4756328d7251c"
     },
     ".prime/agent/skills/article-loop/src/article_loop/prompts.py": {
-      "bytes": 17405,
+      "bytes": 16831,
       "kind": "text",
-      "lines": 338,
-      "sha256": "716d1ff983a66567807df1e6f13ef7692e507936aec9b1ae5c51271ac374433c"
+      "lines": 325,
+      "sha256": "0d85ee1f22240d4a6e1c13ba1e60aa17ec78347947ac4be55bb367879a890d3a"
     },
     ".prime/agent/skills/article-loop/src/article_loop/refocus.py": {
       "bytes": 27249,
@@ -265,10 +265,16 @@
       "sha256": "f346e70a2639bd089a2574a22f14d3c1467ca01cbe1f7871231b9aa42e075d98"
     },
     ".prime/agent/skills/article-loop/src/article_loop/routed_evaluation.py": {
-      "bytes": 20700,
+      "bytes": 20654,
       "kind": "text",
-      "lines": 325,
-      "sha256": "6e0534886bc9e40694bdf2d2c50a1e75c9d74e32ee3d9f4868517acb462c15be"
+      "lines": 326,
+      "sha256": "8bb82cc39ff60865aaa8bcdc9048f2a17f6c43f65d1df5dfa9ec520f6b005b70"
+    },
+    ".prime/agent/skills/article-loop/src/article_loop/schema_validation.py": {
+      "bytes": 2131,
+      "kind": "text",
+      "lines": 63,
+      "sha256": "176c0d9fabacc32102c9fc9256dbf87fc6cbbd99b772c253072a5816a0a0b7a1"
     },
     ".prime/agent/skills/article-loop/src/article_loop/state_machine.py": {
       "bytes": 2587,
@@ -283,10 +289,22 @@
       "sha256": "a23cf5cd930436b249ab2e88bdc786b5af81d9230f85f083a3b1cb583fdc715e"
     },
     ".prime/agent/skills/article-loop/src/article_loop/synthesis.py": {
-      "bytes": 21789,
+      "bytes": 21762,
       "kind": "text",
-      "lines": 284,
-      "sha256": "f03b64696c4a6005f28148a04f72ae33fa6dd6905d79838ddf0bf6106a87350c"
+      "lines": 285,
+      "sha256": "f2e403089cbf21f9cabb542d2c98a7133bf7de3cbd459832423eee1904cbd716"
+    },
+    ".prime/agent/skills/repo-maintenance/SKILL.md": {
+      "bytes": 2393,
+      "kind": "text",
+      "lines": 53,
+      "sha256": "482085ce1bead7f42b27890540b2b0025ad864c239ad199624e1bb1f499bccaa"
+    },
+    ".prime/agent/skills/repo-maintenance/references/roles.md": {
+      "bytes": 2072,
+      "kind": "text",
+      "lines": 50,
+      "sha256": "4c37431c6276a4c3059b220d60b15cd9b6df11e7ec9a9b9fc5cbc74a7ebadf0f"
     },
     ".prime/handoffs/02_para_03.md": {
       "bytes": 2831,
@@ -372,6 +390,12 @@
       "lines": 66,
       "sha256": "7f905635a87c77fbfec21043c59b63f78e772a0cfaa624d36e20f2a3744344f0"
     },
+    ".python-version": {
+      "bytes": 5,
+      "kind": "text",
+      "lines": 1,
+      "sha256": "a876e0b10411037a012498b9fe18d9bc1df32ed8b722a13564dc944ddcfd9135"
+    },
     "AGENTS.md": {
       "bytes": 3870,
       "kind": "text",
@@ -379,10 +403,10 @@
       "sha256": "bcce634f695265611e57bad8a7a904d8b9bd7b2c0b361433a7038481b008548c"
     },
     "CONTRIBUTING.md": {
-      "bytes": 2175,
+      "bytes": 2210,
       "kind": "text",
-      "lines": 63,
-      "sha256": "88dd6a0e2eb029acecf00f6b3d30046425027832782a5a903fa21f9c26bab224"
+      "lines": 60,
+      "sha256": "459a825b6efcdc1f805039a0a4fc5af92a3134c3ac028a29d941967add07dd8b"
     },
     "LICENSE": {
       "bytes": 1092,
@@ -391,16 +415,16 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 82307,
+      "bytes": 84406,
       "kind": "text",
-      "lines": 1177,
-      "sha256": "32ac068d198b376e7dfa56bab7c02b724ee4d74a55e9d8eb84dabd9e441b7591"
+      "lines": 1210,
+      "sha256": "1b2357ca7dd14624749dc064be6da44d9999ce6a34de4044fce31c3614f02f81"
     },
     "README.md": {
-      "bytes": 47021,
+      "bytes": 47468,
       "kind": "text",
-      "lines": 797,
-      "sha256": "ebfacfb31d6d100033d8e60e3f967ff8903017ad4c3605d84c6e8c713e6bdabb"
+      "lines": 806,
+      "sha256": "04f0394b07641c405d08dc12b91c386e4983939d59a72caab7a2cc6e2b269296"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -427,34 +451,40 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     },
     "bin/bootstrap-deps.sh": {
-      "bytes": 2041,
+      "bytes": 3902,
       "kind": "text",
-      "lines": 67,
-      "sha256": "663e5a0a596c91f5fef6b33b14e01fb632c451455a029693405dc278c0299c20"
+      "lines": 121,
+      "sha256": "2773b3ed1dab4e046a18cddc783d87798d790399c5899cc1707929b98ac02837"
     },
     "bin/check.sh": {
-      "bytes": 439,
+      "bytes": 494,
       "kind": "text",
-      "lines": 14,
-      "sha256": "275ae836c32f3bcfc9876be20b3bba2d65a37799af0ebb954e9eed7db21ddc64"
+      "lines": 15,
+      "sha256": "59fdd57c7cd58b5097fc18214d0f7cbb127fc8d4879b7346d7a350bbc155d45f"
     },
     "bin/preflight.sh": {
-      "bytes": 384,
+      "bytes": 422,
       "kind": "text",
-      "lines": 4,
-      "sha256": "b2d8b23273e2827f3f9399f4db176666bbb7dc4bfcc7c4078c74e97561736785"
+      "lines": 5,
+      "sha256": "0c564e26f845584c8fe9b8d22d4a0b808a474bd6f88e7847da1bba17d3051816"
+    },
+    "bin/python-runtime.sh": {
+      "bytes": 1191,
+      "kind": "text",
+      "lines": 39,
+      "sha256": "a330e4310da8d93700260c1ddb81aae43e6513f07e5a3c6db19034ccb39b1b8a"
     },
     "bin/start-control-center.sh": {
-      "bytes": 1589,
+      "bytes": 1644,
       "kind": "text",
-      "lines": 57,
-      "sha256": "7a0e4871790b1ac973f37002d5516562d1b0e83f66937a05a9086ca41bbee3e8"
+      "lines": 58,
+      "sha256": "3c908a28b361360e63c8059e47dff7731a70ea7680defd1d2040a71882835106"
     },
     "bin/start-prime.sh": {
-      "bytes": 3893,
+      "bytes": 4291,
       "kind": "text",
-      "lines": 143,
-      "sha256": "5805e1b6f491b0ff0ba8b12dd27e2f9b611d89da255ebc2bc4c6cd5acd646463"
+      "lines": 152,
+      "sha256": "c0bf8ecbd3a030586a313d144aae7fae1fbdd823433001cb152407528619c66c"
     },
     "config/budgets.yaml": {
       "bytes": 2823,
@@ -829,10 +859,10 @@
       "sha256": "9fdba0f111b26f36eed0d5d7a3fa5f5a79948ad6ed266c69e44ae3cd373b366b"
     },
     "control/test_local_loopback_full_cycle.py": {
-      "bytes": 5320,
+      "bytes": 5373,
       "kind": "text",
-      "lines": 115,
-      "sha256": "3497ecd554b855f9e126bf1d51b83f5849ff9a1f79f73364adbd09efbd288292"
+      "lines": 117,
+      "sha256": "dc97d8e663a9869dd67169e34939f0f0c68ea009a8a1f7005850cf8a1c1aed46"
     },
     "control/test_m10_policy_finalization.py": {
       "bytes": 28099,
@@ -841,10 +871,10 @@
       "sha256": "3084e0cf69b9905f13052ef9c20cb6a8c6589db4a272ae9d33aaf49a2adb4238"
     },
     "control/test_m11_commands.py": {
-      "bytes": 8674,
+      "bytes": 9277,
       "kind": "text",
-      "lines": 197,
-      "sha256": "cebe422d7122b710d1df7ff72b74fdb2341e7a34d1e3879938d6eb12ffda42ca"
+      "lines": 206,
+      "sha256": "5eb6ceeefe28a4b149cf5b1a2fe37df22ad6509345f70ce090059ac0b72639ff"
     },
     "control/test_m1251_dual_execution.py": {
       "bytes": 36112,
@@ -853,10 +883,10 @@
       "sha256": "f9bcf67e74d2462bda7399088976467af16de25f551579d169ee592083d4b760"
     },
     "control/test_m125_inference_routing.py": {
-      "bytes": 53415,
+      "bytes": 53467,
       "kind": "text",
-      "lines": 1071,
-      "sha256": "6edfde6c9e84c71f93f1c7fab34d311e2d13e8ed11adda7f580313e88ead9a0b"
+      "lines": 1072,
+      "sha256": "6b881bb1c0f6bd174813bf9450e062bc78a896c58d34d02fe712c86f15ed7306"
     },
     "control/test_m12_budget_observability.py": {
       "bytes": 23024,
@@ -877,10 +907,10 @@
       "sha256": "4da13c01f8dda22fe49ffbbfbd86b54fd4dff7ada19bcdf75a4f5511254ed482"
     },
     "control/test_m14_control_center.py": {
-      "bytes": 20351,
+      "bytes": 20629,
       "kind": "text",
-      "lines": 423,
-      "sha256": "2e0376925305f2a9afdb0fd9ebff83135ec22616683d3cd33e0847e4af5290a4"
+      "lines": 426,
+      "sha256": "75dc180b896175dff0d36a18e530bbc0eaea270f3917ca15dca58032afa9702e"
     },
     "control/test_m2_durable_state.py": {
       "bytes": 19002,
@@ -895,10 +925,10 @@
       "sha256": "b0874f8c8e3bd3b2554862733005e77aba57a17f9c9d1e8fc499acdb769fba3d"
     },
     "control/test_m4_prompts.py": {
-      "bytes": 15125,
+      "bytes": 15115,
       "kind": "text",
       "lines": 280,
-      "sha256": "096ee680589e809d64b9373ddd1798febbdb1f59601b3eba3124c67b174ba848"
+      "sha256": "f993d6bfed3560ebd37ea684936ab4c9069e098417bd934b228be39f2e248180"
     },
     "control/test_m5_blackboard_activation.py": {
       "bytes": 19773,
@@ -913,10 +943,10 @@
       "sha256": "ab18520d5e8fdb265550b5853e8aa64860686dce56a83494b3f8d44498815683"
     },
     "control/test_m6_orchestration.py": {
-      "bytes": 41501,
+      "bytes": 42652,
       "kind": "text",
-      "lines": 562,
-      "sha256": "0c698839b4ef2edd44f0a7636e203deedf923f0a335928d9341ecb0f1a15f0f1"
+      "lines": 615,
+      "sha256": "f97275a91230a0a6e2a7865e572c80d4b28710c23fc3531c0e549ca64fe15c93"
     },
     "control/test_m7_synthesis_gates.py": {
       "bytes": 24028,
@@ -936,17 +966,41 @@
       "lines": 1245,
       "sha256": "fc822010cc3726b4c081d84e36eb0b4c9a46c90c22e1f3a58a00efd7673cec8a"
     },
+    "control/test_maintenance_agents.py": {
+      "bytes": 2619,
+      "kind": "text",
+      "lines": 66,
+      "sha256": "ed18ee050f1165af9208514f011bf25e7839d765b9e0b25e27d30b9793a1cbf8"
+    },
+    "control/test_package_metadata.py": {
+      "bytes": 2223,
+      "kind": "text",
+      "lines": 56,
+      "sha256": "4cf8ca4a54b6f23c942c3862067db546474f324db61d155440fe866534ac3258"
+    },
+    "control/test_python_runtime_policy.py": {
+      "bytes": 7640,
+      "kind": "text",
+      "lines": 167,
+      "sha256": "a883555bdc7a7865f9703556f907b120f55db7ce817796728feb9642f05162f3"
+    },
+    "control/test_schema_validation.py": {
+      "bytes": 2185,
+      "kind": "text",
+      "lines": 60,
+      "sha256": "13c002ff269e356dcc6fdc69b7ecc2bfd39f3cad24872c0eb283a192eeb3525e"
+    },
     "docs/architecture.md": {
-      "bytes": 28528,
+      "bytes": 28537,
       "kind": "text",
       "lines": 563,
-      "sha256": "ca96280f20f577dee5a452c662609977d0df0bb24a7ab12769a8635a7b8326d5"
+      "sha256": "5235cb304135ebced8ccbe676b2a7a03d0a4796689deb2656ef8ada5d1b3b75d"
     },
     "docs/compatibility.md": {
-      "bytes": 12986,
+      "bytes": 14261,
       "kind": "text",
-      "lines": 188,
-      "sha256": "be929550d830cb3203e13cbde156a8f5fe73e904a6145c7c9a2b346b9c17ced8"
+      "lines": 211,
+      "sha256": "18325183dffd882235fc87e3bc415ed990dac7b7085553ac42eca1c335154fb1"
     },
     "docs/control-center.md": {
       "bytes": 4008,
@@ -955,10 +1009,10 @@
       "sha256": "2eb9ab85bd98ebf5bac9e5209a1c8fb97dd85181ac32aeff9de3745e8dec1c62"
     },
     "docs/decisions.md": {
-      "bytes": 106589,
+      "bytes": 110173,
       "kind": "text",
-      "lines": 1810,
-      "sha256": "61e12cf9ba2e57b11d9c81baec7290feb5a4cf82fdd7cfbc16b2e5233fa0fff0"
+      "lines": 1869,
+      "sha256": "4bfd317caf67b019a0446bfd2e04695d4d89584d1f4b6aaf2abefcd582766051"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -973,16 +1027,22 @@
       "sha256": "81596d44946072bfcadb784b3d5c3d030f6ab898cdfe444d6a504856671b3e59"
     },
     "docs/m13-system-acceptance.md": {
-      "bytes": 8463,
+      "bytes": 8571,
       "kind": "text",
-      "lines": 144,
-      "sha256": "da913ee40db235467952620cdb2bba78e71f60cdd80087e80fb0c98119c1e5c9"
+      "lines": 146,
+      "sha256": "6dc149bb49b944bd31b2abbe15c73bcaed439c94611adf62bd4588b11a3ca0e4"
     },
     "docs/m6-official-smoke.md": {
-      "bytes": 9528,
+      "bytes": 9636,
       "kind": "text",
-      "lines": 172,
-      "sha256": "01732e99e8f35c329c5a71039f407a2e2ae11dbea240056c7e6229d08b0e1791"
+      "lines": 174,
+      "sha256": "50c6f73e8cd6958442be3080cc7af28e2884d37fac933582d5435edb53115514"
+    },
+    "docs/maintenance-agents.md": {
+      "bytes": 2339,
+      "kind": "text",
+      "lines": 46,
+      "sha256": "2bbcd661ec61d0c2a75aa81d4ba4e0535e662e8155d40ee81bd60438891b6836"
     },
     "docs/model-driven-surfaces.md": {
       "bytes": 2385,
@@ -991,10 +1051,10 @@
       "sha256": "d1fb59e1b2b64b10aefd3c42328bcc7bf16b655e9657e895d07530e6dadc21cb"
     },
     "docs/runbook.md": {
-      "bytes": 15096,
+      "bytes": 15471,
       "kind": "text",
-      "lines": 300,
-      "sha256": "36e8d856a1aae1b9cd7cb5c008e5efae3818342b34a71a6fe0c8a160d9e6a802"
+      "lines": 303,
+      "sha256": "8cfde4456864e05b3fde55476d6e132d0e520371af3101d0987692b994908283"
     },
     "input/inbox/.gitkeep": {
       "bytes": 1,
@@ -1177,10 +1237,10 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     },
     "requirements-dev.txt": {
-      "bytes": 103,
+      "bytes": 114,
       "kind": "text",
       "lines": 3,
-      "sha256": "30ee56beb67d94cad7f09edb4d7d320e56b1767a4f7e126d6e83a48e16c5236d"
+      "sha256": "d44cfe42c1ae8dfd78b50e8a3ce3a8cff497210613ddb60d197a8d25192d452c"
     },
     "runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/document.pdf": {
       "bytes": 876312,
@@ -3703,10 +3763,10 @@
       "sha256": "6d379c3173b9067f65ecfa6b68efb81d80fbd3f8b2de67b9786ff7944c204bbe"
     },
     "scripts/ai_context.py": {
-      "bytes": 20078,
+      "bytes": 18336,
       "kind": "text",
-      "lines": 388,
-      "sha256": "f977db70f0ffda9d183ab2789a0efb3a16a06d3d88622da7298532d9eb5cd97f"
+      "lines": 366,
+      "sha256": "59bd80d4a6d67e0ce6309564c30828df87c724d8f8945ae3fa934d3ec4f8009c"
     },
     "scripts/ai_handoff_common.py": {
       "bytes": 13818,
@@ -3727,10 +3787,10 @@
       "sha256": "f847bdc092e9b61cce25a8f1e096b69141b93bf445ef40de6703ebce9f31a8ab"
     },
     "scripts/local_loopback_full_cycle.py": {
-      "bytes": 24290,
+      "bytes": 24195,
       "kind": "text",
-      "lines": 537,
-      "sha256": "95bc5a336e322f9689ee873b9597249e92f2036f288751275dc66d023930f771"
+      "lines": 535,
+      "sha256": "9b577fb2e1d5e804ad00c347aed912a99de0c273b2be90be9265bd77e07a8780"
     },
     "scripts/m13_system_check.py": {
       "bytes": 3327,
@@ -3835,23 +3895,71 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "b4b16e26ba7716b9813aea34c350262b826a84f53a4040943b531a8b1313eda5",
+  "fingerprint": "070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4",
   "git": {
     "available": true,
-    "branch": "codex/m6-bounded-context-selection",
-    "head": "bc0aaa753958f018590ac6c00506a261eb37f352",
+    "branch": "main",
+    "head": "f8dd27e9578982fd61ec9854aed48339ccbe5240",
     "status": [
+      " M .github/ISSUE_TEMPLATE/bug_report.md",
+      " M .github/pull_request_template.md",
+      " M .github/workflows/ci.yml",
+      " M .gitignore",
+      " M .prime/agent/skills/article-loop/pyproject.toml",
+      " M .prime/agent/skills/article-loop/src/article_loop/adapters.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/budget.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/control_center.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/control_center_static/app.js",
+      " M .prime/agent/skills/article-loop/src/article_loop/diagnosis.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/evaluation.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/execution.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/finalization.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/gates.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/inference.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/ingestion.py",
       " M .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/observability.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/orchestrator.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/policy.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/prompts.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/routed_evaluation.py",
+      " M .prime/agent/skills/article-loop/src/article_loop/synthesis.py",
+      " M CONTRIBUTING.md",
       " M PLANS.md",
-      " M config/schemas/m6-context-selection.schema.json",
-      " M control/test_m6_official_smoke.py",
+      " M README.md",
+      " M bin/bootstrap-deps.sh",
+      " M bin/check.sh",
+      " M bin/preflight.sh",
+      " M bin/start-control-center.sh",
+      " M bin/start-prime.sh",
+      " M control/test_local_loopback_full_cycle.py",
+      " M control/test_m11_commands.py",
+      " M control/test_m125_inference_routing.py",
+      " M control/test_m14_control_center.py",
+      " M control/test_m4_prompts.py",
+      " M control/test_m6_orchestration.py",
+      " M docs/architecture.md",
+      " M docs/compatibility.md",
       " M docs/decisions.md",
+      " M docs/m13-system-acceptance.md",
       " M docs/m6-official-smoke.md",
-      " M scripts/m6_context_selection.py",
-      " M scripts/m6_official_smoke.py"
+      " M docs/runbook.md",
+      " M requirements-dev.txt",
+      " M scripts/ai_context.py",
+      " M scripts/local_loopback_full_cycle.py",
+      "?? .prime/agent/skills/article-loop/src/article_loop/schema_validation.py",
+      "?? .prime/agent/skills/repo-maintenance/SKILL.md",
+      "?? .prime/agent/skills/repo-maintenance/references/roles.md",
+      "?? .python-version",
+      "?? bin/python-runtime.sh",
+      "?? control/test_maintenance_agents.py",
+      "?? control/test_package_metadata.py",
+      "?? control/test_python_runtime_policy.py",
+      "?? control/test_schema_validation.py",
+      "?? docs/maintenance-agents.md"
     ]
   },
-  "recorded_at": "2026-09-08T06:34:55Z",
+  "recorded_at": "2026-09-19T12:23:07Z",
   "schema_version": "1.0.0",
-  "session_id": "session-8247cc84d3866873df82"
+  "session_id": "session-00fbbe2e74f802a4fd2d"
 }

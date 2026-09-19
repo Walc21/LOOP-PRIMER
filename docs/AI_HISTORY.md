@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `b4b16e26ba7716b9813aea34c350262b826a84f53a4040943b531a8b1313eda5`
-- Registrado em: `2026-09-08T06:34:55Z`
-- Git: branch `codex/m6-bounded-context-selection`, HEAD `bc0aaa753958`
-- Arquivos relevantes: 639
+- Fingerprint das fontes: `070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4`
+- Registrado em: `2026-09-19T12:23:07Z`
+- Git: branch `main`, HEAD `f8dd27e95789`
+- Arquivos relevantes: 649
 
 ## Evolução reconstruída do versionamento
 
@@ -21,7 +21,7 @@
 | sem marco explícito | 2026-08-13..2026-09-08 | 59 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
-| M6 | 2026-08-14..2026-09-08 | 18 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py… |
+| M6 | 2026-08-14..2026-09-08 | 20 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py… |
 | M7 | 2026-08-14..2026-09-01 | 6 | Síntese, merge isolado, challenger write-once e 13 gates locais. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/synthe… |
 | M8 | 2026-08-27..2026-09-01 | 3 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
 | M9 | 2026-08-28..2026-09-01 | 5 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
@@ -190,9 +190,12 @@
 | `2030a1b9d` | 2026-09-08 | M6 | Merge pull request #17 from Walc21/codex/ignore-m6-runtime-evidence |  |
 | `d3848378e` | 2026-09-08 | sem marco explícito | docs: expand system architecture README | README.md |
 | `bc0aaa753` | 2026-09-08 | sem marco explícito | Merge pull request #18 from Walc21/codex/readme-system-architecture-reference |  |
+| `3de2b63bb` | 2026-09-08 | M6 | feat: add bounded M6 context segments | .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py, AI_CONTEXT.md, PLANS.md, config/schemas/m6-context-selection.schema.json, control/test_m6_official_smoke.py, docs/AI… |
+| `f8dd27e95` | 2026-09-08 | M6 | Merge pull request #19 from Walc21/codex/m6-bounded-context-selection |  |
 
 ## Decisões arquiteturais
 
+- ADR-044 — Equipe efêmera de manutenção e runtime Python canônico
 - ADR-043 — Segmentos canônicos de linhas na seleção de contexto M6
 - ADR-042 — Smoke oficial M6 limitado a uma tarefa routed
 - ADR-040 — Contexto escalonado para agentes sem perda de autoridade
@@ -3526,3 +3529,94 @@
 | modified | `docs/m6-official-smoke.md` | `053d2061aafe` | `01732e99e8f3` |
 | modified | `scripts/m6_context_selection.py` | `56d89d39eefc` | `df289d1edbe9` |
 | modified | `scripts/m6_official_smoke.py` | `22afe3ff0e66` | `dc8887c1d0e2` |
+
+### 2026-09-19T12:23:07Z — Auditoria multiagente do código, saneamento de partes mortas e unificação do runtime Python concluídos offline.
+
+- Session ID: `session-00fbbe2e74f802a4fd2d`
+- Fingerprint final: `070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4`
+- Git final: `f8dd27e95789`; status relevante: 56 item(ns)
+- Delta factual: 10 adicionados, 46 modificados, 0 removidos
+
+**Mudanças**
+
+- Criada equipe project-local maint-* efêmera com coordenador, escritor único e verificador read-only.
+- Unificados launchers e bootstrap em CPython 3.14 na .venv; CI passou a provar 3.11–3.14.
+- Atualizados contratos Prime 0.9.5, dependências runtime, validação RFC3339 estrita e limpeza de código morto de alta confiança.
+
+**Decisões**
+
+- Preservado o texto histórico do ADR-038 e adicionada emenda atual vinculada ao ADR-044.
+
+**Validações**
+
+- Suíte integral: 564 testes OK em Python 3.14.4.
+- Bootstrap, skill editable 0.7.0, pip check, bin/check.sh, py_compile, bash/dash, node --check e git diff --check OK.
+
+**Riscos/limites**
+
+- Prime live, modelos, endpoints, ciclo científico e CI remota não foram iniciados.
+
+**Próximos passos**
+
+- Revisão humana do diff e commit separado, se autorizado.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.prime/agent/skills/article-loop/src/article_loop/schema_validation.py` | `-` | `176c0d9fabac` |
+| added | `.prime/agent/skills/repo-maintenance/SKILL.md` | `-` | `482085ce1bea` |
+| added | `.prime/agent/skills/repo-maintenance/references/roles.md` | `-` | `4c37431c6276` |
+| added | `.python-version` | `-` | `a876e0b10411` |
+| added | `bin/python-runtime.sh` | `-` | `a330e4310da8` |
+| added | `control/test_maintenance_agents.py` | `-` | `ed18ee050f11` |
+| added | `control/test_package_metadata.py` | `-` | `4cf8ca4a54b6` |
+| added | `control/test_python_runtime_policy.py` | `-` | `a883555bdc7a` |
+| added | `control/test_schema_validation.py` | `-` | `13c002ff269e` |
+| added | `docs/maintenance-agents.md` | `-` | `2bbcd661ec61` |
+| modified | `.github/ISSUE_TEMPLATE/bug_report.md` | `6e7f0c070911` | `faf6da294c2a` |
+| modified | `.github/pull_request_template.md` | `42ee22ace252` | `2fc55c8d5cb5` |
+| modified | `.github/workflows/ci.yml` | `bf1d737ea098` | `92d8ddd87080` |
+| modified | `.gitignore` | `015270132dca` | `91b4eb29e647` |
+| modified | `.prime/agent/skills/article-loop/pyproject.toml` | `3a6e28296b26` | `c9f0c8af81ec` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/adapters.py` | `69abdcbb18f7` | `862ef378f775` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/budget.py` | `6d7166c3d594` | `8a8194b61366` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/control_center.py` | `a91cb370be06` | `7ebedf881948` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/control_center_static/app.js` | `f20913c8a3fa` | `9930b3715d9c` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/diagnosis.py` | `fcb74adb4501` | `96d778ea9eef` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/evaluation.py` | `0ef24de6bb89` | `084f48f0117d` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/execution.py` | `d875e151b4e9` | `42beddda0185` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/finalization.py` | `0a7f109e9e2e` | `0e5329b5b9fb` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/gates.py` | `0f7376d992db` | `2f1cbe646934` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference.py` | `f2edeccd833c` | `e02d46402e3d` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/ingestion.py` | `ff3679b5ded9` | `e4ab281984e4` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/m6_smoke.py` | `d9b544589c55` | `7827618cf902` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/observability.py` | `6c4cb2259d89` | `ff382175ad86` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/orchestrator.py` | `1d541d68a101` | `4ca630cb1ec4` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/policy.py` | `cda534151c1c` | `cb343fa46700` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/prompts.py` | `716d1ff983a6` | `0d85ee1f2224` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/routed_evaluation.py` | `6e0534886bc9` | `8bb82cc39ff6` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/synthesis.py` | `f03b64696c4a` | `f2e403089cbf` |
+| modified | `CONTRIBUTING.md` | `88dd6a0e2eb0` | `459a825b6efc` |
+| modified | `PLANS.md` | `32ac068d198b` | `1b2357ca7dd1` |
+| modified | `README.md` | `ebfacfb31d6d` | `04f0394b0764` |
+| modified | `bin/bootstrap-deps.sh` | `663e5a0a596c` | `2773b3ed1dab` |
+| modified | `bin/check.sh` | `275ae836c32f` | `59fdd57c7cd5` |
+| modified | `bin/preflight.sh` | `b2d8b23273e2` | `0c564e26f845` |
+| modified | `bin/start-control-center.sh` | `7a0e4871790b` | `3c908a28b361` |
+| modified | `bin/start-prime.sh` | `5805e1b6f491` | `c0bf8ecbd3a0` |
+| modified | `control/test_local_loopback_full_cycle.py` | `3497ecd554b8` | `dc97d8e663a9` |
+| modified | `control/test_m11_commands.py` | `cebe422d7122` | `5eb6ceeefe28` |
+| modified | `control/test_m125_inference_routing.py` | `6edfde6c9e84` | `6b881bb1c0f6` |
+| modified | `control/test_m14_control_center.py` | `2e0376925305` | `75dc180b8961` |
+| modified | `control/test_m4_prompts.py` | `096ee680589e` | `f993d6bfed35` |
+| modified | `control/test_m6_orchestration.py` | `0c698839b4ef` | `f97275a91230` |
+| modified | `docs/architecture.md` | `ca96280f20f5` | `5235cb304135` |
+| modified | `docs/compatibility.md` | `be929550d830` | `18325183dffd` |
+| modified | `docs/decisions.md` | `61e12cf9ba2e` | `4bfd317caf67` |
+| modified | `docs/m13-system-acceptance.md` | `da913ee40db2` | `6dc149bb49b9` |
+| modified | `docs/m6-official-smoke.md` | `01732e99e8f3` | `50c6f73e8cd6` |
+| modified | `docs/runbook.md` | `36e8d856a1aa` | `8cfde4456864` |
+| modified | `requirements-dev.txt` | `30ee56beb67d` | `d44cfe42c1ae` |
+| modified | `scripts/ai_context.py` | `f977db70f0ff` | `59bd80d4a6d6` |
+| modified | `scripts/local_loopback_full_cycle.py` | `95bc5a336e32` | `9b577fb2e1d5` |

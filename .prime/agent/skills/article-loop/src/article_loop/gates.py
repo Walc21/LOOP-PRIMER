@@ -29,7 +29,6 @@ REQUIRED_GATES = (
     "math_critical_issues", "forbidden_metatext", "local_budget",
     "manifest_integrity", "correctness_math",
 )
-_HEX = re.compile(r"[a-f0-9]{64}\Z")
 
 
 def _config(root: Path) -> dict[str, dict[str, Any]]:

@@ -10,6 +10,39 @@ champion, challengers e arquivo Pareto.
 A fonte normativa de arquitetura é `docs/architecture.md`; a autoridade da
 integração Prime Agent continua sendo `docs/compatibility.md`.
 
+## Manutenção multiagente, runtime Python e saneamento — 2026-09-18
+
+Criar uma equipe operacional de manutenção separada dos 21 papéis científicos.
+A equipe será recriada por tarefa, no namespace `maint-*`, com uma sessão raiz
+coordenadora, um único filho escritor por rodada e um verificador independente
+somente leitura. Ela usará apenas `rlm.spawn`, handles de admissão,
+`rlm.list_subagents`, `rlm.delete_subagent` e `agent_message.send` já observados
+no Prime Agent local; não haverá manifesto de agentes permanentes, múltiplos
+escritores, netos, seleção implícita de modelo ou estado científico novo.
+
+Unificar a execução operacional no ambiente local `.venv`, com CPython 3.14
+como linha canônica declarada em `.python-version`. O piso sintático e de pacote
+permanece Python 3.11, e a CI passa a provar 3.11, 3.12, 3.13 e 3.14 em ambientes
+virtuais isolados; a matriz de compatibilidade não autoriza launchers locais a
+misturar o Python do sistema com a `.venv`. Bootstrap, launchers, documentação
+e testes devem falhar fechados quando o ambiente canônico estiver ausente ou
+for de outra linha minor.
+
+Atualizar a integração Prime para o contrato local 0.9.5: criação usa
+`rlm.spawn`, listagem possui forma própria e paths de skill/template são paths
+reais, não nomes. Declarar PyYAML e jsonschema como dependências runtime da
+skill, alinhar metadata e versão, centralizar a validação estrita de
+`format: date-time` e atualizar os pins apenas para versões já observadas
+localmente. Frescor remoto não será alegado nem consultado sem autorização de
+rede.
+
+Remover somente imports, constantes e funções privadas sem referência e de alta
+confiança, além do fetch redundante da UI M14. APIs públicas, scripts numerados,
+endpoints dinâmicos, hooks, schemas e papéis científicos serão preservados.
+Testes novos cobrirão política Python, pacote, equipe de manutenção, contrato
+Prime 0.9.5, datas inválidas e a requisição única da topologia. A validação será
+offline, sem Prime live, modelo, endpoint, PDF real ou ciclo científico.
+
 ## Contexto enxuto para agentes — 2026-09-07
 
 Reduzir o custo de início de Codex, Copilot e Prime sem perder contratos ou

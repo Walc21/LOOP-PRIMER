@@ -92,8 +92,10 @@ if [[ -L "$ROOT" || ! -d "$ROOT" ]]; then
 fi
 ROOT="$(cd -- "$ROOT" && pwd -P)"
 
+"$ROOT/bin/python-runtime.sh" "$ROOT"
+
 bash "$ROOT/bin/check.sh"
-python3 "$ROOT/scripts/article_loop_command.py" preflight --root "$ROOT"
+"$ROOT/.venv/bin/python" "$ROOT/scripts/article_loop_command.py" preflight --root "$ROOT"
 
 if [[ -e "$ROOT/control/STOP" || -L "$ROOT/control/STOP" ]]; then
     echo "control/STOP blocks new operations" >&2
@@ -101,7 +103,7 @@ if [[ -e "$ROOT/control/STOP" || -L "$ROOT/control/STOP" ]]; then
 fi
 
 if [[ "$MODE" == "dry-run" ]]; then
-    python3 - "$ROOT" "$TEMPLATE" <<'PY'
+    "$ROOT/.venv/bin/python" - "$ROOT" "$TEMPLATE" <<'PY'
 import json
 import sys
 
@@ -123,7 +125,7 @@ fi
 
 # M11 consumes the already versioned fail-closed budget declaration. It does
 # not change it, and it cannot turn live execution on by itself.
-python3 "$ROOT/scripts/article_loop_command.py" check --root "$ROOT" --require-live
+"$ROOT/.venv/bin/python" "$ROOT/scripts/article_loop_command.py" check --root "$ROOT" --require-live
 
 # This is the existing M3 ingestion preflight. It is intentionally reached
 # only after explicit live authorization and the local budget gate.
@@ -139,5 +141,12 @@ if ! PRIME_AGENT_BIN="$(command -v prime-agent)"; then
     exit 1
 fi
 
+SKILL_PATH="$ROOT/.prime/agent/skills/article-loop/SKILL.md"
+TEMPLATE_PATH="$ROOT/.prime/agent/prompts/$TEMPLATE.md"
+if [[ -L "$SKILL_PATH" || ! -f "$SKILL_PATH" || -L "$TEMPLATE_PATH" || ! -f "$TEMPLATE_PATH" ]]; then
+    echo "project skill or prompt template path is unavailable" >&2
+    exit 1
+fi
+
 cd -- "$ROOT"
-exec "$PRIME_AGENT_BIN" --skill article-loop --prompt-template "$TEMPLATE"
+exec "$PRIME_AGENT_BIN" --skill "$SKILL_PATH" --prompt-template "$TEMPLATE_PATH"

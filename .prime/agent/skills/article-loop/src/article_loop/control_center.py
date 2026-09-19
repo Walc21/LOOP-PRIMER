@@ -15,7 +15,6 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 import fcntl
 import hashlib
-from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import math
@@ -34,9 +33,10 @@ from uuid import uuid4
 import jsonschema
 import yaml
 
+from .schema_validation import validator
 from .budget import BudgetError, BudgetLedger
 from .execution import ExecutionError, execution_readiness
-from .finalization import FinalizationError, finalize_decision
+from .finalization import finalize_decision
 from .inference import InferenceConfigError, ModelRegistry, inference_preflight
 from .observability import ObservabilityError, StructuredLogger
 from .orchestrator import OrchestrationError, Orchestrator
@@ -275,14 +275,14 @@ class AuditLedger:
             return []
         if self.path.is_symlink() or not self.path.is_file():
             raise ControlCenterError("INTEGRITY_ERROR", "audit ledger is unsafe")
-        validator = jsonschema.Draft202012Validator(self._schema())
+        schema_validator = validator(self._schema())
         events: list[dict[str, Any]] = []
         for line in self.path.read_bytes().splitlines(keepends=True):
             if not line.endswith(b"\n"):
                 raise ControlCenterError("INTEGRITY_ERROR", "audit ledger has a partial record")
             try:
                 event = json.loads(line)
-                validator.validate(event)
+                schema_validator.validate(event)
             except (json.JSONDecodeError, jsonschema.ValidationError) as error:
                 raise ControlCenterError("INTEGRITY_ERROR", "audit ledger record is invalid") from error
             previous = events[-1]["event_hash"] if events else None
@@ -341,7 +341,7 @@ class AuditLedger:
                         "previous_event_hash": events[-1]["event_hash"] if events else None,
                     }
                     event["event_hash"] = _hash(event)
-                    jsonschema.Draft202012Validator(self._schema()).validate(event)
+                    validator(self._schema()).validate(event)
                     prior = self.path.read_bytes() if self.path.exists() else b""
                     _atomic_bytes(self.path, prior + _canonical(event) + b"\n")
                     return event
@@ -614,14 +614,14 @@ class ConfigurationRepository:
         self.draft_directory.mkdir(exist_ok=True)
         if self.draft_directory.is_symlink() or not self.draft_directory.is_dir():
             raise ControlCenterError("UNSAFE_PATH", "draft directory is unsafe")
-        jsonschema.Draft202012Validator(self._draft_schema()).validate(dict(draft))
+        validator(self._draft_schema()).validate(dict(draft))
         _atomic_bytes(self._draft_path(str(draft["draft_id"])), _canonical(dict(draft)))
 
     def read_draft(self, draft_id: str) -> dict[str, Any]:
         self.ledger._check_directory(create=False)
         draft = _read_json(self._draft_path(draft_id), maximum=MAX_CONFIG_BYTES)
         try:
-            jsonschema.Draft202012Validator(self._draft_schema()).validate(draft)
+            validator(self._draft_schema()).validate(draft)
         except jsonschema.ValidationError as error:
             raise ControlCenterError("INTEGRITY_ERROR", "configuration draft is invalid") from error
         return draft
@@ -813,7 +813,7 @@ def _canonical_artifact(root: Path, locator: str, schema_name: str) -> dict[str,
     try:
         value = json.loads(raw)
         schema = _read_json(_contained(root, f"config/schemas/{schema_name}", exists=True), maximum=MAX_CONFIG_BYTES)
-        jsonschema.Draft202012Validator(schema).validate(value)
+        validator(schema).validate(value)
     except (UnicodeDecodeError, json.JSONDecodeError, jsonschema.ValidationError) as error:
         raise ControlCenterError("INTEGRITY_ERROR", "artifact schema is invalid") from error
     if not isinstance(value, dict) or raw != _canonical(value):
