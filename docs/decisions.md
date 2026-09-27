@@ -16,6 +16,9 @@ exigem triagem por evidência; pontuação agregada não comprova vulnerabilidad
 nem correção de código. Nenhum passo executa Prime, modelo ou ciclo científico.
 O JavaScript da UI em `.prime` não foi descoberto pelo CodeQL nesta configuração;
 a análise de JavaScript exige revisão separada, sem job vermelho permanente.
+O lock `requirements-ci.txt` contém versões e hashes do conjunto completo de
+dependências da CI. A instalação exige hashes e não atualiza pip por comando
+solto. Alterações no lock exigem regeneração, revisão e validação da matriz.
 
 ## ADR-044 — Equipe efêmera de manutenção e runtime Python canônico
 

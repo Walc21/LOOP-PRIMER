@@ -24,6 +24,9 @@ badge, fuzzing e proteção da branch requerem decisões ou configuração próp
 não representam automaticamente defeitos no runtime científico.
 O JavaScript da UI em `.prime` não foi descoberto pelo extrator CodeQL mesmo
 com `paths` explícitos; sua cobertura SAST permanece pendente de solução própria.
+Para a CI, manter um lock Python com hashes de todos os pacotes diretos e
+transitivos; instalar com `--require-hashes` e sem atualizar pip implicitamente.
+A matriz 3.11--3.14 deve validar o mesmo lock antes do merge.
 
 ## Manutenção multiagente, runtime Python e saneamento — 2026-09-18
 
