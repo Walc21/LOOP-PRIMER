@@ -1,5 +1,20 @@
 # Decisões arquiteturais
 
+## ADR-045 — Permissões mínimas e análise estática na CI
+
+**Status:** Proposto para validação em PR. **Data:** 2026-09-27.
+
+O Scorecard publicado para `bdcc873` registrou permissões implícitas na CI,
+referências móveis de ações e ausência de SAST e atualizações automáticas.
+Workflows de teste usam `permissions: read-all` e checkout sem persistir
+credenciais. Ações são fixadas por SHA de tag conferida; Dependabot propõe
+atualizações semanais, sujeitas a revisão e à CI. CodeQL examina Python e
+JavaScript em push e pull request, com `security-events: write` restrito ao job
+de análise. O workflow Scorecard preserva a permissão específica para publicar
+seu SARIF e resultado autenticado. Os alertas gerados por essas ferramentas
+exigem triagem por evidência; pontuação agregada não comprova vulnerabilidade
+nem correção de código. Nenhum passo executa Prime, modelo ou ciclo científico.
+
 ## ADR-044 — Equipe efêmera de manutenção e runtime Python canônico
 
 **Status:** Aceito; implementação em andamento. **Data:** 2026-09-18.

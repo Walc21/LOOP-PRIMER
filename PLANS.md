@@ -10,6 +10,19 @@ champion, challengers e arquivo Pareto.
 A fonte normativa de arquitetura é `docs/architecture.md`; a autoridade da
 integração Prime Agent continua sendo `docs/compatibility.md`.
 
+## Segurança da CI — 2026-09-27
+
+O Scorecard público no commit `bdcc873` identificou permissões implícitas no
+workflow de CI, três ações GitHub sem SHA fixo, ausência de atualização
+automatizada de dependências e ausência de SAST em cada mudança. Definir
+permissões de leitura na CI, fixar ações por commit verificado, abrir PRs semanais
+de atualização pelo Dependabot e executar CodeQL para Python e JavaScript em
+push e pull request. O job CodeQL recebe somente as permissões necessárias para
+publicar resultados. Revisar os PRs de dependências e os alertas gerados antes
+de promover qualquer alteração. Métricas sobre idade, contribuidores, revisão,
+badge, fuzzing e proteção da branch requerem decisões ou configuração próprias;
+não representam automaticamente defeitos no runtime científico.
+
 ## Manutenção multiagente, runtime Python e saneamento — 2026-09-18
 
 Criar uma equipe operacional de manutenção separada dos 21 papéis científicos.
