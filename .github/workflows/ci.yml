@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: requirements-dev.txt
+          cache-dependency-path: requirements-ci.txt
 
       - name: Create isolated compatibility venv
         run: python -m venv .venv
@@ -37,8 +37,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ghostscript poppler-utils texlive-latex-base
-          .venv/bin/python -m pip install --upgrade pip
-          .venv/bin/python -m pip install -r requirements-dev.txt
+          .venv/bin/python -m pip install --require-hashes -r requirements-ci.txt
 
       - name: Syntax, shell, and JavaScript checks
         run: |
