@@ -16,12 +16,14 @@ O Scorecard público no commit `bdcc873` identificou permissões implícitas no
 workflow de CI, três ações GitHub sem SHA fixo, ausência de atualização
 automatizada de dependências e ausência de SAST em cada mudança. Definir
 permissões de leitura na CI, fixar ações por commit verificado, abrir PRs semanais
-de atualização pelo Dependabot e executar CodeQL para Python e JavaScript em
+de atualização pelo Dependabot e executar CodeQL para Python em
 push e pull request. O job CodeQL recebe somente as permissões necessárias para
 publicar resultados. Revisar os PRs de dependências e os alertas gerados antes
 de promover qualquer alteração. Métricas sobre idade, contribuidores, revisão,
 badge, fuzzing e proteção da branch requerem decisões ou configuração próprias;
 não representam automaticamente defeitos no runtime científico.
+O JavaScript da UI em `.prime` não foi descoberto pelo extrator CodeQL mesmo
+com `paths` explícitos; sua cobertura SAST permanece pendente de solução própria.
 
 ## Manutenção multiagente, runtime Python e saneamento — 2026-09-18
 
