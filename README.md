@@ -3,6 +3,7 @@
 # 🔬 LOOP-PRIMER
 ### Arquitetura auditável para revisão, refinamento e decisão sobre manuscritos científicos
 
+[![Scorecard supply-chain security](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/scorecard.yml/badge.svg)](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/scorecard.yml)
 [![CodeQL](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/codeql.yml/badge.svg?event=push)](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/codeql.yml)
 [![CI Suite](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/ci.yml/badge.svg)](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/ci.yml)
 [![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
