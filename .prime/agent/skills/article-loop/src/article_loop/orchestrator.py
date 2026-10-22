@@ -73,6 +73,9 @@ class Orchestrator:
     def _file(self, run: str, name: str, *, create: bool = True) -> Path:
         directory = self._dir(run, create=create)
         path = directory / name
+        resolved = path.resolve(strict=False)
+        if resolved != directory and directory not in resolved.parents:
+            raise OrchestrationError("orchestration file escapes run directory")
         if path.is_symlink(): raise OrchestrationError("symlinked orchestration file")
         return path
 
