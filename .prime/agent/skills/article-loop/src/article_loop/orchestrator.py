@@ -114,22 +114,23 @@ class Orchestrator:
         path = self._file(run, "journal.jsonl", create=False)
         if not path.exists(): return []
         result = []
-        for line in path.read_bytes().splitlines(keepends=True):
-            if not line.endswith(b"\n"): raise OrchestrationError("partial orchestration journal")
-            try: item = json.loads(line)
-            except json.JSONDecodeError as error: raise OrchestrationError("invalid orchestration journal") from error
-            if not isinstance(item, dict) or set(item) != {"schema_version","sequence","previous_hash","event_hash","idempotency_key","event_type","payload","at"}:
-                raise OrchestrationError("invalid orchestration journal event")
-            previous = result[-1]["event_hash"] if result else None
-            body = {k:v for k,v in item.items() if k != "event_hash"}
-            if (item["schema_version"] != SCHEMA_VERSION or type(item["sequence"]) is not int or item["sequence"] != len(result)
-                    or item["previous_hash"] != previous or not isinstance(item["idempotency_key"], str) or not item["idempotency_key"]
-                    or not isinstance(item["event_type"], str) or not isinstance(item["payload"], dict)
-                    or not _SHA.fullmatch(item["event_hash"]) or item["event_hash"] != _hash(_bytes(body))):
-                raise OrchestrationError("invalid orchestration journal chain")
-            self._validate_event(item["event_type"], item["payload"])
-            if any(x["idempotency_key"] == item["idempotency_key"] for x in result): raise OrchestrationError("duplicate journal idempotency key")
-            result.append(item)
+        with open(path, "rb") as f:
+            for line in f:
+                if not line.endswith(b"\n"): raise OrchestrationError("partial orchestration journal")
+                try: item = json.loads(line)
+                except json.JSONDecodeError as error: raise OrchestrationError("invalid orchestration journal") from error
+                if not isinstance(item, dict) or set(item) != {"schema_version","sequence","previous_hash","event_hash","idempotency_key","event_type","payload","at"}:
+                    raise OrchestrationError("invalid orchestration journal event")
+                previous = result[-1]["event_hash"] if result else None
+                body = {k:v for k,v in item.items() if k != "event_hash"}
+                if (item["schema_version"] != SCHEMA_VERSION or type(item["sequence"]) is not int or item["sequence"] != len(result)
+                        or item["previous_hash"] != previous or not isinstance(item["idempotency_key"], str) or not item["idempotency_key"]
+                        or not isinstance(item["event_type"], str) or not isinstance(item["payload"], dict)
+                        or not _SHA.fullmatch(item["event_hash"]) or item["event_hash"] != _hash(_bytes(body))):
+                    raise OrchestrationError("invalid orchestration journal chain")
+                self._validate_event(item["event_type"], item["payload"])
+                if any(x["idempotency_key"] == item["idempotency_key"] for x in result): raise OrchestrationError("duplicate journal idempotency key")
+                result.append(item)
         return result
 
     @staticmethod
