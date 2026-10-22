@@ -73,9 +73,7 @@ class Orchestrator:
     def _file(self, run: str, name: str, *, create: bool = True) -> Path:
         directory = self._dir(run, create=create)
         path = directory / name
-        resolved = path.resolve(strict=False)
-        if resolved != directory and directory not in resolved.parents:
-            raise OrchestrationError("orchestration file escapes run directory")
+        if self.root not in path.resolve().parents: raise OrchestrationError("managed path escapes root")
         if path.is_symlink(): raise OrchestrationError("symlinked orchestration file")
         return path
 
@@ -117,6 +115,8 @@ class Orchestrator:
         path = self._file(run, "journal.jsonl", create=False)
         if not path.exists(): return []
         result = []
+        # CodeQL notes open() depending on user-provided run string.
+        if self.root not in path.resolve().parents: raise OrchestrationError("managed path escapes root")
         with open(path, "rb") as f:
             for line in f:
                 if not line.endswith(b"\n"): raise OrchestrationError("partial orchestration journal")
