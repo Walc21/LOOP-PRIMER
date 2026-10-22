@@ -564,15 +564,16 @@ class BudgetLedger:
         if not path.exists():
             return []
         events: list[dict[str, Any]] = []
-        for line in path.read_bytes().splitlines(keepends=True):
-            if not line.endswith(b"\n"):
-                raise BudgetIntegrityError("partial budget event")
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError as error:
-                raise BudgetIntegrityError("invalid budget event JSON") from error
-            self._validate_event(event, len(events), events[-1]["event_hash"] if events else None)
-            events.append(event)
+        with path.open("rb") as stream:
+            for line in stream:
+                if not line.endswith(b"\n"):
+                    raise BudgetIntegrityError("partial budget event")
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError as error:
+                    raise BudgetIntegrityError("invalid budget event JSON") from error
+                self._validate_event(event, len(events), events[-1]["event_hash"] if events else None)
+                events.append(event)
         return events
 
     def _validate_event(self, event: Any, sequence: int, previous: str | None) -> None:
