@@ -314,7 +314,11 @@ def load_budget_config(root: str | Path) -> Mapping[str, Any]:
     if path.is_symlink() or not path.is_file():
         raise BudgetError("config/budgets.yaml is missing or unsafe")
     try:
-        value = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueSafeLoader)
+        loader = _UniqueSafeLoader(path.read_text(encoding="utf-8"))
+        try:
+            value = loader.get_single_data()
+        finally:
+            loader.dispose()
     except (OSError, UnicodeError, yaml.YAMLError) as error:
         raise BudgetError("config/budgets.yaml cannot be read") from error
     if not isinstance(value, Mapping):
