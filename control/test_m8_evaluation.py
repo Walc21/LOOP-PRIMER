@@ -24,7 +24,6 @@ if str(SRC) not in sys.path:
 from article_loop import (
     DurableStore,
     FakeRLMAdapter,
-    IntegrityError,
     M7Pipeline,
     Orchestrator,
     State,
