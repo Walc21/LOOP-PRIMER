@@ -33,6 +33,20 @@ O lock `requirements-ci.txt` contém versões e hashes do conjunto completo de
 dependências da CI. A instalação exige hashes e não atualiza pip por comando
 solto. Alterações no lock exigem regeneração, revisão e validação da matriz.
 
+## ADR-047 — Contenção e symlinks na leitura de journals
+
+**Data:** 2026-10-22. **Status:** Aceito para validação em PR.
+
+O replay M2/M6 passa a iterar linhas binárias sem materializar o arquivo
+completo em bytes e linhas. Preservam-se formato, ordem, hashes, erros de I/O
+e rejeição de registro sem newline. Antes da abertura, componentes do path
+não resolvido são verificados contra symlinks e o path absoluto deve começar
+pela raiz absoluta mais separador. A validação é local ao ponto de abertura
+para ser também observável pelo SAST. A coleção de eventos continua O(N).
+Essa checagem não promete proteção contra substituição concorrente de paths
+por um processo hostil com acesso de escrita à raiz; isso requer outra fronteira.
+
+
 ## ADR-044 — Equipe efêmera de manutenção e runtime Python canônico
 
 **Status:** Aceito; implementação em andamento. **Data:** 2026-09-18.

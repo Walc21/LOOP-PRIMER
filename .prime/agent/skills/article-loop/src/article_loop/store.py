@@ -258,25 +258,34 @@ class DurableStore:
         the evidence and choose an explicit recovery action.
         """
         run_id = self._run_id(run_id)
-        path = self._log(run_id)
+        path = self.root / "state" / "events" / f"{run_id}.jsonl"
+        for component in (path, *path.parents):
+            if component == self.root:
+                break
+            if component.is_symlink():
+                raise StoreError("symlink in event log path")
+        filename = os.path.abspath(path)
+        if not filename.startswith(str(self.root) + os.sep):
+            raise StoreError("event log path escapes root")
         if not path.exists():
             return []
         events: list[dict[str, Any]] = []
-        for line in path.read_bytes().splitlines(keepends=True):
-            if not line.endswith(b"\n"):
-                raise IntegrityError("partial event line")
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError as error:
-                raise IntegrityError("invalid event JSON") from error
-            previous_hash = events[-1]["event_hash"] if events else None
-            self._validate_event(event, run_id, len(events), previous_hash)
-            self._validate_replay_transition(event, events)
-            if any(previous["event_id"] == event["event_id"] for previous in events):
-                raise IntegrityError("duplicate event_id in log")
-            if any(previous["idempotency_key"] == event["idempotency_key"] for previous in events):
-                raise IntegrityError("duplicate idempotency_key in log")
-            events.append(event)
+        with open(filename, "rb") as f:
+            for line in f:
+                if not line.endswith(b"\n"):
+                    raise IntegrityError("partial event line")
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError as error:
+                    raise IntegrityError("invalid event JSON") from error
+                previous_hash = events[-1]["event_hash"] if events else None
+                self._validate_event(event, run_id, len(events), previous_hash)
+                self._validate_replay_transition(event, events)
+                if any(previous["event_id"] == event["event_id"] for previous in events):
+                    raise IntegrityError("duplicate event_id in log")
+                if any(previous["idempotency_key"] == event["idempotency_key"] for previous in events):
+                    raise IntegrityError("duplicate idempotency_key in log")
+                events.append(event)
         return events
 
     def _validate_replay_transition(
