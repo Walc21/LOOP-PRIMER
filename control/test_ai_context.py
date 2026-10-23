@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import ast
 import json
-import os
 import subprocess
 import sys
 import tempfile
@@ -144,7 +142,6 @@ class AIContextTests(unittest.TestCase):
             control_dir.mkdir(parents=True)
             (control_dir / "test_module.py").write_text("def test_feature():\n    pass\n\nasync def test_async_feature():\n    pass", encoding="utf-8")
             (control_dir / "test_invalid.py").write_text("invalid python", encoding="utf-8")
-            (control_dir / "test_invalid.py").write_text("invalid python", encoding="utf-8")
 
             tests = _tests(root)
             self.assertEqual(len(tests), 2)
@@ -246,8 +243,17 @@ class AIContextTests(unittest.TestCase):
             root = Path(temporary)
             (root / "docs").mkdir(parents=True)
             (root / "config").mkdir(parents=True)
-            ret = main(["--root", str(root), "--check"])
-            self.assertEqual(ret, 1) # stale because file doesn't exist
+            def snapshot():
+                return {p.relative_to(root).as_posix(): p.read_bytes() if p.is_file() else None
+                        for p in root.rglob("*")}
+            for existing in (False, True):
+                with self.subTest(existing=existing):
+                    if existing:
+                        (root / "AI_CONTEXT.md").write_bytes(b"stale sentinel\n")
+                    before = snapshot()
+                    ret = main(["--root", str(root), "--check"])
+                    self.assertEqual(ret, 1)
+                    self.assertEqual(snapshot(), before)
 
     def test_main_write_and_stdout(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -260,23 +266,30 @@ class AIContextTests(unittest.TestCase):
 
 
     def test_main_execution_raises_system_exit(self):
-
-
-        result = subprocess.run([sys.executable, "scripts/ai_context.py", "--check"], capture_output=True)
-        # Even if it exits with 1 (stale), it runs the block.
-        self.assertIn(result.returncode, (0, 1))
-
+        with tempfile.TemporaryDirectory() as temporary:
+            result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "ai_context.py"), "--root", temporary, "--check"],
+                cwd=temporary, capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertTrue(json.loads(result.stdout)["stale"])
+            self.assertEqual(list(Path(temporary).iterdir()), [])
 
     def test_module_execution(self):
-        result = subprocess.run([sys.executable, "scripts/ai_context.py", "--root", str(ROOT), "--check"], capture_output=True)
-        # It should exit with 0 (current) or 1 (stale)
-        self.assertIn(result.returncode, (0, 1))
-
+        with tempfile.TemporaryDirectory() as temporary:
+            missing = Path(temporary) / "missing"
+            result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "ai_context.py"), "--root", str(missing), "--check"],
+                cwd=temporary, capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(json.loads(result.stderr)["status"], "error")
 
     def test_runpy(self):
         import runpy
-        with patch.object(sys, "argv", ["ai_context.py", "--check"]):
-            try:
-                runpy.run_path(str(SCRIPTS / "ai_context.py"), run_name="__main__")
-            except SystemExit as e:
-                self.assertIn(e.code, (0, 1))
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(sys, "argv", ["ai_context.py", "--root", temporary, "--check"]):
+                with self.assertRaises(SystemExit) as raised:
+                    runpy.run_path(str(SCRIPTS / "ai_context.py"), run_name="__main__")
+            self.assertEqual(raised.exception.code, 1)
+            self.assertEqual(list(Path(temporary).iterdir()), [])
