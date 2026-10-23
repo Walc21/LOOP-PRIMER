@@ -52,6 +52,24 @@ absoluto dentro da raiz com fronteira de diretório explícita. Não resolver
 um symlink antes de testá-lo. A leitura remove a cópia transitória de bytes,
 mas a lista retornada continua proporcional aos eventos. Ver ADR-047.
 
+### Regressões dos alertas de segurança — 2026-10-23
+
+Validar symlinks no caminho lexical e usar o path canônico contido em todas
+as operações de leitura M2/M6, incluindo stat/exists. M2 reutiliza `_log`;
+M6 normaliza e verifica contenção antes de consultar o journal. Recusar também
+raiz M6 symlink e journal especial/diretório antes de
+abrir; entradas JSON com encoding/nesting inválido ou hash de tipo incorreto devem
+falhar com o erro de integridade do componente. Ampliar as regressões para
+symlinks em diretórios-pais e caminhos fora da raiz (emenda ADR-047).
+
+Adicionar fuzzing Atheris limitado aos leitores M2/M6 e identificadores,
+executado em raiz temporária na CI e sem backend científico. Dependência de
+fuzzing separada, fixa e com hash, em Python 3.12; preservar a matriz regular.
+CodeQL continua em pushes/PRs com consultas security-extended. O alerta
+CII-Best-Practices depende da avaliação externa no OpenSSF Best Practices;
+documentar evidências e passos pendentes sem declarar um selo inexistente
+(emenda ADR-045).
+
 
 ## Manutenção multiagente, runtime Python e saneamento — 2026-09-18
 

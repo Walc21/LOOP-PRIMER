@@ -1,0 +1,48 @@
+name: Journal fuzzing
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '17 4 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install locked fuzzing dependencies
+        timeout-minutes: 5
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --timeout 30 --retries 2 --require-hashes -r requirements-ci.txt -r requirements-fuzz.txt
+      - name: Fuzz journal replay and run identifiers
+        run: |
+          fuzz_corpus="$(mktemp -d "$RUNNER_TEMP/article-loop-fuzz.XXXXXX")"
+          cp fuzz/corpus/* "$fuzz_corpus/"
+          .venv/bin/python fuzz/fuzz_journals.py "$fuzz_corpus" -max_total_time=60 -timeout=5 -rss_limit_mb=1024 -max_len=4096 -seed=1 -artifact_prefix="$RUNNER_TEMP/"
+      - name: Preserve crashing input
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: journal-fuzz-crashes
+          path: |
+            ${{ runner.temp }}/crash-*
+            ${{ runner.temp }}/timeout-*
+            ${{ runner.temp }}/oom-*
+          if-no-files-found: ignore
+          retention-days: 5
