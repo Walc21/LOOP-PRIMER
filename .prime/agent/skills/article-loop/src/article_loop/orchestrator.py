@@ -81,7 +81,7 @@ class Orchestrator:
         ):
             raise OrchestrationError("name must be a simple identifier")
         directory = self._dir(run, create=create)
-        path = (directory / name).resolve()
+        path = directory / name
         if self.root != path and self.root not in path.parents: raise OrchestrationError("managed path escapes root")
         if path.is_symlink(): raise OrchestrationError("symlinked orchestration file")
         return path
@@ -124,9 +124,10 @@ class Orchestrator:
         path = self._file(run, "journal.jsonl", create=False)
         if not path.exists(): return []
         result = []
-        # CodeQL notes open() depending on user-provided run string.
-        if self.root not in path.resolve().parents: raise OrchestrationError("managed path escapes root")
-        with open(path, "rb") as f:
+        filename = os.path.abspath(path)
+        if not filename.startswith(str(self.root) + os.sep):
+            raise OrchestrationError("managed path escapes root")
+        with open(filename, "rb") as f:
             for line in f:
                 if not line.endswith(b"\n"): raise OrchestrationError("partial orchestration journal")
                 try: item = json.loads(line)
