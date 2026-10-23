@@ -2,7 +2,7 @@
 
 ## Future Performance Optimizations
 
-* **JSON Schema Validator Caching:** Investigate caching `jsonschema.Draft202012Validator` initialization in `article_loop/schema_validation.py`. The `validator` function currently creates a new instance on every call, which is expensive (~0.2ms-3ms depending on schema complexity). By using `functools.lru_cache` and an object ID-based fast-path cache `_id_cache` (using `weakref.WeakKeyDictionary` to avoid memory leaks), we can achieve significant speedups since the validator is called repeatedly on the same schema dict objects.
+* **JSON Schema Validator Caching:** Investigate caching `jsonschema.Draft202012Validator` initialization in `article_loop/schema_validation.py`. For JSON-compatible schemas, serialize the schema on each call with `json.dumps(schema, sort_keys=True, separators=(",", ":"), allow_nan=False)` and pass that immutable string to a private factory bounded by `functools.lru_cache(maxsize=128)`. The factory must reconstruct its own schema with `json.loads` before creating the validator, so cached validators do not retain caller-owned mutable dictionaries; callers must also treat shared validators and their schemas as read-only. Changes to the input schema produce a new key, and eviction bounds the number of retained entries. Preserve uncached construction for schemas that cannot be safely JSON-round-tripped. Do not use dictionary weak keys or an object-ID fast path: ordinary dictionaries cannot be weak-referenced or hashed, and identity alone does not detect mutation. Benchmark serialization plus construction/lookup before implementing or claiming a speedup.
 
 
 ## Objetivo
