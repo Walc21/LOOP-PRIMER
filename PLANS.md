@@ -10,6 +10,16 @@ champion, challengers e arquivo Pareto.
 A fonte normativa de arquitetura é `docs/architecture.md`; a autoridade da
 integração Prime Agent continua sendo `docs/compatibility.md`.
 
+
+## Resolução de executáveis dos gates — 2026-10-22
+
+M7 aceita somente nomes simples de executável, validados integralmente, e exige
+que `shutil.which` devolva caminho absoluto. PATH relativo, caminho explícito
+ou nome com separadores/controle falha antes de subprocesso (código 127).
+Argumentos continuam em lista, sem shell. A mudança endurece resolução de
+executáveis; não comprova shell injection anterior. Testes cobrem comandos
+permitidos, ausência e PATH relativo; ver ADR-046.
+
 ## Segurança da CI — 2026-09-27
 
 O Scorecard público no commit `bdcc873` identificou permissões implícitas no
