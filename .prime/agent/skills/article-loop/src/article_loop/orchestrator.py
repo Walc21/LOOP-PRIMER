@@ -71,9 +71,11 @@ class Orchestrator:
         return self._managed("state", "orchestration", self._run(run), create=create)
 
     def _file(self, run: str, name: str, *, create: bool = True) -> Path:
+        if not isinstance(name, str) or "/" in name or name in {".", ".."}:
+            raise OrchestrationError("name must be a simple identifier")
         directory = self._dir(run, create=create)
-        path = directory / name
-        if self.root not in path.resolve().parents: raise OrchestrationError("managed path escapes root")
+        path = (directory / name).resolve()
+        if self.root != path and self.root not in path.parents: raise OrchestrationError("managed path escapes root")
         if path.is_symlink(): raise OrchestrationError("symlinked orchestration file")
         return path
 
