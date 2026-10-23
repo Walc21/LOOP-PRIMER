@@ -1,5 +1,10 @@
 # ExecPlan vivo — article-loop
 
+## Future Performance Optimizations
+
+* **JSON Schema Validator Caching:** Investigate caching `jsonschema.Draft202012Validator` initialization in `article_loop/schema_validation.py`. The `validator` function currently creates a new instance on every call, which is expensive (~0.2ms-3ms depending on schema complexity). By using `functools.lru_cache` and an object ID-based fast-path cache `_id_cache` (using `weakref.WeakKeyDictionary` to avoid memory leaks), we can achieve significant speedups since the validator is called repeatedly on the same schema dict objects.
+
+
 ## Objetivo
 
 Construir uma integração verificável para revisão iterativa de artigo matemático
