@@ -10,6 +10,16 @@ champion, challengers e arquivo Pareto.
 A fonte normativa de arquitetura é `docs/architecture.md`; a autoridade da
 integração Prime Agent continua sendo `docs/compatibility.md`.
 
+
+## Resolução de executáveis dos gates — 2026-10-22
+
+M7 aceita somente nomes simples de executável, validados integralmente, e exige
+que `shutil.which` devolva caminho absoluto. PATH relativo, caminho explícito
+ou nome com separadores/controle falha antes de subprocesso (código 127).
+Argumentos continuam em lista, sem shell. A mudança endurece resolução de
+executáveis; não comprova shell injection anterior. Testes cobrem comandos
+permitidos, ausência e PATH relativo; ver ADR-046.
+
 ## Segurança da CI — 2026-09-27
 
 O Scorecard público no commit `bdcc873` identificou permissões implícitas no
@@ -27,6 +37,16 @@ com `paths` explícitos; sua cobertura SAST permanece pendente de solução pró
 Para a CI, manter um lock Python com hashes de todos os pacotes diretos e
 transitivos; instalar com `--require-hashes` e sem atualizar pip implicitamente.
 A matriz 3.11--3.14 deve validar o mesmo lock antes do merge.
+
+
+## Leitura dos journals em streaming — 2026-10-22
+
+Preservar JSONL, cadeia hash, replay e rejeição de registro parcial. Antes de
+abrir o journal, rejeitar symlinks em cada componente e confirmar o caminho
+absoluto dentro da raiz com fronteira de diretório explícita. Não resolver
+um symlink antes de testá-lo. A leitura remove a cópia transitória de bytes,
+mas a lista retornada continua proporcional aos eventos. Ver ADR-047.
+
 
 ## Manutenção multiagente, runtime Python e saneamento — 2026-09-18
 

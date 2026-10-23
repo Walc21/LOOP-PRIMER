@@ -12,6 +12,7 @@ jobs:
   test:
     name: Compatibility tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -33,11 +34,22 @@ jobs:
       - name: Create isolated compatibility venv
         run: python -m venv .venv
 
-      - name: Install dependencies
+      - name: Install system test tools
+        timeout-minutes: 5
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ghostscript poppler-utils texlive-latex-base
-          .venv/bin/python -m pip install --require-hashes -r requirements-ci.txt
+          # The Azure mirror can trickle downloads without hitting socket timeouts.
+          # Use Ubuntu's official archive in this disposable runner only.
+          if [[ -f /etc/apt/apt-mirrors.txt ]]; then
+            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt
+          fi
+          sudo -E apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+          sudo -E apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y ghostscript poppler-utils texlive-latex-base
+
+      - name: Install locked Python dependencies
+        timeout-minutes: 5
+        run: .venv/bin/python -m pip install --timeout 30 --retries 2 --require-hashes -r requirements-ci.txt
 
       - name: Syntax, shell, and JavaScript checks
         run: |
