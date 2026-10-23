@@ -1,5 +1,18 @@
 # Decisões arquiteturais
 
+## ADR-046 — Resolução de executáveis locais dos gates
+
+**Data:** 2026-10-22. **Status:** Aceito para validação em PR.
+
+Os gates M7 passam argumentos em lista e não usam shell. A resolução pelo PATH
+ainda pode devolver um executável relativo ao diretório de trabalho; por isso
+`_run` aceita apenas nomes simples `[A-Za-z0-9_.+-]+` com correspondência
+integral e exige resultado absoluto de `shutil.which`. Nomes inválidos, comando
+ausente e resultado relativo retornam falha 127 antes de executar. PATH absoluto
+continua sendo responsabilidade do ambiente autorizado; esta regra não cria
+allowlist de diretórios nem autoriza Prime/modelo. Testes simulam subprocesso
+e também verificam a resolução de um executável em PATH relativo.
+
 ## ADR-045 — Permissões mínimas e análise estática na CI
 
 **Status:** Proposto para validação em PR. **Data:** 2026-09-27.
