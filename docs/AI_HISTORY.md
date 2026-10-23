@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4`
-- Registrado em: `2026-09-19T12:23:07Z`
-- Git: branch `main`, HEAD `f8dd27e95789`
-- Arquivos relevantes: 649
+- Fingerprint das fontes: `b9f8d50df22352e9bc631e9f1f58a55c3cd99fb8918ba76485b9069d5c35df5c`
+- Registrado em: `2026-10-23T05:02:41Z`
+- Git: branch `fix/security-scanning-alerts-20261023`, HEAD `06ca8601383b`
+- Arquivos relevantes: 263
 
 ## Evolução reconstruída do versionamento
 
@@ -18,12 +18,12 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13..2026-09-07 | 8 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.p… |
-| sem marco explícito | 2026-08-13..2026-09-08 | 59 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/pull_request_template.md, .github/workflows/ci.yml, .giti… |
+| sem marco explícito | 2026-08-13..2026-10-23 | 146 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/dependabot.yml, .github/pull_request_template.md, .github… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-08 | 20 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py… |
 | M7 | 2026-08-14..2026-09-01 | 6 | Síntese, merge isolado, challenger write-once e 13 gates locais. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/gates.py, .prime/agent/skills/article-loop/src/article_loop/synthe… |
-| M8 | 2026-08-27..2026-09-01 | 3 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
+| M8 | 2026-08-27..2026-10-22 | 4 | Júri externo cego, inversão consistente e meta-revisão. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/evaluation.py, .prime/handoffs/08_para_09.md, PLANS.md, control/te… |
 | M9 | 2026-08-28..2026-09-01 | 5 | Diagnóstico determinístico de progresso e refoco reversível. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/diagnosis.py, .prime/agent/skills/article-loop/src/article_loop/ev… |
 | M8/M9 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | bin/bootstrap-deps.sh, bin/check.sh, bin/preflight.sh, bin/start-prime.sh, scripts/01_external_evaluator.py, scripts/02_stagnation_detector.py, scripts/03_refocus_generator.py |
 | M0 | 2026-09-01 | 1 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | config/roles/M00.yaml, config/roles/S10.yaml, config/roles/S20.yaml, config/roles/S30.yaml, config/roles/S40.yaml, config/roles/S50.yaml, config/roles/W11.yaml |
@@ -192,9 +192,100 @@
 | `bc0aaa753` | 2026-09-08 | sem marco explícito | Merge pull request #18 from Walc21/codex/readme-system-architecture-reference |  |
 | `3de2b63bb` | 2026-09-08 | M6 | feat: add bounded M6 context segments | .prime/agent/skills/article-loop/src/article_loop/m6_smoke.py, AI_CONTEXT.md, PLANS.md, config/schemas/m6-context-selection.schema.json, control/test_m6_official_smoke.py, docs/AI… |
 | `f8dd27e95` | 2026-09-08 | M6 | Merge pull request #19 from Walc21/codex/m6-bounded-context-selection |  |
+| `82c5d8788` | 2026-09-19 | sem marco explícito | feat: unify maintenance runtime contracts | .github/ISSUE_TEMPLATE/bug_report.md, .github/pull_request_template.md, .github/workflows/ci.yml, .gitignore, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/… |
+| `b22f71d3e` | 2026-09-19 | sem marco explícito | Merge pull request #20 from Walc21/codex/maintenance-runtime-hardening |  |
+| `bdcc873b9` | 2026-09-25 | sem marco explícito | Add Scorecard workflow for supply-chain security | .github/workflows/scorecard.yml |
+| `ff9b151dc` | 2026-09-27 | sem marco explícito | Harden CI and add Python security scanning | .github/dependabot.yml, .github/workflows/ci.yml, .github/workflows/codeql.yml, .github/workflows/scorecard.yml, PLANS.md, docs/decisions.md |
+| `8892ca528` | 2026-09-27 | sem marco explícito | chore(deps): bump ossf/scorecard-action from 2.4.1 to 2.4.4 | .github/workflows/scorecard.yml |
+| `7a883c4a4` | 2026-09-27 | sem marco explícito | chore(deps): bump actions/upload-artifact from 4.6.1 to 7.0.1 | .github/workflows/scorecard.yml |
+| `91e45b0c6` | 2026-09-27 | sem marco explícito | chore(deps): bump github/codeql-action/upload-sarif | .github/workflows/scorecard.yml |
+| `ef7c53d54` | 2026-09-27 | sem marco explícito | chore(deps): bump actions/checkout from 4.2.2 to 7.0.1 | .github/workflows/scorecard.yml |
+| `57dadb501` | 2026-09-27 | sem marco explícito | Verify CI dependencies with hash-locked requirements | .github/workflows/ci.yml, PLANS.md, docs/decisions.md, requirements-ci.txt |
+| `62950be13` | 2026-09-27 | sem marco explícito | Merge pull request #22 from Walc21/dependabot/github_actions/ossf/scorecard-action-2.4.4 |  |
+| `3d083a953` | 2026-09-27 | sem marco explícito | Merge pull request #23 from Walc21/dependabot/github_actions/actions/upload-artifact-7.0.1 |  |
+| `4520d6298` | 2026-09-27 | sem marco explícito | Merge pull request #24 from Walc21/dependabot/github_actions/github/codeql-action/upload-sarif-4.38.2 |  |
+| `7dad03006` | 2026-09-27 | sem marco explícito | Merge pull request #25 from Walc21/dependabot/github_actions/actions/checkout-7.0.1 |  |
+| `649eb842d` | 2026-10-06 | sem marco explícito | Rename scorecard.yml to scorecarde.yml | .github/workflows/scorecard.yml, .github/workflows/scorecarde.yml |
+| `a19794c5c` | 2026-10-06 | sem marco explícito | Add Scorecard workflow for supply-chain security | .github/workflows/scorecard.yml |
+| `84eaeccf0` | 2026-10-08 | sem marco explícito | Initial plan |  |
+| `40b47d54c` | 2026-10-08 | sem marco explícito | Merge pull request #27 from Walc21/copilot/fix-code-scanning-alerts |  |
+| `ca7f38b78` | 2026-10-08 | sem marco explícito | Delete .github/workflows/scorecarde.yml | .github/workflows/scorecarde.yml |
+| `da3bc5883` | 2026-10-08 | sem marco explícito | Add badges for CI, Python version, and license | README.md |
+| `f81462acb` | 2026-10-08 | sem marco explícito | Add badges for CI and Python version to README | README.md |
+| `519bfaadf` | 2026-10-11 | sem marco explícito | chore(deps): bump actions/checkout from 4.2.2 to 7.0.1 | .github/workflows/scorecard.yml |
+| `1b4296740` | 2026-10-11 | sem marco explícito | chore(deps): bump rpds-py from 2026.6.3 to 2026.9.1 | requirements-ci.txt |
+| `7b103e0c1` | 2026-10-11 | sem marco explícito | chore(deps): bump github/codeql-action/init from 4.38.2 to 4.38.3 | .github/workflows/codeql.yml |
+| `63745a3a0` | 2026-10-11 | sem marco explícito | chore(deps): bump github/codeql-action from 3 to 4 | .github/workflows/scorecard.yml |
+| `eba358165` | 2026-10-11 | sem marco explícito | chore(deps): bump ossf/scorecard-action from 2.4.1 to 2.4.4 | .github/workflows/scorecard.yml |
+| `091240383` | 2026-10-22 | sem marco explícito | Remove unused `DIMENSIONS` import in `control/test_m8_evaluation.py` | control/test_m8_evaluation.py |
+| `23356dc64` | 2026-10-22 | sem marco explícito | Remove unused `import copy` from `control/test_m9_diagnosis.py` | control/test_m9_diagnosis.py |
+| `93ffc92e4` | 2026-10-22 | sem marco explícito | Remove unused `IntegrityError` import from `control/test_m8_evaluation.py`. | control/test_m8_evaluation.py |
+| `7dffb7ef2` | 2026-10-22 | sem marco explícito | Refactor: split multiple statements into separate lines in synthesis.py | .prime/agent/skills/article-loop/src/article_loop/synthesis.py |
+| `587e3a6c6` | 2026-10-22 | sem marco explícito | Fix shell injection vulnerability in _run | .prime/agent/skills/article-loop/src/article_loop/gates.py |
+| `033e67d83` | 2026-10-22 | sem marco explícito | Optimize budget event reading via stream iteration | .prime/agent/skills/article-loop/src/article_loop/budget.py |
+| `b95657081` | 2026-10-22 | sem marco explícito | Address review feedback |  |
+| `ddcf7ef87` | 2026-10-22 | sem marco explícito | Fix unsafe yaml.load usage in budget.py | .prime/agent/skills/article-loop/src/article_loop/budget.py |
+| `833d14c61` | 2026-10-22 | sem marco explícito | Add comprehensive tests for ai_context.py | control/test_ai_context.py |
+| `0577abd82` | 2026-10-22 | sem marco explícito | refactor(store): stream file lines efficiently in read_events | .prime/agent/skills/article-loop/src/article_loop/store.py |
+| `dbd0f821e` | 2026-10-22 | sem marco explícito | perf: optimize journal reading in orchestrator | .prime/agent/skills/article-loop/src/article_loop/orchestrator.py |
+| `4e4b9ba11` | 2026-10-22 | sem marco explícito | Potential fix for pull request finding 'CodeQL / Uncontrolled data used in path expression' | .prime/agent/skills/article-loop/src/article_loop/orchestrator.py |
+| `f7f591eb4` | 2026-10-22 | sem marco explícito | perf: optimize journal reading in orchestrator | .prime/agent/skills/article-loop/src/article_loop/orchestrator.py |
+| `38317946d` | 2026-10-23 | sem marco explícito | Remove unused `DIMENSIONS` import in `control/test_m8_evaluation.py` |  |
+| `42b770cd0` | 2026-10-23 | sem marco explícito | optimize observability read_events with direct file iteration | .prime/agent/skills/article-loop/src/article_loop/observability.py |
+| `7a5e61f36` | 2026-10-23 | sem marco explícito | perf: optimize journal reading in orchestrator | .prime/agent/skills/article-loop/src/article_loop/orchestrator.py |
+| `1cc212145` | 2026-10-22 | sem marco explícito | Potential fix for pull request finding 'CodeQL / Uncontrolled data used in path expression' | .prime/agent/skills/article-loop/src/article_loop/orchestrator.py |
+| `067e336f9` | 2026-10-22 | sem marco explícito | Address review findings and regression coverage for PR #31 | .github/dependabot.yml, .github/workflows/codeql.yml |
+| `bf5ed7fb5` | 2026-10-22 | sem marco explícito | Address review findings and regression coverage for PR #39 | .prime/agent/skills/article-loop/src/article_loop/gates.py, PLANS.md, control/test_gate_executable_resolution.py, docs/decisions.md |
+| `e5061e207` | 2026-10-22 | sem marco explícito | Address review findings and regression coverage for PR #43 | control/test_ai_context.py |
+| `614c7b0c7` | 2026-10-22 | sem marco explícito | Address review findings and regression coverage for PR #44 | .prime/agent/skills/article-loop/src/article_loop/store.py, PLANS.md, control/test_store_journal_paths.py, docs/decisions.md |
+| `f62d2140e` | 2026-10-22 | sem marco explícito | Address review findings and regression coverage for PR #45 | .prime/agent/skills/article-loop/src/article_loop/orchestrator.py, PLANS.md, control/test_orchestrator_journal_paths.py, docs/decisions.md |
+| `3f5a24004` | 2026-10-22 | sem marco explícito | Pin CodeQL SARIF upload to reviewed action commit | .github/workflows/scorecard.yml |
+| `22cf9b7f2` | 2026-10-22 | sem marco explícito | Validate combined ordered PR integration before individual merges | .github/dependabot.yml, .github/workflows/codeql.yml, .github/workflows/scorecard.yml, .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loo… |
+| `77e1401f4` | 2026-10-22 | sem marco explícito | Bound and separate CI dependency installation after repeated stalled jobs | .github/workflows/ci.yml |
+| `fe7b28a2a` | 2026-10-22 | sem marco explícito | Use official Ubuntu archive after diagnosing Azure mirror download stall | .github/workflows/ci.yml |
+| `0900bfa66` | 2026-10-22 | sem marco explícito | Merge pull request #29 from Walc21/dependabot/github_actions/actions/checkout-7.0.1 |  |
+| `0cfb03218` | 2026-10-22 | sem marco explícito | Merge pull request #30 from Walc21/dependabot/pip/rpds-py-2026.9.1 |  |
+| `f0de9cb61` | 2026-10-22 | sem marco explícito | Merge pull request #31 from Walc21/dependabot/github_actions/github/codeql-action/init-4.38.3 |  |
+| `08441a725` | 2026-10-22 | sem marco explícito | Merge pull request #33 from Walc21/dependabot/github_actions/github/codeql-action-4 |  |
+| `a5cdc50b6` | 2026-10-22 | sem marco explícito | Merge pull request #34 from Walc21/dependabot/github_actions/ossf/scorecard-action-2.4.4 |  |
+| `b6a9ddcea` | 2026-10-22 | sem marco explícito | Merge pull request #35 from Walc21/fix-unused-import-test_m8_evaluation-1643714161536199013 |  |
+| `d8168b3cd` | 2026-10-22 | sem marco explícito | Merge pull request #36 from Walc21/jules/remove-unused-import-copy-7686577962904589188 |  |
+| `16bdbd011` | 2026-10-22 | M8 | Merge pull request #37 from Walc21/fix/unused-import-m8-evaluation-6619764704183908786 |  |
+| `0dd2aa3d0` | 2026-10-22 | sem marco explícito | Merge pull request #38 from Walc21/fix-synthesis-code-health-16164351993297259157 |  |
+| `b10d5243d` | 2026-10-22 | sem marco explícito | Merge pull request #39 from Walc21/security/fix-command-injection-gates-3236849216714088619 |  |
+| `019975aba` | 2026-10-22 | sem marco explícito | Merge pull request #41 from Walc21/performance-budget-file-read-optimization-359806023937261528 |  |
+| `e77c41d9d` | 2026-10-22 | sem marco explícito | Merge pull request #42 from Walc21/fix-yaml-load-17279492547714080417 |  |
+| `78296dcb1` | 2026-10-22 | sem marco explícito | Merge pull request #43 from Walc21/add-ai-context-tests-13810491498647312920 |  |
+| `10a3e774b` | 2026-10-22 | sem marco explícito | Merge pull request #44 from Walc21/performance/efficient-file-reading-15867267842442378473 |  |
+| `591b660d7` | 2026-10-22 | sem marco explícito | Merge pull request #45 from Walc21/perf-orchestrator-memory-12302323003107345397 |  |
+| `3b5341f18` | 2026-10-22 | sem marco explícito | Merge pull request #46 from Walc21/perf-optimize-observability-read-events-1719927142739137129 |  |
+| `88dd9c915` | 2026-10-22 | sem marco explícito | Preserve sequential reviewed PR merges in validated integration |  |
+| `34836cd30` | 2026-10-22 | sem marco explícito | Merge pull request #47 from Walc21/codex/validate-ordered-pr-integration |  |
+| `a2d042405` | 2026-10-23 | sem marco explícito | chore(deps): bump the codeql-action group with 3 updates | .github/workflows/codeql.yml, .github/workflows/scorecard.yml |
+| `d14183414` | 2026-10-23 | sem marco explícito | chore(deps): bump ossf/scorecard-action from 2.4.4 to 2.5.0 | .github/workflows/scorecard.yml |
+| `fc99f6464` | 2026-10-23 | sem marco explícito | chore(deps): bump actions/upload-artifact from 4.6.1 to 7.0.2 | .github/workflows/scorecard.yml |
+| `b30233661` | 2026-10-22 | sem marco explícito | Merge pull request #50 from Walc21/dependabot/github_actions/actions/upload-artifact-7.0.2 |  |
+| `250f14d86` | 2026-10-22 | sem marco explícito | Merge pull request #49 from Walc21/dependabot/github_actions/ossf/scorecard-action-2.5.0 |  |
+| `ffc2d5aa2` | 2026-10-22 | sem marco explícito | Merge pull request #48 from Walc21/dependabot/github_actions/codeql-action-1b1ce9824d |  |
+| `e47a9d869` | 2026-10-23 | sem marco explícito | Update PLANS.md and journal with JSON schema validator cache idea | .jules/bolt.md, PLANS.md |
+| `bca0ff17b` | 2026-10-23 | sem marco explícito | Address PR comments |  |
+| `d4f95a7e1` | 2026-10-22 | sem marco explícito | docs: replace invalid weak-key validator cache proposal | PLANS.md |
+| `a83d3ed46` | 2026-10-23 | sem marco explícito | Address PR comments | PLANS.md |
+| `6239a92b0` | 2026-10-22 | sem marco explícito | Merge pull request #51 from Walc21/bolt-performance-optimizations-678404287603807020 |  |
+| `1df60ae2f` | 2026-10-23 | sem marco explícito | Add tests for 05_transactional_finalizer.py | control/test_05_transactional_finalizer.py |
+| `36685df3b` | 2026-10-23 | sem marco explícito | test: add tests for ai_history.py | control/test_ai_history.py |
+| `f720a576d` | 2026-10-23 | sem marco explícito | Add test suite for 03_refocus_generator.py | control/test_03_refocus_generator.py |
+| `4f6503aef` | 2026-10-23 | sem marco explícito | Merge pull request #52 from Walc21/test-transactional-finalizer-5068255897327820222 |  |
+| `f5d2c5a7f` | 2026-10-23 | sem marco explícito | Merge pull request #53 from Walc21/test-ai-history-17361217937388450901 |  |
+| `68929bc88` | 2026-10-23 | sem marco explícito | Merge pull request #54 from Walc21/test-03-refocus-generator-13537485746084871160 |  |
+| `b24e95c9f` | 2026-10-23 | sem marco explícito | Potential fix for code scanning alert no. 44: Uncontrolled data used in path expression | .prime/agent/skills/article-loop/src/article_loop/store.py |
+| `06ca86013` | 2026-10-23 | sem marco explícito | Fix lexical symlink check for event journals | .prime/agent/skills/article-loop/src/article_loop/store.py |
 
 ## Decisões arquiteturais
 
+- ADR-046 — Resolução de executáveis locais dos gates
+- ADR-045 — Permissões mínimas e análise estática na CI
+- ADR-047 — Contenção e symlinks na leitura de journals
 - ADR-044 — Equipe efêmera de manutenção e runtime Python canônico
 - ADR-043 — Segmentos canônicos de linhas na seleção de contexto M6
 - ADR-042 — Smoke oficial M6 limitado a uma tarefa routed
@@ -3620,3 +3711,497 @@
 | modified | `requirements-dev.txt` | `30ee56beb67d` | `d44cfe42c1ae` |
 | modified | `scripts/ai_context.py` | `f977db70f0ff` | `59bd80d4a6d6` |
 | modified | `scripts/local_loopback_full_cycle.py` | `95bc5a336e32` | `9b577fb2e1d5` |
+
+### 2026-10-23T05:02:41Z — Endurecidos os leitores M2/M6 e adicionados fuzzing limitado e SAST security-extended para os alertas de code scanning.
+
+- Session ID: `security-scanning-alerts-20261023`
+- Fingerprint final: `b9f8d50df22352e9bc631e9f1f58a55c3cd99fb8918ba76485b9069d5c35df5c`
+- Git final: `06ca8601383b`; status relevante: 26 item(ns)
+- Delta factual: 30 adicionados, 13 modificados, 416 removidos
+
+**Mudanças**
+
+- Leituras usam paths canonicos contidos apos rejeitar symlinks lexicais; M6 rejeita raiz symlink e ambos recusam arquivos especiais e JSON malformado.
+- Adicionados alvo Atheris, 14 seeds sinteticos, lock com hash e workflow limitado em Python 3.12; documentado o acompanhamento OpenSSF.
+
+**Decisões**
+
+- Preservados hashes, replay, evidencias existentes, erros reais de I/O e ausencia de backend cientifico; cadastro CII permanece externo.
+
+**Validações**
+
+- Suite completa do checkout inicial: 609 testes, zero falhas e um skip previsto; validacao final na base da PR 55: 135 testes aprovados, incluindo 45 novos testes da main.
+- Regressoes de paths aprovadas em CPython 3.12 e 3.14; fuzzing Atheris limitado a 60 segundos sem falhas; sintaxe Python/shell/JavaScript, YAML, bin/check.sh e git diff --check aprovados.
+
+**Riscos/limites**
+
+- Cadastro e autoavaliacao CII/OpenSSF dependem do mantenedor; SAST JavaScript permanece pendente conforme ADR-045.
+- A integracao recebeu HTTP 403 ao listar alertas de code scanning; baixa dos alertas depende de nova analise no main apos merge.
+
+**Próximos passos**
+
+- Revisar a PR 55 atualizada, acompanhar checks remotos e concluir o cadastro OpenSSF com evidencias.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `.github/dependabot.yml` | `-` | `85160e3d6f28` |
+| added | `.github/workflows/codeql.yml` | `-` | `1a45ab94cfc9` |
+| added | `.github/workflows/fuzz.yml` | `-` | `e85b334eb752` |
+| added | `.github/workflows/scorecard.yml` | `-` | `ea5774310f40` |
+| added | `.jules/bolt.md` | `-` | `b9ceb87b21de` |
+| added | `control/test_03_refocus_generator.py` | `-` | `eaed8774f33d` |
+| added | `control/test_05_transactional_finalizer.py` | `-` | `ed3d5890ff43` |
+| added | `control/test_ai_context.py` | `-` | `66e8b31021a1` |
+| added | `control/test_ai_history.py` | `-` | `2ae94d0d343c` |
+| added | `control/test_gate_executable_resolution.py` | `-` | `2c08382225f8` |
+| added | `control/test_orchestrator_journal_paths.py` | `-` | `b6e32b880429` |
+| added | `control/test_store_journal_paths.py` | `-` | `ac6c32ee2a9c` |
+| added | `docs/security-scanning.md` | `-` | `3da62e443b17` |
+| added | `fuzz/corpus/absolute-path` | `-` | `b977f6ac1c8c` |
+| added | `fuzz/corpus/deep-json` | `-` | `621a5db0e9af` |
+| added | `fuzz/corpus/orchestration-empty` | `-` | `c4694f2e93d5` |
+| added | `fuzz/corpus/orchestration-invalid-hash` | `-` | `9381574e1e68` |
+| added | `fuzz/corpus/orchestration-invalid-utf8` | `-` | `b734f3b9716e` |
+| added | `fuzz/corpus/orchestration-surrogate` | `-` | `cd3c5c72645e` |
+| added | `fuzz/corpus/orchestration-valid` | `-` | `fe5ee17c326a` |
+| added | `fuzz/corpus/partial-record` | `-` | `93561556858a` |
+| added | `fuzz/corpus/store-empty` | `-` | `8de0b3c47f11` |
+| added | `fuzz/corpus/store-invalid-utf8` | `-` | `428440ff6baf` |
+| added | `fuzz/corpus/store-valid` | `-` | `b573399f107b` |
+| added | `fuzz/corpus/traversal` | `-` | `a4e5987f8df3` |
+| added | `fuzz/corpus/valid-id` | `-` | `3ea72809c8fd` |
+| added | `fuzz/corpus/windows-path` | `-` | `06a08ab45d1d` |
+| added | `fuzz/fuzz_journals.py` | `-` | `2c9bf1fffb29` |
+| added | `requirements-ci.txt` | `-` | `c98e7cda0aa1` |
+| added | `requirements-fuzz.txt` | `-` | `957b5ce4caa6` |
+| modified | `.github/workflows/ci.yml` | `92d8ddd87080` | `075a668c5731` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/budget.py` | `8a8194b61366` | `afa046e61410` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/gates.py` | `2f1cbe646934` | `1de5319e83d3` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/observability.py` | `ff382175ad86` | `e9c28784bc74` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/orchestrator.py` | `4ca630cb1ec4` | `4038a5ee18f7` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/store.py` | `a23cf5cd9304` | `1809276ec330` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/synthesis.py` | `f2e403089cbf` | `2910a6c6e343` |
+| modified | `PLANS.md` | `1b2357ca7dd1` | `35bb5084e55f` |
+| modified | `README.md` | `04f0394b0764` | `1784dc83ab1f` |
+| modified | `SECURITY.md` | `1adf19468e39` | `303e92caf6d9` |
+| modified | `control/test_m8_evaluation.py` | `7217301cb474` | `03264be48cbf` |
+| modified | `control/test_m9_diagnosis.py` | `fc822010cc37` | `c9da49070bbe` |
+| modified | `docs/decisions.md` | `4bfd317caf67` | `4dfaf514171c` |
+| deleted | `input/inbox/artigo.pdf` | `7a888ab15668` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/document.pdf` | `7a888ab15668` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `8d3064e2d549` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/config/gates.yaml` | `2ee0a93dee8e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/input/inbox/artigo.pdf` | `7a888ab15668` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/state/events/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.jsonl` | `31ec00c53e9f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/state/locks/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.lock` | `e3b0c44298fc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-c133a0f9-2ada-4717-87c7-b4103f79fc74/state/snapshots/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.json` | `df5c2209ad9a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/coordinates.html` | `f3dfb58dd0c2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `1597152b815f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/normalized.json` | `7ceba5b337e9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-01.png` | `5164607c0873` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-02.png` | `7f2ca5e57f40` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-03.png` | `48467c667d58` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-04.png` | `e74ced835f8d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-05.png` | `ecbc55b4e74b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-06.png` | `936ebc1f1a40` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-07.png` | `f0149c6908bc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-08.png` | `ced0ce2331de` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-09.png` | `3d17ee571b21` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-10.png` | `f3b3afe0cc5b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-11.png` | `1cc658f643c6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-12.png` | `aeb2541f8114` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-13.png` | `558e81573479` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-14.png` | `514cddd3db59` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-15.png` | `ab6b76289179` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-16.png` | `308c7290dcd3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-17.png` | `c23d6c61ce81` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-18.png` | `23d6afb8e50a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-19.png` | `c37e7719e531` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-20.png` | `a8bbd768185c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-21.png` | `219b429b7fb8` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-22.png` | `f284202648c5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-23.png` | `2dc67a648b31` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-24.png` | `048b8516c292` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-25.png` | `8e38a57b9a85` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-26.png` | `f18ad02a4e3f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-27.png` | `acc74f6e9807` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-28.png` | `272263eb07a2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-29.png` | `df1ac8703fda` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-30.png` | `eb9ca0cfb635` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-31.png` | `3cf40ca22df2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-32.png` | `debca3459201` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-33.png` | `aee15b1fe347` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-34.png` | `923254aaa20c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-35.png` | `1c48deb53f20` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-36.png` | `1ec36ea69760` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-37.png` | `0070a9703a57` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-38.png` | `d2a4b4466400` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-39.png` | `e2c02d228eb0` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-40.png` | `a59779f6410e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-41.png` | `787c0d3abba9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-42.png` | `0b6a12ae228f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-43.png` | `19120549029c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-44.png` | `48c9bdc545f8` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-45.png` | `7c4d8d1e888c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-46.png` | `b092692f2974` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-47.png` | `38b31cb00e9c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-48.png` | `dff92f18a3d5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-49.png` | `22e000d1dc90` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-50.png` | `8c725d21b21a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-51.png` | `4b38e01262a4` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-52.png` | `ebae884b77c5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-53.png` | `494938cb91c9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-54.png` | `7b36dadc22bf` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-55.png` | `c36ce667896c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-56.png` | `f17416d246b9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-57.png` | `9164976dfeae` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-58.png` | `10d5c501d061` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-59.png` | `dfcb9fd3eb6a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-60.png` | `1b3fa518e237` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-61.png` | `f966f211354e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-62.png` | `5c8064d7e7ea` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-63.png` | `f6cc6eec2c04` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-64.png` | `558c03485dce` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-65.png` | `d613cade3106` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-66.png` | `3edc69d16dca` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-67.png` | `f883b79e525c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-68.png` | `eeeebcfb20d1` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-69.png` | `4cab9aa8d996` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-70.png` | `184971bdba6b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-71.png` | `5abaf5270764` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-72.png` | `a4ec57f24c51` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-73.png` | `8892329413cc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-74.png` | `54e1b437c74f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-75.png` | `5adb10b0fb8f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-76.png` | `ce5d8af85376` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-77.png` | `92ca120e6645` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/reconstructed.tex` | `7be05a737bc9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/source_ready.json` | `9cba70684b67` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-1.txt` | `e0a4c94e6763` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-10.txt` | `f6f190e11565` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-11.txt` | `ad93e8fcf847` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-12.txt` | `44fea84eced7` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-13.txt` | `6dc3a8b6e6ce` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-14.txt` | `0dd221d7fe42` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-15.txt` | `05080687a263` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-16.txt` | `47470f482106` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-17.txt` | `1c76adaec0f6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-18.txt` | `8fbeef1db877` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-19.txt` | `473c6db146cf` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-2.txt` | `2ffaebc3222b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-20.txt` | `75f3002f9ec6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-21.txt` | `0a78e85a58e5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-22.txt` | `c5ee1e9f8883` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-23.txt` | `047cee02a21a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-24.txt` | `ced168acb9ec` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-25.txt` | `fe2a5885221d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-26.txt` | `a096227ca7a6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-27.txt` | `ec37f80d8a27` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-28.txt` | `0b292bfd3cac` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-29.txt` | `9817fe6f8089` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-3.txt` | `f0f674fad649` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-30.txt` | `6fee76cb5a4a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-31.txt` | `812f9cec95e3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-32.txt` | `1e0469003c4f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-33.txt` | `7ed43e2c3296` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-34.txt` | `5147fd4160c1` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-35.txt` | `c3e808b742a6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-36.txt` | `79015f2d7951` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-37.txt` | `0cac1a39aafc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-38.txt` | `df38257d6425` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-39.txt` | `0bc46900550b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-4.txt` | `26fbd9596e36` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-40.txt` | `fab97c611e12` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-41.txt` | `9bbd640966f6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-42.txt` | `eecf3a01541e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-43.txt` | `1de1f5e98b28` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-44.txt` | `7aa1d1ae8e83` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-45.txt` | `043bb47f672e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-46.txt` | `cb8764beaafe` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-47.txt` | `e9056da516d9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-48.txt` | `f15f3e0a1395` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-49.txt` | `afde326d5f0f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-5.txt` | `7d5c97c7d92c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-50.txt` | `45a12bd8c1f7` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-51.txt` | `806164829e9b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-52.txt` | `765e5c57dc63` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-53.txt` | `9e05cd4bac67` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-54.txt` | `31b85af43259` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-55.txt` | `145e109e2b95` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-56.txt` | `79013fa18602` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-57.txt` | `66d0f2c0aa1d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-58.txt` | `2c83ecb78570` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-59.txt` | `7ec883e5272a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-6.txt` | `28e634101375` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-60.txt` | `4512e64906ed` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-61.txt` | `d2987d34c3fc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-62.txt` | `28fdf1883361` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-63.txt` | `1d4ac6ce02a2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-64.txt` | `c6033665a8b3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-65.txt` | `8a44b2b80162` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-66.txt` | `b8583e033a3a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-67.txt` | `892d5da1b0d2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-68.txt` | `6c881d04085c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-69.txt` | `435714b6b269` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-7.txt` | `1b9a70b0e22c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-70.txt` | `b4917e26c0be` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-71.txt` | `c433b6d389a7` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-72.txt` | `42116507a396` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-73.txt` | `16be43e13a2b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-74.txt` | `a1f53e0af6d9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-75.txt` | `a8026361fb9d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-76.txt` | `578d7e769981` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-77.txt` | `7c168201fe02` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-8.txt` | `8db088f136ac` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text-page-9.txt` | `f4dc4757dbae` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/extracted/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/text.txt` | `cefcc209f1ac` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/document.pdf` | `7a888ab15668` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/original/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `8d3064e2d549` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/manifest.json` | `91d527f8f5a5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-01.png` | `5164607c0873` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-02.png` | `7f2ca5e57f40` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-03.png` | `48467c667d58` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-04.png` | `e74ced835f8d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-05.png` | `ecbc55b4e74b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-06.png` | `936ebc1f1a40` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-07.png` | `f0149c6908bc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-08.png` | `ced0ce2331de` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-09.png` | `3d17ee571b21` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-10.png` | `f3b3afe0cc5b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-11.png` | `1cc658f643c6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-12.png` | `aeb2541f8114` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-13.png` | `558e81573479` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-14.png` | `514cddd3db59` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-15.png` | `ab6b76289179` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-16.png` | `308c7290dcd3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-17.png` | `c23d6c61ce81` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-18.png` | `23d6afb8e50a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-19.png` | `c37e7719e531` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-20.png` | `a8bbd768185c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-21.png` | `219b429b7fb8` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-22.png` | `f284202648c5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-23.png` | `2dc67a648b31` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-24.png` | `048b8516c292` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-25.png` | `8e38a57b9a85` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-26.png` | `f18ad02a4e3f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-27.png` | `acc74f6e9807` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-28.png` | `272263eb07a2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-29.png` | `df1ac8703fda` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-30.png` | `eb9ca0cfb635` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-31.png` | `3cf40ca22df2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-32.png` | `debca3459201` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-33.png` | `aee15b1fe347` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-34.png` | `923254aaa20c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-35.png` | `1c48deb53f20` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-36.png` | `1ec36ea69760` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-37.png` | `0070a9703a57` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-38.png` | `d2a4b4466400` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-39.png` | `e2c02d228eb0` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-40.png` | `a59779f6410e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-41.png` | `787c0d3abba9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-42.png` | `0b6a12ae228f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-43.png` | `19120549029c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-44.png` | `48c9bdc545f8` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-45.png` | `7c4d8d1e888c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-46.png` | `b092692f2974` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-47.png` | `38b31cb00e9c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-48.png` | `dff92f18a3d5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-49.png` | `22e000d1dc90` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-50.png` | `8c725d21b21a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-51.png` | `4b38e01262a4` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-52.png` | `ebae884b77c5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-53.png` | `494938cb91c9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-54.png` | `7b36dadc22bf` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-55.png` | `c36ce667896c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-56.png` | `f17416d246b9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-57.png` | `9164976dfeae` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-58.png` | `10d5c501d061` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-59.png` | `dfcb9fd3eb6a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-60.png` | `1b3fa518e237` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-61.png` | `f966f211354e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-62.png` | `5c8064d7e7ea` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-63.png` | `f6cc6eec2c04` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-64.png` | `558c03485dce` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-65.png` | `d613cade3106` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-66.png` | `3edc69d16dca` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-67.png` | `f883b79e525c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-68.png` | `eeeebcfb20d1` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-69.png` | `4cab9aa8d996` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-70.png` | `184971bdba6b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-71.png` | `5abaf5270764` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-72.png` | `a4ec57f24c51` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-73.png` | `8892329413cc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-74.png` | `54e1b437c74f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-75.png` | `5adb10b0fb8f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-76.png` | `ce5d8af85376` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/artifacts/rendered/7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d/pages/page-77.png` | `92ca120e6645` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/config/gates.yaml` | `2ee0a93dee8e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/input/inbox/artigo.pdf` | `7a888ab15668` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/state/events/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.jsonl` | `c53b3edf94f4` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/state/locks/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.lock` | `e3b0c44298fc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/state/snapshots/ingest-7a888ab156684c927bd017fd24d4ca28650bedc88f9709b6bae3046593a76d9d.json` | `c0aced74dc5b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/baseline.pdf` | `7a888ab15668` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/ingestion-manifest.json` | `6c3a09e76b94` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/manifest.json` | `3b8b62f1742a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/coordinates.html` | `f3dfb58dd0c2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/manifest.json` | `1597152b815f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/normalized.json` | `7ceba5b337e9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-01.png` | `5164607c0873` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-02.png` | `7f2ca5e57f40` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-03.png` | `48467c667d58` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-04.png` | `e74ced835f8d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-05.png` | `ecbc55b4e74b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-06.png` | `936ebc1f1a40` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-07.png` | `f0149c6908bc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-08.png` | `ced0ce2331de` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-09.png` | `3d17ee571b21` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-10.png` | `f3b3afe0cc5b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-11.png` | `1cc658f643c6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-12.png` | `aeb2541f8114` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-13.png` | `558e81573479` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-14.png` | `514cddd3db59` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-15.png` | `ab6b76289179` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-16.png` | `308c7290dcd3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-17.png` | `c23d6c61ce81` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-18.png` | `23d6afb8e50a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-19.png` | `c37e7719e531` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-20.png` | `a8bbd768185c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-21.png` | `219b429b7fb8` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-22.png` | `f284202648c5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-23.png` | `2dc67a648b31` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-24.png` | `048b8516c292` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-25.png` | `8e38a57b9a85` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-26.png` | `f18ad02a4e3f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-27.png` | `acc74f6e9807` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-28.png` | `272263eb07a2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-29.png` | `df1ac8703fda` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-30.png` | `eb9ca0cfb635` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-31.png` | `3cf40ca22df2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-32.png` | `debca3459201` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-33.png` | `aee15b1fe347` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-34.png` | `923254aaa20c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-35.png` | `1c48deb53f20` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-36.png` | `1ec36ea69760` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-37.png` | `0070a9703a57` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-38.png` | `d2a4b4466400` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-39.png` | `e2c02d228eb0` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-40.png` | `a59779f6410e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-41.png` | `787c0d3abba9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-42.png` | `0b6a12ae228f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-43.png` | `19120549029c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-44.png` | `48c9bdc545f8` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-45.png` | `7c4d8d1e888c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-46.png` | `b092692f2974` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-47.png` | `38b31cb00e9c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-48.png` | `dff92f18a3d5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-49.png` | `22e000d1dc90` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-50.png` | `8c725d21b21a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-51.png` | `4b38e01262a4` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-52.png` | `ebae884b77c5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-53.png` | `494938cb91c9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-54.png` | `7b36dadc22bf` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-55.png` | `c36ce667896c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-56.png` | `f17416d246b9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-57.png` | `9164976dfeae` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-58.png` | `10d5c501d061` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-59.png` | `dfcb9fd3eb6a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-60.png` | `1b3fa518e237` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-61.png` | `f966f211354e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-62.png` | `5c8064d7e7ea` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-63.png` | `f6cc6eec2c04` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-64.png` | `558c03485dce` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-65.png` | `d613cade3106` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-66.png` | `3edc69d16dca` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-67.png` | `f883b79e525c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-68.png` | `eeeebcfb20d1` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-69.png` | `4cab9aa8d996` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-70.png` | `184971bdba6b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-71.png` | `5abaf5270764` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-72.png` | `a4ec57f24c51` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-73.png` | `8892329413cc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-74.png` | `54e1b437c74f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-75.png` | `5adb10b0fb8f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-76.png` | `ce5d8af85376` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/pages/page-77.png` | `92ca120e6645` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/reconstructed.tex` | `7be05a737bc9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/source_ready.json` | `9cba70684b67` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-1.txt` | `e0a4c94e6763` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-10.txt` | `f6f190e11565` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-11.txt` | `ad93e8fcf847` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-12.txt` | `44fea84eced7` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-13.txt` | `6dc3a8b6e6ce` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-14.txt` | `0dd221d7fe42` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-15.txt` | `05080687a263` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-16.txt` | `47470f482106` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-17.txt` | `1c76adaec0f6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-18.txt` | `8fbeef1db877` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-19.txt` | `473c6db146cf` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-2.txt` | `2ffaebc3222b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-20.txt` | `75f3002f9ec6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-21.txt` | `0a78e85a58e5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-22.txt` | `c5ee1e9f8883` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-23.txt` | `047cee02a21a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-24.txt` | `ced168acb9ec` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-25.txt` | `fe2a5885221d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-26.txt` | `a096227ca7a6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-27.txt` | `ec37f80d8a27` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-28.txt` | `0b292bfd3cac` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-29.txt` | `9817fe6f8089` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-3.txt` | `f0f674fad649` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-30.txt` | `6fee76cb5a4a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-31.txt` | `812f9cec95e3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-32.txt` | `1e0469003c4f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-33.txt` | `7ed43e2c3296` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-34.txt` | `5147fd4160c1` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-35.txt` | `c3e808b742a6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-36.txt` | `79015f2d7951` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-37.txt` | `0cac1a39aafc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-38.txt` | `df38257d6425` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-39.txt` | `0bc46900550b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-4.txt` | `26fbd9596e36` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-40.txt` | `fab97c611e12` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-41.txt` | `9bbd640966f6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-42.txt` | `eecf3a01541e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-43.txt` | `1de1f5e98b28` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-44.txt` | `7aa1d1ae8e83` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-45.txt` | `043bb47f672e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-46.txt` | `cb8764beaafe` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-47.txt` | `e9056da516d9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-48.txt` | `f15f3e0a1395` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-49.txt` | `afde326d5f0f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-5.txt` | `7d5c97c7d92c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-50.txt` | `45a12bd8c1f7` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-51.txt` | `806164829e9b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-52.txt` | `765e5c57dc63` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-53.txt` | `9e05cd4bac67` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-54.txt` | `31b85af43259` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-55.txt` | `145e109e2b95` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-56.txt` | `79013fa18602` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-57.txt` | `66d0f2c0aa1d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-58.txt` | `2c83ecb78570` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-59.txt` | `7ec883e5272a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-6.txt` | `28e634101375` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-60.txt` | `4512e64906ed` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-61.txt` | `d2987d34c3fc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-62.txt` | `28fdf1883361` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-63.txt` | `1d4ac6ce02a2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-64.txt` | `c6033665a8b3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-65.txt` | `8a44b2b80162` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-66.txt` | `b8583e033a3a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-67.txt` | `892d5da1b0d2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-68.txt` | `6c881d04085c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-69.txt` | `435714b6b269` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-7.txt` | `1b9a70b0e22c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-70.txt` | `b4917e26c0be` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-71.txt` | `c433b6d389a7` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-72.txt` | `42116507a396` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-73.txt` | `16be43e13a2b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-74.txt` | `a1f53e0af6d9` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-75.txt` | `a8026361fb9d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-76.txt` | `578d7e769981` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-77.txt` | `7c168201fe02` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-8.txt` | `8db088f136ac` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text-page-9.txt` | `f4dc4757dbae` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-e4686df9-2fbe-49f3-9f4f-f6358adbd211/versions/champion/v0000/source/text.txt` | `cefcc209f1ac` | `-` |

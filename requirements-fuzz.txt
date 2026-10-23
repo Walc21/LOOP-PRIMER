@@ -1,0 +1,4 @@
+# Fuzzing only: CPython 3.12 on Linux x86_64, separate from runtime dependencies.
+# Install alongside requirements-ci.txt with --require-hashes.
+atheris==3.1.0 \
+    --hash=sha256:ec5e11f21a4c197fe91f7aea2b2de88e623c73a21fc07b105ac6329a1588457b

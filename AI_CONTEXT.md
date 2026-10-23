@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4`
-- Baseline da última sessão: `070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4`
-- Inventário: 649 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (352577 bytes; SHA-256 `79c061d475f7fa8f`).
+- Fingerprint atual das fontes: `b9f8d50df22352e9bc631e9f1f58a55c3cd99fb8918ba76485b9069d5c35df5c`
+- Baseline da última sessão: `b9f8d50df22352e9bc631e9f1f58a55c3cd99fb8918ba76485b9069d5c35df5c`
+- Inventário: 263 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (449617 bytes; SHA-256 `59e76a0ced1f2d18`).
 
 ## Estado e limites atuais
 
@@ -30,12 +30,7 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 62.
-- `gitignore-m6-runtime-evidence-20260908` — Ajustado o Git para preservar localmente, sem exibir como alteracao, os manifestos de selecao M6 e as evidencias create-only de smokes.
-  - mudança: Adicionadas regras .gitignore para runtime/m6-context-selections e runtime/m6-official-smokes; nenhum artefato existente foi movido, removido ou reescrito.
-  - decisão: Evidencia operacional M6 permanece local e nao versionada, mas deixa de tornar a arvore Git visualmente suja.
-  - risco: Os artefatos ignorados permanecem dependentes do disco local e nao sao backup ou publicacao Git.
-  - próximo: Revisar e, se desejado, publicar esta regra Git isolada em commit e PR.
+- Sessões estruturadas registradas: 63.
 - `session-8247cc84d3866873df82` — Selecao M6 por segmentos canonicos de linhas implementada offline
   - mudança: Adicionado manifesto 2.0.0 create-only com segmentos inclusivos vinculados ao normalized.json, hashes por unidade e agregado, preservando leitura do manifesto 1.0.0 de pagina inteira.
   - decisão: ADR-043 preserva 1.0.0 sem migracao e adota 2.0.0 apenas para segmentos numericos explicitos, ordenados e nao sobrepostos.
@@ -46,6 +41,11 @@
   - decisão: Preservado o texto histórico do ADR-038 e adicionada emenda atual vinculada ao ADR-044.
   - risco: Prime live, modelos, endpoints, ciclo científico e CI remota não foram iniciados.
   - próximo: Revisão humana do diff e commit separado, se autorizado.
+- `security-scanning-alerts-20261023` — Endurecidos os leitores M2/M6 e adicionados fuzzing limitado e SAST security-extended para os alertas de code scanning.
+  - mudança: Leituras usam paths canonicos contidos apos rejeitar symlinks lexicais; M6 rejeita raiz symlink e ambos recusam arquivos especiais e JSON malformado.
+  - decisão: Preservados hashes, replay, evidencias existentes, erros reais de I/O e ausencia de backend cientifico; cadastro CII permanece externo.
+  - risco: Cadastro e autoavaliacao CII/OpenSSF dependem do mantenedor; SAST JavaScript permanece pendente conforme ADR-045.
+  - próximo: Revisar a PR 55 atualizada, acompanhar checks remotos e concluir o cadastro OpenSSF com evidencias.
 
 ## Roteamento obrigatório por escopo
 

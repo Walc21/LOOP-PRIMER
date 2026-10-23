@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import tempfile
 from typing import Any, Mapping
 import jsonschema
@@ -42,8 +43,11 @@ def _name(run: str, cycle: int, role: str) -> str: return f"article-loop-{run}-c
 
 class Orchestrator:
     def __init__(self, root: str | Path, adapter: Any | None = None):
-        self.root = Path(root).resolve()
-        if self.root.is_symlink() or not self.root.is_dir():
+        raw_root = Path(root)
+        if raw_root.is_symlink():
+            raise OrchestrationError("root must not be a symlink")
+        self.root = raw_root.resolve()
+        if not self.root.is_dir():
             raise OrchestrationError("root must be a regular existing directory")
         self.adapter = adapter
 
@@ -121,17 +125,18 @@ class Orchestrator:
     def _events(self, run: str) -> list[dict[str, Any]]:
         # Status projection must never create an orchestration directory merely
         # because an observer asks about an M2-only or absent run.
-        path = self._file(run, "journal.jsonl", create=False)
-        if not path.exists(): return []
-        result = []
-        filename = os.path.abspath(path)
-        if not filename.startswith(str(self.root) + os.sep):
+        path = self._file(run, "journal.jsonl", create=False).resolve()
+        if self.root not in path.parents:
             raise OrchestrationError("managed path escapes root")
-        with open(filename, "rb") as f:
+        if not path.exists(): return []
+        if not stat.S_ISREG(path.lstat().st_mode):
+            raise OrchestrationError("orchestration journal must be a regular file")
+        result = []
+        with path.open("rb") as f:
             for line in f:
                 if not line.endswith(b"\n"): raise OrchestrationError("partial orchestration journal")
                 try: item = json.loads(line)
-                except json.JSONDecodeError as error: raise OrchestrationError("invalid orchestration journal") from error
+                except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as error: raise OrchestrationError("invalid orchestration journal") from error
                 if not isinstance(item, dict) or set(item) != {"schema_version","sequence","previous_hash","event_hash","idempotency_key","event_type","payload","at"}:
                     raise OrchestrationError("invalid orchestration journal event")
                 previous = result[-1]["event_hash"] if result else None
@@ -139,7 +144,13 @@ class Orchestrator:
                 if (item["schema_version"] != SCHEMA_VERSION or type(item["sequence"]) is not int or item["sequence"] != len(result)
                         or item["previous_hash"] != previous or not isinstance(item["idempotency_key"], str) or not item["idempotency_key"]
                         or not isinstance(item["event_type"], str) or not isinstance(item["payload"], dict)
-                        or not _SHA.fullmatch(item["event_hash"]) or item["event_hash"] != _hash(_bytes(body))):
+                        or not isinstance(item["event_hash"], str) or not _SHA.fullmatch(item["event_hash"])):
+                    raise OrchestrationError("invalid orchestration journal chain")
+                try:
+                    expected_hash = _hash(_bytes(body))
+                except (UnicodeEncodeError, RecursionError) as error:
+                    raise OrchestrationError("invalid orchestration journal encoding or nesting") from error
+                if item["event_hash"] != expected_hash:
                     raise OrchestrationError("invalid orchestration journal chain")
                 self._validate_event(item["event_type"], item["payload"])
                 if any(x["idempotency_key"] == item["idempotency_key"] for x in result): raise OrchestrationError("duplicate journal idempotency key")

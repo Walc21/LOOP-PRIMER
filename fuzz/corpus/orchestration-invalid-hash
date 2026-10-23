@@ -1,0 +1,1 @@
+O{"schema_version": "1.1.0", "sequence": 0, "previous_hash": null, "idempotency_key": "stop", "event_type": "STOPPED", "payload": {}, "at": "2026-10-23T00:00:00Z", "event_hash": null}
