@@ -258,19 +258,11 @@ class DurableStore:
         the evidence and choose an explicit recovery action.
         """
         run_id = self._run_id(run_id)
-        path = self.root / "state" / "events" / f"{run_id}.jsonl"
-        for component in (path, *path.parents):
-            if component == self.root:
-                break
-            if component.is_symlink():
-                raise StoreError("symlink in event log path")
-        filename = os.path.abspath(path)
-        if not filename.startswith(str(self.root) + os.sep):
-            raise StoreError("event log path escapes root")
+        path = self._log(run_id)
         if not path.exists():
             return []
         events: list[dict[str, Any]] = []
-        with open(filename, "rb") as f:
+        with path.open("rb") as f:
             for line in f:
                 if not line.endswith(b"\n"):
                     raise IntegrityError("partial event line")
