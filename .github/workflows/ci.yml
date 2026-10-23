@@ -39,6 +39,11 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
+          # The Azure mirror can trickle downloads without hitting socket timeouts.
+          # Use Ubuntu's official archive in this disposable runner only.
+          if [[ -f /etc/apt/apt-mirrors.txt ]]; then
+            printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt
+          fi
           sudo -E apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
           sudo -E apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y ghostscript poppler-utils texlive-latex-base
 
