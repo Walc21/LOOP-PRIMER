@@ -258,12 +258,13 @@ class DurableStore:
         the evidence and choose an explicit recovery action.
         """
         run_id = self._run_id(run_id)
-        path = self._log(run_id)
-        for component in (path, *path.parents):
+        lexical_path = self.root / "state/events" / f"{run_id}.jsonl"
+        for component in (lexical_path, *lexical_path.parents):
             if component == self.root:
                 break
             if component.is_symlink():
                 raise StoreError("symlink in event log path")
+        path = self._log(run_id)
         if not path.exists():
             return []
         events: list[dict[str, Any]] = []
