@@ -71,7 +71,14 @@ class Orchestrator:
         return self._managed("state", "orchestration", self._run(run), create=create)
 
     def _file(self, run: str, name: str, *, create: bool = True) -> Path:
-        if not isinstance(name, str) or "/" in name or name in {".", ".."}:
+        if (
+            not isinstance(name, str)
+            or not name
+            or name in {".", ".."}
+            or Path(name).name != name
+            or "/" in name
+            or "\\" in name
+        ):
             raise OrchestrationError("name must be a simple identifier")
         directory = self._dir(run, create=create)
         path = (directory / name).resolve()
