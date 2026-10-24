@@ -233,8 +233,14 @@
   }
 
   document.querySelectorAll(".nav-button").forEach((button) => button.addEventListener("click", async () => {
-    document.querySelectorAll(".nav-button").forEach((item) => item.classList.remove("active"));
-    button.classList.add("active"); currentView = button.dataset.view; await render();
+    document.querySelectorAll(".nav-button").forEach((item) => {
+      item.classList.remove("active");
+      item.removeAttribute("aria-current");
+    });
+    button.classList.add("active");
+    button.setAttribute("aria-current", "page");
+    currentView = button.dataset.view;
+    await render();
   }));
   render().then(startEvents);
 })();
