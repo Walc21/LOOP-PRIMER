@@ -6,6 +6,8 @@ The checker is registered locally so validation does not depend on the optional
 from __future__ import annotations
 
 from datetime import date, datetime
+import functools
+import json
 import re
 from typing import Any, Mapping
 
@@ -56,8 +58,13 @@ STRICT_FORMAT_CHECKER = jsonschema.FormatChecker()
 STRICT_FORMAT_CHECKER.checks("date-time")(is_rfc3339_datetime)
 
 
+@functools.lru_cache(maxsize=128)
+def _get_cached_validator(schema_str: str) -> jsonschema.Draft202012Validator:
+    return jsonschema.Draft202012Validator(
+        json.loads(schema_str), format_checker=STRICT_FORMAT_CHECKER,
+    )
+
+
 def validator(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator:
     """Build the only Draft 2020-12 instance validator used by the package."""
-    return jsonschema.Draft202012Validator(
-        schema, format_checker=STRICT_FORMAT_CHECKER,
-    )
+    return _get_cached_validator(json.dumps(schema, sort_keys=True))
