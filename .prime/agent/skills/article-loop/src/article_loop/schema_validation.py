@@ -6,6 +6,8 @@ The checker is registered locally so validation does not depend on the optional
 from __future__ import annotations
 
 from datetime import date, datetime
+import functools
+import json
 import re
 from typing import Any, Mapping
 
@@ -56,8 +58,47 @@ STRICT_FORMAT_CHECKER = jsonschema.FormatChecker()
 STRICT_FORMAT_CHECKER.checks("date-time")(is_rfc3339_datetime)
 
 
-def validator(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator:
-    """Build the only Draft 2020-12 instance validator used by the package."""
+@functools.lru_cache(maxsize=128)
+def _get_validator(schema_str: str) -> jsonschema.Draft202012Validator:
+    schema = json.loads(schema_str)
     return jsonschema.Draft202012Validator(
         schema, format_checker=STRICT_FORMAT_CHECKER,
     )
+
+
+import collections
+
+
+class _IDCache:
+    def __init__(self, maxsize: int = 128) -> None:
+        self.cache: collections.OrderedDict[int, tuple[Mapping[str, Any], jsonschema.Draft202012Validator]] = collections.OrderedDict()
+        self.maxsize = maxsize
+
+    def get(self, schema_id: int, schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator | None:
+        if schema_id in self.cache:
+            cached_schema, validator_instance = self.cache[schema_id]
+            if cached_schema is schema:
+                self.cache.move_to_end(schema_id)
+                return validator_instance
+        return None
+
+    def set(self, schema_id: int, schema: Mapping[str, Any], validator_instance: jsonschema.Draft202012Validator) -> None:
+        self.cache[schema_id] = (schema, validator_instance)
+        if len(self.cache) > self.maxsize:
+            self.cache.popitem(last=False)
+
+
+_ID_CACHE = _IDCache(maxsize=128)
+
+
+def validator(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator:
+    """Build the only Draft 2020-12 instance validator used by the package."""
+    schema_id = id(schema)
+    validator_instance = _ID_CACHE.get(schema_id, schema)
+    if validator_instance is not None:
+        return validator_instance
+
+    schema_str = json.dumps(schema, sort_keys=True)
+    validator_instance = _get_validator(schema_str)
+    _ID_CACHE.set(schema_id, schema, validator_instance)
+    return validator_instance
