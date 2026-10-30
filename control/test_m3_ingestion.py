@@ -376,6 +376,14 @@ class IngestionTests(unittest.TestCase):
         self.assertEqual(source.stat().st_size, provenance["source_zip"]["size_bytes"])
         self.assertIn("SOURCE_ZIP_STRUCTURALLY_INVALID", [issue["code"] for issue in normalized["issues"]])
 
+    def test_zip_with_path_traversal_throws_ingestion_error(self):
+        self.fixture()
+        source = self.root / "input/inbox/source.zip"
+        with zipfile.ZipFile(source, "w") as archive:
+            archive.writestr("../malicious.tex", "\\documentclass{article}\n\\begin{document}A\\end{document}\n")
+        with self.assertRaisesRegex(IngestionError, "source.zip contains unsafe path"):
+            ingest(self.root)
+
     def test_managed_parent_symlinks_are_rejected_without_external_writes(self):
         for relative in ("input/inbox", "workspaces", "artifacts/original", "artifacts/extracted", "artifacts/rendered", "versions/champion", "config", "state"):
             with self.subTest(relative=relative):
