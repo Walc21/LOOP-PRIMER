@@ -5,6 +5,9 @@ The checker is registered locally so validation does not depend on the optional
 """
 from __future__ import annotations
 
+import collections
+import functools
+import json
 from datetime import date, datetime
 import re
 from typing import Any, Mapping
@@ -56,8 +59,52 @@ STRICT_FORMAT_CHECKER = jsonschema.FormatChecker()
 STRICT_FORMAT_CHECKER.checks("date-time")(is_rfc3339_datetime)
 
 
-def validator(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator:
-    """Build the only Draft 2020-12 instance validator used by the package."""
+# Cache by object ID to avoid hashing dictionaries (unhashable) in the fast path.
+_schema_cache_by_id: collections.OrderedDict[int, tuple[Any, jsonschema.Draft202012Validator]] = collections.OrderedDict()
+MAX_CACHE_SIZE = 128
+
+@functools.lru_cache(maxsize=MAX_CACHE_SIZE)
+def _validator_from_json(schema_json: str) -> jsonschema.Draft202012Validator:
+    """Fallback cache using canonical JSON string for structurally identical schemas."""
+    schema = json.loads(schema_json)
     return jsonschema.Draft202012Validator(
         schema, format_checker=STRICT_FORMAT_CHECKER,
     )
+
+
+def validator(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator:
+    """Build the only Draft 2020-12 instance validator used by the package.
+
+    Optimized: Draft202012Validator initialization is expensive (~0.2ms - 3ms).
+    This caches instances to prevent redundant initializations in hot loops.
+
+    WARNING: This cache assumes `schema` objects are immutable throughout their lifecycle.
+    Mutating a cached schema dictionary will result in validation against the old state.
+    """
+    schema_id = id(schema)
+
+    # Fast path: check if the exact same dictionary object was already seen.
+    # The identity check `cached_schema is schema` prevents collisions if Python reuses memory addresses.
+    if schema_id in _schema_cache_by_id:
+        cached_schema, cached_validator = _schema_cache_by_id[schema_id]
+        if cached_schema is schema:
+            _schema_cache_by_id.move_to_end(schema_id)
+            return cached_validator
+
+    # Slow path / fallback: serialize schema to a canonical JSON string to use as cache key for identical values
+    try:
+        schema_json = json.dumps(schema, sort_keys=True)
+    except TypeError:
+        # Fallback if the schema contains un-serializable objects (e.g. custom types)
+        return jsonschema.Draft202012Validator(
+            schema, format_checker=STRICT_FORMAT_CHECKER,
+        )
+
+    val = _validator_from_json(schema_json)
+
+    # Update object ID cache
+    _schema_cache_by_id[schema_id] = (schema, val)
+    if len(_schema_cache_by_id) > MAX_CACHE_SIZE:
+        _schema_cache_by_id.popitem(last=False)
+
+    return val
