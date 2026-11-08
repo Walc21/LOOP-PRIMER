@@ -125,9 +125,7 @@ class Orchestrator:
     def _events(self, run: str) -> list[dict[str, Any]]:
         # Status projection must never create an orchestration directory merely
         # because an observer asks about an M2-only or absent run.
-        path = self._file(run, "journal.jsonl", create=False).resolve()
-        if self.root not in path.parents:
-            raise OrchestrationError("managed path escapes root")
+        path = self._file(run, "journal.jsonl", create=False)
         if not path.exists(): return []
         if not stat.S_ISREG(path.lstat().st_mode):
             raise OrchestrationError("orchestration journal must be a regular file")
@@ -271,6 +269,11 @@ class Orchestrator:
 
     async def bootstrap(self, pdf_path: str | Path) -> dict[str, Any]:
         source = Path(pdf_path)
+        if source.is_symlink() or not source.is_file(): raise OrchestrationError("pdf must be a regular file")
+        try:
+            source = source.resolve(strict=True)
+        except OSError as error:
+            raise OrchestrationError("pdf must be a regular file") from error
         if source.is_symlink() or not source.is_file(): raise OrchestrationError("pdf must be a regular file")
         digest = _hash(source.read_bytes()); run = self._run("ingest-" + digest)
         try:

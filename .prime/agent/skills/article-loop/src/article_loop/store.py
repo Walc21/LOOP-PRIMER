@@ -269,7 +269,10 @@ class DurableStore:
                 break
             if component.is_symlink():
                 raise StoreError("symlink in event log path")
-        path = self._log(run_id)
+        path = self.root / "state" / "events" / f"{run_id}.jsonl"
+        resolved = path.resolve(strict=False)
+        if resolved != self.root and self.root not in resolved.parents:
+            raise StoreError("event log escapes validated root")
         if not path.exists():
             return []
         if not stat.S_ISREG(path.lstat().st_mode):
