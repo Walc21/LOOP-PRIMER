@@ -24,7 +24,6 @@ if str(SRC) not in sys.path:
 from article_loop import (
     DurableStore,
     FakeRLMAdapter,
-    IntegrityError,
     M7Pipeline,
     Orchestrator,
     State,
@@ -35,7 +34,6 @@ from article_loop.activation import ActivationPlanner
 from article_loop.blackboard import Blackboard, Impact
 from article_loop.gates import REQUIRED_GATES, record_math_verification, run_gates
 from article_loop.evaluation import (
-    DIMENSIONS,
     BlindComparisonBundle,
     EvaluationError,
     FakeJurorAdapter,

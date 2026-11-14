@@ -8,8 +8,12 @@ from __future__ import annotations
 from datetime import date, datetime
 import re
 from typing import Any, Mapping
+import json
+from functools import lru_cache
 
 import jsonschema
+
+
 
 
 _RFC3339_DATE_TIME = re.compile(
@@ -56,8 +60,17 @@ STRICT_FORMAT_CHECKER = jsonschema.FormatChecker()
 STRICT_FORMAT_CHECKER.checks("date-time")(is_rfc3339_datetime)
 
 
+# Performance Optimization: Cache schema validators
+# Compiling a jsonschema validator is expensive. By memoizing the validator creation,
+# we avoid redundant work when the same schema is requested repeatedly.
+# Since dicts are unhashable, we serialize the schema to a sorted JSON string for the cache key.
+@lru_cache(maxsize=128)
+def _cached_validator(schema_json: str) -> jsonschema.Draft202012Validator:
+    return jsonschema.Draft202012Validator(
+        json.loads(schema_json), format_checker=STRICT_FORMAT_CHECKER,
+    )
+
 def validator(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator:
     """Build the only Draft 2020-12 instance validator used by the package."""
-    return jsonschema.Draft202012Validator(
-        schema, format_checker=STRICT_FORMAT_CHECKER,
-    )
+    schema_json = json.dumps(schema, sort_keys=True)
+    return _cached_validator(schema_json)

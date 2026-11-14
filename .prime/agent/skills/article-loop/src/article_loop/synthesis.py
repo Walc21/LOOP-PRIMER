@@ -166,11 +166,13 @@ class M7Pipeline:
         for proposal in proposals.values():
             if proposal["cycle_id"]!=cycle_id or proposal["base_hash"]!=base_hash or proposal["schema_version"]!=schema_version: raise SynthesisError("proposal identity differs")
             if any(dep not in proposals for dep in proposal["dependencies"]): raise SynthesisError("proposal dependency is absent")
-        todo=set(proposals); order=[]
+        todo=set(proposals)
+        order=[]
         while todo:
             ready=sorted(item for item in todo if not(set(proposals[item]["dependencies"])&todo))
             if not ready: raise SynthesisError("cyclic proposal dependencies")
-            order.extend(ready); todo.difference_update(ready)
+            order.extend(ready)
+            todo.difference_update(ready)
         decision={"accepted":order,"rejected":[],"deferred":[],"conflicts":[],"justifications":{x:"accepted departmental proposal" for x in order},"packet_hashes":packet_hashes,"packet_receipts":packet_receipts,"proposal_hashes":hashes,"proposal_receipts":proposal_receipts,"application_order":order,"dependencies":{x:proposals[x]["dependencies"] for x in order},"validations":{x:proposals[x]["requested_validations"] for x in order},"obsolete_claims":[]}
         body={"schema_version":"1.1.0","run_id":run_id,"cycle_id":cycle_id,"base_hash":base_hash,"packets":packets,"packet_hashes":packet_hashes,"decision":decision}; raw=_json(body)
         return {**body,"synthesis_hash":_sha(raw),"frozen_bytes":raw}
