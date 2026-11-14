@@ -6,6 +6,8 @@ The checker is registered locally so validation does not depend on the optional
 from __future__ import annotations
 
 from datetime import date, datetime
+import functools
+import json
 import re
 from typing import Any, Mapping
 
@@ -56,8 +58,32 @@ STRICT_FORMAT_CHECKER = jsonschema.FormatChecker()
 STRICT_FORMAT_CHECKER.checks("date-time")(is_rfc3339_datetime)
 
 
-def validator(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator:
-    """Build the only Draft 2020-12 instance validator used by the package."""
+@functools.lru_cache(maxsize=128)
+def _cached_validator_by_hash(schema_str: str) -> jsonschema.Draft202012Validator:
+    """Build and cache the validator using the serialized JSON schema."""
+    schema = json.loads(schema_str)
     return jsonschema.Draft202012Validator(
         schema, format_checker=STRICT_FORMAT_CHECKER,
     )
+
+
+_validator_id_cache = {}
+
+
+def validator(schema: Mapping[str, Any]) -> jsonschema.Draft202012Validator:
+    """Build the only Draft 2020-12 instance validator used by the package."""
+    schema_id = id(schema)
+    if schema_id in _validator_id_cache:
+        cached_schema, val = _validator_id_cache[schema_id]
+        if schema is cached_schema:
+            return val
+
+    schema_str = json.dumps(schema, sort_keys=True)
+    val = _cached_validator_by_hash(schema_str)
+
+    # Cap cache size to prevent unbounded memory growth from short-lived dicts
+    if len(_validator_id_cache) > 128:
+        _validator_id_cache.clear()
+
+    _validator_id_cache[schema_id] = (schema, val)
+    return val

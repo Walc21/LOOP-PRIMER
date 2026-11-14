@@ -209,15 +209,16 @@ class StructuredLogger:
     def read_events(self) -> list[dict[str, Any]]:
         events: list[dict[str, Any]] = []
         for path in self._all_log_paths():
-            for line in path.read_bytes().splitlines(keepends=True):
-                if not line.endswith(b"\n"):
-                    raise ObservabilityError("partial structured log record")
-                try:
-                    item = json.loads(line)
-                except json.JSONDecodeError as error:
-                    raise ObservabilityError("invalid structured log JSON") from error
-                self._validate_event(item)
-                events.append(item)
+            with path.open("rb") as stream:
+                for line in stream:
+                    if not line.endswith(b"\n"):
+                        raise ObservabilityError("partial structured log record")
+                    try:
+                        item = json.loads(line)
+                    except json.JSONDecodeError as error:
+                        raise ObservabilityError("invalid structured log JSON") from error
+                    self._validate_event(item)
+                    events.append(item)
         events.sort(key=lambda item: item["sequence"])
         previous: str | None = None
         for sequence, item in enumerate(events):
