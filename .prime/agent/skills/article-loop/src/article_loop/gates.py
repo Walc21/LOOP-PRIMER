@@ -179,9 +179,11 @@ def _entrypoint(candidate: Path) -> Path:
 
 
 def _run(command: str, args: list[str], *, cwd: Path, timeout: int) -> tuple[bool, int, str, int]:
+    if not re.fullmatch(r"[a-zA-Z0-9_.+-]+", command):
+        return False, 127, "invalid executable name format", 0
     executable = shutil.which(command)
-    if executable is None:
-        return False, 127, "required executable is unavailable", 0
+    if executable is None or not Path(executable).is_absolute():
+        return False, 127, "required executable is unavailable or not absolute", 0
     started = time.monotonic()
     try:
         done = subprocess.run([executable, *args], cwd=cwd, stdout=subprocess.PIPE,
