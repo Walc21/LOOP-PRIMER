@@ -29,7 +29,7 @@ h3 { font-size: 1.05rem; }
 .connection { max-width: 22rem; margin: 0; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: .45rem; color: var(--muted); text-align: right; }
 .shell { display: grid; grid-template-columns: 15.5rem minmax(0, 1fr); min-height: calc(100vh - 7rem); }
 .navigation { padding: 1rem; border-right: 1px solid var(--line); background: #0c1a28; }
-.nav-button { display: block; width: 100%; margin: 0 0 .35rem; padding: .7rem .8rem; border: 1px solid transparent; border-radius: .45rem; background: transparent; color: var(--muted); text-align: left; }
+.nav-button { display: block; width: 100%; margin: 0 0 .35rem; padding: .7rem .8rem; border: 1px solid transparent; border-radius: .45rem; background: transparent; color: var(--muted); text-align: left; transition: all 0.2s ease-in-out; }
 .nav-button:hover, .nav-button.active { border-color: var(--line); background: var(--surface-raised); color: var(--ink); }
 main { padding: clamp(1rem, 3vw, 2.5rem); max-width: 100rem; }
 .notice { margin: 0 0 1rem; padding: .8rem 1rem; border: 1px solid var(--focus); border-radius: .45rem; background: #322b13; color: #fff0bc; }
@@ -46,6 +46,7 @@ main { padding: clamp(1rem, 3vw, 2.5rem); max-width: 100rem; }
 .button { min-height: 2.6rem; padding: .45rem .75rem; border: 1px solid var(--accent); border-radius: .35rem; background: #114737; color: var(--ink); font-weight: 700; }
 .button.secondary { border-color: var(--line); background: var(--surface-raised); }
 .button.danger { border-color: var(--danger); background: #54252b; }
+.button:hover:not(:disabled) { filter: brightness(1.1); }
 .button:disabled { cursor: not-allowed; opacity: .55; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: .55rem; }
 table { width: 100%; border-collapse: collapse; }
