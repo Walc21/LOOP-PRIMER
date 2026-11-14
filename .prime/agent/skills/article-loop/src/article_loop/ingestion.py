@@ -350,7 +350,10 @@ def _copy_zip(zip_path: Path, destination: Path) -> None:
     with zipfile.ZipFile(zip_path) as archive:
         for member in archive.infolist():
             if member.is_dir(): continue
-            target = destination / PurePosixPath(member.filename); target.parent.mkdir(parents=True, exist_ok=True)
+            pure = PurePosixPath(member.filename)
+            if pure.is_absolute() or ".." in pure.parts:
+                raise IngestionError("source.zip contains unsafe path")
+            target = destination / pure; target.parent.mkdir(parents=True, exist_ok=True)
             with archive.open(member) as source, target.open("xb") as output: shutil.copyfileobj(source, output)
 
 

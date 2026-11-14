@@ -1,0 +1,4 @@
+## 2024-05-18 - [Path Traversal in Archive Extraction (Zip Slip)]
+**Vulnerability:** A Zip-Slip path traversal vulnerability was present in the `_copy_zip` extraction logic of `ingestion.py`. While the archive was verified safely elsewhere (`_zip_info`), the actual extraction routine indiscriminately joined the destination folder with unverified path entries from the `infolist()` without stripping `..` or validating for absolute paths.
+**Learning:** Checking a zip file in one function (`_zip_info`) does not guarantee safety if the extraction logic in another function (`_copy_zip`) rereads the archive and extracts entries directly without validating them. An attacker could craft a zip that bypasses the first check or exploits the second step.
+**Prevention:** Always enforce path validation (e.g., checking `is_absolute()` and `".."` in `parts` of `PurePosixPath`) directly within the extraction loop immediately before the write operation to ensure defense in depth.
