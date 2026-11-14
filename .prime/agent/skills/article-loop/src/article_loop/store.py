@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import tempfile
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -247,7 +248,11 @@ class DurableStore:
                 State(event["state_from"])
         except (TypeError, ValueError) as error:
             raise IntegrityError("event state is invalid") from error
-        if event["event_hash"] != self._ehash(event):
+        try:
+            expected_hash = self._ehash(event)
+        except RecursionError as error:
+            raise IntegrityError("event JSON nesting is too deep") from error
+        if event["event_hash"] != expected_hash:
             raise IntegrityError("event hash mismatch")
 
     def read_events(self, run_id: str) -> list[dict[str, Any]]:
@@ -258,25 +263,37 @@ class DurableStore:
         the evidence and choose an explicit recovery action.
         """
         run_id = self._run_id(run_id)
-        path = self._log(run_id)
+        lexical_path = self.root / "state/events" / f"{run_id}.jsonl"
+        for component in (lexical_path, *lexical_path.parents):
+            if component == self.root:
+                break
+            if component.is_symlink():
+                raise StoreError("symlink in event log path")
+        path = self.root / "state" / "events" / f"{run_id}.jsonl"
+        resolved = path.resolve(strict=False)
+        if resolved != self.root and self.root not in resolved.parents:
+            raise StoreError("event log escapes validated root")
         if not path.exists():
             return []
+        if not stat.S_ISREG(path.lstat().st_mode):
+            raise StoreError("event log must be a regular file")
         events: list[dict[str, Any]] = []
-        for line in path.read_bytes().splitlines(keepends=True):
-            if not line.endswith(b"\n"):
-                raise IntegrityError("partial event line")
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError as error:
-                raise IntegrityError("invalid event JSON") from error
-            previous_hash = events[-1]["event_hash"] if events else None
-            self._validate_event(event, run_id, len(events), previous_hash)
-            self._validate_replay_transition(event, events)
-            if any(previous["event_id"] == event["event_id"] for previous in events):
-                raise IntegrityError("duplicate event_id in log")
-            if any(previous["idempotency_key"] == event["idempotency_key"] for previous in events):
-                raise IntegrityError("duplicate idempotency_key in log")
-            events.append(event)
+        with path.open("rb") as f:
+            for line in f:
+                if not line.endswith(b"\n"):
+                    raise IntegrityError("partial event line")
+                try:
+                    event = json.loads(line)
+                except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as error:
+                    raise IntegrityError("invalid event JSON") from error
+                previous_hash = events[-1]["event_hash"] if events else None
+                self._validate_event(event, run_id, len(events), previous_hash)
+                self._validate_replay_transition(event, events)
+                if any(previous["event_id"] == event["event_id"] for previous in events):
+                    raise IntegrityError("duplicate event_id in log")
+                if any(previous["idempotency_key"] == event["idempotency_key"] for previous in events):
+                    raise IntegrityError("duplicate idempotency_key in log")
+                events.append(event)
         return events
 
     def _validate_replay_transition(

@@ -18,6 +18,9 @@
 
 ## Reporting a Vulnerability
 
+Code-scanning coverage, reproducible fuzzing, and the OpenSSF badge follow-up
+are documented in [Security scanning](docs/security-scanning.md).
+
 If you discover a security vulnerability within LOOP-PRIMER:
 
 1. **Do not** create a public issue.

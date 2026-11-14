@@ -1,5 +1,18 @@
 # Decisões arquiteturais
 
+## ADR-046 — Resolução de executáveis locais dos gates
+
+**Data:** 2026-10-22. **Status:** Aceito para validação em PR.
+
+Os gates M7 passam argumentos em lista e não usam shell. A resolução pelo PATH
+ainda pode devolver um executável relativo ao diretório de trabalho; por isso
+`_run` aceita apenas nomes simples `[A-Za-z0-9_.+-]+` com correspondência
+integral e exige resultado absoluto de `shutil.which`. Nomes inválidos, comando
+ausente e resultado relativo retornam falha 127 antes de executar. PATH absoluto
+continua sendo responsabilidade do ambiente autorizado; esta regra não cria
+allowlist de diretórios nem autoriza Prime/modelo. Testes simulam subprocesso
+e também verificam a resolução de um executável em PATH relativo.
+
 ## ADR-045 — Permissões mínimas e análise estática na CI
 
 **Status:** Proposto para validação em PR. **Data:** 2026-09-27.
@@ -19,6 +32,43 @@ a análise de JavaScript exige revisão separada, sem job vermelho permanente.
 O lock `requirements-ci.txt` contém versões e hashes do conjunto completo de
 dependências da CI. A instalação exige hashes e não atualiza pip por comando
 solto. Alterações no lock exigem regeneração, revisão e validação da matriz.
+
+### Emenda: fuzzing e cobertura SAST — 2026-10-23
+
+Um job separado em Python 3.12 executa Atheris com corpus versionado, tempo,
+memória e tamanho de entrada limitados. O alvo usa somente arquivos fixos sob
+uma raiz temporária e os leitores locais M2/M6; identificadores externos são
+validados sem acessar os caminhos propostos. A dependência de fuzzing usa
+versão e hash fixos em lock separado, sem integrar o runtime científico.
+CodeQL utiliza também security-extended. A adoção dessas verificações não
+equivale ao selo CII/OpenSSF Best Practices: cadastro e autoavaliação com
+evidência continuam externos e precisam ser concluídos pelo mantenedor.
+
+## ADR-047 — Contenção e symlinks na leitura de journals
+
+**Data:** 2026-10-22. **Status:** Aceito para validação em PR.
+
+O replay M2/M6 passa a iterar linhas binárias sem materializar o arquivo
+completo em bytes e linhas. Preservam-se formato, ordem, hashes, erros de I/O
+e rejeição de registro sem newline. Antes da abertura, componentes do path
+não resolvido são verificados contra symlinks e o path absoluto deve começar
+pela raiz absoluta mais separador. A validação é local ao ponto de abertura
+para ser também observável pelo SAST. A coleção de eventos continua O(N).
+Essa checagem não promete proteção contra substituição concorrente de paths
+por um processo hostil com acesso de escrita à raiz; isso requer outra fronteira.
+
+### Emenda: rejeição de arquivos especiais e entradas malformadas — 2026-10-23
+
+A raiz M6 é verificada contra symlink antes de resolver seu caminho. Journals
+M2 usam `_log` após checar symlinks no caminho lexical; M6 resolve o path
+validado e confirma sua contenção antes de stat/exists/open. Isso mantém
+as operações de leitura vinculadas ao próprio path canônico validado. Journals
+existentes precisam ser arquivos regulares antes da leitura, recusando também
+FIFO e diretório. Encoding/nesting JSON inválido e event_hash M6 de tipo incorreto
+produzem o erro canônico do leitor. Testes e fuzzing preservam cadeia, replay,
+ausência de escrita no status e a contenção estabelecida acima; a limitação
+contra substituições concorrentes permanece explícita.
+
 
 ## ADR-044 — Equipe efêmera de manutenção e runtime Python canônico
 
