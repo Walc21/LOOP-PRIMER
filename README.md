@@ -18,6 +18,14 @@
 
 </div>
 
+> **MVP local demonstrado de ponta a ponta.** O LOOP-PRIMER recebeu um artigo
+> sintético, gerou e avaliou uma revisão, aplicou uma decisão e concluiu o
+> ciclo em `CYCLE_COMPLETE` com auditoria aprovada. Foram **12 chamadas reais
+> no Ollama**, **13 gates aprovados**, decisão **`REJECT`** e custo externo
+> zero em **2 min 32 s**. [Roteiro da demonstração](docs/demo-mvp-local.md) ·
+> [Auditoria](docs/evidence/local-qwen-mvp/audit.json) ·
+> [Registros e artefatos](docs/evidence/local-qwen-mvp/README.md)
+
 > **Estado estrutural:** os marcos M0–M14 estão implementados e validados
 > offline dentro de seus contratos. Isso não habilita por si só modelo, Prime
 > Agent, provedor, API paga ou ciclo científico real. Qualquer execução externa
@@ -26,6 +34,7 @@
 
 ## Sumário
 
+- [Demonstração real de ponta a ponta](#demonstração-real-de-ponta-a-ponta)
 - [Visão geral executiva](#visão-geral-executiva)
 - [O que o sistema faz — e o que ele não afirma fazer](#o-que-o-sistema-faz--e-o-que-ele-não-afirma-fazer)
 - [Mapa arquitetural](#mapa-arquitetural)
@@ -47,6 +56,27 @@
 - [Contribuição e limites para agentes](#contribuição-e-limites-para-agentes)
 
 ---
+
+## Demonstração real de ponta a ponta
+
+A execução de demonstração começou com um PDF sintético de uma página e sua
+fonte LaTeX. Cinco propostas do produtor formaram o candidato. Depois dos
+13 gates, o Qwen2.5 1.5B Instruct emitiu seis pareceres cegos nas duas ordens
+de apresentação e um meta-parecer. O sistema aplicou `REJECT` porque o
+critério matemático do júri ficou reprovado. A verificação aritmética local
+havia passado. A auditoria executada em um processo separado confirmou a
+decisão, os 12 recibos reconciliados e a preservação do PDF original.
+
+| Resultado observado | Evidência |
+|---|---|
+| Estado final `CYCLE_COMPLETE` e auditoria `pass` | [Resultado da run](docs/evidence/local-qwen-mvp/outcome.json) |
+| Artigo original e revisão | [PDF](docs/evidence/local-qwen-mvp/artigo-original.pdf), [fonte revisada](docs/evidence/local-qwen-mvp/revisado.tex) |
+| Decisão aplicada `REJECT` | [Decisão](docs/evidence/local-qwen-mvp/decision.json), [referência publicada](docs/evidence/local-qwen-mvp/rejection-reference.json) |
+| Histórico de quatro tentativas, com eventos, pareceres e recibos | [Registros para download](docs/evidence/local-qwen-mvp/registros-qwen.zip), [hashes SHA-256](docs/evidence/local-qwen-mvp/SHA256SUMS) |
+
+A demonstração estabelece que o fluxo completo funciona com inferência local
+para esse artigo sintético. A execução usa a mesma família de modelo nos três
+papéis de júri e registra essa diversidade reduzida.
 
 ## Visão geral executiva
 
@@ -92,7 +122,7 @@ as **M10 CLIs are operational** somente dentro das fronteiras fail-closed docume
 | Gates e júri | Treze gates M7, comparação cega, rubrica versionada, meta-review e veto matemático. | Que pontuação ou consenso substituem avaliação humana ou certificam verdade científica geral. |
 | Decisão e Pareto | Política fechada, `Decision` content-addressed, relação Pareto e finalização transacional. | Que o modelo escolhe livremente a ação ou que Pareto equivale a “melhor artigo” em sentido absoluto. |
 | Centro de Controle | Projeções locais, SSE, controles canônicos e editor tipado allowlisted. | Que a interface expõe shell, executa ação arbitrária ou habilita inferência ao ser aberta. |
-| Execução científica real | Infraestrutura de admissão e contenção potencialmente utilizável sob condições explícitas. | Que execução live está globalmente pronta, habilitada, concluída ou aprovada. |
+| Execução com inferência real | Um ciclo sintético local concluído e auditado, sob admissão e orçamento por tentativa. | Que qualquer manuscrito ou configuração nova terá o mesmo desfecho. |
 | Qualidade científica | Evidência estruturada, revisão por dimensões e rastreabilidade de decisões. | Que há garantia de correção, qualidade, novidade, publicação ou aceitação por pares. |
 
 ## Mapa arquitetural
@@ -734,6 +764,9 @@ LOOP-PRIMER/
 
 ## Estado atual de prontidão
 
+O MVP sintético tem uma execução com inferência real e entrega auditada. As
+seções abaixo descrevem a cobertura estrutural e os requisitos para novas runs.
+
 ### 1. Estruturalmente implementado e validado offline
 
 - máquina de estados, event log, recuperação e publicação durável;
@@ -787,6 +820,7 @@ ativos e a política de conteúdo remoto é `deny_remote`.
 | [Centro de Controle](docs/control-center.md) | Inicialização loopback, segurança, SSE, controles e configuração. |
 | [Contrato do smoke M6](docs/m6-official-smoke.md) | Escopo de uma tarefa, preflight, contexto e parada obrigatória. |
 | [Aceitação M13](docs/m13-system-acceptance.md) | Prova offline de composição e limites da auditoria de entrega. |
+| [Demonstração do MVP com Ollama](docs/demo-mvp-local.md) | Ciclo real concluído, decisão, artefatos e instruções de auditoria. |
 | [Plano vivo](PLANS.md) | Estado dos marcos, riscos e trabalho planejado. |
 | [Política para agentes](AGENTS.md) | Autoridade, segurança, escopo e protocolo de checkpoint. |
 

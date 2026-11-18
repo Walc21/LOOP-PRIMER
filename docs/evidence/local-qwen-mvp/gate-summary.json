@@ -1,0 +1,100 @@
+{
+  "correctness_math_pass": true,
+  "gates": [
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "contracts_state",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "source_provenance",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 111,
+      "exit_code": 0,
+      "gate_id": "latex_compile_safe",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 140,
+      "exit_code": 0,
+      "gate_id": "render",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 28,
+      "exit_code": 0,
+      "gate_id": "pdf_valid",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "references_labels",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "asset_inventory",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "claim_dependencies",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "math_critical_issues",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "forbidden_metatext",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "local_budget",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "manifest_integrity",
+      "passed": true,
+      "verifier_version": "m7.4"
+    },
+    {
+      "duration_ms": 0,
+      "exit_code": 0,
+      "gate_id": "correctness_math",
+      "passed": true,
+      "verifier_version": "m7.4"
+    }
+  ],
+  "overall_pass": true,
+  "report_hash": "b4fa08f45eef87c0588280ffbf8bf8fe64950841f3790ff5888c420d1948f9c3",
+  "report_id": "g-b4fa08f45eef87c0588280ffbf8bf8fe",
+  "source_sha256": "bee557474079b9c4263c5f3565e525b6b1716e41cb8446836c7fe9703ffd7c1e"
+}

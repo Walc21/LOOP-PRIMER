@@ -1,5 +1,8 @@
 # Evidência do MVP local com Qwen2.5
 
+A execução posterior completou o ciclo real com a ação `REJECT` e auditoria
+aprovada. Veja o [roteiro da demonstração](demo-mvp-local.md).
+
 A tentativa `attempt-a4a07eb4-c74f-4b19-b7d8-94a3e14df238` processou o artigo
 sintético de uma página. O produtor local registrou cinco propostas válidas,
 o candidato passou nos 13 gates e o Qwen2.5 1.5B Instruct produziu os seis
@@ -28,8 +31,8 @@ texto, de modo que a regra específica que falhou segue indeterminada.
 
 Após essa tentativa, o adaptador ganhou um prompt próprio para a meta-revisão
 e o log passou a identificar a categoria de rejeição. Os testes com dublês
-chegaram a `CYCLE_COMPLETE` com disposição auditada. A validação da
-meta-revisão com inferência real permanece pendente.
+chegaram a `CYCLE_COMPLETE` com disposição auditada. O roteiro acima apresenta
+o resultado posterior com inferência real.
 
 Veja o [plano do MVP](../PLANS.md#proposta-de-mvp-local--2026-11-17) e a
 [decisão sobre o júri](decisions.md#júri-pequeno-para-o-artigo-sintético).

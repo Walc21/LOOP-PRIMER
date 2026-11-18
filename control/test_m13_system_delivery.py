@@ -19,7 +19,7 @@ import yaml
 from control.m13_fixture import (
     ROOT, BETTER_TEX, SyntheticCycle, canonical, digest, fake_policy, remove_fixture,
 )
-from article_loop.delivery import DeliveryError, verify_delivery
+from article_loop.delivery import DeliveryError, verify_delivery, verify_extra_judgment_checkpoint
 from article_loop.diagnosis import DiagnosisError, diagnose_cycle, verify_published_diagnosis
 from article_loop.evaluation import EvaluationError, FakeMetaReviewerAdapter, evaluate_candidate
 from article_loop.finalization import FinalizationError, TransactionalFinalizer
@@ -141,6 +141,25 @@ class M13SystemTests(unittest.TestCase):
         self.assertNotEqual(f.decide()["action"], "PROMOTE")
         f.finalize()
         self.assertFalse((f.root / "versions/champion/v0001").exists())
+
+    def test_extra_judgment_checkpoint_is_auditable_but_is_not_a_delivery(self):
+        f = self.evaluated(winner="tie")
+        f.diagnose()
+        self.assertEqual(f.decide()["action"], "REQUEST_EXTRA_JUDGMENT")
+        receipt = f.finalize()
+        with self.assertRaisesRegex(DeliveryError, "supports PROMOTE"):
+            verify_delivery(f.root, f.run_id)
+        report = verify_extra_judgment_checkpoint(f.root, f.run_id)
+        self.assertEqual(report["scope"], "extra_judgment_checkpoint")
+        self.assertEqual(report["artifact"]["locator"], receipt["destination"])
+
+        request_path = f.root / receipt["destination"]
+        request = json.loads(request_path.read_text(encoding="utf-8"))
+        request["evaluation_id"] = "eval-unbound"
+        request_path.chmod(0o644)
+        request_path.write_bytes(canonical(request))
+        with self.assertRaisesRegex(DeliveryError, "extra judgment request differs"):
+            verify_extra_judgment_checkpoint(f.root, f.run_id)
 
     def test_meta_cannot_substitute_gate_identity(self):
         class WrongGate(FakeMetaReviewerAdapter):

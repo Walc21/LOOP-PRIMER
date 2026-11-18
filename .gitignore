@@ -5,6 +5,9 @@
 # Inputs and derived article artifacts (keep directory sentinels/examples)
 *.pdf
 *.zip
+# Public export of the synthetic, audited MVP demonstration.
+!docs/evidence/local-qwen-mvp/artigo-original.pdf
+!docs/evidence/local-qwen-mvp/registros-qwen.zip
 input/inbox/*
 artifacts/original/*
 artifacts/extracted/*

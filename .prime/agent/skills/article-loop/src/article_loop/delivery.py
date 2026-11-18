@@ -176,7 +176,17 @@ def _verify_routed(root, run_id, synthesis, record: CycleRecord):
 
 
 def verify_delivery(root: str | Path, run_id: str, *, cycle_id: int = 0) -> dict:
-    """Audit the latest completed cycle without invoking any model or publisher.
+    """Audit a scientific disposition without invoking any model or publisher."""
+    return _verify_completed_cycle(root, run_id, cycle_id=cycle_id, judgment_checkpoint=False)
+
+
+def verify_extra_judgment_checkpoint(root: str | Path, run_id: str, *, cycle_id: int = 0) -> dict:
+    """Audit an applied request for an extra judgment and its earlier evidence."""
+    return _verify_completed_cycle(root, run_id, cycle_id=cycle_id, judgment_checkpoint=True)
+
+
+def _verify_completed_cycle(root: str | Path, run_id: str, *, cycle_id: int, judgment_checkpoint: bool) -> dict:
+    """Revalidate a completed cycle and the effect of its decision.
 
     Inputs are bounded to 100000 entries / 1 GiB per managed tree. Missing
     evidence fails; there is no repair mode and no implicit execution.
@@ -197,6 +207,8 @@ def verify_delivery(root: str | Path, run_id: str, *, cycle_id: int = 0) -> dict
         _require(bool(events) and events[-1]["event_type"] == "FINALIZATION_APPLIED" and events[-1]["cycle_id"] == cycle_id, "delivery requires the latest applied finalization")
         input_identity, baseline = _verify_input(root, events, run_id)
         decision, decision_hash = finalizer._load_decision(run_id, cycle_id)
+        if judgment_checkpoint:
+            _require(decision["action"] == "REQUEST_EXTRA_JUDGMENT", "cycle did not request an extra judgment")
         record, manifest, candidate = finalizer._revalidate_evidence(decision, run_id, cycle_id)
         synthesis_path = _contained(root, manifest["merge_receipt_locator"], exists=True)
         pipe = M7Pipeline(root)
@@ -247,6 +259,17 @@ def verify_delivery(root: str | Path, run_id: str, *, cycle_id: int = 0) -> dict
             expected_reference = {"candidate_id": record.candidate_id, "candidate_content_hash": record.candidate_content_hash, "decision_id": decision["decision_id"], "action": decision["action"], "applied_at": receipt["applied_at"], "reason_code": decision.get("reason_code"), "scores": dict(record.dimension_scores_challenger), "correctness_math_pass": bool(record.correctness_math_pass), "pareto_relation": decision.get("pareto_relation")}
             _require(reference == expected_reference, "disposition reference differs")
             artifact = {"locator": destination + "/reference.json", "sha256": _hash(path), "content_hash": record.candidate_content_hash}
+        elif judgment_checkpoint:
+            expected = f"state/decisions/{run_id}/c{cycle_id:04d}/extra-judgment.json"
+            _require(destination == expected, "extra judgment locator differs")
+            path = _contained(root, expected, exists=True)
+            request = _read_canonical_json(path, "extra judgment request")
+            _require(request == {
+                "decision_id": decision["decision_id"],
+                "evaluation_id": record.evaluation_report["evaluation_id"],
+                "requested_at": receipt["applied_at"],
+            }, "extra judgment request differs from verified evidence")
+            artifact = {"locator": destination, "sha256": _hash(path)}
         else:
             # An operational checkpoint is not a scientific deliverable.
             raise DeliveryError("delivery audit supports PROMOTE, ARCHIVE_PARETO and REJECT dispositions")
@@ -254,6 +277,7 @@ def verify_delivery(root: str | Path, run_id: str, *, cycle_id: int = 0) -> dict
         _require(finalizer.store.read_events(run_id) == events, "event log changed during delivery audit")
         return {
             "schema_version": "1.0.0", "milestone": "M13", "status": "pass",
+            **({"scope": "extra_judgment_checkpoint"} if judgment_checkpoint else {}),
             "run_id": run_id, "cycle_id": cycle_id,
             "original_pdf": input_identity,
             "baseline": {

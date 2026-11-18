@@ -1,0 +1,95 @@
+{
+  "action": "REJECT",
+  "artifact": {
+    "content_hash": "16b6478e5630f94dd5dd19b819f68495b48153c6f396a6d87ae45178472982ec",
+    "locator": "versions/rejected/c-971f219d0b041b2a329855a94b3bfd91/reference.json",
+    "sha256": "2d28bd009ecd6d1db6af7926eb1fd283ced009da4aee4f2370a97dd2a88cf860"
+  },
+  "baseline": {
+    "candidate_id": "v0000",
+    "content_hash": "4bb14771b28d4d6fb909ab89efabe4d072fdea1e9f58e55b1331eb5f5c593e80"
+  },
+  "candidate": {
+    "candidate_id": "c-971f219d0b041b2a329855a94b3bfd91",
+    "content_hash": "16b6478e5630f94dd5dd19b819f68495b48153c6f396a6d87ae45178472982ec",
+    "manifest_sha256": "47b4e5d59797b31a0c5fe654285347247ed292fa5769cd411f0d26282b95d023"
+  },
+  "comparison_id": "cmp-696915a113d0ff6fd035d53a3558846a5dc494738e4a869b07ed4772371eae2f",
+  "cycle_id": 0,
+  "decision_id": "dec-0e44933a35479b5d5afab5288399f796",
+  "decision_sha256": "7ad43e9b2d17bef299fefc877590862f01acc315dc8d2e48281ff5b638829b92",
+  "department_packet_hashes": {
+    "S10": "a6b00cde475ed73e439ccddd1794f69be41982521e24d61c15ec886d7fbef437",
+    "S20": "d59ecfd68935a987fc36e5a3f6304e8aab286bd480f9e7a920cd960c2a0e44ab",
+    "S30": "6a7d78a5328ff8a0844be202ae322f4ae326cc4ba62cefcf4e97bcdfedc6d935",
+    "S40": "51f0146489d02bfdcf94ef5a2c316288da480ffda915d5af238a7916d61ce024",
+    "S50": "2fdfe1bec98cac2300ffeab13475ab115feee01b5f627a9b2b7fec5422f6c6d7"
+  },
+  "diagnosis_id": "diag-713e8a8f0e706b2091c2c3b31701d504841e10d7a3aec0c4d47de11db62cb5d9",
+  "evaluation_report_hash": "fe2587795770ebcc0392411cf8c6ddade6d84dcc20ec95d9a4588fcc1642cdb6",
+  "event_tip_sha256": "8e38eeee0ff5c7e5f136d0b0504d07e967525f86e8e2987ce8860817933d5935",
+  "gate_report_hash": "b4fa08f45eef87c0588280ffbf8bf8fe64950841f3790ff5888c420d1948f9c3",
+  "gate_report_id": "g-b4fa08f45eef87c0588280ffbf8bf8fe",
+  "meta_verdict_id": "meta-4b545671df105307a4ed0ad9575cfe872f893f18518d7972",
+  "milestone": "M13",
+  "original_pdf": {
+    "original_locator": "artifacts/original/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/document.pdf",
+    "sha256": "4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46",
+    "size_bytes": 22396,
+    "unchanged": true
+  },
+  "proposal_ids": [
+    "p-2937c7545f21188ecd40cb1e51e9ab7f94e9de067c8bab98",
+    "p-441e527b0f99239417940120b9d0064a3f3e03f496724469",
+    "p-686999d062d7b4d8267e6c940b974bf3174d5841918acbab",
+    "p-b34acbaeb59fc1e0d3491fb64175d9f60f12f4d523be76c4",
+    "p-c71840b482f7b60f599cc5a83e4b5f916da18ce9079c7c92"
+  ],
+  "receipt_id": "fin-55520f2194bcf577ea9032678c1a352a",
+  "receipt_sha256": "08f5b6b377b3dd0a27d206ff2dd0d4f7d5b05742c85e87c83c45c46ec37306a0",
+  "reproducibility": "semantic bindings and exact-byte replay; fresh-run timestamps and tool metadata may vary",
+  "routed_inference": {
+    "assurance": "reported_usage",
+    "calls": 12,
+    "receipt_ids": [
+      "ir-2d6b8d1be3a1c2e36ea1e1bd98d2a0674ddad2e11c11c9de",
+      "ir-36b870122c6a77af02e1798ed20ae79cd871e25557f998e4",
+      "ir-402e21f9fa5f1ccc7b1a4f4f27a5570ddb6b43b3539f28fd",
+      "ir-4239da7e6352d99ee8570dadb1f4a58c5e90222e5fe4cbb2",
+      "ir-425cd87dd95e31cb234569ad7a42bdfc931740fba9708bad",
+      "ir-46cc2dccd52a00cc90108f220ae9245dba5da40e74ee468d",
+      "ir-67cb9dd03dc469a7dd860e576e7d17c8124699d7a473529e",
+      "ir-94cccd195374a6e948646513e959ef0742880d1c0e74f060",
+      "ir-a77580f4418b3b7b16a1dcb52e6ffab5fec4e37a7ecf02b3",
+      "ir-bc8fc9bb1005fd5643fcbb2b82ee5161be2ffd2936260f0a",
+      "ir-cb7354ff02bc52578c790d2df77092f05f763586512cdd87",
+      "ir-d8c1477e754985835a43599250556f3a15f6cd0466a4995b"
+    ]
+  },
+  "run_id": "ingest-4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46",
+  "schema_version": "1.0.0",
+  "state": "CYCLE_COMPLETE",
+  "status": "pass",
+  "synthesis_hash": "d9a0ab0981bfe29b7bdd9a8741d921c27774c211dfff94d14946dc7daad3d0fc",
+  "system_path": [
+    "SOURCE_READY",
+    "CYCLE_PLANNED",
+    "DEPARTMENTS_RUNNING",
+    "SYNTHESIS_READY",
+    "CANDIDATE_BUILT",
+    "GATES_PASSED",
+    "EVALUATED",
+    "DIAGNOSED",
+    "DECIDED",
+    "COMMITTING",
+    "CYCLE_COMPLETE"
+  ],
+  "verdict_ids": [
+    "v-ceb862695278a1c020889811f674192d5e5bf3a6f4af8045",
+    "v-9aad4b8d2a61bf9149175fef70b734c9eafa74d0d8f58b7a",
+    "v-4d450591b8c374c68756ebdf6ff64096adde641117fb8ce8",
+    "v-a13288b1a588394c536b95edfdc1b84f80ae18dadec34116",
+    "v-0c63f7f0ba771cc2e70c20b69e0bb1ded001e18520586355",
+    "v-ded862b3e65b8b17d29fc3bcf7dc5891c067704c61d73273"
+  ]
+}

@@ -395,6 +395,24 @@ indica locators presentes nos resumos recebidos. O runtime acrescenta ao log
 uma categoria de rejeição fixa para distinguir JSON inválido, schema e
 contrato. A validação canônica e os recibos existentes permanecem intactos.
 
+A segunda tentativa com Qwen isolou a rejeição no schema da meta-revisão,
+com 61 tokens de saída e os seis pareceres válidos preservados. O formato
+enviado ao modelo na versão v8 pede `verdict`, `explanation` e um
+`evidence_locator` dos resumos recebidos. O veredito usa três valores
+mutuamente exclusivos. O adaptador deriva os booleanos e reaproveita a
+explicação dada pelo modelo como motivo quando há veto. O formato antigo
+continua disponível para requisições anteriores. A validação do schema
+canônico permanece obrigatória antes de publicar o meta-parecer.
+
+### Verificação do pedido de parecer extra
+
+A execução real com meta-parecer v8 válido registrou `CYCLE_COMPLETE` com
+`REQUEST_EXTRA_JUDGMENT`. Um comando de auditoria separado revalida a cadeia
+de evidências e o registro imutável do pedido. A auditoria de entrega M13
+continua aceitando apenas `PROMOTE`, `ARCHIVE_PARETO` e `REJECT`. A instrução
+do júri reforça o uso dos IDs neutros ao avaliar a prova e comparar os textos,
+sem mudar o teste de inversão, a rubrica ou a política de disposição.
+
 ### Recuperação de overflow antes da inferência — 2026-11-17
 
 O plano local inclui variantes 16k e 32k do mesmo modelo e as fixa no hash da
