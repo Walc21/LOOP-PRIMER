@@ -6,7 +6,7 @@
 [![Scorecard supply-chain security](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/scorecard.yml/badge.svg)](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/scorecard.yml)
 [![CodeQL](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/codeql.yml/badge.svg?event=push)](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/codeql.yml)
 [![CI Suite](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/ci.yml/badge.svg)](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/ci.yml)
-[![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
+[![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](.github/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Architecture: RLM](https://img.shields.io/badge/Architecture-RLM%20(Max%20Depth%202)-purple.svg)](docs/architecture.md)
 [![Agents: 21 Roles](https://img.shields.io/badge/Agents-21%20Specialized%20Roles-orange.svg)](docs/architecture.md#catálogo-exato-de-21-papéis)
@@ -343,8 +343,9 @@ flowchart TB
     VALIDATE["13. Validação de proposta<br/>schema e identidade M6"]
     GATES["14. Gates locais<br/>GateReport"]
     JURY["15. Júri e avaliação<br/>bundle cego e rubrica"]
-    DECIDE["16. Decision<br/>política fechada"]
-    FINAL["17. Persistência e finalização<br/>disposição atômica"]
+    DIAG["16. Diagnóstico<br/>evolução do ciclo"]
+    DECIDE["17. Decision<br/>política fechada"]
+    FINAL["18. Persistência e finalização<br/>disposição atômica"]
     BLOCK["BLOCKED<br/>sem ultrapassar a fronteira"]
     FAILED["FAILED_OUTPUT<br/>receipt e outcome preservados<br/>sem retry ou refund"]
     UNCERTAIN["UNCERTAIN<br/>preservar reserva e evidência"]
@@ -357,15 +358,16 @@ flowchart TB
     BACKEND -->|resultado válido| OUTPUT --> RECEIPT --> RECON --> VALIDATE
     BACKEND -->|resposta fora do schema| FAILED
     BACKEND -->|ambiguidade pós-envio| UNCERTAIN
-    VALIDATE --> GATES --> JURY --> DECIDE --> FINAL
-    GATES -->|falha| DECIDE
+    VALIDATE --> GATES
+    GATES -->|aprovados| JURY --> DIAG --> DECIDE --> FINAL
+    GATES -->|falha| BLOCK
 
     classDef local fill:#dbeafe,stroke:#1d4ed8,color:#111827;
     classDef auth fill:#fef3c7,stroke:#b45309,color:#111827;
     classDef infer fill:#ffedd5,stroke:#c2410c,color:#111827;
     classDef evidence fill:#dcfce7,stroke:#15803d,color:#111827;
     classDef blocked fill:#fee2e2,stroke:#b91c1c,color:#111827;
-    class SRC,M3,READY,SELECT,PLAN,ENVELOPE,ROUTE,RESERVE,ADMIT,RECON,VALIDATE,GATES,DECIDE,FINAL local;
+    class SRC,M3,READY,SELECT,PLAN,ENVELOPE,ROUTE,RESERVE,ADMIT,RECON,VALIDATE,GATES,DIAG,DECIDE,FINAL local;
     class AUTH,PREFLIGHT auth;
     class BACKEND,JURY infer;
     class OUTPUT,RECEIPT evidence;
@@ -376,10 +378,10 @@ No diagrama, azul indica processamento local determinístico; amarelo,
 fronteiras de autorização/admissão; laranja, inferência potencial; verde,
 evidência durável; e vermelho, parada conservadora.
 
-Uma falha em gates não é apagada: ela pode alimentar uma `Decision` de rejeição
-ou checkpoint permitido. Júri só ocorre depois dos gates requeridos; decisão só
-opera sobre evidência publicada; finalização não recompõe nem “melhora” o
-challenger já avaliado.
+Uma reprovação nos gates preserva o `GateReport` e bloqueia a progressão a
+partir de `CANDIDATE_BUILT`. Gates aprovados liberam o júri. A política usa a
+avaliação e o diagnóstico publicados para emitir a `Decision`, e o finalizador
+aplica a disposição aos mesmos bytes avaliados.
 
 ## Fonte científica e M3
 

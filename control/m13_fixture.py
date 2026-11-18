@@ -17,12 +17,13 @@ from article_loop import FakeRLMAdapter, Orchestrator, ingest
 from article_loop.activation import ActivationPlanner
 from article_loop.blackboard import Blackboard, Impact
 from article_loop.evaluation import FakeJurorAdapter, FakeMetaReviewerAdapter, evaluate_candidate
-from article_loop.gates import record_math_verification, run_gates
+from article_loop.gates import run_gates
 from article_loop.diagnosis import diagnose_cycle
 from article_loop.policy import decide
 from article_loop.finalization import TransactionalFinalizer
 from article_loop.store import DurableStore
 from article_loop.synthesis import M7Pipeline
+from scripts.synthetic_article import BASE_SOURCE, REVISED_SOURCE, verify_synthetic_candidate
 
 
 def canonical(value):
@@ -54,8 +55,8 @@ def synthetic_pdf():
     return data + f"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
 
 
-BASE_TEX = "\\documentclass{article}\n\\begin{document}\nIf $x=1$, then $x+x=2$. Proof: substitute.\\label{lemma}\n\\end{document}\n"
-BETTER_TEX = BASE_TEX.replace("Proof: substitute.", "Proof: substituting $x=1$ gives $x+x=1+1=2$.")
+BASE_TEX = BASE_SOURCE
+BETTER_TEX = REVISED_SOURCE
 DEPARTMENTS = ("S10", "S20", "S30", "S40", "S50")
 
 
@@ -196,10 +197,7 @@ class SyntheticCycle:
         self.pipe.record_candidate(self.store, self.manifest)
         self.candidate_dir = self.root / "versions/challengers" / self.manifest["candidate_id"]
         if approve_math:
-            # A known synthetic identity, not evidence for arbitrary mathematics.
-            if 1 + 1 != 2:
-                raise RuntimeError("synthetic arithmetic verifier failed")
-            record_math_verification(self.candidate_dir, claim_id=self.claim_id, proposal_id="p-W22", verifier_id="m13-synthetic-arithmetic", verifier_version="1.0.0", method="manual-proof-check", summary="For the synthetic fixture only: substitution x=1 gives 1+1=2.")
+            verify_synthetic_candidate(self.candidate_dir)
         return self.manifest
 
     def gates(self):

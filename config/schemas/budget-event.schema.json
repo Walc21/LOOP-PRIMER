@@ -14,7 +14,7 @@
     "schema_version": {"const": "1.0.0"},
     "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
     "idempotency_key": {"type": "string", "minLength": 1, "maxLength": 256},
-    "event_type": {"enum": ["AUTHORIZATION", "RESERVED", "ADMITTED", "RECONCILED", "RELEASED", "UNCERTAIN", "PROGRESS", "ALERT", "PAUSED", "RESUMED", "STOPPED"]},
+    "event_type": {"enum": ["AUTHORIZATION", "RESERVED", "ADMITTED", "RECONCILED", "RELEASED", "UNCERTAIN", "PROGRESS", "ALERT", "LIMITS_EXTENDED", "PAUSED", "RESUMED", "STOPPED"]},
     "run_id": {"type": "string", "minLength": 1, "maxLength": 128},
     "cycle_id": {"type": "integer", "minimum": 0},
     "department_id": {"type": ["string", "null"], "maxLength": 128},

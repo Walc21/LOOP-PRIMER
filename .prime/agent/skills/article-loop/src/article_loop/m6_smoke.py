@@ -56,6 +56,9 @@ REQUEST_BYTES_PER_TOKEN = 4
 REQUEST_TOKEN_SAFETY_MULTIPLIER = 2
 AUDITED_OLLAMA_VERSION = "0.33.2"
 AUDITED_OLLAMA_SHA256 = "20cca6e293efd5bbed05b26abba891df7dec75ac3edc640caa5f60eed95c6292"
+ADDITIONAL_OLLAMA_PROFILES = {
+    "8ff456e3f8c08b7fb211857c634d4df8e1a84cacaaf5b9e7b6bbf89e0f9ae8e0": "0.40.2",
+}
 MAX_OLLAMA_EXECUTABLE_BYTES = 128 * 1024 * 1024
 _OLLAMA_COMPATIBILITY_MARKERS = (
     b"/v1/chat/completions",
@@ -113,7 +116,9 @@ def audit_local_ollama_compatibility(
     except OSError as error:
         raise M6SmokeError("audited Ollama executable is unreadable") from error
     executable_sha = sha256(binary)
-    if executable_sha != AUDITED_OLLAMA_SHA256:
+    version = (AUDITED_OLLAMA_VERSION if executable_sha == AUDITED_OLLAMA_SHA256
+               else ADDITIONAL_OLLAMA_PROFILES.get(executable_sha))
+    if version is None:
         raise M6SmokeError("installed Ollama binary differs from the offline audited profile")
     missing = [marker.decode("ascii") for marker in _OLLAMA_COMPATIBILITY_MARKERS if marker not in binary]
     if missing:
@@ -124,7 +129,7 @@ def audit_local_ollama_compatibility(
         "status": "supported_verified_offline",
         "implementation": "ollama",
         "version_binding": "pinned_by_executable_sha256",
-        "implementation_version": AUDITED_OLLAMA_VERSION,
+        "implementation_version": version,
         "executable_sha256": executable_sha,
         "executable_size_bytes": len(binary),
         "dialect": dialect,

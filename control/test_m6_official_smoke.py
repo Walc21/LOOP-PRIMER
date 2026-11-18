@@ -1162,6 +1162,13 @@ class OllamaCompatibilityAuditTests(unittest.TestCase):
             self.assertEqual("supported_verified_offline", proof["status"])
             self.assertFalse(proof["server_contacted"])
             self.assertEqual(digest, proof["executable_sha256"])
+            with mock.patch.object(smoke_module, "ADDITIONAL_OLLAMA_PROFILES", {digest: "fixture-new"}):
+                additional = smoke_module.audit_local_ollama_compatibility(
+                    "http://127.0.0.1:11434/v1/chat/completions",
+                    OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+                    executable=executable,
+                )
+            self.assertEqual("fixture-new", additional["implementation_version"])
 
     def test_missing_or_changed_offline_proof_fails_closed(self) -> None:
         import article_loop.m6_smoke as smoke_module

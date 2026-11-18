@@ -9,7 +9,7 @@ reconciliation or non-admission.  Unknown outcomes stay ``uncertain``.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timedelta, timezone
 import fcntl
 import hashlib
@@ -66,9 +66,12 @@ _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}\Z")
 _SHA = re.compile(r"[a-f0-9]{64}\Z")
 _EVENT_TYPES = frozenset({
     "AUTHORIZATION", "RESERVED", "ADMITTED", "RECONCILED", "RELEASED",
-    "UNCERTAIN", "PROGRESS", "ALERT", "PAUSED", "RESUMED", "STOPPED",
+    "UNCERTAIN", "PROGRESS", "ALERT", "LIMITS_EXTENDED", "PAUSED", "RESUMED", "STOPPED",
 })
 _ALERT_THRESHOLDS = (0.50, 0.80, 0.95, 1.00)
+MAX_EXPLICIT_CALL_EXTENSIONS = 7
+MAX_EXPLICIT_WALL_EXTENSIONS = 2
+MAX_EXPLICIT_WALL_EXTENSION_SECONDS = 3600
 
 
 class BudgetError(RuntimeError):
@@ -354,10 +357,12 @@ class BudgetLedger:
             raise BudgetError("max_integer is invalid")
         self.max_integer = max_integer
         self.limits = limits or BudgetLimits()
+        self._base_limits = self.limits
         for name, value in asdict(self.limits).items():
             if value is not None and value > self.max_integer:
                 raise BudgetError(f"{name} exceeds max_integer")
         self._limits_hash = _hash(_canonical(asdict(self.limits)))
+        self._base_limits_hash = self._limits_hash
         self.profile = _safe_id(profile, "profile", allow_none=True)
         if config_hash is None:
             config_hash = _hash(_canonical({"limits": asdict(self.limits), "profile": self.profile}))
@@ -405,35 +410,113 @@ class BudgetLedger:
             self._ensure_dir(self.budget_dir)
             self._ensure_dir(self.lock_dir)
         existing = self.read_events() if self.ledger_path.exists() else []
+        self._restore_limit_extensions(existing)
         self._resume_elapsed = float(existing[-1]["monotonic_elapsed_seconds"]) if existing else 0.0
-        persisted_deadlines = [
-            item["payload"].get("deadline_at")
-            for item in existing
-            if isinstance(item.get("payload"), Mapping) and item["payload"].get("deadline_at")
-        ]
-        if persisted_deadlines:
-            deadlines = [_parse_datetime(value) for value in persisted_deadlines]
-            if self.deadline_at is not None:
-                deadlines.append(_parse_datetime(self.deadline_at))
-            self.deadline_at = min(deadlines).isoformat().replace("+00:00", "Z")
-        persisted_reservations = [
-            item["payload"] for item in existing
-            if item.get("event_type") == "RESERVED" and isinstance(item.get("payload"), Mapping)
-        ]
-        if persisted_reservations:
-            persisted = persisted_reservations[0]
-            expected_binding = {
-                "budget_config_hash": self.config_hash,
-                "budget_limits_hash": self._limits_hash,
-                "budget_max_integer": self.max_integer,
-                "budget_currency": self.currency,
-            }
-            if self.max_run_cost_microunits is not None:
-                expected_binding["budget_max_run_cost_microunits"] = self.max_run_cost_microunits
-            actual_binding = {key: persisted.get(key) for key in expected_binding}
-            if actual_binding != expected_binding:
-                raise BudgetIntegrityError("run budget binding cannot be enlarged or changed")
         self.logger = logger or StructuredLogger(self.root, self.run_id, read_only=self.read_only)
+
+    def _restore_limit_extensions(self, events: Sequence[Mapping[str, Any]]) -> None:
+        """Replay explicitly approved one-call extensions without rewriting prior bindings."""
+        limits = self._base_limits
+        limits_hash = self._base_limits_hash
+        reservation_states: dict[str, str] = {}
+        extension_count = 0
+        wall_extension_count = 0
+        authorization_seen = False
+        active_deadline = self.deadline_at
+        for event in events:
+            event_type = event["event_type"]
+            payload = event["payload"]
+            reservation_id = payload.get("reservation_id")
+            if event_type == "AUTHORIZATION":
+                authorization_seen = True
+            elif event_type == "RESERVED":
+                expected = {
+                    "budget_config_hash": self.config_hash,
+                    "budget_limits_hash": limits_hash,
+                    "budget_max_integer": self.max_integer,
+                    "budget_currency": self.currency,
+                }
+                if self.max_run_cost_microunits is not None:
+                    expected["budget_max_run_cost_microunits"] = self.max_run_cost_microunits
+                if any(payload.get(key) != value for key, value in expected.items()):
+                    raise BudgetIntegrityError("reservation budget binding differs from its active limits")
+                event_deadline = payload.get("deadline_at")
+                if active_deadline is None:
+                    active_deadline = event_deadline
+                elif event_deadline != active_deadline:
+                    if (not isinstance(event_deadline, str)
+                            or _parse_datetime(event_deadline) > _parse_datetime(active_deadline)):
+                        raise BudgetIntegrityError("reservation deadline differs from the active deadline")
+                    active_deadline = event_deadline
+                reservation_states[reservation_id] = "RESERVED"
+            elif event_type in {"ADMITTED", "RECONCILED", "RELEASED", "UNCERTAIN"}:
+                if reservation_id not in reservation_states:
+                    raise BudgetIntegrityError("reservation lifecycle has no reserved binding")
+                if event_type == "ADMITTED":
+                    reservation_states[reservation_id] = "ADMITTED"
+                elif event_type in {"RECONCILED", "RELEASED"}:
+                    reservation_states[reservation_id] = event_type
+                else:
+                    reservation_states[reservation_id] = "UNCERTAIN"
+            elif event_type == "LIMITS_EXTENDED":
+                if (not authorization_seen or any(state in {"RESERVED", "ADMITTED", "UNCERTAIN"}
+                                                   for state in reservation_states.values())):
+                    raise BudgetIntegrityError("limits may only extend after authorization and closed reservations")
+                if extension_count >= MAX_EXPLICIT_CALL_EXTENSIONS:
+                    raise BudgetIntegrityError("too many explicit call-limit extensions")
+                required = {"previous_limits_hash", "max_calls", "new_limits_hash", "approval_reference"}
+                runtime_fields = {"max_wall_time_seconds", "previous_deadline_at", "deadline_at"}
+                runtime_extension = runtime_fields <= set(payload)
+                if (set(payload) != (required | runtime_fields if runtime_extension else required)
+                        or payload.get("previous_limits_hash") != limits_hash):
+                    raise BudgetIntegrityError("call-limit extension binding is invalid")
+                reference = payload.get("approval_reference")
+                if (not isinstance(reference, str) or not reference.startswith("human-authorized-recovery:")
+                        or len(reference) > 256):
+                    raise BudgetIntegrityError("call-limit extension lacks recovery authorization")
+                try:
+                    new_calls = _integer(payload["max_calls"], "extended max_calls")
+                    new_wall = limits.max_wall_time_seconds
+                    if runtime_extension:
+                        if (wall_extension_count >= MAX_EXPLICIT_WALL_EXTENSIONS or new_wall is None
+                                or self._base_limits.max_wall_time_seconds is None
+                                or new_wall > self._base_limits.max_wall_time_seconds
+                                + MAX_EXPLICIT_WALL_EXTENSIONS * MAX_EXPLICIT_WALL_EXTENSION_SECONDS):
+                            raise BudgetIntegrityError("runtime extension is unavailable or already used")
+                        new_wall = _integer(payload["max_wall_time_seconds"], "extended max_wall_time_seconds")
+                        if new_wall != limits.max_wall_time_seconds + MAX_EXPLICIT_WALL_EXTENSION_SECONDS:
+                            raise BudgetIntegrityError("runtime extension must add exactly one bounded hour")
+                    new_limits = replace(limits, max_calls=new_calls, max_wall_time_seconds=new_wall)
+                except (BudgetError, TypeError) as error:
+                    raise BudgetIntegrityError("extended budget limits are invalid") from error
+                old_values, new_values = asdict(limits), asdict(new_limits)
+                old_calls, new_calls = limits.max_calls, new_limits.max_calls
+                old_values["max_calls"] = new_values["max_calls"]
+                if runtime_extension:
+                    old_values["max_wall_time_seconds"] = new_values["max_wall_time_seconds"]
+                if (old_values != new_values or old_calls is None or new_calls != old_calls + 1
+                        or self._base_limits.max_calls is None
+                        or new_calls > self._base_limits.max_calls + MAX_EXPLICIT_CALL_EXTENSIONS):
+                    raise BudgetIntegrityError("call-limit extension changed more than one call")
+                new_hash = _hash(_canonical(asdict(new_limits)))
+                if payload.get("new_limits_hash") != new_hash:
+                    raise BudgetIntegrityError("extended limits hash differs")
+                if runtime_extension:
+                    previous_deadline = payload.get("previous_deadline_at")
+                    next_deadline = payload.get("deadline_at")
+                    if active_deadline is None or previous_deadline != active_deadline:
+                        raise BudgetIntegrityError("runtime extension deadline binding differs")
+                    expected_deadline = (_parse_datetime(active_deadline)
+                                         + timedelta(seconds=MAX_EXPLICIT_WALL_EXTENSION_SECONDS))
+                    if _parse_datetime(next_deadline) != expected_deadline:
+                        raise BudgetIntegrityError("runtime extension deadline is not exactly one bounded hour")
+                    active_deadline = expected_deadline.isoformat().replace("+00:00", "Z")
+                    wall_extension_count += 1
+                limits, limits_hash = new_limits, new_hash
+                extension_count += 1
+        self.limits = limits
+        self._limits_hash = limits_hash
+        self.deadline_at = active_deadline
 
     @classmethod
     def from_project(
@@ -713,6 +796,7 @@ class BudgetLedger:
         alerts: list[dict[str, Any]] = []
         authorization: dict[str, Any] | None = None
         progress: list[dict[str, Any]] = []
+        limit_extensions: list[dict[str, Any]] = []
         state = "RUNNING"
         for event in events:
             payload = event["payload"]
@@ -755,6 +839,8 @@ class BudgetLedger:
                     item.update({**payload, "status": "UNCERTAIN"})
             elif event["event_type"] == "ALERT":
                 alerts.append(dict(payload))
+            elif event["event_type"] == "LIMITS_EXTENDED":
+                limit_extensions.append(dict(payload))
             elif event["event_type"] == "PROGRESS":
                 progress.append(dict(payload))
             elif event["event_type"] == "PAUSED":
@@ -775,6 +861,7 @@ class BudgetLedger:
             "alerts": alerts,
             "authorization": authorization,
             "progress": progress,
+            "limit_extensions": limit_extensions,
             "state": state,
         }
 
@@ -827,8 +914,6 @@ class BudgetLedger:
             raise BudgetStateError("unresolved uncertain reservation blocks new reservations")
         confirmed = [item for item in reservations if item.get("status") == "RECONCILED"]
         open_items = [item for item in reservations if self._open(item)]
-        if any(item.get("status") == "RECONCILED" and item.get("usage_tokens", 0) > item.get("estimate_tokens", 0) for item in reservations):
-            raise BudgetExceeded("a prior call exceeded its estimate; new reservations are blocked")
         if any(
             item.get("status") == "RECONCILED"
             and int(item.get("cost_microunits", 0) or 0) > int(item.get("estimated_cost_microunits", 0) or 0)
@@ -990,6 +1075,118 @@ class BudgetLedger:
             ):
                 raise BudgetStateError("unresolved uncertain reservation blocks new inference")
 
+    def extend_call_limit(self, *, approval_reference: str) -> dict[str, Any]:
+        """Append one explicitly approved recovery call without changing other ceilings."""
+        if self.read_only:
+            raise BudgetError("read-only ledger cannot extend limits")
+        if (not isinstance(approval_reference, str)
+                or not approval_reference.startswith("human-authorized-recovery:")
+                or len(approval_reference) > 256):
+            raise BudgetAuthorizationError("call-limit extension requires recovery authorization")
+        with self._lock():
+            state = self._state_locked()
+            if state.get("authorization") is None:
+                raise BudgetAuthorizationError("call-limit extension requires prior run authorization")
+            if state["state"] in {"PAUSED", "STOPPED"}:
+                raise BudgetStateError(f"run is {state['state'].lower()}")
+            self._check_deadline()
+            stop = self.root / "control" / "STOP"
+            if stop.exists() or stop.is_symlink():
+                raise BudgetStateError("control/STOP blocks call-limit extension")
+            if any(self._open(item) for item in state["reservations"].values()):
+                raise BudgetStateError("call-limit extension requires all reservations to be reconciled or released")
+            if len(state["limit_extensions"]) >= MAX_EXPLICIT_CALL_EXTENSIONS:
+                raise BudgetExceeded("explicit recovery-call extension ceiling reached")
+            if self.limits.max_calls is None or self._base_limits.max_calls is None:
+                raise BudgetError("only a finite call limit can be extended")
+            if self.limits.max_calls >= self._base_limits.max_calls + MAX_EXPLICIT_CALL_EXTENSIONS:
+                raise BudgetExceeded("explicit recovery-call extension ceiling reached")
+            new_limits = replace(self.limits, max_calls=self.limits.max_calls + 1)
+            new_hash = _hash(_canonical(asdict(new_limits)))
+            payload = {
+                "previous_limits_hash": self._limits_hash,
+                "max_calls": new_limits.max_calls,
+                "new_limits_hash": new_hash,
+                "approval_reference": approval_reference,
+            }
+            event = self._append_locked(
+                "LIMITS_EXTENDED",
+                idempotency_key=f"limits-extension:{self.run_id}:{new_hash}",
+                payload=payload,
+            )
+            self.limits = new_limits
+            self._limits_hash = new_hash
+            return event
+
+    def extend_recovery_runtime(self, *, approval_reference: str) -> dict[str, Any]:
+        """Append one bounded local recovery hour and its required call slot.
+
+        This explicit recovery-only extension may be recorded after the prior
+        deadline, but only with closed reservations and prior run authorization.
+        Token, cost, endpoint, provider, concurrency and retry ceilings remain fixed.
+        """
+        if self.read_only:
+            raise BudgetError("read-only ledger cannot extend limits")
+        if (not isinstance(approval_reference, str)
+                or not approval_reference.startswith("human-authorized-recovery:")
+                or len(approval_reference) > 256):
+            raise BudgetAuthorizationError("runtime extension requires recovery authorization")
+        with self._lock():
+            state = self._state_locked()
+            if state.get("authorization") is None:
+                raise BudgetAuthorizationError("runtime extension requires prior run authorization")
+            if state["state"] in {"PAUSED", "STOPPED"}:
+                raise BudgetStateError(f"run is {state['state'].lower()}")
+            stop = self.root / "control" / "STOP"
+            if stop.exists() or stop.is_symlink():
+                raise BudgetStateError("control/STOP blocks runtime extension")
+            if any(self._open(item) for item in state["reservations"].values()):
+                raise BudgetStateError("runtime extension requires reconciled or released reservations")
+            if len(state["limit_extensions"]) >= MAX_EXPLICIT_CALL_EXTENSIONS:
+                raise BudgetExceeded("explicit recovery-call extension ceiling reached")
+            if self.limits.max_calls is None or self._base_limits.max_calls is None:
+                raise BudgetError("only a finite call limit can be extended")
+            if self.limits.max_calls >= self._base_limits.max_calls + MAX_EXPLICIT_CALL_EXTENSIONS:
+                raise BudgetExceeded("explicit recovery-call extension ceiling reached")
+            if self.limits.max_wall_time_seconds is None or self._base_limits.max_wall_time_seconds is None:
+                raise BudgetError("only a finite wall-time limit can be extended")
+            events = self.read_events()
+            wall_extension_count = sum(
+                1 for event in events if event["event_type"] == "LIMITS_EXTENDED"
+                and "deadline_at" in event["payload"]
+            )
+            if wall_extension_count >= MAX_EXPLICIT_WALL_EXTENSIONS:
+                raise BudgetExceeded("the bounded recovery runtime extension ceiling is exhausted")
+            if self.deadline_at is None:
+                raise BudgetError("runtime extension requires an existing absolute deadline")
+            new_limits = replace(
+                self.limits,
+                max_calls=self.limits.max_calls + 1,
+                max_wall_time_seconds=self.limits.max_wall_time_seconds + MAX_EXPLICIT_WALL_EXTENSION_SECONDS,
+            )
+            next_deadline = (_parse_datetime(self.deadline_at)
+                             + timedelta(seconds=MAX_EXPLICIT_WALL_EXTENSION_SECONDS))
+            next_deadline_text = next_deadline.isoformat().replace("+00:00", "Z")
+            new_hash = _hash(_canonical(asdict(new_limits)))
+            payload = {
+                "previous_limits_hash": self._limits_hash,
+                "max_calls": new_limits.max_calls,
+                "max_wall_time_seconds": new_limits.max_wall_time_seconds,
+                "previous_deadline_at": self.deadline_at,
+                "deadline_at": next_deadline_text,
+                "new_limits_hash": new_hash,
+                "approval_reference": approval_reference,
+            }
+            event = self._append_locked(
+                "LIMITS_EXTENDED",
+                idempotency_key=f"limits-extension:{self.run_id}:{new_hash}",
+                payload=payload,
+            )
+            self.limits = new_limits
+            self._limits_hash = new_hash
+            self.deadline_at = next_deadline_text
+            return event
+
     def reserve(
         self,
         call_id: str,
@@ -1069,9 +1266,11 @@ class BudgetLedger:
                 if isinstance(item.get("deadline_at"), str)
             ]
             deadline_values = [
-                value for value in (self.deadline_at, deadline_at, *persisted_deadlines)
+                value for value in (self.deadline_at, deadline_at)
                 if value is not None
             ]
+            if not deadline_values:
+                deadline_values.extend(persisted_deadlines)
             effective_deadline_at = (
                 min(_parse_datetime(value) for value in deadline_values)
                 .isoformat().replace("+00:00", "Z")
@@ -1524,6 +1723,7 @@ class BudgetLedger:
             "children": sum(int(item.get("children", 0) or 0) for item in open_items),
             "calls": len(reservations),
             "retries": sum(int(item.get("attempt", 0) or 0) for item in reservations),
+            "limit_extensions": len(state["limit_extensions"]),
             "last_improvement": last_improvement,
             "diagnosis": diagnosis,
             "next_action": next_action,

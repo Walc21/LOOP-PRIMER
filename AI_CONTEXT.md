@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4`
-- Baseline da última sessão: `070df633e5aee8e486c23c0d7a4698de06f2158cb65a12e608d7f1afc362a9e4`
-- Inventário: 649 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (352577 bytes; SHA-256 `79c061d475f7fa8f`).
+- Fingerprint atual das fontes: `d97ed743ef8283ebcf0dac917d206278bdd30e34a078633901512a06a5d4128f`
+- Baseline da última sessão: `d97ed743ef8283ebcf0dac917d206278bdd30e34a078633901512a06a5d4128f`
+- Inventário: 325 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (472042 bytes; SHA-256 `92f77f61c4560adb`).
 
 ## Estado e limites atuais
 
@@ -30,22 +30,21 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 62.
-- `gitignore-m6-runtime-evidence-20260908` — Ajustado o Git para preservar localmente, sem exibir como alteracao, os manifestos de selecao M6 e as evidencias create-only de smokes.
-  - mudança: Adicionadas regras .gitignore para runtime/m6-context-selections e runtime/m6-official-smokes; nenhum artefato existente foi movido, removido ou reescrito.
-  - decisão: Evidencia operacional M6 permanece local e nao versionada, mas deixa de tornar a arvore Git visualmente suja.
-  - risco: Os artefatos ignorados permanecem dependentes do disco local e nao sao backup ou publicacao Git.
-  - próximo: Revisar e, se desejado, publicar esta regra Git isolada em commit e PR.
-- `session-8247cc84d3866873df82` — Selecao M6 por segmentos canonicos de linhas implementada offline
-  - mudança: Adicionado manifesto 2.0.0 create-only com segmentos inclusivos vinculados ao normalized.json, hashes por unidade e agregado, preservando leitura do manifesto 1.0.0 de pagina inteira.
-  - decisão: ADR-043 preserva 1.0.0 sem migracao e adota 2.0.0 apenas para segmentos numericos explicitos, ordenados e nao sobrepostos.
-  - risco: Segmentos nao escolhem relevancia cientifica e nenhuma execucao live foi autorizada; runtime e evidencias existentes permaneceram inalterados.
-  - próximo: Revisao humana do diff local antes de qualquer commit ou futura selecao/runtime autorizados.
-- `session-00fbbe2e74f802a4fd2d` — Auditoria multiagente do código, saneamento de partes mortas e unificação do runtime Python concluídos offline.
-  - mudança: Criada equipe project-local maint-* efêmera com coordenador, escritor único e verificador read-only.
-  - decisão: Preservado o texto histórico do ADR-038 e adicionada emenda atual vinculada ao ADR-044.
-  - risco: Prime live, modelos, endpoints, ciclo científico e CI remota não foram iniciados.
-  - próximo: Revisão humana do diff e commit separado, se autorizado.
+- Sessões estruturadas registradas: 74.
+- `session-a73eeaf3ea5f9565cdcd` — Qwen2.5 1.5B Instruct instalado no Ollama e vinculado ao júri e à meta-revisão da próxima tentativa sintética.
+  - mudança: Aliases loop-primer-juror-qwen25:16k e loop-primer-juror-qwen25:32k compartilham o peso Q4_K_M do manifesto público 65ec06548149.
+  - decisão: Trocar o Spark pelo Qwen no plano isolado attempt-a4a07eb4-c74f-4b19-b7d8-94a3e14df238. As janelas de 16.384 e 32.768 preservam o roteamento por tamanho. O produtor e os hashes do artigo foram preservados.
+  - risco: A tentativa está preparada. A qualidade dos pareceres JSON e a conclusão de M8–M10 ainda não foram verificadas com o novo modelo.
+  - próximo: Quando solicitada a execução nova, usar o plano preparado e o modo --synthetic-article, com autorização e prazo UTC vinculados à tentativa.
+- `session-c2e7be4b160e5e30233e` — Primeira run real com o Qwen chegou aos seis pareceres válidos e parou na meta-revisão por schema_invalid.
+  - mudança: Prompt próprio para a meta-revisão com booleans, nulidade, veto e referências aos resumos. O log registra uma categoria fixa para rejeições sem persistir a resposta inválida.
+  - decisão: Manter os doze recibos reconciliados da tentativa a4a07eb4 e preparar o plano isolado attempt-1a666fd5-443d-4d9c-9ddc-898e40f25c7b para validar a correção.
+  - risco: A resposta bruta rejeitada não foi persistida. A regra específica não pode ser identificada pelo recibo existente. Sem meta-veredito, decisão aplicada nem auditoria real.
+  - próximo: Validar o prompt específico da meta-revisão no plano preparado, após autorização para a nova execução local.
+- `session-8fc7ec68b3fd37d10ace` — Preparação do PR do MVP local com evidência da execução real do júri Qwen.
+  - mudança: docs/local-qwen-mvp-run.md registra os 13 gates, seis pareceres válidos, a falha da meta-revisão e os hashes dos artefatos locais.
+  - risco: A execução real não atingiu CYCLE_COMPLETE. A correção do prompt da meta-revisão foi verificada offline e ainda precisa de inferência real.
+  - próximo: Revisar o PR e validar a meta-revisão com o plano de execução preparado.
 
 ## Roteamento obrigatório por escopo
 

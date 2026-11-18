@@ -26,6 +26,7 @@ from article_loop.budget import (  # noqa: E402
     BudgetIntegrityError,
     BudgetLedger,
     BudgetLimits,
+    RunAuthorization,
     BudgetStateError,
     LimitedSupervisor,
     ManualClock,
@@ -152,14 +153,78 @@ class M12LedgerTests(unittest.TestCase):
         with self.assertRaises(BudgetIdempotencyError):
             ledger.reconcile(reservation["reservation_id"], receipt_id="receipt-2", input_tokens=1, output_tokens=2, cache_tokens=0, usage_available=True)
 
-    def test_over_estimate_blocks_new_admission(self):
+    def test_known_over_estimate_uses_reconciled_actual_usage_for_next_admission(self):
         ledger = self.ledger(limits={"total_tokens": 100})
         reservation = ledger.reserve("call-1", 10)
         ledger.admit(reservation["reservation_id"], "receipt-1")
         ledger.reconcile(reservation["reservation_id"], receipt_id="receipt-1", input_tokens=11, output_tokens=0, cache_tokens=0, usage_available=True)
         self.assertTrue(ledger.status()["reservations"][0]["over_estimate"])
+        next_reservation = ledger.reserve("call-2", 1)
+        self.assertEqual(next_reservation["status"], "reserved")
         with self.assertRaises(BudgetExceeded):
-            ledger.reserve("call-2", 1)
+            ledger.reserve("call-3", 89)
+
+    def test_authorized_call_limit_extension_is_append_only_and_replayed(self):
+        ledger = self.ledger(limits={"max_calls": 2})
+        ledger.authorize(RunAuthorization(
+            run_id="run-1", profile=None, config_hash=ledger.config_hash,
+            provider=None, model=None, token_limit=100,
+            approved_at=self.clock.now_utc(), approval_reference="human-authorized:run-1",
+        ))
+        for index in (1, 2):
+            reservation = ledger.reserve(f"call-{index}", 1)
+            ledger.admit(reservation["reservation_id"], f"receipt-{index}")
+            ledger.reconcile(reservation["reservation_id"], receipt_id=f"receipt-{index}",
+                             input_tokens=1, output_tokens=0, cache_tokens=0, usage_available=True)
+        extension = ledger.extend_call_limit(approval_reference="human-authorized-recovery:run-1")
+        self.assertEqual(extension["event_type"], "LIMITS_EXTENDED")
+        self.assertEqual(ledger.status(read_only=True)["limits"]["max_calls"], 3)
+        resumed = self.ledger(limits={"max_calls": 2})
+        self.assertEqual(resumed.status(read_only=True)["limits"]["max_calls"], 3)
+        third = resumed.reserve("call-3", 1)
+        self.assertEqual(third["status"], "reserved")
+
+    def test_call_limit_extension_rejects_open_reservation(self):
+        ledger = self.ledger(limits={"max_calls": 2})
+        ledger.authorize(RunAuthorization(
+            run_id="run-1", profile=None, config_hash=ledger.config_hash,
+            provider=None, model=None, token_limit=100,
+            approved_at=self.clock.now_utc(), approval_reference="human-authorized:run-1",
+        ))
+        ledger.reserve("call-1", 1)
+        with self.assertRaises(BudgetStateError):
+            ledger.extend_call_limit(approval_reference="human-authorized-recovery:run-1")
+
+    def test_authorized_recovery_runtime_extension_is_bounded_and_replayed(self):
+        original_deadline = "2026-01-01T00:00:05Z"
+        ledger = self.ledger(deadline_at=original_deadline)
+        ledger.authorize(RunAuthorization(
+            run_id="run-1", profile=None, config_hash=ledger.config_hash,
+            provider=None, model=None, token_limit=100,
+            approved_at=self.clock.now_utc(), approval_reference="human-authorized:run-1",
+        ))
+        self.clock.advance(seconds=6)
+        event = ledger.extend_recovery_runtime(
+            approval_reference="human-authorized-recovery:run-1",
+        )
+        self.assertEqual(event["payload"]["deadline_at"], "2026-01-01T01:00:05Z")
+        self.assertEqual(ledger.limits.max_wall_time_seconds, 3700)
+        self.assertEqual(ledger.limits.max_calls, 11)
+        second = ledger.extend_recovery_runtime(
+            approval_reference="human-authorized-recovery:run-1",
+        )
+        self.assertEqual(second["payload"]["deadline_at"], "2026-01-01T02:00:05Z")
+        self.assertEqual(ledger.limits.max_wall_time_seconds, 7300)
+        self.assertEqual(ledger.limits.max_calls, 12)
+        with self.assertRaises(BudgetExceeded):
+            ledger.extend_recovery_runtime(
+                approval_reference="human-authorized-recovery:run-1",
+            )
+        resumed = self.ledger(deadline_at=original_deadline)
+        self.assertEqual(resumed.deadline_at, "2026-01-01T02:00:05Z")
+        self.assertEqual(resumed.limits.max_wall_time_seconds, 7300)
+        reservation = resumed.reserve("recovery-call", 1, estimated_wall_time_seconds=30)
+        self.assertEqual(reservation["deadline_at"], "2026-01-01T02:00:05Z")
 
     def test_hierarchical_balance_is_atomic_and_reported(self):
         ledger = self.ledger(limits={"total_tokens": 100, "per_department_tokens": 5})

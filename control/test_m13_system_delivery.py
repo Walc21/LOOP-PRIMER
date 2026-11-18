@@ -34,6 +34,22 @@ def inventory(root):
 
 
 class M13SystemTests(unittest.TestCase):
+    def test_synthetic_verifier_rejects_changed_proof_before_evidence(self):
+        from unittest.mock import patch
+        from control import m13_fixture
+        from article_loop.synthesis import IntegrityError
+        from scripts.synthetic_article import verify_synthetic_candidate
+
+        f = self.fixture()
+        changed = m13_fixture.BETTER_TEX.replace("1+1=2", "1+1=3")
+        with patch.object(m13_fixture, "BETTER_TEX", changed):
+            f.candidate(approve_math=False)
+        with self.assertRaisesRegex(IntegrityError, "changes the assertion or proof"):
+            verify_synthetic_candidate(f.candidate_dir)
+        self.assertFalse((f.root / "state/math-verifications" / f.manifest["candidate_id"]).exists())
+        report = run_gates(f.candidate_dir)
+        self.assertFalse(report["overall_pass"])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

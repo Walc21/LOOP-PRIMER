@@ -3,14 +3,17 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import socket
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
 import jsonschema
 
-from control.m13_fixture import SyntheticCycle, fake_policy, remove_fixture
+from control.m13_fixture import ROOT, SyntheticCycle, fake_policy, remove_fixture
 from article_loop.budget import BudgetLedger
+from article_loop.delivery import DeliveryError, verify_delivery
 from article_loop.evaluation import BlindComparisonBundle, DIMENSIONS, EvaluationError, evaluate_candidate
 from article_loop.inference import (
     InferenceBackendError, InferenceConfigError, InferenceIntegrityError,
@@ -52,7 +55,7 @@ class JudgmentBackend:
                 "evidence_locators": ["B/document_0000.tex"]}
         else:
             payload = {"confirmed": True, "vetoed": False, "veto_reason": None,
-                "explanation": "Synthetic judgments agree with supplied gate evidence.", "evidence_locators": ["reviews/0"]}
+                "explanation": "Os juízos sintéticos concordam com a evidência dos gates.", "evidence_locators": ["reviews/0"]}
         self.mutate(payload)
         return InferenceResult(json.dumps(payload), 10, 5, 0, True, wall_time_seconds=0, finish_reason="stop")
 
@@ -102,6 +105,13 @@ class RoutedEvaluationTests(unittest.TestCase):
         result = self.evaluate(allow_test_doubles=True)
         self.assertEqual(len(self.backend.calls), 7)
         self.assertEqual([r.requested_output_schema for r in self.backend.calls].count(JURY_SCHEMA), 6)
+        meta_request = self.backend.calls[-1]
+        self.assertEqual(meta_request.requested_output_schema, META_SCHEMA)
+        self.assertTrue(meta_request.prompt_version.startswith("routed-m8-meta-v7-"))
+        meta_instructions = meta_request.prompt.split("\noutput_contract=", 1)[0]
+        self.assertIn("the JSON literal null", meta_instructions)
+        self.assertIn("gate_summary, consistent_verdicts, or divergences", meta_instructions)
+        self.assertNotIn("Score arrays", meta_instructions)
         self.assertEqual(f.store.snapshot(f.run_id)["state"], "EVALUATED")
         for request in self.backend.calls:
             self.assertEqual(set(model_output_schema(f.root, request)["properties"]), MODEL_FIELDS[request.requested_output_schema])
@@ -111,6 +121,88 @@ class RoutedEvaluationTests(unittest.TestCase):
         f.diagnose()
         f.decide()
         self.assertEqual(f.finalize()["action"], "PROMOTE")
+        delivery = verify_delivery(f.root, f.run_id)
+        self.assertEqual(delivery["state"], "CYCLE_COMPLETE")
+        self.assertEqual(delivery["action"], "PROMOTE")
+        self.assertEqual(delivery["verdict_ids"], result["verdict_ids"])
+        self.assertEqual(delivery["meta_verdict_id"], result["meta_verdict"]["meta_verdict_id"])
+        receipts = self.runtime.store.receipts()
+        self.assertEqual(delivery["routed_inference"]["calls"], 10)
+        self.assertEqual(delivery["routed_inference"]["receipt_ids"], sorted(r["receipt_id"] for r in receipts))
+        command = [sys.executable, str(ROOT / "scripts/m13_system_check.py"),
+                   "--verify-root", str(f.root), "--run-id", f.run_id]
+        inspected = subprocess.run(command, capture_output=True, text=True, check=False, timeout=60)
+        self.assertEqual(inspected.returncode, 0, inspected.stderr)
+        self.assertEqual(json.loads(inspected.stdout), delivery)
+        self.assertEqual(len(self.backend.calls), 7)
+
+    def test_delivery_rejects_missing_or_unbound_evaluator_evidence(self):
+        f = self.fixture()
+        evaluation = self.evaluate(allow_test_doubles=True)
+        f.diagnose()
+        f.decide()
+        f.finalize()
+        verify_delivery(f.root, f.run_id)
+        receipt = next(r for r in self.runtime.store.receipts() if r.get("actor_kind") == "evaluator")
+        receipt_path = self.runtime.store.receipts_dir / (receipt["call_id"] + ".json")
+        saved_path = receipt_path.with_suffix(".saved")
+        receipt_path.rename(saved_path)
+        try:
+            with self.assertRaisesRegex(DeliveryError, "budget/inference call coverage differs"):
+                verify_delivery(f.root, f.run_id)
+        finally:
+            saved_path.rename(receipt_path)
+
+        output = f.root / receipt["output_locator"]
+        original = output.read_bytes()
+        output.write_bytes(original + b" ")
+        try:
+            with self.assertRaisesRegex(DeliveryError, "durable output bytes differ"):
+                verify_delivery(f.root, f.run_id)
+        finally:
+            output.write_bytes(original)
+
+        # A reconciled receipt for a different comparison is valid inference
+        # evidence but cannot attest to any verdict in this completed cycle.
+        other = self.juror().evaluate(self.presentation(seed=914))
+        self.assertNotEqual(other["comparison_id"], evaluation["comparison_id"])
+        with self.assertRaisesRegex(DeliveryError, "does not match a unique published M8 judgment"):
+            verify_delivery(f.root, f.run_id)
+
+    def test_local_cycle_continuation_completes_and_audits(self):
+        from control.test_local_loopback_full_cycle import runner
+
+        f = self.fixture()
+        jurors = {name: self.juror(juror_id=name)
+                  for name in ("juror-math", "juror-contrib", "juror-clarity")}
+        guard_calls = []
+        outcome = runner._complete_cycle(
+            f.root, f.run_id, f.manifest["candidate_id"], f.gate_report["report_locator"],
+            jurors, self.meta(), "synthetic-judge", lambda: guard_calls.append(True),
+            allow_test_doubles=True,
+        )
+        self.assertEqual(outcome["status"], "complete")
+        self.assertEqual(outcome["state"], "CYCLE_COMPLETE")
+        self.assertEqual(outcome["audit"]["routed_inference"]["calls"], 10)
+        self.assertEqual(len(self.backend.calls), 7)
+        self.assertEqual(len(guard_calls), 12)
+
+    def test_local_cycle_stop_blocks_first_jury_call(self):
+        from control.test_local_loopback_full_cycle import runner
+
+        f = self.fixture()
+        jurors = {name: self.juror(juror_id=name)
+                  for name in ("juror-math", "juror-contrib", "juror-clarity")}
+
+        def stop():
+            raise runner.LocalCycleError("stopped")
+
+        with self.assertRaisesRegex(runner.LocalCycleError, "stopped"):
+            runner._complete_cycle(f.root, f.run_id, f.manifest["candidate_id"],
+                                   f.gate_report["report_locator"], jurors, self.meta(),
+                                   "synthetic-judge", stop, allow_test_doubles=True)
+        self.assertEqual(self.backend.calls, [])
+        self.assertEqual(f.store.snapshot(f.run_id)["state"], "GATES_PASSED")
 
     def test_juror_replay_survives_new_adapter_and_no_backend_call(self):
         self.fixture()
@@ -168,6 +260,12 @@ class RoutedEvaluationTests(unittest.TestCase):
                     self.juror().evaluate(self.presentation(80 + index))
         receipts = [r for r in self.runtime.store.receipts() if r["requested_output_schema"] == JURY_SCHEMA]
         self.assertTrue(all(r["output_sha256"] is None and r["finish_reason"] == "schema_invalid" for r in receipts))
+        reasons = [event["payload"]["reason_code"] for event in self.runtime.ledger.logger.read_events()
+                   if event["event_type"] == "inference_receipt"
+                   and event["payload"].get("finish_reason") == "schema_invalid"]
+        self.assertEqual(len(reasons), len(mutations))
+        self.assertIn("OUTPUT_CONTRACT_INVALID", reasons)
+        self.assertIn("OUTPUT_SCHEMA_INVALID", reasons)
 
     def test_same_model_different_group_fails_without_backend(self):
         policy = review_policy()
@@ -228,12 +326,16 @@ class RoutedEvaluationTests(unittest.TestCase):
 
     def test_projection_preserves_conditionals_and_rejects_unsafe_refs(self):
         # Schema-only test does not need the expensive synthetic cycle.
-        from control.m13_fixture import ROOT
         for name in (JURY_SCHEMA, META_SCHEMA):
             canonical = load_requested_output_schema(ROOT, name)
             original = deepcopy(canonical)
             projection = judgment_payload_schema(canonical)
             self.assertEqual(projection["allOf"], canonical["allOf"])
+            self.assertEqual(projection["properties"]["evidence_locators"]["maxItems"], 1)
+            self.assertEqual(projection["properties"]["evidence_locators"]["items"]["maxLength"], 160)
+            if name == META_SCHEMA:
+                self.assertEqual(projection["properties"]["explanation"]["maxLength"], 256)
+                self.assertEqual(projection["properties"]["veto_reason"]["maxLength"], 256)
             self.assertEqual(canonical, original)
             for ref in ("https://invalid/schema", "other.json", "#/$defs/unknown"):
                 bad = deepcopy(canonical)

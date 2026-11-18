@@ -1380,22 +1380,28 @@ class InferenceRuntime:
             self.store.persist_route(decision)
         return decision
 
-    def _validated_document(self, request: InferenceRequest, response: str) -> dict[str, Any] | None:
+    def _validated_document(self, request: InferenceRequest, response: str) -> tuple[dict[str, Any] | None, str | None]:
         contract_root = getattr(self, "contract_root", self.root)
         try:
             value = json.loads(response)
             if request.requested_output_schema == "agent-proposal.schema.json":
-                return compose_agent_proposal(contract_root, request, value)
+                return compose_agent_proposal(contract_root, request, value), None
             if request.judgment_context is not None:
                 from .routed_evaluation import compose_judgment
-                return compose_judgment(contract_root, request, value)
+                return compose_judgment(contract_root, request, value), None
             schema = load_requested_output_schema(contract_root, request.requested_output_schema)
             validator(schema).validate(value)
-        except (json.JSONDecodeError, jsonschema.ValidationError, InferenceOutputError):
-            return None
+        except json.JSONDecodeError:
+            return None, "OUTPUT_INVALID_JSON"
+        except jsonschema.ValidationError:
+            return None, "OUTPUT_SCHEMA_INVALID"
+        except InferenceOutputError as error:
+            if isinstance(error.__cause__, jsonschema.ValidationError):
+                return None, "OUTPUT_SCHEMA_INVALID"
+            return None, "OUTPUT_CONTRACT_INVALID"
         if not isinstance(value, dict) or not output_identity_matches(request, value):
-            return None
-        return value
+            return None, "OUTPUT_CONTRACT_INVALID"
+        return value, None
 
     @staticmethod
     def _receipt_from_manifest(manifest: Mapping[str, Any]) -> InferenceReceipt:
@@ -1504,7 +1510,11 @@ class InferenceRuntime:
         receipt_id = self.receipt_id(call_id)
         estimated_cost = self._estimated_cost(request, target)
         reservation = self.ledger.reserve(
-            call_id, request.estimate_tokens, cycle_id=request.cycle_id,
+            # BudgetLimits.total_tokens accounts for observed input + output,
+            # while ModelRouter separately adds max_output_tokens to the input
+            # estimate for context admission. Reserve the full projected usage
+            # here so a response at its output ceiling cannot be underbudgeted.
+            call_id, request.estimate_tokens + request.max_output_tokens, cycle_id=request.cycle_id,
             department_id=request.department_id, role_id=request.role_id,
             routing_role_id=request.routing_role_id,
             attempt=request.attempt, provider=target.provider, model=target.model,
@@ -1549,7 +1559,7 @@ class InferenceRuntime:
                 raise InferenceBackendError("BACKEND_FAILURE", "backend returned an invalid result", sent=True)
             if len(result.response.encode("utf-8")) > max(4096, target.max_output_tokens * 32):
                 raise InferenceBackendError("BACKEND_FAILURE", "backend content exceeds the routed output bound", sent=True)
-            document = self._validated_document(request, result.response)
+            document, validation_reason = self._validated_document(request, result.response)
             schema_valid = document is not None
             finish_reason = result.finish_reason if schema_valid else "schema_invalid"
             created_at = self.clock.now_utc() if self.clock is not None else _now()
@@ -1588,6 +1598,7 @@ class InferenceRuntime:
                 "target_id": target.target_id, "provider": target.provider,
                 "model": target.model, "backend_type": target.backend_type,
                 "finish_reason": finish_reason,
+                **({"reason_code": validation_reason} if validation_reason else {}),
                 "usage_available": result.usage_available,
                 "input_tokens": result.input_tokens,
                 "output_tokens": result.output_tokens,

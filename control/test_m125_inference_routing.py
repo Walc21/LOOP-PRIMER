@@ -63,6 +63,7 @@ from article_loop.inference_backends import (  # noqa: E402
     FakeInferenceBackend,
     LocalOpenAICompatibleBackend,
     OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+    build_ollama_native_structured_request,
     build_openai_structured_request,
 )
 
@@ -193,7 +194,7 @@ class M125Base(unittest.TestCase):
             kwargs.setdefault("deadline_at", "2026-01-01T00:10:00Z")
         return BudgetLedger(
             self.root, "run-1",
-            limits=BudgetLimits(total_tokens=200, per_model_tokens=100, max_calls=5, max_retries=2, max_wall_time_seconds=10),
+            limits=BudgetLimits(total_tokens=200, per_model_tokens=200, max_calls=5, max_retries=2, max_wall_time_seconds=10),
             clock=self.clock, inference_policy=route_policy, **kwargs,
         )
 
@@ -512,7 +513,7 @@ class M125TransactionTests(M125Base):
             runtime.execute(self.request(), allow_test_doubles=True)
         status = runtime.ledger.status()
         self.assertEqual(status["reservations"][0]["status"], "UNCERTAIN")
-        self.assertEqual(status["usage"]["reserved_tokens"], 20)
+        self.assertEqual(status["usage"]["reserved_tokens"], 120)
         self.assertEqual(status["children"], 1)
         self.assertEqual(len(backend.calls), 1)
 
@@ -718,10 +719,20 @@ class M125SchemaIdentityBindingTests(M125Base):
         injected = scientific_payload()
         injected["role_id"] = "S40"
         runtime = SimpleNamespace(root=self.root)
-        self.assertIsNone(InferenceRuntime._validated_document(runtime, request, json.dumps(injected)))
+        self.assertEqual(
+            InferenceRuntime._validated_document(runtime, request, json.dumps(injected)),
+            (None, "OUTPUT_SCHEMA_INVALID"),
+        )
         malformed = scientific_payload()
         malformed["scope"] = []
-        self.assertIsNone(InferenceRuntime._validated_document(runtime, request, json.dumps(malformed)))
+        self.assertEqual(
+            InferenceRuntime._validated_document(runtime, request, json.dumps(malformed)),
+            (None, "OUTPUT_SCHEMA_INVALID"),
+        )
+        self.assertEqual(
+            InferenceRuntime._validated_document(runtime, request, "{"),
+            (None, "OUTPUT_INVALID_JSON"),
+        )
 
     def test_non_agent_schema_remains_canonical_and_backward_compatible(self):
         task = self.task()
@@ -811,6 +822,7 @@ class M125LoopbackBackendTests(M125Base):
         backend = LocalOpenAICompatibleBackend(
             project_root=self.root, max_response_bytes=4096,
             structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+            reasoning_effort="none",
         )
         result = backend.complete(self.request(), self.local_target("/valid"))
         self.assertTrue(result.usage_available)
@@ -893,6 +905,7 @@ class M125BackendUnitTests(M125Base):
         backend = LocalOpenAICompatibleBackend(
             project_root=self.root, max_response_bytes=4096,
             structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+            reasoning_effort="none",
         )
         backend._opener = opener
         result = backend.complete(self.request(), self.local_target())
@@ -911,6 +924,7 @@ class M125BackendUnitTests(M125Base):
             max_output_tokens=self.request().max_output_tokens,
             target_max_output_tokens=self.local_target().max_output_tokens,
             schema_name="agent_proposal", schema=payload_schema,
+            reasoning_effort="none",
         )
         self.assertEqual(built.body_bytes, opener.request.data)
         manifest = built.manifest()
@@ -922,6 +936,8 @@ class M125BackendUnitTests(M125Base):
             + manifest["request_envelope_bytes"],
         )
         self.assertEqual(sent["temperature"], 0)
+        self.assertEqual(sent["reasoning_effort"], "none")
+        self.assertIs(sent["think"], False)
         self.assertEqual(sent["response_format"], {
             "type": "json_schema",
             "json_schema": {
@@ -929,6 +945,39 @@ class M125BackendUnitTests(M125Base):
             },
         })
         self.assertEqual((result.input_tokens, result.output_tokens, result.cache_tokens), (3, 4, 1))
+
+    def test_native_ollama_structured_chat_disables_thinking_on_loopback(self):
+        envelope = {
+            "message": {"role": "assistant", "content": json.dumps(scientific_payload())},
+            "done": True, "done_reason": "stop", "prompt_eval_count": 3, "eval_count": 4,
+        }
+        opener = self.Opener(self.Response(json.dumps(envelope).encode()))
+        backend = LocalOpenAICompatibleBackend(
+            project_root=self.root, max_response_bytes=4096,
+            structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+            native_ollama_chat=True,
+        )
+        backend._opener = opener
+        native_target = ModelRegistry(policy(target(
+            "ollama-native", backend_type="local_openai_compatible",
+            endpoint="http://127.0.0.1:11434/v1/chat/completions",
+        ))).target("ollama-native")
+        result = backend.complete(self.request(), native_target)
+        body = json.loads(opener.request.data)
+        self.assertEqual(opener.request.full_url, "http://127.0.0.1:11434/api/chat")
+        self.assertIs(body["think"], False)
+        self.assertEqual(body["options"], {"num_predict": 100, "temperature": 0})
+        self.assertEqual(body["format"], model_output_schema(self.root, self.request()))
+        self.assertNotIn("reasoning_effort", body)
+        self.assertEqual((result.input_tokens, result.output_tokens, result.cache_tokens), (3, 4, 0))
+        self.assertEqual(result.finish_reason, "stop")
+
+        with self.assertRaises(InferenceIntegrityError):
+            build_ollama_native_structured_request(
+                endpoint="https://example.test/v1/chat/completions", model="local",
+                prompt="safe", max_output_tokens=10, target_max_output_tokens=100,
+                schema={"type": "object"},
+            )
 
     def test_historical_prompt_only_estimate_fits_while_real_request_does_not(self):
         prompt = "x" * 16_000

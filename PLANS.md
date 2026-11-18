@@ -10,6 +10,181 @@ champion, challengers e arquivo Pareto.
 A fonte normativa de arquitetura é `docs/architecture.md`; a autoridade da
 integração Prime Agent continua sendo `docs/compatibility.md`.
 
+## Proposta de MVP local — 2026-11-17
+
+**Entrega.** Um comando da CLI deve processar um manuscrito matemático sintético
+de uma página, usar inferência local real e chegar uma vez a `CYCLE_COMPLETE`.
+A entrega inclui a diferença entre a fonte inicial e o challenger, os treze
+gates, a avaliação cega, a decisão aplicada e o resultado do auditor. `PROMOTE`,
+`ARCHIVE_PARETO` e `REJECT` são resultados válidos quando a evidência sustenta a
+ação. `PAUSED` e `TECHNICAL_FAILURE` devem aparecer como paradas. O pacote
+terminal `FINALIZE` fica para uma etapa posterior.
+
+### Diagnóstico do checkout
+
+| Área | Evidência atual | Lacuna para o MVP |
+|---|---|---|
+| Entrada, estado e ciclo | A ingestão M3 preserva o PDF e aceita fonte LaTeX inspecionada. A CLI copia e vincula o PDF e o ZIP opcional. A aceitação M13 compõe as etapas até a disposição com entrada sintética e dublês nas fronteiras. | A caixa de entrada deste checkout está vazia. Falta exercitar a ingestão da CLI com o caso sintético completo. |
+| Inferência M6/M12.5 | O backend loopback, as rotas e o ledger existem. O smoke oficial aceita uma tarefa. A execução sintética atual aceitou cinco respostas de workers com os aliases configurados para 16.384 tokens de contexto. O plano passa a declarar variantes locais 16k e 32k para o roteamento determinístico antes da reserva. | Demonstrar respostas estruturadas válidas para os avaliadores M8 na execução local e confirmar que a variante maior só é escolhida quando necessária. |
+| Gates M7 | O modo `--synthetic-article` verifica integralmente a fonte sintética conhecida, a afirmação W22 e o cálculo antes de registrar a evidência para os treze gates. | Validar o caminho completo da CLI com um modelo local e uma resposta W22 compatível. |
+| Júri e disposição M8–M10 | A CLI compõe adaptadores routed, diagnóstico, política, finalizador e auditoria. A continuação após os gates foi exercitada com a fixture M13.1 e sete chamadas simuladas. Cinco receipts locais reconciliados do júri terminaram `schema_invalid`, todos com 4.096 tokens de saída e entre 553–590 s de duração; limitar o schema/prompt e as opções de reasoning não reduziu o teto. Não são falhas de contexto. A recuperação v6 usou a API nativa Ollama `/api/chat` com `think=false`, no mesmo host/porta/modelo loopback, mas expirou após 600 s sem receipt. O ledger registrou a reserva como `UNCERTAIN`; a tentativa permanece em `GATES_PASSED`, sem veredito M8, disposição ou auditoria final. | Não repetir nem retomar esta tentativa sem prova de não consumo. Targets de júri em tentativas novas passam a ter timeout de 900 s, com base nas durações observadas; para completar o ciclo, iniciar uma execução nova com identidade e raiz isoladas e autorização própria. |
+| Auditoria | A fixture M13.1 aplica `PROMOTE` e passa na auditoria independente com três receipts de papéis e sete de avaliadores. Cada receipt de avaliador fica vinculado ao veredito M8, conforme o ADR-035. | Repetir a auditoria na futura execução real pela CLI local. |
+| Operação local | `bin/check.sh` retorna `live_ready: false`. A invocação `run` exige autorização e prazo UTC e os vincula à tentativa e ao ledger. O plano original limita a uma hora, 12 chamadas, 120.000 tokens, concorrência um e custo externo zero. Duas extensões autorizadas de runtime já foram registradas; o último despacho expirou após 600 s e deixou uma reserva `UNCERTAIN`. | Preservar a reserva e a evidência. Nenhuma inferência pode ser repetida nesta tentativa até haver prova de não consumo. |
+
+### Ordem de implementação
+
+**Júri do próximo ciclo sintético.** Usar Qwen2.5 1.5B Instruct Q4_K_M
+para os pareceres do M8 e a meta-revisão. O modelo não tem modo de raciocínio
+separado e suporta 32.768 tokens de contexto. Usar 16k como janela principal
+e 32k para requisições que excedam a primeira. Manter o produtor e o mesmo
+artigo sintético em uma tentativa nova. A primeira execução com Qwen passou
+nos 13 gates e gerou os seis pareceres do júri. A meta-revisão recebeu 536
+tokens e gerou 87 em três segundos, mas o runtime registrou `schema_invalid`.
+As 12 chamadas foram reconciliadas e o estado permaneceu em `GATES_PASSED`.
+A próxima tentativa usará instruções próprias para a meta-revisão e o log
+registrará a categoria de rejeição sem guardar a resposta inválida. A
+aceitação ainda exige meta-veredito válido, disposição e auditoria reais.
+Os totais e hashes da execução estão no [registro do MVP local](docs/local-qwen-mvp-run.md).
+
+**Compatibilidade Ollama 0.40.2.** O serviço local reporta versão 0.40.2 e o
+Snap instalado contém os mesmos marcadores estáticos de rota e schema exigidos
+pelo smoke. Registrar o SHA-256 do executável regular da revisão instalada como
+perfil adicional, preservando o perfil anterior e a rejeição de links. O smoke
+usará o executável regular explícito por descoberta no PATH e será validado
+offline antes de uma única chamada local delimitada.
+
+**Ciclo sintético limitado.** Na entrada local, reduzir o teto a 12 chamadas,
+concorrência um e zero retries. Para cada requisição, construir o corpo HTTP
+estruturado exato e aplicar a mesma admissão conservadora do smoke antes da
+reserva. O target produtor reserva 2.048 tokens; o target de júri reserva 4.096.
+Cada target possui variantes locais 16k e 32k do mesmo peso, registradas na
+política imutável. A admissão congela a requisição corrente, mede o corpo para
+as variantes e o roteador escolhe a menor janela que a comporta antes de criar
+reserva ou chamar o modelo. Isso corrige overflow determinístico sem repetir
+inferência nem alterar a política durante o run. A janela operacional máxima é
+32k para respeitar memória local. Erro de contexto vindo do serviço depois da
+admissão permanece `UNCERTAIN` até que haja prova de que o modelo não processou
+a requisição. Saída `schema_invalid` é recuperável na mesma tentativa quando o
+receipt está reconciliado, o uso atingiu o teto de saída, todas as reservas
+estão fechadas e a recuperação cabe nos limites autorizados; um evento
+append-only pode acrescentar uma chamada por falha corrigida sem aumentar
+tokens, prazo, custo ou concorrência. Plano e receipt originais permanecem
+imutáveis. Evidência insuficiente, falha de integridade ou consumo incerto
+continuam bloqueando continuação.
+O catálogo loopback pode incluir nomes fora da gramática aceita para a tentativa.
+Ignorar esses registros na descoberta e exigir que os modelos selecionados tenham
+nomes válidos e apareçam no conjunto filtrado.
+Na tentativa sintética inicial, M3 chegou a `SOURCE_READY`, mas a ativação
+buscou `base_hash` em um campo ausente do evento. Ela passará a usar a projeção
+do orquestrador após bootstrap, que já valida a identidade do champion M3. A
+tentativa bloqueada permanece intacta e o teste é repetido em raiz nova.
+Após corrigir a ativação, a tentativa alcançou `DEPARTMENTS_RUNNING` e parou
+antes da primeira chamada. O snapshot integral da orquestração fez o contexto
+de W11 exceder o teto. No modo sintético, as tarefas dos workers vão usar a
+fonte LaTeX, a rubrica e a afirmação registrada no blackboard. O protocolo de
+saída autoriza apenas a revisão editorial de W11 e notas de texto dos demais
+workers, com pedido de verificação matemática de W22.
+O primeiro teste offline com esse recorte estimou 8.603 tokens para W11,
+incluindo saída e margem. O operador autorizou uma janela maior. Usar 16.384
+tokens nos aliases locais do Ollama e nos targets da tentativa nova, com o
+mesmo orçamento total e a mesma margem de admissão.
+Na tentativa `attempt-b4fce040-6051-4390-bcbd-896cf78e7d25`, cinco workers
+locais produziram recibos válidos e M7 alcançou `GATES_PASSED`. A primeira
+chamada M8 foi reconciliada com `finish_reason=schema_invalid`, 1.000 tokens de
+saída e entrada estimada de 1.554 tokens. O target permitia 2.048, mas o
+adaptador routed conservava seu padrão de 1.000. Propagar o teto do target ao
+adaptador e cobrir a correspondência na regressão offline. A tentativa bloqueada
+e seus seis recibos permanecem preservados; qualquer nova execução usa raiz e
+autorização próprias.
+Usar um relógio de execução no ledger local para validar a autorização e o
+prazo com a mesma fonte de tempo UTC durante o ciclo.
+A admissão de M8 ajusta a estimativa antes de fixar a identidade da
+requisição do avaliador, usada para derivar o identificador do veredito.
+O produtor local devolveu a revisão esperada sem a quebra de linha final.
+Permitir somente essa variante no merge e na verificação matemática, mantendo
+a proposta e os bytes efetivamente entregues vinculados aos seus hashes.
+
+**Resultado operacional.** A tentativa
+`attempt-8bf6db79-835e-4655-ac32-2449ac7aee70` concluiu cinco chamadas reais
+dos workers com recibos reconciliados. A comparação literal de W11 bloqueou
+o merge antes do júri. A checagem atualizada aceitou as cinco propostas em
+leitura e a regressão offline chegou a `CYCLE_COMPLETE` com a mesma variante
+de LaTeX. O ciclo real completo continua pendente em uma tentativa nova.
+
+**Verificação da fixture matemática.** O artigo sintético terá uma única fonte
+LaTeX e uma afirmação aritmética fixa. A verificação aceitará apenas as duas
+versões integrais conhecidas da fonte, confirmará o pedido W22 associado à
+afirmação e recalculará a igualdade antes de registrar evidência. Alterações no
+enunciado ou na prova serão rejeitadas. A cobertura negativa será executada em
+árvores temporárias e não usará artefatos científicos existentes.
+
+**Integração M8–M10 em andamento.** A CLI chamará os adaptadores routed,
+diagnóstico, decisão, finalizador e auditoria após `GATES_PASSED`. A autorização
+para iniciar uma tentativa deve ser informada na invocação `run`, junto com um
+prazo UTC absoluto. STOP, prazo e interrupção serão conferidos antes de cada
+chamada do júri e antes das mutações posteriores. O caso de teste usa a fixture
+M13.1 existente e evidência matemática sintética da própria fixture.
+
+1. **Fechar o ciclo offline pela CLI.** Reutilizar a composição de M13 e o
+   runner `scripts/local_loopback_full_cycle.py`. Preparar um `artigo.pdf` de
+   uma página derivado do `source.zip`, com uma correção editorial identificável
+   e uma afirmação aritmética simples. Vincular PDF, ZIP, configuração e rota à
+   raiz nova da tentativa. Usar a ativação focal existente para manter M00 e os
+   cinco departamentos no ciclo zero com o mínimo de workers exigido pelo
+   contrato. Com impacto W22, o planejador já produz cinco focais (`W11`,
+   `W22`, `W31`, `W41` e `W51`). W22 fica em `CHECK` para pedir a verificação.
+2. **Integrar a verificação matemática e a disposição.** Limitar as alterações
+   do caso inicial a um trecho editorial identificável. Conferir o trecho
+   matemático do challenger e recalcular a afirmação fixada pela fixture.
+   Vincular essa evidência independente à proposta de W22 e ao hash do
+   candidato antes de `run_gates()`. Depois de `GATES_PASSED`, chamar
+   `evaluate_candidate()` com os adaptadores routed, `diagnose_cycle()`,
+   `decide()` e `TransactionalFinalizer`. Testar que evidência ausente ou
+   alteração da afirmação impedem a passagem para o júri.
+3. **Auditoria M13.1 validada offline.** `verify_delivery` passou em processo
+   separado com seis vereditos em duas ordens e uma meta-revisão. Os testes
+   confirmaram a rejeição de receipt ausente, output alterado e veredito que
+   pertence a outra comparação. Usar o mesmo verificador para auditar a entrega
+   na CLI local.
+4. **Qualificar a inferência local.** Usar um único serviço Ollama em
+   `127.0.0.1`, com um modelo produtor e outro de pesos distintos para as três
+   identidades de jurado e a meta-revisão. Registrar a diversidade reduzida do
+   júri em M8. Confirmar a versão do runtime, os IDs, os pesos e os limites
+   efetivos. Reaproveitar a admissão do smoke para conferir schema, tamanho do
+   corpo estruturado, saída reservada e margem aplicáveis a cada tarefa.
+   Preparar uma nova raiz `SOURCE_READY` no caminho `runtime/m3-real-attempts/`
+   aceito pelo smoke e criar um manifesto de segmentos para o caso sintético.
+   Rodar `m6_official_smoke.py --preflight-only` com os argumentos do runbook M6.
+   Depois, em tentativa autorizada, executar o smoke W11 e exigir output
+   válido, receipt e reserva reconciliados. O histórico de W11 indica que
+   tamanho do contexto e espaço para saída são os primeiros pontos a validar.
+5. **Executar e auditar um único ciclo local.** Exigir autorização nova para
+   a tentativa, vinculada ao hash da configuração e das rotas, entrada, modelos,
+   teto de chamadas e tokens, prazo UTC absoluto e custo externo zero. Passar
+   esse prazo ao `BudgetLedger` antes da primeira reserva. Derivar o teto de
+   chamadas dos workers ativos mais sete do M8, totalizando doze no plano focal
+   inicial. Usar concorrência um, zero retry, zero fallback e `deny_remote`.
+   Exercitar STOP e prazo antes de cada
+   nova admissão, inclusive no júri. Se houver `UNCERTAIN`, preservar a reserva e
+   parar novas chamadas. No final, emitir o estado canônico, o locator da
+   diferença de fonte, a ação, o locator da disposição e os hashes necessários
+   para a auditoria local. O comando `run` deve retornar sucesso somente quando
+   a entrega tiver sido aplicada e auditada.
+
+### Aceitação e próximos ciclos
+
+- A regressão offline passa da ingestão até a auditoria pela mesma composição da
+  CLI. Cobrir bloqueio por autorização ausente, STOP, overflow, schema inválido,
+  falta de evidência matemática e `UNCERTAIN`.
+- A primeira execução local autorizada termina com um único `CYCLE_COMPLETE`,
+  decisão aplicada e recibos reais de produtor e avaliadores. O auditor valida
+  a entrega sem fazer outra chamada. O SHA-256 do PDF original coincide antes
+  e depois, as reservas estão reconciliadas e a fonte revisada pode ser inspecionada.
+- Para a versão final do produto, validar depois um manuscrito real autorizado,
+  evidência matemática adequada às suas afirmações, diversidade real de júri,
+  ciclos de diagnóstico e refoco e o pacote terminal `FINALIZE`. A primeira prova
+  operacional usa a CLI e a Central como visualização da evidência disponível.
+
 ## Segurança da CI — 2026-09-27
 
 O Scorecard público no commit `bdcc873` identificou permissões implícitas no
