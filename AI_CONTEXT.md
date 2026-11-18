@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `d97ed743ef8283ebcf0dac917d206278bdd30e34a078633901512a06a5d4128f`
-- Baseline da última sessão: `d97ed743ef8283ebcf0dac917d206278bdd30e34a078633901512a06a5d4128f`
-- Inventário: 325 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (472042 bytes; SHA-256 `92f77f61c4560adb`).
+- Fingerprint atual das fontes: `83276f9fa2cb8ba5361ddb535075f707e8f72445bfe069de583b83fa79d1bc1f`
+- Baseline da última sessão: `83276f9fa2cb8ba5361ddb535075f707e8f72445bfe069de583b83fa79d1bc1f`
+- Inventário: 340 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (477213 bytes; SHA-256 `b2352e6772675a21`).
 
 ## Estado e limites atuais
 
@@ -30,21 +30,20 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 74.
-- `session-a73eeaf3ea5f9565cdcd` — Qwen2.5 1.5B Instruct instalado no Ollama e vinculado ao júri e à meta-revisão da próxima tentativa sintética.
-  - mudança: Aliases loop-primer-juror-qwen25:16k e loop-primer-juror-qwen25:32k compartilham o peso Q4_K_M do manifesto público 65ec06548149.
-  - decisão: Trocar o Spark pelo Qwen no plano isolado attempt-a4a07eb4-c74f-4b19-b7d8-94a3e14df238. As janelas de 16.384 e 32.768 preservam o roteamento por tamanho. O produtor e os hashes do artigo foram preservados.
-  - risco: A tentativa está preparada. A qualidade dos pareceres JSON e a conclusão de M8–M10 ainda não foram verificadas com o novo modelo.
-  - próximo: Quando solicitada a execução nova, usar o plano preparado e o modo --synthetic-article, com autorização e prazo UTC vinculados à tentativa.
-- `session-c2e7be4b160e5e30233e` — Primeira run real com o Qwen chegou aos seis pareceres válidos e parou na meta-revisão por schema_invalid.
-  - mudança: Prompt próprio para a meta-revisão com booleans, nulidade, veto e referências aos resumos. O log registra uma categoria fixa para rejeições sem persistir a resposta inválida.
-  - decisão: Manter os doze recibos reconciliados da tentativa a4a07eb4 e preparar o plano isolado attempt-1a666fd5-443d-4d9c-9ddc-898e40f25c7b para validar a correção.
-  - risco: A resposta bruta rejeitada não foi persistida. A regra específica não pode ser identificada pelo recibo existente. Sem meta-veredito, decisão aplicada nem auditoria real.
-  - próximo: Validar o prompt específico da meta-revisão no plano preparado, após autorização para a nova execução local.
+- Sessões estruturadas registradas: 76.
 - `session-8fc7ec68b3fd37d10ace` — Preparação do PR do MVP local com evidência da execução real do júri Qwen.
   - mudança: docs/local-qwen-mvp-run.md registra os 13 gates, seis pareceres válidos, a falha da meta-revisão e os hashes dos artefatos locais.
   - risco: A execução real não atingiu CYCLE_COMPLETE. A correção do prompt da meta-revisão foi verificada offline e ainda precisa de inferência real.
   - próximo: Revisar o PR e validar a meta-revisão com o plano de execução preparado.
+- `session-f7719085e359fc5f588a` — Demonstração real do MVP chegou a CYCLE_COMPLETE com REJECT e auditoria M13 aprovada.
+  - mudança: Meta-revisão v8 gera três campos simples e recompõe o meta-parecer canônico. O júri v9 reforça o uso de IDs neutros e avaliação da prova.
+  - decisão: Preservar o critério de inversão e a política de disposição. A tentativa d45eb426 rejeitou o candidato porque o critério matemático do júri ficou falso, apesar dos gates aprovados.
+  - risco: A demonstração usa um artigo sintético e o mesmo Qwen 1.5B nos papéis de júri; novas inferências podem chegar a outra decisão.
+  - próximo: Usar docs/demo-mvp-local.md para apresentar a run e reproduzir a auditoria.
+- `session-bb53f1d81db9005ba681` — Publicação do resultado do primeiro ciclo real do MVP com auditoria aprovada.
+  - mudança: O README destaca CYCLE_COMPLETE, 12 chamadas locais reais, 13 gates, REJECT e auditoria M13. Roteiro e evidências públicas incluem o artigo, a edição, a avaliação e a decisão.
+  - risco: O pacote público documenta a execução. O replay completo da auditoria de entrega depende da raiz original por causa dos caminhos vinculados aos recibos M6.
+  - próximo: Usar o README, o roteiro e o pacote para demonstrar o ciclo e verificar as evidências.
 
 ## Roteamento obrigatório por escopo
 

@@ -20,17 +20,20 @@ def main(argv=None):
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--keep-workspace", type=Path, help="create a NEW synthetic evidence workspace after acceptance")
     group.add_argument("--verify-root", type=Path, help="read-only audit of an existing completed cycle")
+    group.add_argument("--verify-extra-judgment-root", type=Path, help="read-only audit of an applied request for an extra judgment")
     parser.add_argument("--run-id")
     parser.add_argument("--cycle-id", type=int, default=0)
     args = parser.parse_args(argv)
-    if args.verify_root is not None and not args.run_id:
-        parser.error("--verify-root requires --run-id")
-    if args.verify_root is None and (args.run_id is not None or args.cycle_id != 0):
-        parser.error("--run-id/--cycle-id apply only to --verify-root")
-    from article_loop.delivery import verify_delivery
+    audit_root = args.verify_extra_judgment_root or args.verify_root
+    if audit_root is not None and not args.run_id:
+        parser.error("audit requires --run-id")
+    if audit_root is None and (args.run_id is not None or args.cycle_id != 0):
+        parser.error("--run-id/--cycle-id apply only to audits")
+    from article_loop.delivery import verify_delivery, verify_extra_judgment_checkpoint
     try:
-        if args.verify_root is not None:
-            print(json.dumps(verify_delivery(args.verify_root, args.run_id, cycle_id=args.cycle_id), sort_keys=True, indent=2))
+        if audit_root is not None:
+            verify = verify_extra_judgment_checkpoint if args.verify_extra_judgment_root else verify_delivery
+            print(json.dumps(verify(audit_root, args.run_id, cycle_id=args.cycle_id), sort_keys=True, indent=2))
             return 0
         if args.keep_workspace is not None and (args.keep_workspace.exists() or args.keep_workspace.is_symlink()):
             raise ValueError("--keep-workspace must name a new path; existing output is preserved")

@@ -1,0 +1,92 @@
+[
+  {
+    "action": null,
+    "attempt_id": "attempt-a4a07eb4-c74f-4b19-b7d8-94a3e14df238",
+    "calls": {
+      "admitted": 12,
+      "reconciled": 12,
+      "uncertain": 0
+    },
+    "cause": "meta-reviewer adapter failed",
+    "end_utc": "2026-11-18T01:37:41.726327Z",
+    "export": "01-schema-invalid",
+    "input_tokens": 26081,
+    "original_outcome_sha256": "165990fca577f7e6078fd4a648e97f8fba04efcb7a2012ffadc92b3ae9a236bc",
+    "output_tokens": 2424,
+    "receipt_finish_reasons": {
+      "schema_invalid": 1,
+      "stop": 11
+    },
+    "run_id": "ingest-4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46",
+    "start_utc": "2026-11-18T01:35:40.869577Z",
+    "state": "GATES_PASSED",
+    "status": "blocked"
+  },
+  {
+    "action": null,
+    "attempt_id": "attempt-1a666fd5-443d-4d9c-9ddc-898e40f25c7b",
+    "calls": {
+      "admitted": 12,
+      "reconciled": 12,
+      "uncertain": 0
+    },
+    "cause": "meta-reviewer adapter failed",
+    "end_utc": "2026-11-18T02:13:00.678450Z",
+    "export": "02-meta-v7",
+    "input_tokens": 26247,
+    "original_outcome_sha256": "918d96054a3f8441d0f375d0286a774cbfb3b80d6a1ad5f6e56fd9a9d7aea628",
+    "output_tokens": 2156,
+    "receipt_finish_reasons": {
+      "schema_invalid": 1,
+      "stop": 11
+    },
+    "run_id": "ingest-4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46",
+    "start_utc": "2026-11-18T02:11:05.766530Z",
+    "state": "GATES_PASSED",
+    "status": "blocked"
+  },
+  {
+    "action": "REQUEST_EXTRA_JUDGMENT",
+    "attempt_id": "attempt-11eafb0d-15d1-433f-93e9-50cd869285ea",
+    "calls": {
+      "admitted": 12,
+      "reconciled": 12,
+      "uncertain": 0
+    },
+    "cause": null,
+    "end_utc": "2026-11-18T02:19:40.292450Z",
+    "export": "03-extra-judgment",
+    "input_tokens": 26074,
+    "original_outcome_sha256": "90a5ec9194299206f81a8c7e25995b686c3e0116307f87dda122e8fe0bf61e5b",
+    "output_tokens": 2139,
+    "receipt_finish_reasons": {
+      "stop": 12
+    },
+    "run_id": "ingest-4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46",
+    "start_utc": "2026-11-18T02:17:05.721887Z",
+    "state": "CYCLE_COMPLETE",
+    "status": "stopped"
+  },
+  {
+    "action": "REJECT",
+    "attempt_id": "attempt-d45eb426-2b1b-4a4b-837f-26d631cf0573",
+    "calls": {
+      "admitted": 12,
+      "reconciled": 12,
+      "uncertain": 0
+    },
+    "cause": null,
+    "end_utc": "2026-11-18T02:26:48.756438Z",
+    "export": "04-complete",
+    "input_tokens": 26553,
+    "original_outcome_sha256": "cee4c077232a897daeed780e0aa82b7f839b2abd53e7c7ddf3dabb3011ffd961",
+    "output_tokens": 1807,
+    "receipt_finish_reasons": {
+      "stop": 12
+    },
+    "run_id": "ingest-4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46",
+    "start_utc": "2026-11-18T02:24:16.519378Z",
+    "state": "CYCLE_COMPLETE",
+    "status": "complete"
+  }
+]

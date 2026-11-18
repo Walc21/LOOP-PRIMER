@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `d97ed743ef8283ebcf0dac917d206278bdd30e34a078633901512a06a5d4128f`
-- Registrado em: `2026-11-18T02:02:29Z`
+- Fingerprint das fontes: `83276f9fa2cb8ba5361ddb535075f707e8f72445bfe069de583b83fa79d1bc1f`
+- Registrado em: `2026-11-18T02:47:28Z`
 - Git: branch `main`, HEAD `0cfb03218b80`
-- Arquivos relevantes: 325
+- Arquivos relevantes: 340
 
 ## Evolução reconstruída do versionamento
 
@@ -4621,3 +4621,92 @@
 | added | `docs/local-qwen-mvp-run.md` | `-` | `6a3fcc22ff06` |
 | modified | `PLANS.md` | `75167f2e0e87` | `767e53204d16` |
 | modified | `control/test_m125_inference_routing.py` | `2de7b9ce224b` | `28eeb8369f64` |
+
+### 2026-11-18T02:29:01Z — Demonstração real do MVP chegou a CYCLE_COMPLETE com REJECT e auditoria M13 aprovada.
+
+- Session ID: `session-f7719085e359fc5f588a`
+- Fingerprint final: `5ba6c275a5924c7b4212e1b95c377789b9b35c03e5d76bf2aa7ce1520eb76025`
+- Git final: `0cfb03218b80`; status relevante: 28 item(ns)
+- Delta factual: 1 adicionados, 9 modificados, 0 removidos
+
+**Mudanças**
+
+- Meta-revisão v8 gera três campos simples e recompõe o meta-parecer canônico. O júri v9 reforça o uso de IDs neutros e avaliação da prova.
+- Auditoria separada verificou o registro de pedido de parecer extra da tentativa anterior. docs/demo-mvp-local.md liga a execução real ao artigo, à decisão e ao comando de auditoria.
+
+**Decisões**
+
+- Preservar o critério de inversão e a política de disposição. A tentativa d45eb426 rejeitou o candidato porque o critério matemático do júri ficou falso, apesar dos gates aprovados.
+
+**Validações**
+
+- 13 gates aprovados, seis pareceres e meta-revisão válidos, 12 chamadas contabilizadas e nenhum UNCERTAIN; 28.360 tokens, custo externo zero, 152 segundos. Auditoria independente igual ao resultado salvo. Testes focados de composição, rejeição de adulteração, entrega e recuperação passaram.
+
+**Riscos/limites**
+
+- A demonstração usa um artigo sintético e o mesmo Qwen 1.5B nos papéis de júri; novas inferências podem chegar a outra decisão.
+
+**Próximos passos**
+
+- Usar docs/demo-mvp-local.md para apresentar a run e reproduzir a auditoria.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `docs/demo-mvp-local.md` | `-` | `f090e5797922` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/delivery.py` | `957effbcf6da` | `d69fce9d4124` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference.py` | `8a81c00d7052` | `793058c9cc7f` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/routed_evaluation.py` | `6fc46d26d11a` | `e04c23b91d86` |
+| modified | `PLANS.md` | `767e53204d16` | `26ea12f07a8c` |
+| modified | `control/test_m131_routed_evaluation.py` | `b1096c815423` | `01f034c4e4b3` |
+| modified | `control/test_m13_system_delivery.py` | `bc742e161350` | `c6804e9bd2ce` |
+| modified | `docs/decisions.md` | `0d4a612f9deb` | `101461c3964d` |
+| modified | `docs/local-qwen-mvp-run.md` | `6a3fcc22ff06` | `71ca8bc7bbc0` |
+| modified | `scripts/m13_system_check.py` | `5522dba9bbd4` | `59c49a738334` |
+
+### 2026-11-18T02:47:28Z — Publicação do resultado do primeiro ciclo real do MVP com auditoria aprovada.
+
+- Session ID: `session-bb53f1d81db9005ba681`
+- Fingerprint final: `83276f9fa2cb8ba5361ddb535075f707e8f72445bfe069de583b83fa79d1bc1f`
+- Git final: `0cfb03218b80`; status relevante: 43 item(ns)
+- Delta factual: 14 adicionados, 3 modificados, 0 removidos
+
+**Mudanças**
+
+- O README destaca CYCLE_COMPLETE, 12 chamadas locais reais, 13 gates, REJECT e auditoria M13. Roteiro e evidências públicas incluem o artigo, a edição, a avaliação e a decisão.
+- docs/evidence/local-qwen-mvp contém o pacote documental de 295 entradas de quatro tentativas, com checksums e um resumo por tentativa. Arquivos vinculados a caminhos locais são identificados por hash.
+
+**Validações**
+
+- 60 testes das suítes do ciclo local, M13 e M13.1 passaram. Compilação de seis arquivos Python, diff check, links do README, integridade do ZIP e paridade do audit.json passaram.
+
+**Riscos/limites**
+
+- O pacote público documenta a execução. O replay completo da auditoria de entrega depende da raiz original por causa dos caminhos vinculados aos recibos M6.
+
+**Próximos passos**
+
+- Usar o README, o roteiro e o pacote para demonstrar o ciclo e verificar as evidências.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| added | `docs/evidence/local-qwen-mvp/README.md` | `-` | `6c578865856e` |
+| added | `docs/evidence/local-qwen-mvp/SHA256SUMS` | `-` | `b68d21907919` |
+| added | `docs/evidence/local-qwen-mvp/artigo-original.pdf` | `-` | `4d07d27bcd2e` |
+| added | `docs/evidence/local-qwen-mvp/audit.json` | `-` | `c14bd86671ef` |
+| added | `docs/evidence/local-qwen-mvp/decision.json` | `-` | `7ad43e9b2d17` |
+| added | `docs/evidence/local-qwen-mvp/evaluation.json` | `-` | `fe2587795770` |
+| added | `docs/evidence/local-qwen-mvp/finalization-receipt.json` | `-` | `08f5b6b377b3` |
+| added | `docs/evidence/local-qwen-mvp/gate-summary.json` | `-` | `797009dff0bf` |
+| added | `docs/evidence/local-qwen-mvp/original.tex` | `-` | `7e34784969c0` |
+| added | `docs/evidence/local-qwen-mvp/outcome.json` | `-` | `cee4c077232a` |
+| added | `docs/evidence/local-qwen-mvp/registros-qwen.zip` | `-` | `59b9ce5925ec` |
+| added | `docs/evidence/local-qwen-mvp/rejection-reference.json` | `-` | `2d28bd009ecd` |
+| added | `docs/evidence/local-qwen-mvp/revisado.tex` | `-` | `b5e31fa3b0ac` |
+| added | `docs/evidence/local-qwen-mvp/timeline.json` | `-` | `64d00b2623ba` |
+| modified | `.gitignore` | `91b4eb29e647` | `b509a1fe78d1` |
+| modified | `README.md` | `5da1d304c819` | `2a7bb68aa2cf` |
+| modified | `docs/demo-mvp-local.md` | `f090e5797922` | `42cc7be72caf` |

@@ -21,7 +21,7 @@ from article_loop.inference import (
     ModelRegistry, canonical_bytes, load_requested_output_schema, model_output_schema,
 )
 from article_loop.routed_evaluation import (
-    JURY_SCHEMA, META_SCHEMA, MODEL_FIELDS, PROTOCOL_FIELDS,
+    JURY_SCHEMA, META_PROMPT_VERSION, META_SCHEMA, MODEL_FIELDS, PROTOCOL_FIELDS,
     RoutedJurorAdapter, RoutedMetaReviewerAdapter, compose_judgment, judgment_payload_schema,
 )
 
@@ -54,8 +54,8 @@ class JudgmentBackend:
                 "outcome": "winner", "winner_neutral_id": "B", "correctness_math_pass": [True, True],
                 "evidence_locators": ["B/document_0000.tex"]}
         else:
-            payload = {"confirmed": True, "vetoed": False, "veto_reason": None,
-                "explanation": "Os juízos sintéticos concordam com a evidência dos gates.", "evidence_locators": ["reviews/0"]}
+            payload = {"verdict": "confirm",
+                "explanation": "Os juízos sintéticos concordam com a evidência dos gates.", "evidence_locator": "gate_summary"}
         self.mutate(payload)
         return InferenceResult(json.dumps(payload), 10, 5, 0, True, wall_time_seconds=0, finish_reason="stop")
 
@@ -107,14 +107,15 @@ class RoutedEvaluationTests(unittest.TestCase):
         self.assertEqual([r.requested_output_schema for r in self.backend.calls].count(JURY_SCHEMA), 6)
         meta_request = self.backend.calls[-1]
         self.assertEqual(meta_request.requested_output_schema, META_SCHEMA)
-        self.assertTrue(meta_request.prompt_version.startswith("routed-m8-meta-v7-"))
+        self.assertTrue(meta_request.prompt_version.startswith(META_PROMPT_VERSION))
         meta_instructions = meta_request.prompt.split("\noutput_contract=", 1)[0]
-        self.assertIn("the JSON literal null", meta_instructions)
-        self.assertIn("gate_summary, consistent_verdicts, or divergences", meta_instructions)
+        self.assertIn("withhold", meta_instructions)
+        self.assertIn("one evidence_locator", meta_instructions)
         self.assertNotIn("Score arrays", meta_instructions)
         self.assertEqual(f.store.snapshot(f.run_id)["state"], "EVALUATED")
         for request in self.backend.calls:
-            self.assertEqual(set(model_output_schema(f.root, request)["properties"]), MODEL_FIELDS[request.requested_output_schema])
+            fields = {"verdict", "explanation", "evidence_locator"} if request is meta_request else MODEL_FIELDS[JURY_SCHEMA]
+            self.assertEqual(set(model_output_schema(f.root, request)["properties"]), fields)
             self.assertEqual(request.required_capabilities, ("language", "structured_output"))
         self.assertEqual(self.evaluate(allow_test_doubles=True), result)
         self.assertEqual(len(self.backend.calls), 7)
@@ -237,9 +238,29 @@ class RoutedEvaluationTests(unittest.TestCase):
                 self.backend.mutate = lambda p, field=field: p.update({field: "forged"})
                 with self.assertRaises(InferenceOutputError):
                     self.juror().evaluate(self.presentation(100 + index))
-        self.backend.mutate = lambda p: p.update(gate_report_id="forged") if "confirmed" in p else None
+        self.backend.mutate = lambda p: p.update(gate_report_id="forged") if "verdict" in p else None
         with self.assertRaises(EvaluationError):
             self.evaluate(allow_test_doubles=True)
+
+    def test_compact_meta_preserves_confirm_withhold_and_veto(self):
+        self.fixture()
+        self.evaluate(allow_test_doubles=True)
+        request = self.backend.calls[-1]
+        for verdict, confirmed, vetoed in (("confirm", True, False), ("withhold", False, False), ("veto", False, True)):
+            with self.subTest(verdict=verdict):
+                document = compose_judgment(self.f.root, request, {
+                    "verdict": verdict, "explanation": "Review found a material issue.",
+                    "evidence_locator": "divergences",
+                })
+                self.assertIs(document["confirmed"], confirmed)
+                self.assertIs(document["vetoed"], vetoed)
+                self.assertEqual(document["veto_reason"], document["explanation"] if vetoed else None)
+                self.assertEqual(document["evidence_locators"], ["divergences"])
+        with self.assertRaises(InferenceOutputError):
+            compose_judgment(self.f.root, request, {
+                "verdict": "promote", "explanation": "Not a meta verdict.",
+                "evidence_locator": "divergences",
+            })
 
     def test_missing_scientific_fields_fail_without_repair(self):
         self.fixture()

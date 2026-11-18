@@ -49,10 +49,10 @@
       "sha256": "31bdc0f6044def865eba70af41ebce523052455031cb21f8ee5da12b512d6c80"
     },
     ".gitignore": {
-      "bytes": 1362,
+      "bytes": 1522,
       "kind": "text",
-      "lines": 73,
-      "sha256": "91b4eb29e6471e541717574ff8345252372941ff86de1ba3f3d1a7fcbb789573"
+      "lines": 76,
+      "sha256": "b509a1fe78d1456ab9cc85c34565b8df8e8f69bd041d04f743c5dcea665ef162"
     },
     ".prime/agent/APPEND_SYSTEM.md": {
       "bytes": 918,
@@ -193,10 +193,10 @@
       "sha256": "bf08db5bcb11ac80b5be276ae77d79609ee9a9a82381a43c0d28abda0a7f53cf"
     },
     ".prime/agent/skills/article-loop/src/article_loop/delivery.py": {
-      "bytes": 19548,
+      "bytes": 21035,
       "kind": "text",
-      "lines": 293,
-      "sha256": "957effbcf6dacd47bed2a266c65317511feba78e0696fcc3def7c6035910f381"
+      "lines": 317,
+      "sha256": "d69fce9d412410fbb54a810301154eab53e90f1dcad89c4f0d11ec7795b46f65"
     },
     ".prime/agent/skills/article-loop/src/article_loop/diagnosis.py": {
       "bytes": 52815,
@@ -229,10 +229,10 @@
       "sha256": "2f1cbe64693475d0840a71f699e449327ed5d9525cdc290a5d481e70e035415a"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference.py": {
-      "bytes": 85581,
+      "bytes": 85620,
       "kind": "text",
       "lines": 1689,
-      "sha256": "8a81c00d7052905503ce33cec6023ce7f0b5260ba75adc9502dfbd2200257b5b"
+      "sha256": "793058c9cc7feec21ffb933325dee15214a6d45dd0e12ac695babc7f7f67037e"
     },
     ".prime/agent/skills/article-loop/src/article_loop/inference_backends.py": {
       "bytes": 22581,
@@ -283,10 +283,10 @@
       "sha256": "f346e70a2639bd089a2574a22f14d3c1467ca01cbe1f7871231b9aa42e075d98"
     },
     ".prime/agent/skills/article-loop/src/article_loop/routed_evaluation.py": {
-      "bytes": 22462,
+      "bytes": 24223,
       "kind": "text",
-      "lines": 354,
-      "sha256": "6fc46d26d11a6a803b47ec5d6fc20580ad97d811584ecc97302f71147119bfcc"
+      "lines": 385,
+      "sha256": "e04c23b91d86bf178864d33eb3788de2822d7bb2a6a07681125c18e12218e800"
     },
     ".prime/agent/skills/article-loop/src/article_loop/schema_validation.py": {
       "bytes": 2131,
@@ -433,16 +433,16 @@
       "sha256": "0d0db335dda491246e0e01625f3e7dc751705ba7e09e6951d8060a9671fbdb8a"
     },
     "PLANS.md": {
-      "bytes": 100086,
+      "bytes": 101205,
       "kind": "text",
-      "lines": 1403,
-      "sha256": "767e53204d16ad409e655bf937b40496cf2e7275a25e7b106e761a3713c9e56e"
+      "lines": 1418,
+      "sha256": "26ea12f07a8cd0af8f4c1a25f0042ff1f43c0d9374343c6d0e6fab7c986012ea"
     },
     "README.md": {
-      "bytes": 47941,
+      "bytes": 50310,
       "kind": "text",
-      "lines": 810,
-      "sha256": "5da1d304c81998e51c54be12a91504d3d15a1ae97363df9711f5d861b595ef07"
+      "lines": 844,
+      "sha256": "2a7bb68aa2cf7c3c2ed0d64afc48b9d3e33388944626041d9a0667c5c6aee80a"
     },
     "SECURITY.md": {
       "bytes": 1428,
@@ -919,16 +919,16 @@
       "sha256": "28892bf937b3907752b777314d6620617d14ab886d3f34ab441af43e887f6639"
     },
     "control/test_m131_routed_evaluation.py": {
-      "bytes": 19830,
+      "bytes": 20994,
       "kind": "text",
-      "lines": 370,
-      "sha256": "b1096c8154232e236156bdfa9e3d3f3709ddd5466645be8309bc203fcf60d733"
+      "lines": 391,
+      "sha256": "01f034c4e4b300872fe5c298ce2e253cc2e1675a477645140914d48530375ae9"
     },
     "control/test_m13_system_delivery.py": {
-      "bytes": 22304,
+      "bytes": 23336,
       "kind": "text",
-      "lines": 445,
-      "sha256": "bc742e1613503dbde36d1df1c4f9cd8b81847562bd29f57b3c9668461c427566"
+      "lines": 464,
+      "sha256": "c6804e9bd2ce473d55ab84d435a53ccd43d6b3726dbbeb8901ee091bed024084"
     },
     "control/test_m14_control_center.py": {
       "bytes": 20629,
@@ -1033,10 +1033,100 @@
       "sha256": "2eb9ab85bd98ebf5bac9e5209a1c8fb97dd85181ac32aeff9de3745e8dec1c62"
     },
     "docs/decisions.md": {
-      "bytes": 124123,
+      "bytes": 125217,
       "kind": "text",
-      "lines": 2088,
-      "sha256": "0d4a612f9debb94522fcbc8c6f2d1b0708a1d163a442238e1dc6d23af26e426e"
+      "lines": 2106,
+      "sha256": "101461c3964d9708422dac314bb753bc88395eb7a8a160337a251e05ae1225b9"
+    },
+    "docs/demo-mvp-local.md": {
+      "bytes": 3428,
+      "kind": "text",
+      "lines": 62,
+      "sha256": "42cc7be72caf1a16fb8d49e31b06e944d515969b3b4ace3f255cb1ae9d1ac0c7"
+    },
+    "docs/evidence/local-qwen-mvp/README.md": {
+      "bytes": 2313,
+      "kind": "text",
+      "lines": 35,
+      "sha256": "6c578865856e53ee7e995d735269a01236281d9c7aa480ebb57c1dd015717dc8"
+    },
+    "docs/evidence/local-qwen-mvp/SHA256SUMS": {
+      "bytes": 994,
+      "kind": "text",
+      "lines": 12,
+      "sha256": "b68d21907919024b8b5ea5cca3f989474b50b273a95edc22115fec01619d2f50"
+    },
+    "docs/evidence/local-qwen-mvp/artigo-original.pdf": {
+      "bytes": 22396,
+      "kind": "binary",
+      "lines": null,
+      "sha256": "4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46"
+    },
+    "docs/evidence/local-qwen-mvp/audit.json": {
+      "bytes": 4464,
+      "kind": "text",
+      "lines": 95,
+      "sha256": "c14bd86671ef4192867e5442dbbb79d14beba930b126b8bcf89ecc083e99874a"
+    },
+    "docs/evidence/local-qwen-mvp/decision.json": {
+      "bytes": 1290,
+      "kind": "text",
+      "lines": 1,
+      "sha256": "7ad43e9b2d17bef299fefc877590862f01acc315dc8d2e48281ff5b638829b92"
+    },
+    "docs/evidence/local-qwen-mvp/evaluation.json": {
+      "bytes": 3017,
+      "kind": "text",
+      "lines": 1,
+      "sha256": "fe2587795770ebcc0392411cf8c6ddade6d84dcc20ec95d9a4588fcc1642cdb6"
+    },
+    "docs/evidence/local-qwen-mvp/finalization-receipt.json": {
+      "bytes": 708,
+      "kind": "text",
+      "lines": 1,
+      "sha256": "08f5b6b377b3dd0a27d206ff2dd0d4f7d5b05742c85e87c83c45c46ec37306a0"
+    },
+    "docs/evidence/local-qwen-mvp/gate-summary.json": {
+      "bytes": 2261,
+      "kind": "text",
+      "lines": 100,
+      "sha256": "797009dff0bfaf82da3edffc6ce66ec560f97a5863d87ca582593c42852d09bf"
+    },
+    "docs/evidence/local-qwen-mvp/original.tex": {
+      "bytes": 112,
+      "kind": "text",
+      "lines": 4,
+      "sha256": "7e34784969c09413c57d04984b9368ea3b02a3f0d2057f893e9d89254e36046d"
+    },
+    "docs/evidence/local-qwen-mvp/outcome.json": {
+      "bytes": 4209,
+      "kind": "text",
+      "lines": 1,
+      "sha256": "cee4c077232a897daeed780e0aa82b7f839b2abd53e7c7ddf3dabb3011ffd961"
+    },
+    "docs/evidence/local-qwen-mvp/registros-qwen.zip": {
+      "bytes": 409764,
+      "kind": "binary",
+      "lines": null,
+      "sha256": "59b9ce5925ec0654cb9e988e9374660044f740d9815c492afeab923c67675f80"
+    },
+    "docs/evidence/local-qwen-mvp/rejection-reference.json": {
+      "bytes": 537,
+      "kind": "text",
+      "lines": 1,
+      "sha256": "2d28bd009ecd6d1db6af7926eb1fd283ced009da4aee4f2370a97dd2a88cf860"
+    },
+    "docs/evidence/local-qwen-mvp/revisado.tex": {
+      "bytes": 137,
+      "kind": "text",
+      "lines": 4,
+      "sha256": "b5e31fa3b0acd93f3eb255e91b8ddbf1cff5fd8fc492aef2cc62a153a0cd5eee"
+    },
+    "docs/evidence/local-qwen-mvp/timeline.json": {
+      "bytes": 2857,
+      "kind": "text",
+      "lines": 92,
+      "sha256": "64d00b2623ba72c7d361e79463814b0760211c243a0f993ff2768f7f0ae9bb97"
     },
     "docs/examples/m1251-human-configuration.yaml": {
       "bytes": 917,
@@ -1045,10 +1135,10 @@
       "sha256": "26746a614b8423da9e8ab2c9ab59a1da456f30c63e911cf71e627cfe95e8be68"
     },
     "docs/local-qwen-mvp-run.md": {
-      "bytes": 2215,
+      "bytes": 2359,
       "kind": "text",
-      "lines": 35,
-      "sha256": "6a3fcc22ff0692beecb41e6e7174b6a47fd98ca54b2ea57d83074e92e5cbe3b8"
+      "lines": 38,
+      "sha256": "71ca8bc7bbc047a428f751a028778ff8d996c0a462b9a23bb824ca860039afdb"
     },
     "docs/m1251-phase-a-audit.md": {
       "bytes": 2599,
@@ -1843,10 +1933,10 @@
       "sha256": "0396b71859655632f3e469645576724f70cb9bed34615103785f7b94504e6c3b"
     },
     "scripts/m13_system_check.py": {
-      "bytes": 3327,
+      "bytes": 3626,
       "kind": "text",
-      "lines": 69,
-      "sha256": "5522dba9bbd421801ed5c30700d70859590679c6b8113506b3461c7d95070ebf"
+      "lines": 72,
+      "sha256": "59c49a738334089e0baba5e49164a74611a695093004e41e2a845a7c6bced0d1"
     },
     "scripts/m3_reconstruction_diagnostic.py": {
       "bytes": 5489,
@@ -1951,12 +2041,13 @@
       "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
     }
   },
-  "fingerprint": "d97ed743ef8283ebcf0dac917d206278bdd30e34a078633901512a06a5d4128f",
+  "fingerprint": "83276f9fa2cb8ba5361ddb535075f707e8f72445bfe069de583b83fa79d1bc1f",
   "git": {
     "available": true,
     "branch": "main",
     "head": "0cfb03218b802e41344aa9df1c891e9b23328a98",
     "status": [
+      " M .gitignore",
       " M .prime/agent/skills/article-loop/src/article_loop/budget.py",
       " M .prime/agent/skills/article-loop/src/article_loop/delivery.py",
       " M .prime/agent/skills/article-loop/src/article_loop/inference.py",
@@ -1980,12 +2071,28 @@
       " M docs/compatibility.md",
       " M docs/decisions.md",
       " M scripts/local_loopback_full_cycle.py",
+      " M scripts/m13_system_check.py",
       "?? control/fixtures/artigo-sintetico.tex",
+      "?? docs/demo-mvp-local.md",
+      "?? docs/evidence/local-qwen-mvp/README.md",
+      "?? docs/evidence/local-qwen-mvp/SHA256SUMS",
+      "?? docs/evidence/local-qwen-mvp/artigo-original.pdf",
+      "?? docs/evidence/local-qwen-mvp/audit.json",
+      "?? docs/evidence/local-qwen-mvp/decision.json",
+      "?? docs/evidence/local-qwen-mvp/evaluation.json",
+      "?? docs/evidence/local-qwen-mvp/finalization-receipt.json",
+      "?? docs/evidence/local-qwen-mvp/gate-summary.json",
+      "?? docs/evidence/local-qwen-mvp/original.tex",
+      "?? docs/evidence/local-qwen-mvp/outcome.json",
+      "?? docs/evidence/local-qwen-mvp/registros-qwen.zip",
+      "?? docs/evidence/local-qwen-mvp/rejection-reference.json",
+      "?? docs/evidence/local-qwen-mvp/revisado.tex",
+      "?? docs/evidence/local-qwen-mvp/timeline.json",
       "?? docs/local-qwen-mvp-run.md",
       "?? scripts/synthetic_article.py"
     ]
   },
-  "recorded_at": "2026-11-18T02:02:29Z",
+  "recorded_at": "2026-11-18T02:47:28Z",
   "schema_version": "1.0.0",
-  "session_id": "session-8fc7ec68b3fd37d10ace"
+  "session_id": "session-bb53f1d81db9005ba681"
 }

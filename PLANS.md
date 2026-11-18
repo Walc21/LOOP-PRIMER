@@ -45,6 +45,21 @@ A próxima tentativa usará instruções próprias para a meta-revisão e o log
 registrará a categoria de rejeição sem guardar a resposta inválida. A
 aceitação ainda exige meta-veredito válido, disposição e auditoria reais.
 Os totais e hashes da execução estão no [registro do MVP local](docs/local-qwen-mvp-run.md).
+A repetição com o prompt próprio produziu seis pareceres válidos, mas a
+meta-revisão retornou `OUTPUT_SCHEMA_INVALID` com 61 tokens de saída. Para a
+demonstração, a saída pedida ao meta-revisor passa a ter três campos simples.
+O adaptador traduz o veredito em confirmação, retenção ou veto e valida o
+meta-parecer completo pelo mesmo schema canônico.
+O formato v8 produziu um meta-parecer válido e o ciclo registrou
+`REQUEST_EXTRA_JUDGMENT` após duas divergências do júri nas ordens A/B e B/A.
+A auditoria dessa ação verifica o pedido persistido em modo separado da
+auditoria de disposição científica. Para a apresentação com disposição,
+reforçar no prompt dos jurados a avaliação por identidade neutra, a prova
+no manuscrito e a coerência entre pontuação e preferência.
+A tentativa com o prompt revisado do júri chegou a `CYCLE_COMPLETE` e aplicou
+`REJECT` pelo critério de matemática do júri. A auditoria foi reproduzida em
+processo separado. O [roteiro da demonstração](docs/demo-mvp-local.md) reúne a
+prova revisada, os pareceres, a decisão e os comandos de reprodução.
 
 **Compatibilidade Ollama 0.40.2.** O serviço local reporta versão 0.40.2 e o
 Snap instalado contém os mesmos marcadores estáticos de rota e schema exigidos

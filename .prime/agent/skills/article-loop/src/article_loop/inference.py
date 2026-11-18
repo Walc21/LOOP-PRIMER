@@ -788,7 +788,7 @@ def model_output_schema(root: str | Path, request: InferenceRequest) -> dict[str
         return agent_proposal_payload_schema(canonical)
     if request.judgment_context is not None:
         from .routed_evaluation import judgment_payload_schema
-        return judgment_payload_schema(canonical)
+        return judgment_payload_schema(canonical, prompt_version=request.prompt_version)
     return canonical
 
 
