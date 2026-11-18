@@ -10,6 +10,20 @@ champion, challengers e arquivo Pareto.
 A fonte normativa de arquitetura é `docs/architecture.md`; a autoridade da
 integração Prime Agent continua sendo `docs/compatibility.md`.
 
+## Auditoria de segurança e privacidade — 2026-11-18
+
+Retirar o contato pessoal e caminhos de estação de trabalho da documentação
+ativa e usar os relatos privados de vulnerabilidade do GitHub. Ampliar as
+regras de exclusão de credenciais e estado de execução. A Central exige
+origem exata nos POSTs, redige subárvores sensíveis em diffs e guarda apenas
+o hash de chaves de idempotência em novos eventos de auditoria. Leituras
+de rascunhos, idempotência e o lock de auditoria rejeitam symlinks. Os
+verificadores M7 resolvem executáveis por caminhos absolutos, recebem um
+ambiente mínimo e emitem diagnósticos sem reproduzir a saída dos subprocessos.
+A fronteira dos backends valida novamente a URL e fecha respostas HTTP de erro.
+A CI fixa a ação de publicação SARIF por commit. Validar esses contratos
+offline com fixtures e a suíte de regressão.
+
 ## Proposta de MVP local — 2026-11-17
 
 **Entrega.** Um comando da CLI deve processar um manuscrito matemático sintético

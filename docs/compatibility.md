@@ -3,7 +3,7 @@
 ## Escopo e autoridade
 
 A auditoria histórica inicial foi realizada em 2026-08-12, no diretório do
-projeto `/home/victor/EXECLOOP`. Nenhuma sessão, agente filho, modelo,
+projeto `~/EXECLOOP`. Nenhuma sessão, agente filho, modelo,
 `/autonomous` ou `/refine` foi iniciado. Não foram lidos arquivos de
 autenticação nem outras credenciais.
 
@@ -16,7 +16,7 @@ superfície local atual nem autorizam execução live.
 
 | Item | Resultado observado |
 |---|---|
-| Executável | `/home/victor/.nvm/versions/node/v24.19.0/bin/prime-agent` |
+| Executável | `~/.nvm/versions/node/v24.19.0/bin/prime-agent` |
 | `prime-agent --version` | `0.7.1` |
 | Pacote | `prime-agent` `0.7.1`, com `piConfig.configDir: .prime/agent` |
 | Node exigido pelo pacote | `>=22.8.0` |
@@ -77,7 +77,7 @@ altera a topologia, profundidade ou lifecycle dos filhos M6.
 ### Reobservação durante a correção CI M12.5 — 2026-09-03
 
 Durante a reprodução da CI, `command -v prime-agent` passou a encontrar
-`/home/victor/.local/share/prime-agent-node/current/bin/prime-agent`, e
+`~/.local/share/prime-agent-node/current/bin/prime-agent`, e
 `prime-agent --version` informou `0.9.1`. Somente a versão foi consultada:
 nenhuma sessão, modelo, child, help de superfície, configuração ou credencial
 foi aberto. A evidência anterior continua histórica, e esta descoberta não

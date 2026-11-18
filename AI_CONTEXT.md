@@ -5,10 +5,10 @@
 
 ## Identidade e frescor
 
-- Fingerprint atual das fontes: `83276f9fa2cb8ba5361ddb535075f707e8f72445bfe069de583b83fa79d1bc1f`
-- Baseline da última sessão: `83276f9fa2cb8ba5361ddb535075f707e8f72445bfe069de583b83fa79d1bc1f`
-- Inventário: 340 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
-- Histórico detalhado: `docs/AI_HISTORY.md` (477213 bytes; SHA-256 `b2352e6772675a21`).
+- Fingerprint atual das fontes: `ae4e6ac143f888ab2d7a55e38f71c6b34b8c8a88b229871649298b53f222a47e`
+- Baseline da última sessão: `ae4e6ac143f888ab2d7a55e38f71c6b34b8c8a88b229871649298b53f222a47e`
+- Inventário: 255 arquivos relevantes; runtime entra apenas por metadata/hash e segredos nunca são incorporados.
+- Histórico detalhado: `docs/AI_HISTORY.md` (493933 bytes; SHA-256 `10c084be44ab4613`).
 
 ## Estado e limites atuais
 
@@ -30,11 +30,7 @@
 
 ## Sessões materiais recentes
 
-- Sessões estruturadas registradas: 76.
-- `session-8fc7ec68b3fd37d10ace` — Preparação do PR do MVP local com evidência da execução real do júri Qwen.
-  - mudança: docs/local-qwen-mvp-run.md registra os 13 gates, seis pareceres válidos, a falha da meta-revisão e os hashes dos artefatos locais.
-  - risco: A execução real não atingiu CYCLE_COMPLETE. A correção do prompt da meta-revisão foi verificada offline e ainda precisa de inferência real.
-  - próximo: Revisar o PR e validar a meta-revisão com o plano de execução preparado.
+- Sessões estruturadas registradas: 77.
 - `session-f7719085e359fc5f588a` — Demonstração real do MVP chegou a CYCLE_COMPLETE com REJECT e auditoria M13 aprovada.
   - mudança: Meta-revisão v8 gera três campos simples e recompõe o meta-parecer canônico. O júri v9 reforça o uso de IDs neutros e avaliação da prova.
   - decisão: Preservar o critério de inversão e a política de disposição. A tentativa d45eb426 rejeitou o candidato porque o critério matemático do júri ficou falso, apesar dos gates aprovados.
@@ -44,6 +40,11 @@
   - mudança: O README destaca CYCLE_COMPLETE, 12 chamadas locais reais, 13 gates, REJECT e auditoria M13. Roteiro e evidências públicas incluem o artigo, a edição, a avaliação e a decisão.
   - risco: O pacote público documenta a execução. O replay completo da auditoria de entrega depende da raiz original por causa dos caminhos vinculados aos recibos M6.
   - próximo: Usar o README, o roteiro e o pacote para demonstrar o ciclo e verificar as evidências.
+- `session-e356abbcda663aaa59c6` — Auditoria de segurança e privacidade do LOOP-PRIMER
+  - mudança: Generalizado o contato e os caminhos pessoais na documentação. Credenciais e estado local passaram a ter exclusões mais abrangentes no Git.
+  - decisão: Aplicar o ADR-046 e usar relatos privados de vulnerabilidade do GitHub. Preservar a atribuição da licença e os registros duráveis existentes.
+  - risco: Dados pessoais de commits anteriores continuam acessíveis no histórico Git.
+  - próximo: Revisão das correções no pull request de segurança.
 
 ## Roteamento obrigatório por escopo
 

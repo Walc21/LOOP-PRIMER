@@ -1,8 +1,8 @@
 # M12.5.1 Phase A — auditoria de ligação
 
 Baseline auditado: `ba316b50a707d490348192d528046b6eec567250`, árvore limpa
-no início. Prompt externo preservado em
-`/home/victor/Downloads/LOOP_PRIMER_M12_5_1_PHASE_A_PROMPT.md`, SHA-256
+no início. Prompt externo preservado como
+`LOOP_PRIMER_M12_5_1_PHASE_A_PROMPT.md`, SHA-256
 `01c9de81d08deb436446c913a7410e457c54efaba0342a8db953c52dc28eb41b`.
 
 ## Mapa end-to-end

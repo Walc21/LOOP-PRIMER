@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import select
 import shutil
 import stat
 import subprocess
@@ -29,6 +31,7 @@ REQUIRED_GATES = (
     "math_critical_issues", "forbidden_metatext", "local_budget",
     "manifest_integrity", "correctness_math",
 )
+MAX_TOOL_OUTPUT_BYTES = 1_048_576
 
 
 def _config(root: Path) -> dict[str, dict[str, Any]]:
@@ -178,19 +181,46 @@ def _entrypoint(candidate: Path) -> Path:
     return present[0]
 
 
-def _run(command: str, args: list[str], *, cwd: Path, timeout: int) -> tuple[bool, int, str, int]:
-    executable = shutil.which(command)
-    if executable is None:
-        return False, 127, "required executable is unavailable", 0
+def _run(command: str, args: list[str], *, candidate: Path, cwd: Path, timeout: int,
+         environment: Mapping[str, str] | None = None) -> tuple[int, str, int]:
+    search_path = os.pathsep.join(
+        entry for entry in os.get_exec_path()
+        if Path(entry).is_absolute() and not Path(entry).resolve().is_relative_to(candidate)
+    )
+    executable = shutil.which(command, path=search_path)
+    if executable is None or Path(executable).resolve().is_relative_to(candidate):
+        return 127, "", 0
     started = time.monotonic()
+    deadline = started + timeout
+    output = bytearray()
+    env = {"PATH": search_path, "LC_ALL": "C", **(environment or {})}
     try:
-        done = subprocess.run([executable, *args], cwd=cwd, stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT, text=True, timeout=timeout, check=False)
-        return done.returncode == 0, done.returncode, done.stdout[:4096], int((time.monotonic() - started) * 1000)
+        with subprocess.Popen(
+            [executable, *args], cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        ) as process:
+            try:
+                assert process.stdout is not None
+                descriptor = process.stdout.fileno()
+                while True:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0 or not select.select([descriptor], [], [], remaining)[0]:
+                        raise subprocess.TimeoutExpired(command, timeout)
+                    block = os.read(descriptor, min(8192, MAX_TOOL_OUTPUT_BYTES + 1 - len(output)))
+                    if not block:
+                        break
+                    output.extend(block)
+                    if len(output) > MAX_TOOL_OUTPUT_BYTES:
+                        return 125, "", int((time.monotonic() - started) * 1000)
+                code = process.wait(timeout=max(0, deadline - time.monotonic()))
+                return code, output.decode("utf-8", errors="replace"), int((time.monotonic() - started) * 1000)
+            finally:
+                if process.poll() is None:
+                    process.kill()
     except subprocess.TimeoutExpired:
-        return False, 124, "local verifier timed out", int((time.monotonic() - started) * 1000)
-    except OSError as exc:
-        return False, 126, str(exc)[:4096], int((time.monotonic() - started) * 1000)
+        return 124, "", int((time.monotonic() - started) * 1000)
+    except OSError:
+        return 126, "", int((time.monotonic() - started) * 1000)
 
 
 def _claims(root: Path, manifest: Mapping[str, Any], proposals: Mapping[str, Mapping[str, Any]]) -> tuple[dict[str, dict[str, Any]], list[str]]:
@@ -397,31 +427,33 @@ def _check(gate: str, candidate: Path, root: Path, manifest: Mapping[str, Any],
         if gate == "latex_compile_safe":
             entry = _entrypoint(candidate)
             work = Path(tempfile.mkdtemp(prefix="m7-latex-"))
-            ok, code, output, duration = _run(
+            context["work"] = work
+            code, output, duration = _run(
                 "pdflatex", ["-no-shell-escape", "-interaction=nonstopmode", "-halt-on-error",
                              f"-output-directory={work}", entry.name],
-                cwd=entry.parent, timeout=timeout,
+                candidate=candidate, cwd=entry.parent, timeout=timeout,
+                environment={"HOME": str(work), "TEXINPUTS": ".:", "openin_any": "p", "openout_any": "p"},
             )
             pdf = work / f"{entry.stem}.pdf"
-            if not ok or not pdf.is_file():
-                shutil.rmtree(work, ignore_errors=True)
-                return False, "technical", output or "LaTeX compilation failed", code, [], duration
-            context["work"] = work
+            if code != 0 or not pdf.is_file() or pdf.is_symlink():
+                return False, "technical", "LaTeX compilation failed", code or 1, [], duration
             context["pdf"] = pdf
-            context["latex_output"] = output
-            return True, "technical", output or "pdflatex completed", 0, [entry.relative_to(candidate).as_posix()], duration
+            context["latex_reference_warning"] = bool(
+                re.search(r"undefined references|undefined citations|multiply defined", output, re.I)
+            )
+            return True, "technical", "pdflatex completed", 0, [entry.relative_to(candidate).as_posix()], duration
         pdf = context.get("pdf")
         if not isinstance(pdf, Path) or not pdf.is_file():
             return False, "technical", "compiler did not produce a PDF", 1, [], 0
         if gate == "render":
             output = Path(context["work"]) / "render"
             output.mkdir(exist_ok=True)
-            ok, code, text, duration = _run("pdftoppm", ["-png", "-f", "1", "-singlefile", str(pdf), str(output / "page")], cwd=candidate, timeout=timeout)
-            return ok, "technical", text or ("first page rendered" if ok else "render failed"), code, ["manifest.json"] if ok else [], duration
+            code, _, duration = _run("pdftoppm", ["-png", "-f", "1", "-singlefile", str(pdf), str(output / "page")], candidate=candidate, cwd=candidate, timeout=timeout)
+            return code == 0, "technical", "first page rendered" if code == 0 else "render failed", code, ["manifest.json"] if code == 0 else [], duration
         if pdf.stat().st_size == 0:
             return False, "technical", "compiler produced an empty PDF", 1, [], 0
-        ok, code, output, duration = _run("pdfinfo", [str(pdf)], cwd=candidate, timeout=timeout)
-        return ok, "technical", output or ("pdfinfo accepted output" if ok else "PDF invalid"), code, ["manifest.json"] if ok else [], duration
+        code, _, duration = _run("pdfinfo", [str(pdf)], candidate=candidate, cwd=candidate, timeout=timeout)
+        return code == 0, "technical", "pdfinfo accepted output" if code == 0 else "PDF invalid", code, ["manifest.json"] if code == 0 else [], duration
     if gate == "references_labels":
         text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in _all_tex(candidate))
         labels = re.findall(r"\\label\{([^}]+)\}", text)
@@ -431,8 +463,7 @@ def _check(gate: str, candidate: Path, root: Path, manifest: Mapping[str, Any],
         bibkeys = set()
         for bib in candidate.rglob("*.bib"):
             bibkeys.update(re.findall(r"@[A-Za-z]+\s*\{\s*([^,\s]+)", bib.read_text(encoding="utf-8", errors="replace")))
-        log = str(context.get("latex_output", ""))
-        bad_log = bool(re.search(r"undefined references|undefined citations|multiply defined", log, re.I))
+        bad_log = context.get("latex_reference_warning", False)
         ok = len(labels) == len(set(labels)) and set(refs).issubset(labels) and set(cites).issubset(bibitems | bibkeys) and not bad_log
         return ok, "technical", "references, citations, and compiler log verified" if ok else "duplicate/unresolved reference or citation", 0 if ok else 1, ["manifest.json"], 0
     if gate == "asset_inventory":
@@ -442,7 +473,7 @@ def _check(gate: str, candidate: Path, root: Path, manifest: Mapping[str, Any],
         tables = len(re.findall(r"\\begin\{table\*?\}", text))
         graphics = re.findall(r"\\includegraphics(?:\[[^]]*\])?\{([^}]+)\}", text)
         for graphic in graphics:
-            options = [candidate / graphic] + [candidate / f"{graphic}{suffix}" for suffix in (".pdf", ".png", ".jpg", ".jpeg", ".eps")]
+            options = [_contained(candidate, graphic + suffix) for suffix in ("", ".pdf", ".png", ".jpg", ".jpeg", ".eps")]
             if not any(path.is_file() for path in options):
                 raise IntegrityError("referenced graphic is absent")
         _manifest(root, candidate)
@@ -554,7 +585,7 @@ def run_gates(candidate: str | Path, *, adapter: Any | None = None,
             except IntegrityError as exc:
                 ok, classification, output, code, evidence, duration = False, "technical", str(exc), 70, [], 0
             except Exception as exc:  # verifier failure is evidence, not an absent report
-                ok, classification, output, code, evidence, duration = False, "technical", f"verifier exception: {type(exc).__name__}: {exc}", 70, [], 0
+                ok, classification, output, code, evidence, duration = False, "technical", f"verifier exception: {type(exc).__name__}", 70, [], 0
             after = tree_hash(candidate)
             if after != before:
                 ok, classification, output, code, evidence = False, "technical", "candidate mutated during gate", 70, []

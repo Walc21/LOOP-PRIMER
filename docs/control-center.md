@@ -46,10 +46,11 @@ o pipeline científico.
 - SSE usa cursor vetorial por fonte durável, com backfill e deduplicação. A UI
   sinaliza texto para ao vivo, reconexão, atualização atrasada e ausência de
   execução, e usa polling somente leitura após queda do stream.
-- POSTs exigem `Origin` same-origin, confirmação, `Idempotency-Key` e hash
-  esperado. O ledger `state/control-center/audit.jsonl` é separado do journal
-  científico, hash-encadeado e escrito com staging, fsync, rename e fsync do
-  diretório.
+- POSTs exigem que `Origin` corresponda ao `Host` exato, além de confirmação,
+  `Idempotency-Key` e hash esperado. O ledger `state/control-center/audit.jsonl`
+  é separado do journal científico, hash-encadeado e escrito com staging,
+  fsync, rename e fsync do diretório. Novos eventos guardam o SHA-256 da chave
+  de idempotência. A API omite o campo também em eventos legados.
 - Os controles são apenas `preflight`, `checkpoint`, `pause`, `resume`,
   `stop` e `finalize`; todos delegam à API canônica. Não há `run`,
   `bootstrap`, inferência, terminal, adaptador ou test double no HTTP público.
@@ -64,6 +65,8 @@ Os únicos arquivos configuráveis são `config/system.yaml`, `config/budgets.ya
 tipados e rascunhos com hash-base, validação estrutural/cruzada, diff lógico e
 confirmação; ela não aceita YAML arbitrário. Comandos de gates, topologia,
 schemas e outros campos canônicos permanecem imutáveis.
+Os diffs redigem valores sob campos sensíveis, inclusive em rascunhos
+e respostas de idempotência anteriores.
 
 Aplicar um rascunho só é permitido sem nenhuma run não terminal. Essa regra é
 intencionalmente conservadora porque snapshots legados ainda não associam hash

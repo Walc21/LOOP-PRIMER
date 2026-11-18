@@ -20,9 +20,7 @@
 
 If you discover a security vulnerability within LOOP-PRIMER:
 
-1. **Do not** create a public issue.
-2. Email details to `victor.gabriel@estudante.ufscar.br` with:
-   - Description of the vulnerability.
-   - Steps to reproduce or proof-of-concept.
-   - Potential impact.
-3. You will receive an acknowledgment within 48 hours and regular updates on the resolution.
+Use GitHub's private vulnerability reporting form. Include the affected
+version, a description of the issue, reproduction steps, and the potential
+impact. Redact credentials and personal data from any attachments.
+[Report a vulnerability privately](https://github.com/Walc21/LOOP-PRIMER/security/advisories/new)

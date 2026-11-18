@@ -70,7 +70,11 @@ CONFIG_PATHS = (
 )
 # Do not redact operational counters such as ``total_tokens``.  Credentials
 # are redacted by their precise credential-like field names instead.
-SENSITIVE_KEY = re.compile(r"(?:api[_-]?key|access[_-]?token|refresh[_-]?token|session[_-]?token|cookie|password|secret|credential)", re.I)
+SENSITIVE_KEY = re.compile(
+    r"(?:api[_-]?(?:key|token)|(?:access|refresh|session|auth|bearer)[_-]?token|"
+    r"cookie|password|secret|credential|private[_-]?key|authorization[_-]?header|^token$)",
+    re.I,
+)
 
 
 class ControlCenterError(RuntimeError):
@@ -123,6 +127,13 @@ def _redact(value: Any, *, key: str | None = None) -> Any:
     if isinstance(value, str) and len(value) > 2_048:
         return value[:2_048] + "…[truncated]"
     return value
+
+
+def _sensitive_diff_prefix(path: str) -> str | None:
+    for part in re.finditer(r"[^.\[\]]+", path):
+        if SENSITIVE_KEY.search(part.group()):
+            return path[:part.end()]
+    return None
 
 
 def _contained(root: Path, relative: str, *, exists: bool = False) -> Path:
@@ -223,17 +234,16 @@ class AuditLedger:
         self.root = raw_root.resolve()
         self.directory = self.root / "state" / "control-center"
         self.path = self.directory / "audit.jsonl"
-        self.lock_path = self.directory / "audit.lock"
         self.schema_path = self.root / "config" / "schemas" / self.schema_name
         self._thread_lock = threading.RLock()
 
     def _check_directory(self, *, create: bool) -> None:
-        _contained(self.root, "state")
+        _contained(self.root, "state/control-center")
         if self.directory.exists():
             if self.directory.is_symlink() or not self.directory.is_dir():
                 raise ControlCenterError("UNSAFE_PATH", "control-center directory is unsafe")
         elif create:
-            self.directory.mkdir(parents=True, exist_ok=False)
+            self.directory.mkdir(parents=True, exist_ok=True)
             descriptor = os.open(self.directory.parent, os.O_RDONLY)
             try:
                 os.fsync(descriptor)
@@ -246,11 +256,11 @@ class AuditLedger:
     @contextmanager
     def exclusive(self, name: str, thread_lock: threading.RLock) -> Iterable[None]:
         """Hold a dedicated local lock across a complete critical operation."""
-        if name not in {"config.lock", "operations.lock"}:
+        if name not in {"audit.lock", "config.lock", "operations.lock"}:
             raise ControlCenterError("UNSAFE_PATH", "control-plane lock is not allowed")
         with thread_lock:
             self._check_directory(create=True)
-            path = self.directory / name
+            path = _contained(self.root, f"state/control-center/{name}")
             flags = os.O_RDWR | os.O_CREAT
             if hasattr(os, "O_NOFOLLOW"):
                 flags |= os.O_NOFOLLOW
@@ -317,36 +327,30 @@ class AuditLedger:
             _safe_id(run_id, "run_id")
         if draft_id is not None:
             _safe_id(draft_id, "draft_id")
-        with self._thread_lock:
-            self._check_directory(create=True)
-            with self.lock_path.open("a+", encoding="utf-8") as stream:
-                fcntl.flock(stream, fcntl.LOCK_EX)
-                try:
-                    events = self.read_events()
-                    event = {
-                        "schema_version": "1.0.0",
-                        "event_id": f"cc-{len(events):08d}",
-                        "sequence": len(events),
-                        "occurred_at": _now(),
-                        "action": action,
-                        "idempotency_key": idempotency_key,
-                        "request_hash": request_hash,
-                        "expected_hash": expected_hash,
-                        "before_hash": before_hash,
-                        "after_hash": after_hash,
-                        "outcome": outcome,
-                        "run_id": run_id,
-                        "draft_id": draft_id,
-                        "response_hash": response_hash,
-                        "previous_event_hash": events[-1]["event_hash"] if events else None,
-                    }
-                    event["event_hash"] = _hash(event)
-                    validator(self._schema()).validate(event)
-                    prior = self.path.read_bytes() if self.path.exists() else b""
-                    _atomic_bytes(self.path, prior + _canonical(event) + b"\n")
-                    return event
-                finally:
-                    fcntl.flock(stream, fcntl.LOCK_UN)
+        with self.exclusive("audit.lock", self._thread_lock):
+            events = self.read_events()
+            event = {
+                "schema_version": "1.0.0",
+                "event_id": f"cc-{len(events):08d}",
+                "sequence": len(events),
+                "occurred_at": _now(),
+                "action": action,
+                "idempotency_key": _hash_bytes(idempotency_key.encode("utf-8")),
+                "request_hash": request_hash,
+                "expected_hash": expected_hash,
+                "before_hash": before_hash,
+                "after_hash": after_hash,
+                "outcome": outcome,
+                "run_id": run_id,
+                "draft_id": draft_id,
+                "response_hash": response_hash,
+                "previous_event_hash": events[-1]["event_hash"] if events else None,
+            }
+            event["event_hash"] = _hash(event)
+            validator(self._schema()).validate(event)
+            prior = self.path.read_bytes() if self.path.exists() else b""
+            _atomic_bytes(self.path, prior + _canonical(event) + b"\n")
+            return event
 
 
 class IdempotencyStore:
@@ -358,7 +362,7 @@ class IdempotencyStore:
 
     def _path(self, key: str) -> Path:
         digest = _hash_bytes(key.encode("utf-8"))
-        return self.directory / f"{digest}.json"
+        return _contained(self.ledger.root, f"state/control-center/idempotency/{digest}.json")
 
     def get(self, key: str) -> dict[str, Any] | None:
         self.ledger._check_directory(create=False)
@@ -580,11 +584,15 @@ class ConfigurationRepository:
         _safe_id(draft_id, "draft_id")
         if not draft_id.startswith("draft-"):
             raise ControlCenterError("INVALID_IDENTIFIER", "draft identifier is invalid")
-        return self.draft_directory / f"{draft_id}.json"
+        return _contained(self.root, f"state/control-center/drafts/{draft_id}.json")
 
     @staticmethod
     def _diff(before: Any, after: Any, location: str = "") -> list[dict[str, Any]]:
         """Return a bounded, redacted logical diff for confirmation screens."""
+        if _sensitive_diff_prefix(location) is not None:
+            if before == after:
+                return []
+            return [{"path": location, "before": "[REDACTED]", "after": "[REDACTED]"}]
         if isinstance(before, Mapping) and isinstance(after, Mapping):
             result: list[dict[str, Any]] = []
             for key in sorted(set(before) | set(after)):
@@ -685,7 +693,13 @@ class ConfigurationRepository:
 
     @staticmethod
     def public_draft(draft: Mapping[str, Any]) -> dict[str, Any]:
-        return _redact(dict(draft))
+        public = _redact(dict(draft))
+        for change in public["diff"]:
+            prefix = _sensitive_diff_prefix(change["path"])
+            if prefix is not None:
+                change["path"] = prefix
+                change["before"] = change["after"] = "[REDACTED]"
+        return public
 
 
 def execution_readiness_from_mapping(config: Mapping[str, Any]) -> dict[str, Any]:
@@ -1112,6 +1126,8 @@ class ControlPlane:
                 response = existing.get("response")
                 if not isinstance(response, Mapping) or existing.get("response_hash") != _hash(response):
                     raise ControlCenterError("INTEGRITY_ERROR", "stored idempotent result is invalid")
+                if action.startswith("config_draft_"):
+                    return {**response, "result": self.config.public_draft(response["result"])}
                 return dict(response)
             self.audit.append(
                 action=action, idempotency_key=idempotency_key, request_hash=request_hash,
@@ -1234,20 +1250,19 @@ class _LocalHandler(BaseHTTPRequestHandler):
         return {f"http://127.0.0.1:{port}", f"http://localhost:{port}"}
 
     def _verify_host(self) -> None:
-        host = self.headers.get("Host", "")
-        expected = {origin.removeprefix("http://") for origin in self._expected_origins()}
-        if host not in expected:
+        hosts = self.headers.get_all("Host", [])
+        if len(hosts) != 1 or f"http://{hosts[0]}" not in self._expected_origins():
             raise ControlCenterError("INVALID_HOST", "request Host must be loopback", status=403)
-        origin = self.headers.get("Origin")
-        if origin is not None and origin not in self._expected_origins():
-            raise ControlCenterError("INVALID_ORIGIN", "request Origin must be loopback", status=403)
+        origins = self.headers.get_all("Origin", [])
+        if origins and origins != [f"http://{hosts[0]}"]:
+            raise ControlCenterError("INVALID_ORIGIN", "request Origin must match the loopback Host", status=403)
 
     def _verify_mutation(self) -> str:
         self._verify_host()
-        if self.headers.get("Origin") not in self._expected_origins():
+        if self.headers.get("Origin") is None:
             raise ControlCenterError("CSRF_REJECTED", "same-origin Origin is required", status=403)
         fetch_site = self.headers.get("Sec-Fetch-Site")
-        if fetch_site not in {None, "same-origin", "same-site"}:
+        if fetch_site not in {None, "same-origin"}:
             raise ControlCenterError("CSRF_REJECTED", "cross-site mutation is rejected", status=403)
         key = self.headers.get("Idempotency-Key")
         if not key:
@@ -1282,12 +1297,19 @@ class _LocalHandler(BaseHTTPRequestHandler):
         payload = _canonical(dict(value))
         self.send_response(status)
         self._headers("application/json; charset=utf-8")
+        if self.close_connection:
+            self.send_header("Connection", "close")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)
 
     def _error(self, error: ControlCenterError) -> None:
-        self._json({"ok": False, "error": {"code": error.code, "message": str(error)}}, error.status)
+        # An early rejection can leave an unread request body in the socket.
+        self.close_connection = True
+        try:
+            self._json({"ok": False, "error": {"code": error.code, "message": str(error)}}, error.status)
+        except (BrokenPipeError, ConnectionResetError):
+            return
 
     def _static(self, path: str) -> None:
         name = {"/": "index.html", "/assets/app.js": "app.js", "/assets/styles.css": "styles.css"}.get(path)
@@ -1361,7 +1383,10 @@ class _LocalHandler(BaseHTTPRequestHandler):
                 limit = int(self._query(parsed.query, "limit") or "50")
                 self._json(plane.errors(cursor=self._query(parsed.query, "cursor"), limit=limit))
             elif path == f"{API_PREFIX}/audit":
-                self._json({"events": [_redact(event) for event in plane.audit.read_events()]})
+                self._json({"events": [
+                    _redact({key: value for key, value in event.items() if key != "idempotency_key"})
+                    for event in plane.audit.read_events()
+                ]})
             else:
                 artifact = re.fullmatch(r"/api/v1/runs/([A-Za-z0-9][A-Za-z0-9_.-]{0,127})/artifacts/([a-f0-9]{64})", path)
                 if artifact is not None:

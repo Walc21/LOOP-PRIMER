@@ -16,14 +16,6 @@ artifacts/rendered/*
 !**/*.example.*
 
 # Durable runtime state is local; schemas/configuration remain versioned
-state/events/*
-state/snapshots/*
-state/checkpoints/*
-state/claims/*
-state/issues/*
-state/decisions/*
-state/locks/*
-state/control-center/*
 versions/champion/*
 versions/challengers/*
 versions/pareto/*
@@ -33,7 +25,10 @@ reports/*
 logs/*
 !**/.gitkeep
 !**/*.example.*
-!state/control-center/.gitkeep
+/state/**
+!/state/**/
+!/state/**/.gitkeep
+/runtime/
 
 # Worktree-local live smoke configuration and evidence
 local-smoke/runs/
@@ -43,8 +38,17 @@ local-smoke/config/*.local.json
 .env
 .env.*
 !.env.example
+auth.json
+.netrc
+.pypirc
+.aws/
+id_rsa
+id_ecdsa
+id_ed25519
 *.pem
 *.key
+*.p12
+*.pfx
 *credentials*.json
 *secrets*.json
 
@@ -67,10 +71,3 @@ env/
 
 # Lock transitório do histórico/contexto para IAs
 docs/ai_history.lock
-runtime/local-full-cycle/
-runtime/m3-diagnostics/
-runtime/m3-real-attempts/
-
-# Create-only M6 smoke evidence and explicit M3 selections stay local.
-runtime/m6-context-selections/
-runtime/m6-official-smokes/

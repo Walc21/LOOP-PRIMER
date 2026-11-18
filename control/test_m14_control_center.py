@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import http.client
 import json
 from pathlib import Path
@@ -20,6 +21,7 @@ sys.path.insert(0, str(ROOT / ".prime/agent/skills/article-loop/src"))
 
 from article_loop.budget import BudgetLedger, BudgetLimits
 from article_loop.control_center import (
+    ConfigurationRepository,
     ControlCenterError,
     ControlPlane,
     LocalControlHTTPServer,
@@ -150,7 +152,9 @@ class ControlCenterTests(unittest.TestCase):
         )
         self.assertEqual(calls, ["called"])
         self.assertEqual(first, second)
-        self.assertEqual([item["outcome"] for item in plane.audit.read_events()], ["PREPARED", "APPLIED"])
+        events = plane.audit.read_events()
+        self.assertEqual([item["outcome"] for item in events], ["PREPARED", "APPLIED"])
+        self.assertEqual({item["idempotency_key"] for item in events}, {hashlib.sha256(b"same-key").hexdigest()})
 
     def test_concurrent_same_idempotency_key_invokes_operation_once(self):
         plane = ControlPlane(self.root)
@@ -314,12 +318,71 @@ class ControlCenterTests(unittest.TestCase):
         with self.assertRaises(ControlCenterError):
             plane.runs()
 
+    def test_control_center_rejects_symlinked_draft_cache_and_audit_lock(self):
+        plane = ControlPlane(self.root)
+        plane.audit.directory.mkdir()
+        outside = self.root.parent / "outside"
+        outside.mkdir()
+        plane.config.draft_directory.symlink_to(outside, target_is_directory=True)
+        plane.idempotency.directory.symlink_to(outside, target_is_directory=True)
+        (plane.audit.directory / "audit.lock").symlink_to(outside / "audit.lock")
+
+        with self.assertRaisesRegex(ControlCenterError, "symlinked path"):
+            plane.config.read_draft("draft-" + "a" * 32)
+        with self.assertRaisesRegex(ControlCenterError, "symlinked path"):
+            plane.idempotency.get("fixture-key")
+        with self.assertRaisesRegex(ControlCenterError, "symlinked path"):
+            plane.audit.append(
+                action="preflight", idempotency_key="fixture-key", request_hash="a" * 64,
+                expected_hash=None, before_hash=None, after_hash=None, outcome="PREPARED",
+            )
+        self.assertEqual(list(outside.iterdir()), [])
+
     def test_redaction_never_returns_secret_like_values(self):
         from article_loop.control_center import _redact
 
-        projected = _redact({"api_key": "do-not-return", "nested": {"cookie": "also-hidden"}})
-        self.assertNotIn("do-not-return", json.dumps(projected))
-        self.assertNotIn("also-hidden", json.dumps(projected))
+        projected = _redact({
+            "api_key": "do-not-return",
+            "nested": {"cookie": "also-hidden", "token": "synthetic-token", "total_tokens": 60},
+        })
+        self.assertEqual(projected, {
+            "api_key": "[REDACTED]",
+            "nested": {"cookie": "[REDACTED]", "token": "[REDACTED]", "total_tokens": 60},
+        })
+
+    def test_config_diff_redacts_nested_credentials_on_creation_and_replay(self):
+        before = {"groups": [{"credentials": {"entry": ["synthetic-old-value"]}}]}
+        after = {"groups": [{"credentials": {"entry": ["synthetic-new-value"]}}]}
+        self.assertEqual(ConfigurationRepository._diff(before, after), [
+            {"path": "groups[0].credentials", "before": "[REDACTED]", "after": "[REDACTED]"},
+        ])
+
+        # Stored responses from earlier releases can contain leaf-level diffs.
+        plane = ControlPlane(self.root)
+        request = {"confirmed": True}
+        response = {"ok": True, "action": "config_draft_validate", "result": {
+            "value": after, "diff": [
+                {"path": "groups[0].credentials.synthetic-private-label[0]", "before": "synthetic-old-value", "after": "synthetic-new-value"},
+                {"path": "total_tokens", "before": 30, "after": 60},
+            ],
+        }}
+        body_hash = lambda value: hashlib.sha256(
+            json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        plane.idempotency.put("legacy-key", {
+            "action": "config_draft_validate", "request_hash": body_hash(request),
+            "response": response, "response_hash": body_hash(response),
+        })
+        replay = plane._mutate(
+            action="config_draft_validate", idempotency_key="legacy-key", request=request,
+            expected_hash=None, before_hash=None, run_id=None, draft_id=None,
+            operation=lambda: self.fail("replay called the canonical operation"),
+        )
+        self.assertNotIn("synthetic-old-value", json.dumps(replay))
+        self.assertNotIn("synthetic-new-value", json.dumps(replay))
+        self.assertNotIn("synthetic-private-label", json.dumps(replay))
+        self.assertEqual(replay["result"]["diff"][0]["path"], "groups[0].credentials")
+        self.assertEqual(replay["result"]["diff"][1], response["result"]["diff"][1])
 
     def test_production_control_rejects_adapter_and_test_double_payload(self):
         run_id = self.make_run()
@@ -346,17 +409,60 @@ class ControlCenterTests(unittest.TestCase):
             self.assertEqual(response.status, 403)
             response.read()
             connection.close()
+            host = f"127.0.0.1:{port}"
+            for origin, site in (
+                ("http://example.invalid", "cross-site"),
+                (f"http://localhost:{port}", "same-origin"),
+                (f"http://{host}", "same-site"),
+            ):
+                with self.subTest(origin=origin, site=site):
+                    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+                    connection.request(
+                        "POST", "/api/v1/preflight",
+                        body=json.dumps({"confirmed": True, "expected_hash": "a" * 64}),
+                        headers={"Host": host, "Origin": origin, "Sec-Fetch-Site": site,
+                                 "Content-Type": "application/json", "Idempotency-Key": "bad-origin"},
+                    )
+                    response = connection.getresponse()
+                    self.assertEqual(response.status, 403)
+                    self.assertEqual(response.getheader("Connection"), "close")
+                    response.read()
+                    connection.close()
             connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
-            connection.request(
-                "POST", "/api/v1/preflight",
-                body=json.dumps({"confirmed": True, "expected_hash": "a" * 64}),
-                headers={"Host": f"127.0.0.1:{port}", "Origin": "http://example.invalid", "Content-Type": "application/json", "Idempotency-Key": "bad-origin"},
-            )
-            response = connection.getresponse()
-            self.assertEqual(response.status, 403)
-            response.read()
+            with patch.object(server.plane, "preflight_action", return_value={"ok": True}) as action:
+                connection.request(
+                    "POST", "/api/v1/preflight", body="{}",
+                    headers={"Host": host, "Origin": f"http://{host}", "Sec-Fetch-Site": "same-origin",
+                             "Content-Type": "application/json", "Idempotency-Key": "same-origin-fixture"},
+                )
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                response.read()
+                action.assert_called_once_with({}, "same-origin-fixture")
             connection.close()
         finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=3)
+
+    def test_audit_api_omits_idempotency_key(self):
+        server = LocalControlHTTPServer(self.root, port=0)
+        server.plane.audit.append(
+            action="preflight", idempotency_key="audit-fixture", request_hash="a" * 64,
+            expected_hash=None, before_hash=None, after_hash=None, outcome="PREPARED",
+        )
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        connection = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=3)
+        try:
+            connection.request("GET", "/api/v1/audit")
+            response = connection.getresponse()
+            self.assertEqual(response.status, 200)
+            events = json.loads(response.read())["events"]
+            self.assertEqual(len(events), 1)
+            self.assertNotIn("idempotency_key", events[0])
+        finally:
+            connection.close()
             server.shutdown()
             server.server_close()
             thread.join(timeout=3)

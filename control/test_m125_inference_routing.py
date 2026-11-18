@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import http.client
+import io
 import json
 from pathlib import Path
 import shutil
@@ -1081,13 +1083,16 @@ class M125BackendUnitTests(M125Base):
         )
         backend._opener = self.Opener(self.Response(json.dumps(no_usage).encode()))
         self.assertFalse(backend.complete(self.request(), self.local_target()).usage_available)
+        malformed_finish = {"choices": [{"message": {"content": "{}"}, "finish_reason": []}]}
+        error_body = io.BytesIO(b"synthetic response body")
         cases = [
             (self.Response(b"not-json"), None, "BACKEND_FAILURE"),
+            (self.Response(json.dumps(malformed_finish).encode()), None, "BACKEND_FAILURE"),
             (self.Response(b"x" * 2048), None, "BACKEND_FAILURE"),
             (None, TimeoutError(), "TIMEOUT"),
             (None, http.client.RemoteDisconnected("closed without response"), "BACKEND_FAILURE"),
             (None, urllib.error.URLError(ConnectionResetError("closed")), "BACKEND_FAILURE"),
-            (None, urllib.error.HTTPError("http://127.0.0.1/", 302, "redirect", {}, None), "BACKEND_FAILURE"),
+            (None, urllib.error.HTTPError("http://127.0.0.1/", 302, "redirect", {}, error_body), "BACKEND_FAILURE"),
         ]
         for response, error, reason in cases:
             with self.subTest(reason=reason, error=type(error).__name__ if error else "response"):
@@ -1096,13 +1101,27 @@ class M125BackendUnitTests(M125Base):
                     structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
                 )
                 candidate._opener = self.Opener(response, error)
-                try:
-                    with self.assertRaises(InferenceBackendError) as caught:
-                        candidate.complete(self.request(), self.local_target())
-                    self.assertEqual(caught.exception.reason_code, reason)
-                finally:
-                    if isinstance(error, urllib.error.HTTPError):
-                        error.close()
+                with self.assertRaises(InferenceBackendError) as caught:
+                    candidate.complete(self.request(), self.local_target())
+                self.assertEqual(caught.exception.reason_code, reason)
+        self.assertTrue(error_body.closed)
+
+    def test_backend_rejects_invalid_endpoint_before_dispatch(self):
+        backend = LocalOpenAICompatibleBackend(
+            project_root=self.root, structured_output_dialect=OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA,
+        )
+        opener = self.Opener()
+        backend._opener = opener
+        for endpoint in (
+            "http://127.0.0.1:65536/v1/chat/completions",
+            "http://127.0.0.1/v1/chat/completions?fixture=1",
+            "http://127.0.0.1/v1/chat/completions#fixture",
+        ):
+            with self.subTest(endpoint=endpoint):
+                with self.assertRaises(InferenceBackendError) as caught:
+                    backend.complete(self.request(), replace(self.local_target(), endpoint=endpoint))
+                self.assertFalse(caught.exception.sent)
+                self.assertIsNone(opener.request)
 
 
 class M125PrimeBoundaryTests(unittest.TestCase):
