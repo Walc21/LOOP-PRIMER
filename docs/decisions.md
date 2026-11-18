@@ -1,5 +1,36 @@
 # Decisões arquiteturais
 
+## ADR-046 — Minimização de dados nos verificadores e na Central
+
+**Status:** Aceito. **Data:** 2026-11-18.
+
+O ADR-023 passa a exigir que os verificadores externos do M7 sejam resolvidos
+por entradas absolutas de `PATH` fora da árvore do candidato. O pdflatex
+executa com shell escape desabilitado e as políticas restritivas de leitura e
+escrita do TeX Live. Os subprocessos recebem um ambiente mínimo e a leitura
+de sua saída tem limite de tamanho e tempo. O relatório guarda o resultado
+do verificador sem copiar sua saída. O gate de referências usa o diagnóstico
+do compilador em memória. A leitura de relatórios históricos continua regida
+pelo contrato de integridade do M7.
+
+No ADR-037, o Origin de um POST deve corresponder ao Host loopback exato.
+O ledger mantém o campo `idempotency_key` como identificador de correlação
+e grava seu SHA-256 em novos registros. A projeção pública omite o campo,
+inclusive em eventos anteriores. Os diffs de configuração redigem a subárvore
+sensível inteira, incluindo na leitura de rascunhos e respostas em cache
+anteriores. Os registros duráveis existentes são preservados.
+Leituras de rascunhos, idempotência e a abertura do lock de auditoria
+rejeitam caminhos simbólicos sob `state/control-center/`.
+
+Os backends de inferência do ADR-032 repetem a validação canônica da URL
+antes de acessar credenciais ou despachar. Respostas HTTP de erro são
+fechadas sem consumir o corpo. Valores inválidos para o motivo de término
+são tratados como falha estruturada após despacho.
+
+O repositório encaminha relatos pelo canal privado do GitHub e mantém a
+atribuição do titular na licença. Credenciais e estado local entram nas
+exclusões do Git. A publicação SARIF segue a regra de SHA fixo do ADR-045.
+
 ## ADR-045 — Permissões mínimas e análise estática na CI
 
 **Status:** Proposto para validação em PR. **Data:** 2026-09-27.

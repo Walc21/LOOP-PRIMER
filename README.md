@@ -841,4 +841,4 @@ Consulte também [CONTRIBUTING.md](CONTRIBUTING.md) e
 [SECURITY.md](SECURITY.md). O projeto é distribuído sob a licença
 [MIT](LICENSE).
 
-**Autor:** Victor Gabriel de Oliveira ([@Walc21](https://github.com/Walc21))
+**Autor:** [@Walc21](https://github.com/Walc21)

@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 
 import jsonschema
@@ -18,10 +19,60 @@ sys.path.insert(0, str(ROOT / ".prime/agent/skills/article-loop/src"))
 from article_loop import FakeRLMAdapter, Orchestrator, ingest
 from article_loop.activation import ActivationPlanner
 from article_loop.blackboard import Blackboard, Impact
+from article_loop import gates
 from article_loop.gates import REQUIRED_GATES, compare, record_math_verification, run_gates
 from article_loop.state_machine import State
 from article_loop.store import DurableStore, IntegrityError
 from article_loop.synthesis import M7Pipeline, SynthesisError, tree_hash
+
+
+class M7VerifierSecurityTests(unittest.TestCase):
+    def test_verifier_excludes_candidate_paths_and_limits_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            candidate = Path(directory)
+            executable = candidate / "fixture-verifier"
+            executable.symlink_to(sys.executable)
+            with patch.dict(os.environ, {"PATH": f".:{candidate}"}):
+                code, output, _ = gates._run(
+                    executable.name, [], candidate=candidate, cwd=candidate, timeout=5,
+                )
+            self.assertEqual((code, output), (127, ""))
+
+            python = Path(sys.executable).resolve()
+            with patch.dict(os.environ, {"PATH": str(python.parent), "FIXTURE_VALUE": "synthetic-setting"}):
+                code, output, _ = gates._run(
+                    python.name, ["-c", "import os; print('FIXTURE_VALUE' in os.environ)"],
+                    candidate=candidate, cwd=candidate, timeout=5,
+                )
+                self.assertEqual((code, output.strip()), (0, "False"))
+                with patch.object(gates, "MAX_TOOL_OUTPUT_BYTES", 16):
+                    code, output, _ = gates._run(
+                        python.name, ["-c", "print('x' * 32)"],
+                        candidate=candidate, cwd=candidate, timeout=5,
+                    )
+                self.assertEqual((code, output), (125, ""))
+
+    def test_gate_reports_omit_compiler_output_and_pdf_metadata(self):
+        with tempfile.TemporaryDirectory() as directory:
+            candidate = Path(directory)
+            (candidate / "paper.tex").write_text("Fixture", encoding="utf-8")
+            (candidate / "paper.pdf").write_bytes(b"synthetic PDF fixture")
+            context = {}
+            with patch.object(gates.tempfile, "mkdtemp", return_value=directory):
+                with patch.object(gates, "_run", return_value=(0, "fixture-text: undefined references", 0)) as run:
+                    passed, _, diagnostic, _, _, _ = gates._check(
+                        "latex_compile_safe", candidate, candidate, {}, context, 5,
+                    )
+            self.assertTrue(passed)
+            self.assertEqual(diagnostic, "pdflatex completed")
+            self.assertTrue(context["latex_reference_warning"])
+            self.assertIn("-no-shell-escape", run.call_args.args[1])
+            self.assertEqual(run.call_args.kwargs["environment"]["openin_any"], "p")
+            self.assertEqual(run.call_args.kwargs["environment"]["openout_any"], "p")
+            with patch.object(gates, "_run", return_value=(0, "Author: Synthetic Fixture", 0)):
+                passed, _, diagnostic, _, _, _ = gates._check("pdf_valid", candidate, candidate, {}, context, 5)
+            self.assertTrue(passed)
+            self.assertEqual(diagnostic, "pdfinfo accepted output")
 
 
 class M7ReceiptIntegrationTests(unittest.TestCase):

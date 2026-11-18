@@ -18,10 +18,12 @@ from urllib.parse import urlsplit, urlunsplit
 
 from .inference import (
     InferenceBackendError,
+    InferenceConfigError,
     InferenceIntegrityError,
     InferenceRequest,
     InferenceResult,
     InferenceTarget,
+    _safe_endpoint,
     model_output_schema,
     sha256,
 )
@@ -277,10 +279,10 @@ class LocalOpenAICompatibleBackend:
             raise InferenceBackendError("BACKEND_FAILURE", "local backend target is invalid", sent=False)
         # ModelRegistry already validates scheme, authority, and exact loopback
         # host. Repeat the security-sensitive checks at the execution boundary.
-        from urllib.parse import urlsplit
-        parsed = urlsplit(target.endpoint)
-        if parsed.scheme not in {"http", "https"} or (parsed.hostname or "").lower() not in {"127.0.0.1", "localhost", "::1"}:
-            raise InferenceBackendError("BACKEND_FAILURE", "local endpoint is not loopback", sent=False)
+        try:
+            _safe_endpoint(target.endpoint, local=True)
+        except InferenceConfigError as error:
+            raise InferenceBackendError("BACKEND_FAILURE", "local endpoint is invalid", sent=False) from error
         if target.timeout_seconds <= 0:
             raise InferenceBackendError("BACKEND_FAILURE", "local timeout is invalid", sent=False)
         if (
@@ -384,7 +386,8 @@ class LocalOpenAICompatibleBackend:
                 if len(raw) > self.max_response_bytes:
                     raise InferenceBackendError("BACKEND_FAILURE", "backend response exceeds size limit", sent=True)
         except urllib.error.HTTPError as error:
-            raise InferenceBackendError("BACKEND_FAILURE", f"local backend returned HTTP {error.code}", sent=True) from error
+            with error:
+                raise InferenceBackendError("BACKEND_FAILURE", f"backend returned HTTP {error.code}", sent=True) from error
         except (TimeoutError, socket.timeout) as error:
             raise InferenceBackendError("TIMEOUT", "local backend timed out", sent=True) from error
         except (http.client.RemoteDisconnected, ConnectionResetError, BrokenPipeError) as error:
@@ -398,16 +401,20 @@ class LocalOpenAICompatibleBackend:
             envelope = json.loads(raw.decode("utf-8"))
             if self.native_ollama_chat:
                 content = envelope["message"]["content"]
-                finish = envelope.get("done_reason") or ("stop" if envelope.get("done") is True else "unknown")
+                finish = envelope.get("done_reason")
+                default_finish = "stop" if envelope.get("done") is True else "unknown"
             else:
                 choices = envelope["choices"]
                 choice = choices[0]
                 content = choice["message"]["content"]
-                finish = choice.get("finish_reason") or "unknown"
+                finish = choice.get("finish_reason")
+                default_finish = "unknown"
         except (UnicodeDecodeError, json.JSONDecodeError, KeyError, IndexError, TypeError) as error:
             raise InferenceBackendError("BACKEND_FAILURE", "local backend response envelope is malformed", sent=True) from error
-        if not isinstance(content, str):
-            raise InferenceBackendError("BACKEND_FAILURE", "local backend content is invalid", sent=True)
+        if finish is None or finish == "":
+            finish = default_finish
+        if not isinstance(content, str) or not isinstance(finish, str):
+            raise InferenceBackendError("BACKEND_FAILURE", "backend content or finish reason is invalid", sent=True)
         normalized_finish = {"stop": "stop", "length": "length", "tool_calls": "tool_call", "tool_call": "tool_call"}.get(finish, "unknown")
         if self.native_ollama_chat:
             input_tokens = self._integer(envelope.get("prompt_eval_count"))
@@ -442,10 +449,10 @@ class RemoteOpenAICompatibleBackend(LocalOpenAICompatibleBackend):
     def preflight(self, target: InferenceTarget) -> Mapping[str, Any]:
         if target.backend_type != "remote_openai_compatible" or target.local or target.endpoint is None:
             raise InferenceBackendError("BACKEND_FAILURE", "remote backend target is invalid", sent=False)
-        from urllib.parse import urlsplit
-        parsed = urlsplit(target.endpoint)
-        if parsed.scheme != "https" or not parsed.hostname or parsed.username is not None or parsed.password is not None:
-            raise InferenceBackendError("BACKEND_FAILURE", "remote endpoint must be explicit HTTPS", sent=False)
+        try:
+            _safe_endpoint(target.endpoint, local=False)
+        except InferenceConfigError as error:
+            raise InferenceBackendError("BACKEND_FAILURE", "remote endpoint is invalid", sent=False) from error
         if target.api_key_env is None:
             raise InferenceBackendError("BACKEND_FAILURE", "remote target lacks a credential environment variable name", sent=False)
         if target.timeout_seconds <= 0:

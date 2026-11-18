@@ -4,10 +4,10 @@
 
 ## Baseline registrado
 
-- Fingerprint das fontes: `83276f9fa2cb8ba5361ddb535075f707e8f72445bfe069de583b83fa79d1bc1f`
-- Registrado em: `2026-11-18T02:47:28Z`
-- Git: branch `main`, HEAD `0cfb03218b80`
-- Arquivos relevantes: 340
+- Fingerprint das fontes: `ae4e6ac143f888ab2d7a55e38f71c6b34b8c8a88b229871649298b53f222a47e`
+- Registrado em: `2026-11-18T03:40:20Z`
+- Git: branch `codex/security-privacy-hardening`, HEAD `87a358b93f32`
+- Arquivos relevantes: 255
 
 ## Evolução reconstruída do versionamento
 
@@ -18,7 +18,7 @@
 | M1/M1.1 | 2026-08-13 | 1 | Scaffold, catálogo de papéis e contratos condicionais em JSON Schema. | .gitignore, .prime/agent/APPEND_SYSTEM.md, .prime/agent/prompts/.gitkeep, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/… |
 | M2 | 2026-08-13 | 4 | Máquina de estados, event log encadeado, replay e recuperação durável. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M3 | 2026-08-13..2026-09-07 | 8 | Ingestão PDF/ZIP offline, preservação do original e baseline v0000. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/ingestion.p… |
-| sem marco explícito | 2026-08-13..2026-10-22 | 83 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/dependabot.yml, .github/pull_request_template.md, .github… |
+| sem marco explícito | 2026-08-13..2026-11-17 | 87 | Inferida dos assuntos dos commits; consulte a tabela exata abaixo. | .github/ISSUE_TEMPLATE/bug_report.md, .github/ISSUE_TEMPLATE/feature_request.md, .github/copilot-instructions.md, .github/dependabot.yml, .github/pull_request_template.md, .github… |
 | M4 | 2026-08-13 | 3 | Prompts imutáveis, overlays e compilação content-addressed dos 21 papéis. | .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/prompts.py, .prime/handoffs/04_para_05.md, PLANS.md, control/fixtu… |
 | M5 | 2026-08-13..2026-08-14 | 4 | Blackboard, grafo de impacto, views fechadas e ativação esparsa. | .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/pyproject.toml, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/arti… |
 | M6 | 2026-08-14..2026-09-08 | 20 | Orquestração RLM hierárquica reentrante por receipts duráveis. | .gitignore, .prime/agent/skills/article-loop/SKILL.md, .prime/agent/skills/article-loop/src/article_loop/__init__.py, .prime/agent/skills/article-loop/src/article_loop/adapters.py… |
@@ -216,9 +216,14 @@
 | `1b4296740` | 2026-10-11 | sem marco explícito | chore(deps): bump rpds-py from 2026.6.3 to 2026.9.1 | requirements-ci.txt |
 | `0900bfa66` | 2026-10-22 | sem marco explícito | Merge pull request #29 from Walc21/dependabot/github_actions/actions/checkout-7.0.1 |  |
 | `0cfb03218` | 2026-10-22 | sem marco explícito | Merge pull request #30 from Walc21/dependabot/pip/rpds-py-2026.9.1 |  |
+| `18241ef5f` | 2026-11-17 | sem marco explícito | feat(mvp): integrate local Ollama cycle and Qwen jury evidence | .prime/agent/skills/article-loop/src/article_loop/budget.py, .prime/agent/skills/article-loop/src/article_loop/delivery.py, .prime/agent/skills/article-loop/src/article_loop/infer… |
+| `26c474982` | 2026-11-17 | sem marco explícito | Merge pull request #74 from Walc21/codex/local-qwen-mvp |  |
+| `85b252628` | 2026-11-17 | sem marco explícito | feat(mvp): publish the audited end-to-end Ollama cycle | .gitignore, .prime/agent/skills/article-loop/src/article_loop/delivery.py, .prime/agent/skills/article-loop/src/article_loop/inference.py, .prime/agent/skills/article-loop/src/art… |
+| `87a358b93` | 2026-11-17 | sem marco explícito | Merge pull request #75 from Walc21/codex/audited-local-mvp-evidence |  |
 
 ## Decisões arquiteturais
 
+- ADR-046 — Minimização de dados nos verificadores e na Central
 - ADR-045 — Permissões mínimas e análise estática na CI
 - ADR-044 — Equipe efêmera de manutenção e runtime Python canônico
 - ADR-043 — Segmentos canônicos de linhas na seleção de contexto M6
@@ -4710,3 +4715,138 @@
 | modified | `.gitignore` | `91b4eb29e647` | `b509a1fe78d1` |
 | modified | `README.md` | `5da1d304c819` | `2a7bb68aa2cf` |
 | modified | `docs/demo-mvp-local.md` | `f090e5797922` | `42cc7be72caf` |
+
+### 2026-11-18T03:40:20Z — Auditoria de segurança e privacidade do LOOP-PRIMER
+
+- Session ID: `session-e356abbcda663aaa59c6`
+- Fingerprint final: `ae4e6ac143f888ab2d7a55e38f71c6b34b8c8a88b229871649298b53f222a47e`
+- Git final: `87a358b93f32`; status relevante: 16 item(ns)
+- Delta factual: 0 adicionados, 16 modificados, 85 removidos
+
+**Mudanças**
+
+- Generalizado o contato e os caminhos pessoais na documentação. Credenciais e estado local passaram a ter exclusões mais abrangentes no Git.
+- Endurecidas as fronteiras HTTP da Central e de inferência. Verificadores M7 passaram a limitar subprocessos e a omitir sua saída dos relatórios.
+
+**Decisões**
+
+- Aplicar o ADR-046 e usar relatos privados de vulnerabilidade do GitHub. Preservar a atribuição da licença e os registros duráveis existentes.
+
+**Validações**
+
+- Regressão de 588 testes com um skip e contraprova de 74 testes focados nos ajustes posteriores. bin/check.sh, verificações de sintaxe e git diff --check concluídos.
+- Varredura por padrões de credenciais no Git e no ZIP versionado sem detecções. Nenhuma versão fixada no lock acionou alerta na consulta ao GitHub Advisory Database.
+
+**Riscos/limites**
+
+- Dados pessoais de commits anteriores continuam acessíveis no histórico Git.
+
+**Próximos passos**
+
+- Revisão das correções no pull request de segurança.
+
+**Arquivos detectados**
+
+| Tipo | Caminho | SHA anterior | SHA final |
+|---|---|---|---|
+| modified | `.github/workflows/scorecard.yml` | `31bdc0f6044d` | `42af1f520052` |
+| modified | `.gitignore` | `b509a1fe78d1` | `6e345bb6636e` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/control_center.py` | `7ebedf881948` | `0b59d010d2b4` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/gates.py` | `2f1cbe646934` | `368c8cdd6d1c` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference.py` | `793058c9cc7f` | `ea251085a2e3` |
+| modified | `.prime/agent/skills/article-loop/src/article_loop/inference_backends.py` | `1d59879bdc18` | `23cf6b534c26` |
+| modified | `PLANS.md` | `26ea12f07a8c` | `a91c647570a1` |
+| modified | `README.md` | `2a7bb68aa2cf` | `60ee98549a0a` |
+| modified | `SECURITY.md` | `1adf19468e39` | `59f7a15c5cd8` |
+| modified | `control/test_m125_inference_routing.py` | `28eeb8369f64` | `c197715c8dae` |
+| modified | `control/test_m14_control_center.py` | `75dc180b8961` | `66c2f1b24139` |
+| modified | `control/test_m7_synthesis_gates.py` | `8e3955770c4b` | `3a18bde4b801` |
+| modified | `docs/compatibility.md` | `274cedb969d4` | `d1f60b0beb8e` |
+| modified | `docs/control-center.md` | `2eb9ab85bd98` | `85693c62cb44` |
+| modified | `docs/decisions.md` | `101461c3964d` | `aa6107701cf9` |
+| modified | `docs/m1251-phase-a-audit.md` | `81596d449460` | `62472b1e646e` |
+| deleted | `input/inbox/artigo.pdf` | `4d07d27bcd2e` | `-` |
+| deleted | `input/inbox/source.zip` | `bd7940fcadec` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/extracted/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/coordinates.html` | `a44cde846345` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/extracted/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/manifest.json` | `f5797f233321` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/extracted/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/normalized.json` | `9306a4ee1407` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/extracted/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/pages/page-1.png` | `671f568e8204` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/extracted/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/reconstructed.tex` | `db8da49b31d2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/extracted/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/source_ready.json` | `223a581f4553` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/extracted/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/text-page-1.txt` | `cb946f2c6569` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/extracted/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/text.txt` | `cb946f2c6569` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/original/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/document.pdf` | `4d07d27bcd2e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/original/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/manifest.json` | `164af122f0a3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/rendered/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/manifest.json` | `26c4895a9558` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/artifacts/rendered/4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46/pages/page-1.png` | `671f568e8204` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/budgets.yaml` | `dc93a24029f2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/decision-policy.yaml` | `461def203733` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/gates.yaml` | `2ee0a93dee8e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/M00.yaml` | `ea31c2793102` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/S10.yaml` | `8c36e3ea25e5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/S20.yaml` | `c678a7e34e9e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/S30.yaml` | `66f5d6d2a6ab` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/S40.yaml` | `854934a64ae0` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/S50.yaml` | `3c48da76c4a1` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W11.yaml` | `0588bfa650a1` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W12.yaml` | `cf8dce421cb8` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W13.yaml` | `9b8c02d0dfa5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W21.yaml` | `4d3d7071c99f` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W22.yaml` | `4d355a126e38` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W23.yaml` | `162ed11152ba` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W31.yaml` | `49379aa93856` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W32.yaml` | `efff22dd1810` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W33.yaml` | `f9228cea7abf` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W41.yaml` | `850af2b8d765` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W42.yaml` | `87166f6e2a6a` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W43.yaml` | `e64d84746070` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W51.yaml` | `6d1a822daad4` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W52.yaml` | `ec5a1ebcd7ca` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/roles/W53.yaml` | `d4ac4aa981de` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/rubrics/evaluation.yaml` | `be7af3ac8ff1` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/agent-proposal.schema.json` | `972929226bb8` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/agent-task.schema.json` | `902377791bc4` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/budget-event.schema.json` | `50a2c40ab3ad` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/candidate-manifest.schema.json` | `a96174c2d8fe` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/control-center-audit.schema.json` | `235dd80de607` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/control-center-draft.schema.json` | `61190b3c62b5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/decision.schema.json` | `285c0e47f450` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/department-packet.schema.json` | `636d3ce4d7a3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/diagnosis-manifest.schema.json` | `9a58a0e027f0` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/diagnosis.schema.json` | `6a2d9ccb1f2c` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/evaluation-manifest.schema.json` | `cd70b4553114` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/evaluation-report.schema.json` | `033e24d66a53` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/event.schema.json` | `379ed1074542` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/final-gate-report.schema.json` | `ede3c466919b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/final-report.schema.json` | `dd19b7227a10` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/finalization-receipt.schema.json` | `deee358a793d` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/gate-report.schema.json` | `c71be17e4ef0` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/inference-receipt.schema.json` | `04326435eee4` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/jury-verdict.schema.json` | `6eec116240c5` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/m6-context-selection.schema.json` | `4c36824267da` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/math-evidence.schema.json` | `6a0701a384f0` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/math-issue.schema.json` | `a49f1362bbf6` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/math-verification.schema.json` | `e7ed4dd8ef86` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/meta-verdict.schema.json` | `8f5f4388e9ef` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/observability-event.schema.json` | `e4d1ac474059` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/refocus-plan.schema.json` | `9ec2d4eedc73` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/run-manifest.schema.json` | `9e12eaa7a653` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/schemas/snapshot.schema.json` | `b4b31330300e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/config/system.yaml` | `4a2decdb7ff3` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/input/inbox/artigo.pdf` | `4d07d27bcd2e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/input/inbox/source.zip` | `bd7940fcadec` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/state/events/ingest-4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46.jsonl` | `57a0b96e15b7` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/state/locks/ingest-4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46.lock` | `e3b0c44298fc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/state/snapshots/ingest-4d07d27bcd2e2a85ab58dca0ad4ad60a9dd193fc90ddb4a29eaa9e3847f3bb46.json` | `95c70e79a10b` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/baseline.pdf` | `4d07d27bcd2e` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/ingestion-manifest.json` | `4c6526c99553` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/latex-source/paper.tex` | `7e34784969c0` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/manifest.json` | `c6a2db8a48bc` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/source/coordinates.html` | `a44cde846345` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/source/manifest.json` | `f5797f233321` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/source/normalized.json` | `9306a4ee1407` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/source/pages/page-1.png` | `671f568e8204` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/source/reconstructed.tex` | `db8da49b31d2` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/source/source_ready.json` | `223a581f4553` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/source/text-page-1.txt` | `cb946f2c6569` | `-` |
+| deleted | `runtime/m3-real-attempts/attempt-76477c9a-62ee-4291-bbde-5e6a287cb334/versions/champion/v0000/source/text.txt` | `cb946f2c6569` | `-` |

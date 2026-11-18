@@ -174,11 +174,12 @@ def _timestamp(value: Any) -> str:
 def _safe_endpoint(endpoint: str, *, local: bool) -> None:
     try:
         parsed = urlsplit(endpoint)
+        port = parsed.port
     except ValueError as error:
         raise InferenceConfigError("target endpoint is invalid") from error
     if parsed.username is not None or parsed.password is not None or parsed.fragment:
         raise InferenceConfigError("target endpoint contains unsupported authority data")
-    if not parsed.hostname or parsed.query:
+    if not parsed.hostname or parsed.query or port == 0:
         raise InferenceConfigError("target endpoint is incomplete")
     if local:
         if parsed.scheme not in {"http", "https"} or parsed.hostname.lower() not in {"127.0.0.1", "localhost", "::1"}:
