@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🔬 LOOP-PRIMER
-### Arquitetura auditável para revisão, refinamento e decisão sobre manuscritos científicos
+### Autonomous multi-agent framework for peer review and refinement of scientific manuscripts — deterministic gates, auditable decisions and local LLMs (Python, Ollama).
 
 [![Scorecard supply-chain security](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/scorecard.yml/badge.svg)](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/scorecard.yml)
 [![CodeQL](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/codeql.yml/badge.svg?event=push)](https://github.com/Walc21/LOOP-PRIMER/actions/workflows/codeql.yml)
