@@ -14,7 +14,7 @@ import re
 from typing import Any, Mapping
 import urllib.error
 import urllib.request
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from .inference import (
     InferenceBackendError,
@@ -77,10 +77,60 @@ class StructuredHTTPBody:
         }
 
 
+@dataclass(frozen=True)
+class NativeOllamaHTTPBody:
+    """Model-specific local request for Ollama's native structured chat API."""
+
+    endpoint: str
+    body_bytes: bytes
+    prompt_bytes: bytes
+    schema_bytes: bytes
+
+
+def build_ollama_native_structured_request(
+    *, endpoint: str, model: str, prompt: str, max_output_tokens: int,
+    target_max_output_tokens: int, schema: Mapping[str, Any],
+) -> NativeOllamaHTTPBody:
+    """Build one fixed-loopback Ollama `/api/chat` request with thinking off."""
+    try:
+        parsed = urlsplit(endpoint)
+    except (TypeError, ValueError) as error:
+        raise InferenceIntegrityError("Ollama endpoint is invalid") from error
+    if (parsed.scheme != "http" or (parsed.hostname or "").lower() not in {"127.0.0.1", "localhost"}
+            or parsed.port != 11434 or parsed.username is not None or parsed.password is not None
+            or parsed.path != "/v1/chat/completions" or parsed.query or parsed.fragment):
+        raise InferenceIntegrityError("native Ollama recovery is bound to the configured loopback service")
+    if not isinstance(model, str) or not model or "\x00" in model:
+        raise InferenceIntegrityError("Ollama model is invalid")
+    if not isinstance(prompt, str) or not prompt or "\x00" in prompt:
+        raise InferenceIntegrityError("Ollama prompt is invalid")
+    if (type(max_output_tokens) is not int or max_output_tokens < 1
+            or type(target_max_output_tokens) is not int
+            or max_output_tokens > target_max_output_tokens):
+        raise InferenceIntegrityError("Ollama output token ceiling is invalid")
+    if not isinstance(schema, Mapping):
+        raise InferenceIntegrityError("Ollama output schema is invalid")
+    native_endpoint = urlunsplit((parsed.scheme, parsed.netloc, "/api/chat", "", ""))
+    messages = [{"role": "user", "content": prompt}]
+    schema_bytes = _http_json_bytes(schema)
+    body = {
+        "model": model,
+        "messages": messages,
+        "format": dict(schema),
+        "think": False,
+        "stream": False,
+        "options": {"num_predict": max_output_tokens, "temperature": 0},
+    }
+    return NativeOllamaHTTPBody(
+        native_endpoint, _http_json_bytes(body), prompt.encode("utf-8"), schema_bytes,
+    )
+
+
 def build_openai_structured_request(
     *, dialect: str, endpoint: str, model: str, prompt: str,
     max_output_tokens: int, target_max_output_tokens: int,
     schema_name: str, schema: Mapping[str, Any],
+    reasoning_effort: str | None = None,
 ) -> StructuredHTTPBody:
     """Purely build the exact OpenAI-compatible JSON Schema request body."""
     if dialect != OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA:
@@ -107,6 +157,10 @@ def build_openai_structured_request(
         raise InferenceIntegrityError("structured output schema name is invalid")
     if not isinstance(schema, Mapping):
         raise InferenceIntegrityError("structured output schema is invalid")
+    if reasoning_effort is not None and (
+        not isinstance(reasoning_effort, str) or reasoning_effort != "none"
+    ):
+        raise InferenceIntegrityError("structured output reasoning effort is unsupported")
 
     messages = [{"role": "user", "content": prompt}]
     response_format = {
@@ -125,6 +179,11 @@ def build_openai_structured_request(
         "stream": False,
         "temperature": 0,
     }
+    if reasoning_effort is not None:
+        body["reasoning_effort"] = reasoning_effort
+        # Compatibility with local Ollama builds whose model template exposes
+        # enable_thinking but predates the OpenAI reasoning_effort bridge.
+        body["think"] = False
     prompt_bytes = prompt.encode("utf-8")
     messages_bytes = _http_json_bytes(messages)
     schema_bytes = _http_json_bytes(schema)
@@ -190,6 +249,8 @@ class LocalOpenAICompatibleBackend:
         self, *, project_root: str | Path | None = None,
         max_response_bytes: int = 1_048_576,
         structured_output_dialect: str | None = None,
+        reasoning_effort: str | None = None,
+        native_ollama_chat: bool = False,
     ):
         if type(max_response_bytes) is not int or max_response_bytes < 1024:
             raise ValueError("max_response_bytes must be an integer >= 1024")
@@ -201,6 +262,14 @@ class LocalOpenAICompatibleBackend:
         ):
             raise ValueError("structured_output_dialect is unsupported")
         self.structured_output_dialect = structured_output_dialect
+        if reasoning_effort is not None and (
+            not isinstance(reasoning_effort, str) or reasoning_effort != "none"
+        ):
+            raise ValueError("reasoning_effort must be None or 'none'")
+        if type(native_ollama_chat) is not bool:
+            raise ValueError("native_ollama_chat must be a strict boolean")
+        self.reasoning_effort = reasoning_effort
+        self.native_ollama_chat = native_ollama_chat
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
     def preflight(self, target: InferenceTarget) -> Mapping[str, Any]:
@@ -225,6 +294,7 @@ class LocalOpenAICompatibleBackend:
             "ready": True, "test_double": False, "network": "loopback_only",
             "redirects": False,
             "structured_output_dialect": self.structured_output_dialect,
+            "native_ollama_chat": self.native_ollama_chat,
         }
 
     @staticmethod
@@ -233,9 +303,16 @@ class LocalOpenAICompatibleBackend:
 
     def complete(self, request: InferenceRequest, target: InferenceTarget) -> InferenceResult:
         self.preflight(target)
+        if self.native_ollama_chat and "structured_output" not in request.required_capabilities:
+            raise InferenceBackendError(
+                "ROUTE_CAPABILITY_INSUFFICIENT",
+                "native Ollama recovery is restricted to structured requests",
+                sent=False,
+            )
         if len(request.prompt.encode("utf-8")) > max(4096, target.context_limit * 16):
             raise InferenceBackendError("BACKEND_FAILURE", "prompt exceeds the target request bound", sent=False)
         body: bytes
+        http_endpoint = str(target.endpoint)
         if "structured_output" in target.capabilities:
             if self.project_root is None:
                 raise InferenceBackendError(
@@ -257,20 +334,29 @@ class LocalOpenAICompatibleBackend:
                 else Path(raw_name).stem
             ).replace("-", "_")
             try:
-                structured = build_openai_structured_request(
-                    dialect=str(self.structured_output_dialect),
-                    endpoint=str(target.endpoint), model=target.model,
-                    prompt=request.prompt,
-                    max_output_tokens=request.max_output_tokens,
-                    target_max_output_tokens=target.max_output_tokens,
-                    schema_name=schema_name, schema=schema,
-                )
+                if self.native_ollama_chat:
+                    native = build_ollama_native_structured_request(
+                        endpoint=str(target.endpoint), model=target.model,
+                        prompt=request.prompt, max_output_tokens=request.max_output_tokens,
+                        target_max_output_tokens=target.max_output_tokens, schema=schema,
+                    )
+                    http_endpoint, body = native.endpoint, native.body_bytes
+                else:
+                    structured = build_openai_structured_request(
+                        dialect=str(self.structured_output_dialect),
+                        endpoint=str(target.endpoint), model=target.model,
+                        prompt=request.prompt,
+                        max_output_tokens=request.max_output_tokens,
+                        target_max_output_tokens=target.max_output_tokens,
+                        schema_name=schema_name, schema=schema,
+                        reasoning_effort=self.reasoning_effort,
+                    )
+                    body = structured.body_bytes
             except InferenceIntegrityError as error:
                 raise InferenceBackendError(
                     "BACKEND_FAILURE", "structured request contract is invalid",
                     sent=False,
                 ) from error
-            body = structured.body_bytes
         elif "structured_output" in request.required_capabilities:
             raise InferenceBackendError(
                 "ROUTE_CAPABILITY_INSUFFICIENT",
@@ -290,7 +376,7 @@ class LocalOpenAICompatibleBackend:
             if not secret:
                 raise InferenceBackendError("BACKEND_FAILURE", "configured credential environment variable is unavailable", sent=False)
             headers["Authorization"] = "Bearer " + secret
-        http_request = urllib.request.Request(target.endpoint, data=body, headers=headers, method="POST")
+        http_request = urllib.request.Request(http_endpoint, data=body, headers=headers, method="POST")
         started = time.monotonic()
         try:
             with self._opener.open(http_request, timeout=target.timeout_seconds) as response:
@@ -310,26 +396,37 @@ class LocalOpenAICompatibleBackend:
         elapsed = max(0, math.ceil(time.monotonic() - started))
         try:
             envelope = json.loads(raw.decode("utf-8"))
-            choices = envelope["choices"]
-            choice = choices[0]
-            content = choice["message"]["content"]
-            finish = choice.get("finish_reason") or "unknown"
+            if self.native_ollama_chat:
+                content = envelope["message"]["content"]
+                finish = envelope.get("done_reason") or ("stop" if envelope.get("done") is True else "unknown")
+            else:
+                choices = envelope["choices"]
+                choice = choices[0]
+                content = choice["message"]["content"]
+                finish = choice.get("finish_reason") or "unknown"
         except (UnicodeDecodeError, json.JSONDecodeError, KeyError, IndexError, TypeError) as error:
             raise InferenceBackendError("BACKEND_FAILURE", "local backend response envelope is malformed", sent=True) from error
         if not isinstance(content, str):
             raise InferenceBackendError("BACKEND_FAILURE", "local backend content is invalid", sent=True)
         normalized_finish = {"stop": "stop", "length": "length", "tool_calls": "tool_call", "tool_call": "tool_call"}.get(finish, "unknown")
-        usage = envelope.get("usage")
-        input_tokens = output_tokens = cache_tokens = None
-        usage_available = False
-        if isinstance(usage, Mapping):
-            input_tokens = self._integer(usage.get("prompt_tokens"))
-            output_tokens = self._integer(usage.get("completion_tokens"))
-            details = usage.get("prompt_tokens_details")
-            cache_tokens = self._integer(details.get("cached_tokens")) if isinstance(details, Mapping) else 0
-            usage_available = input_tokens is not None and output_tokens is not None and cache_tokens is not None
+        if self.native_ollama_chat:
+            input_tokens = self._integer(envelope.get("prompt_eval_count"))
+            output_tokens = self._integer(envelope.get("eval_count"))
+            cache_tokens, usage_available = 0, input_tokens is not None and output_tokens is not None
             if not usage_available:
                 input_tokens = output_tokens = cache_tokens = None
+        else:
+            usage = envelope.get("usage")
+            input_tokens = output_tokens = cache_tokens = None
+            usage_available = False
+            if isinstance(usage, Mapping):
+                input_tokens = self._integer(usage.get("prompt_tokens"))
+                output_tokens = self._integer(usage.get("completion_tokens"))
+                details = usage.get("prompt_tokens_details")
+                cache_tokens = self._integer(details.get("cached_tokens")) if isinstance(details, Mapping) else 0
+                usage_available = input_tokens is not None and output_tokens is not None and cache_tokens is not None
+                if not usage_available:
+                    input_tokens = output_tokens = cache_tokens = None
         return InferenceResult(
             content, input_tokens, output_tokens, cache_tokens,
             usage_available, wall_time_seconds=elapsed,
@@ -365,7 +462,8 @@ class RemoteOpenAICompatibleBackend(LocalOpenAICompatibleBackend):
 
 __all__ = [
     "FakeInferenceBackend", "LocalOpenAICompatibleBackend",
+    "NativeOllamaHTTPBody",
     "OPENAI_CHAT_COMPLETIONS_JSON_SCHEMA", "RemoteOpenAICompatibleBackend",
     "STRUCTURED_OUTPUT_DIALECTS", "StructuredHTTPBody",
-    "build_openai_structured_request",
+    "build_ollama_native_structured_request", "build_openai_structured_request",
 ]

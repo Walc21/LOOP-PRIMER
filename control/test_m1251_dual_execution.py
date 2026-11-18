@@ -372,6 +372,12 @@ class RuntimeRecoveryTests(unittest.TestCase):
         self.assertEqual(recovered["receipt"]["context_hash"], "c" * 64)
         self.assertEqual(recovered["receipt"]["privacy_mode"], "scoped_remote")
 
+    def test_reservation_includes_input_estimate_and_output_ceiling(self):
+        runtime = self.runtime()
+        runtime.execute(self.request(), allow_test_doubles=True)
+        reservation = runtime.ledger.status(read_only=True)["reservations"][0]
+        self.assertEqual(reservation["estimate_tokens"], 20 + 100)
+
     def test_reserved_before_admission_requires_proof_and_reconciled_replay_is_call_free(self):
         def crash_after_reserve(stage):
             if stage == "after_reserve":

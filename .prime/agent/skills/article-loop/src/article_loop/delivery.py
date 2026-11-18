@@ -13,6 +13,8 @@ from pathlib import Path
 import re
 import stat
 
+from .diagnosis import CycleRecord
+from .evaluation import EVALUATION_SCHEMA, META_VERDICT_SCHEMA
 from .finalization import TransactionalFinalizer
 from .ingestion import _verify_artifacts, _verify_champion
 from .policy import _contained, _read_canonical_json, _validate_schema
@@ -81,11 +83,11 @@ def _verify_input(root, events, run_id):
     return {"sha256": digest, "size_bytes": pdf.stat().st_size, "unchanged": True, "original_locator": original_locator}, manifest
 
 
-def _verify_routed(root, run_id, synthesis):
-    """Join the real inference store, budget ledger and immutable M6 receipts."""
+def _verify_routed(root, run_id, synthesis, record: CycleRecord):
+    """Bind inference and budget evidence to the published M6 and M8 outputs."""
     from .budget import BudgetLedger
     from .execution import ExecutionPolicy
-    from .inference import InferenceStore
+    from .inference import InferenceStore, canonical_bytes, sha256
 
     directory = root / "state/inference" / run_id
     ledger_path = root / "state/budgets" / f"{run_id}.jsonl"
@@ -101,12 +103,12 @@ def _verify_routed(root, run_id, synthesis):
     for relative in (f"state/inference/{run_id}/routes", f"state/inference/{run_id}/receipts", f"state/inference/{run_id}/outputs", "state/budgets", "logs"):
         _require(_contained(root, relative, exists=True).is_dir(), "missing routed evidence directory")
     _bounded_tree(root, "logs")
-    ledger = BudgetLedger.from_project(root, run_id)
+    ledger = BudgetLedger.from_project(root, run_id, read_only=True)
     budget_events = ledger.read_events()
     # status() emits threshold alerts. Audit uses the pure ledger projection.
-    reservations = list(ledger._state_locked(budget_events)["reservations"].values())
+    reservations = ledger._state_locked(budget_events)["reservations"]
     ledger.logger.read_events()
-    _require(not any(ledger._open(item) for item in reservations), "unreconciled budget reservation")
+    _require(not any(ledger._open(item) for item in reservations.values()), "unreconciled budget reservation")
     storage = InferenceStore(root, run_id)
     routes = {route["route_decision_hash"]: route for route in storage.routes()}
     receipts = storage.receipts()
@@ -114,21 +116,61 @@ def _verify_routed(root, run_id, synthesis):
     calls = {item["call_id"] for item in receipts}
     _require(len(calls) == len(receipts) == len(reservations), "budget/inference call coverage differs")
     proposal_receipts = synthesis["decision"]["proposal_receipts"]
-    _require({item["role_id"] for item in receipts if item["cycle_id"] == synthesis["cycle_id"]} == expected_roles, "routed role coverage differs")
+    observed_roles = {
+        item["role_id"] for item in receipts
+        if item.get("actor_kind") != "evaluator" and item["cycle_id"] == synthesis["cycle_id"]
+    }
+    _require(observed_roles == expected_roles, "routed role coverage differs")
+    # M8 publishes UTF-8 JSON without a newline. Hash the already revalidated
+    # documents in the inference store's encoding to check its exact bytes.
+    judgments = {
+        (EVALUATION_SCHEMA, sha256(canonical_bytes(verdict) + b"\n")): verdict["juror_id"]
+        for verdict in record.verdicts
+    }
+    meta = record.meta_verdict
+    judgments[META_VERDICT_SCHEMA, sha256(canonical_bytes(meta) + b"\n")] = meta["meta_reviewer_id"]
     for receipt in receipts:
         route = routes.get(receipt["route_decision_hash"])
         _require(route is not None and route["routing_policy_hash"] == ledger.routing_policy_hash, "inference route binding differs")
         for field in ("target_id", "provider", "model", "routing_policy_hash", "backend_type", "context_hash", "privacy_mode", "attempt", "independence_group"):
             _require(receipt[field] == route[field], "inference route/receipt identity differs")
         output = storage.output_for_call(receipt["call_id"])
-        _require(output is not None and output["manifest"]["output_sha256"] == receipt["output_sha256"] and output["manifest"]["output_locator"] == receipt["output_locator"], "inference output binding differs")
-        _require(all(output["manifest"].get(key) == value for key, value in receipt.items() if key != "receipt_hash"), "inference output/receipt metadata differs")
-        document = output["document"]
-        m6 = proposal_receipts.get(document.get("proposal_id"))
-        _require(m6 is not None and m6["sha256"] == receipt["output_sha256"], "routed output is not the accepted M6 receipt")
+        if output is None:
+            _require(
+                receipt.get("actor_kind") == "evaluator"
+                and receipt.get("finish_reason") == "schema_invalid"
+                and receipt.get("output_sha256") is None
+                and receipt.get("output_locator") is None,
+                "inference output binding differs",
+            )
+        else:
+            _require(output["manifest"]["output_sha256"] == receipt["output_sha256"]
+                     and output["manifest"]["output_locator"] == receipt["output_locator"],
+                     "inference output binding differs")
+            _require(all(output["manifest"].get(key) == value for key, value in receipt.items() if key != "receipt_hash"), "inference output/receipt metadata differs")
+            if receipt.get("actor_kind") == "evaluator":
+                key = receipt["requested_output_schema"], receipt["output_sha256"]
+                actor = judgments.pop(key, None)
+                _require(
+                    actor == receipt["actor_id"] and receipt["cycle_id"] == record.cycle_id,
+                    "routed evaluator output does not match a unique published M8 judgment",
+                )
+            else:
+                m6 = proposal_receipts.get(output["document"].get("proposal_id"))
+                _require(m6 is not None and m6["sha256"] == receipt["output_sha256"], "routed output is not the accepted M6 receipt")
+        reservation = reservations.get(receipt["reservation_id"])
+        identity_fields = ("call_id", "cycle_id", "role_id", "routing_role_id", "provider", "model", "attempt")
+        _require(
+            reservation is not None and all(reservation.get(field) == receipt.get(field) for field in identity_fields),
+            "inference reservation identity differs",
+        )
         settled = [event for event in budget_events if event["event_type"] == "RECONCILED" and event["call_id"] == receipt["call_id"]]
-        _require(len(settled) == 1 and settled[0]["payload"]["receipt_id"] == receipt["receipt_id"], "inference receipt not reconciled by budget")
-        for field in ("input_tokens", "output_tokens", "cache_tokens", "cost_microunits", "currency"):
+        _require(
+            len(settled) == 1 and settled[0]["payload"]["receipt_id"] == receipt["receipt_id"]
+            and settled[0]["payload"]["reservation_id"] == receipt["reservation_id"],
+            "inference receipt not reconciled by budget",
+        )
+        for field in ("input_tokens", "output_tokens", "cache_tokens", "wall_time_seconds", "cost_microunits", "currency"):
             _require(settled[0]["payload"].get(field) == receipt.get(field), "budget usage differs from inference receipt")
     return {"calls": len(receipts), "receipt_ids": sorted(item["receipt_id"] for item in receipts), "assurance": "reported_usage"}
 
@@ -208,7 +250,7 @@ def verify_delivery(root: str | Path, run_id: str, *, cycle_id: int = 0) -> dict
         else:
             # An operational checkpoint is not a scientific deliverable.
             raise DeliveryError("delivery audit supports PROMOTE, ARCHIVE_PARETO and REJECT dispositions")
-        routed = _verify_routed(root, run_id, synthesis)
+        routed = _verify_routed(root, run_id, synthesis, record)
         _require(finalizer.store.read_events(run_id) == events, "event log changed during delivery audit")
         return {
             "schema_version": "1.0.0", "milestone": "M13", "status": "pass",

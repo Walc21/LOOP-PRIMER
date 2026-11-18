@@ -54,6 +54,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 ## Pull Request Checklist
 
 Before submitting a Pull Request:
+
 - [ ] All contract and unit tests pass (`.venv/bin/python -m unittest discover -s control`).
 - [ ] Code compiles without warnings (`.venv/bin/python -m py_compile ...`).
 - [ ] All JSON schemas validate correctly against sample manifests.

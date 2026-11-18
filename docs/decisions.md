@@ -116,6 +116,16 @@ API paga ou execução científica.
 
 ## ADR-042 — Smoke oficial M6 limitado a uma tarefa routed
 
+### Perfil adicional Ollama 0.40.2 — 2026-11-17
+
+O Snap instalado declara 0.40.2 e seu binário regular possui SHA-256
+`8ff456e3f8c08b7fb211857c634d4df8e1a84cacaaf5b9e7b6bbf89e0f9ae8e0`.
+Os seis marcadores estáticos da rota e do envelope JSON Schema estão presentes.
+O serviço loopback reporta 0.40.2 e o serviço Snap listener está ativo. Este
+perfil é adicionado ao contrato de auditoria offline já existente. O resultado
+continua sem provar obediência do modelo ou a identidade do executável do
+processo root, que não pôde ser lida pelo usuário não privilegiado.
+
 **Status:** Endurecimento implementado e validado offline. **Data:** 2026-09-07.
 
 O primeiro smoke M6 terá uma entrada própria e executará exatamente uma
@@ -314,6 +324,95 @@ integral de 514 testes, `bin/check.sh`, compilação dos módulos alterados e
 run foi iniciado.
 
 ## ADR-039 — Ciclo local autorizado por composição das APIs canônicas
+
+### Continuação M8–M10 — 2026-11-17
+
+Após gates aprovados, a entrada local usa os adaptadores routed M8, diagnóstico,
+decisão, finalizador e auditoria canônicos. A invocação `run` fornece autorização
+explícita e prazo UTC absoluto, associado ao ledger antes da primeira reserva.
+O controle verifica STOP e interrupção antes das chamadas do júri e das etapas
+posteriores. A CLI informa sucesso apenas após auditoria da disposição aplicada.
+Evidência matemática continua dependente de verificação independente adequada.
+
+O ciclo sintético usa até 12 chamadas sequenciais, sem retry, com teto de
+2.048 tokens de saída por target. Antes de cada reserva, o corpo HTTP exato é
+estimado com o mesmo fator conservador e a mesma margem de contexto do smoke
+M6. A admissão rejeita requisições que excedam o contexto configurado.
+O catálogo loopback é filtrado pela gramática de IDs antes da comparação com os
+targets explicitamente escolhidos, preservando a rejeição de IDs inseguros na
+configuração da tentativa.
+A ativação usa o `base_hash` produzido pelo bootstrap do orquestrador e falha
+se essa identidade estiver ausente, sem inferi-la do evento `SOURCE_READY`.
+As tarefas do ciclo sintético usam a fonte LaTeX, a rubrica e os locators do
+blackboard em vez do snapshot integral. W11 propõe explicitar a substituição
+na prova. Os demais workers adicionam apenas notas de texto de seu papel e
+W22 solicita a validação da afirmação sintética. A checagem independente
+confere as operações antes do merge. O limite de contexto continua valendo.
+A janela configurada da tentativa sintética passa a 16.384 tokens, em
+correspondência com `num_ctx` nos aliases locais dos modelos. Cada tentativa
+mantém os limites vinculados ao plano que a criou.
+O ledger local acompanha o relógio UTC e o monotônico do processo durante a
+execução. O timestamp da autorização usa a mesma fonte UTC do ledger.
+A estimativa ajustada de M8 é aplicada antes da execução e usada na mesma
+requisição que o adaptador revalida ao receber o veredito.
+O verificador sintético admite a revisão conhecida também sem a quebra de
+linha final. O merge mantém exatamente os bytes da proposta aceita.
+
+### Saída estruturada M8 e modelo local — 2026-11-17
+
+A primeira tentativa local completa até M7 alcançou `GATES_PASSED`, mas o
+primeiro veredito M8 terminou com `schema_invalid` no limite de 1.000 tokens.
+O target já autorizava 2.048 tokens; o adaptador roteado usava seu padrão
+independente de 1.000. A CLI passa agora `target.max_output_tokens` ao adaptador
+antes da estimativa do corpo e da admissão de contexto. Na tentativa seguinte,
+o veredito usou exatamente os 2.048 tokens permitidos e também falhou na
+validação do schema. O recibo registra 1.555 tokens de entrada e
+`schema_invalid`; a saída bruta não é persistida, então o truncamento não está
+confirmado.
+
+O digest local `0db039dbedea` foi identificado como
+`maternion/spark-x2.5-heretic:4b-q6_K`, 4,1B parâmetros, contexto declarado de
+1.048.576 tokens. Um alias separado, `loop-primer-juror-spark:16k`, fixa
+`num_ctx=16384`; o alias e o modelo original permanecem distintos. O target de
+júri reserva 4.096 tokens de saída e o target produtor mantém 2.048. O plano da
+CLI limita duração, chamadas, retries e custo externo aos valores autorizados.
+
+### Júri pequeno para o artigo sintético
+
+Preparar a próxima tentativa com Qwen2.5 1.5B Instruct Q4_K_M no júri e na
+meta-revisão. O modelo tem 1,54 bilhão de parâmetros e janela nativa de
+32.768 tokens. Os aliases locais `loop-primer-juror-qwen25:16k` e
+`loop-primer-juror-qwen25:32k` aplicam `num_ctx=16384` e `num_ctx=32768`
+aos mesmos pesos. Usar a rota compatível com JSON Schema como caminho
+principal. A seleção altera apenas o júri da nova tentativa.
+
+A primeira tentativa com Qwen produziu seis pareceres válidos em 45 segundos
+somados pelos recibos. A meta-revisão terminou com `schema_invalid` em três
+segundos e 87 tokens de saída. Como o recibo contém apenas o hash da resposta
+inválida, a regra específica que a rejeitou não pôde ser identificada. O
+prompt próprio da meta-revisão descreve os campos e as condições de veto e
+indica locators presentes nos resumos recebidos. O runtime acrescenta ao log
+uma categoria de rejeição fixa para distinguir JSON inválido, schema e
+contrato. A validação canônica e os recibos existentes permanecem intactos.
+
+### Recuperação de overflow antes da inferência — 2026-11-17
+
+O plano local inclui variantes 16k e 32k do mesmo modelo e as fixa no hash da
+política antes de qualquer chamada. O preparador da requisição mede o corpo HTTP
+exato nas variantes, mantém a requisição corrente e deixa o roteador escolher a
+menor janela que comporta entrada, saída e margem. Essa correção ocorre antes da
+reserva e do despacho, não altera hashes nem repete inferência. O limite maior
+de 32k evita alocar a janela nativa de 1M, que excede o contexto requerido pela
+fixture e pode exceder a memória disponível. Erro de contexto retornado depois
+da admissão não recebe retry automático: sem prova de não consumo, a reserva
+continua `UNCERTAIN`.
+
+### Verificação restrita da fixture — 2026-11-17
+
+A fixture sintética verifica por comparação integral as fontes inicial e
+revisada conhecidas, confere a afirmação vinculada ao pedido W22 e recalcula a
+igualdade antes de registrar a evidência M7. A verificação se aplica somente ao
+artigo sintético e rejeita variantes de fonte, afirmação ou prova.
 
 **Status:** Implementado; nova validação real M3 aprovada. **Data:** 2026-09-07.
 
@@ -599,6 +698,17 @@ júri/meta sem nova inferência.
 A validação offline aprovou 14 testes dedicados M13.1, 135 adjacentes, o check
 M13 com 25 testes e 465 testes na regressão completa, sem falhas, erros ou
 skips. Configuração e autorização live permanecem ausentes.
+
+### Auditoria de entrega dos avaliadores roteados — 2026-11-17
+
+`verify_delivery` usa os vereditos M8 já revalidados pelo finalizador.
+Cada receipt M13.1 deve corresponder ao ator, ciclo, schema e hash da
+serialização canônica de inferência de um veredito publicado. O vínculo é
+único por veredito. Todo receipt deve manter rota, output durável e reserva
+reconciliada, com uso conferido. A exigência de correspondência dos workers
+roteados com as propostas aceitas em M6 continua valendo. Avaliações legadas
+sem chamadas roteadas identificáveis no ledger continuam auditáveis. O
+verificador opera somente por leitura, com os schemas e artefatos existentes.
 
 ## ADR-034 — M13: aceitação offline e auditoria independente da entrega
 
@@ -1887,3 +1997,92 @@ ficar stale até o próximo checkpoint explícito. Consumidores que executavam o
 comando sem flags no início devem migrar para leitura e, opcionalmente,
 `--check`. Uma mudança restrita aos quatro artefatos gerados exige validação de
 ciclo de vida, não repetição automática da regressão funcional já evidenciada.
+
+## ADR-040 — Recuperação limitada de saída estruturada local
+
+**Data:** 2026-11-17
+
+**Status:** Aceito para continuação autorizada do ciclo local
+
+### Contexto
+
+A tentativa `attempt-af7d0812-4b3c-439b-9e41-bbc14d9abfc5` alcançou
+`GATES_PASSED`. O primeiro receipt M8 foi reconciliado com
+`finish_reason=schema_invalid`, `output_tokens=4096` (teto do target),
+`input_tokens=1737` e duração de 590 segundos. Não ocorreu erro de contexto.
+O ledger também revelou que a reserva de inferência contabilizava a estimativa
+segura de entrada, mas não somava o teto de saída, causando `over_estimate`.
+O plano original limita a 12 chamadas; uma correção desta saída consome uma
+chamada adicional à cerimônia canônica de seis vereditos e uma meta-revisão.
+
+### Decisão
+
+1. Reservar `estimate_tokens + max_output_tokens` no ledger para que a estimativa
+   cubra entrada e saída; a admissão de contexto continua considerando entrada,
+   teto de saída e margem separadamente.
+2. Uma chamada reconciliada acima da estimativa não congela automaticamente o
+   restante do orçamento. O ledger já registra o uso real; toda reserva nova
+   precisa caber nos limites restantes de tokens, chamadas, escopos, tempo,
+   custo e prazo. Excesso monetário e reserva incerta continuam bloqueando.
+3. Para erro `schema_invalid` que consumiu exatamente o teto de saída, permitir
+   recuperação na mesma tentativa somente com autorização humana corrente,
+   saída reconciliada, nenhuma reserva aberta/incerta e uma versão compacta do
+   prompt vinculada a um sidecar que referencia o plano e receipt originais.
+   O payload enviado ao modelo limita evidências a um localizador curto e
+   explicações do meta-revisor a 256 caracteres, como subconjunto dos schemas
+   canônicos, sem alterar seus contratos de validação. Se o modelo local
+   anunciar suporte a thinking, a recuperação envia `reasoning_effort=none` e
+   `think=false`; a versão do prompt e o manifesto de recuperação registram a
+   mudança de modo. Se a rota compatível ignorar o controle, a recuperação pode
+   usar `/api/chat` nativo do mesmo serviço loopback, host, porta e modelo; a API
+   efetiva precisa constar no sidecar de recuperação.
+4. A extensão de chamadas é um evento append-only `LIMITS_EXTENDED`, de uma
+   chamada por evento, até sete chamadas além do teto inicial do ciclo M8. Ela
+   não eleva os tetos de tokens, custo, concorrência ou rotas. Com autorização
+   humana explícita para continuar a tentativa bloqueada, no máximo dois desses
+   eventos podem acrescentar exatamente 3.600 segundos cada ao limite de tempo e ao
+   deadline, inclusive depois do deadline anterior; exige todas as reservas
+   reconciliadas/liberadas e mantém o restante dos limites. O evento vincula os
+   hashes anterior e novo, os valores e o prazo anterior/novo. O plano e os
+   receipts originais não são editados.
+5. `UNCERTAIN`, rejeição sem receipt, falha de integridade e evidência
+   insuficiente não são recuperáveis por esta decisão. Overflow determinístico
+   pré-reserva continua sendo resolvido somente por variante local previamente
+   declarada no plano, conforme a política de contexto.
+6. A auditoria final reconhece receipts M8 `schema_invalid` sem artefato de
+   saída somente quando estão reconciliados e têm `output_sha256` e
+   `output_locator` nulos. Eles entram na contabilidade e na cobertura de
+   chamadas, mas nunca são associados a um veredito publicado.
+7. Resultado observado da recuperação nativa: a chamada v6 foi admitida em
+   `/api/chat`, mas expirou no cliente após 600 segundos sem receipt. O ledger
+   preservou a reserva como `UNCERTAIN`; a tentativa permanece em
+   `GATES_PASSED`, sem veredito M8, disposição ou auditoria final. Esta condição
+   não autoriza nova chamada nem retomada da mesma tentativa. Só evidência
+   verificável de não consumo pode remover a ambiguidade conforme os contratos
+   do ledger; caso contrário, uma execução futura requer nova identidade e raiz,
+   depois de resolver a causa do timeout.
+8. Em planos de tentativas novas, targets de júri recebem timeout de 900
+   segundos; produtores permanecem em 600. Os cinco receipts M8 anteriores
+   consumiram entre 553 e 590 segundos cada, sempre com `output_tokens=4096`,
+   mostrando que o teto de 600 segundos não oferecia folga operacional para o
+   júri. Esta mudança só afeta planos novos; não altera a configuração da
+   tentativa existente nem a reserva `UNCERTAIN`.
+
+### Consequências e limites
+
+O modo de recuperação precisa verificar e registrar o binding da falha antes
+de criar qualquer nova reserva. A nova chamada usa a rota/modelo originais e
+um identificador de request distinto; receipts válidos já produzidos podem ser
+reutilizados pelo runtime. O plano e o receipt originais permanecem imutáveis.
+O limite do ciclo local segue em 120.000 tokens e custo externo zero,
+concorrência um e host loopback. O tempo e o deadline podem receber no
+máximo duas extensões locais hash-bound de 3.600 segundos sob autorização humana
+explícita. Uma saída compacta ainda pode falhar no schema; nesse caso só uma
+correção determinística com nova extensão explícita é permitida, dentro desses
+limites. Na primeira tentativa registrada, cinco respostas compactas terminaram
+em `schema_invalid`; a chamada nativa seguinte expirou após 600 segundos e ficou
+`UNCERTAIN` sem receipt. O fail-closed impede continuar essa tentativa ou
+despachar a mesma inferência novamente sem prova de não consumo. Os cinco
+receipts M8 reconciliados duraram de 553 a 590 segundos no teto de saída;
+targets de júri em planos novos usam 900 segundos para permitir folga, mantendo
+600 segundos nos targets produtores. O plano congelado não é alterado.

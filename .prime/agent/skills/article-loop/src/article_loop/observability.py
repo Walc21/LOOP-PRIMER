@@ -27,12 +27,12 @@ _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}\Z")
 _EVENT_TYPES = frozenset({
     "budget_reserved", "budget_admitted", "budget_reconciled",
     "budget_released", "budget_uncertain", "budget_authorized",
-    "budget_progress", "budget_alert", "budget_paused", "budget_resumed",
+    "budget_progress", "budget_alert", "budget_limits_extended", "budget_paused", "budget_resumed",
     "budget_stopped", "supervisor_step",
     "inference_routed", "inference_receipt", "inference_uncertain",
 })
 _SAFE_KEYS = frozenset({
-    "alert_code", "assurance", "attempt", "available", "call_id",
+    "alert_code", "approval_reference", "assurance", "attempt", "available", "call_id",
     "cache_tokens", "cost_microunits",
     "children", "confirmed", "cycle_id", "deadline_at", "department_id",
     "estimate_tokens", "event_type", "extra_judgment", "last_improvement_cycle",
@@ -42,6 +42,8 @@ _SAFE_KEYS = frozenset({
     "retries", "role_id", "state", "status", "threshold", "total_tokens",
     "uncertain", "usage_tokens", "wall_time_seconds", "currency", "scope",
     "backend_type", "finish_reason", "independence_group", "receipt_id",
+    "previous_limits_hash", "new_limits_hash", "max_calls",
+    "max_wall_time_seconds",
     "route_decision_hash", "routing_policy_hash", "target_id", "usage_available",
 })
 

@@ -34,6 +34,29 @@
 - Preserve arquivos e evidência existentes. Todo PDF é imutável; derivados têm
   caminho separado e identidade de execução. Não retome, reescreva, substitua
   ou repita tentativa congelada/`UNCERTAIN`.
+- Em execução local explicitamente autorizada, erro determinístico de contexto
+  detectado antes da reserva pode manter a requisição em memória e selecioná-la
+  por uma variante local de contexto maior já declarada e hash-bound no plano.
+  Esse ajuste não reescreve rota, reserva ou receipt e não repete inferência.
+  Se uma saída estruturada atingir exatamente o teto declarado e houver receipt
+  `schema_invalid` reconciliado, uma continuação na mesma tentativa pode usar
+  uma versão compacta e hash-bound do prompt/schema e, quando o modelo tiver
+  thinking não controlável pela rota compatível, usar a API nativa do mesmo
+  serviço loopback para desabilitá-lo, registrando a rota efetiva no sidecar.
+  A continuação preserva o plano e o receipt originais, registra sua própria
+  extensão de no máximo uma chamada por falha corrigida e consome os mesmos
+  tetos de tokens, custo e rotas locais.
+  Sob autorização humana explícita para continuar a tentativa bloqueada, até
+  duas extensões hash-bound podem acrescentar 3.600 segundos cada ao tempo total
+  e ao deadline; cada uma também consome uma extensão de chamada e exige todas as
+  reservas reconciliadas ou liberadas. Não pode alterar concorrência, host
+  loopback, provedor, modelo ou política de retry. A API nativa pode mudar o
+  caminho local somente no mesmo serviço e deve ser declarada no sidecar. Só
+  pode prosseguir depois de confirmar que não há reserva `UNCERTAIN`/aberta e
+  que o orçamento restante comporta a chamada.
+  Rejeição pós-despacho sem receipt, consumo ambíguo, custo acima do teto,
+  evidência científica insuficiente e falha de integridade continuam
+  fail-closed e não podem ser retomados sem prova de não consumo.
 
 ## Contratos de engenharia que não podem ser relaxados
 
